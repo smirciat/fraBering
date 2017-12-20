@@ -1,0 +1,38 @@
+
+<div flex layout="row">
+  <sidebar layout="row"></sidebar>
+  <md-content flex layout="column" id="content">
+    <div layout="row" flex="5"></div>
+    <div layout="row">
+      <md-input-container class="bering" flex>
+        <label>Pilot</label>
+        <md-select ng-model="main.assessment.pilot">
+          <md-option ng-repeat="pilot in main.pilots" ng-value="pilot.name">
+            {{pilot.name}}
+          </md-option>
+        </md-select>
+      </md-input-container>
+      <md-input-container class="bering" flex>
+        <label>Flight Number</label>
+        <md-select ng-model="main.assessment.flight" ng-change="main.changeFlight($event)">
+          <md-option value="Extra"><em>Extra</em></md-option>
+          <md-option ng-repeat="flight in main.flights track by $index" ng-value="flight.flightNum">
+            {{flight.flightNum}}
+          </md-option>
+        </md-select>
+      </md-input-container>
+    </div>
+    <div ng-repeat-start="airport in main.airports" layout="row" flex>
+      <md-button flex>{{airport}}</md-button>
+      <md-button class="md-warn md-raised" flex>2nd Button</md-button>
+      <md-button flex>3rd Button</md-button>
+      <md-button flex>{{main.flights[0].flightNum}}</md-button>
+    </div>
+    <div ng-repeat-end layout="row" flex>
+      <md-button flex>1st Button</md-button>
+      <md-button flex class="md-warn md-raised">2nd Button</md-button>
+      <md-button flex>3rd Button</md-button>
+      <md-button flex>{{main.flights[0].flightNum}}</md-button>
+    </div>
+  </md-content>
+</div>

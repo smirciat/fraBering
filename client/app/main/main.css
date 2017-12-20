@@ -1,0 +1,35 @@
+.bering{
+  font-weight:bold;
+  font-size:120%;
+}
+.md-button{
+  margin-left:2em;
+  margin-right:2em;
+  font-size:120%;
+}
+
+.navbar-text {
+  margin-left: 15px;
+}
+.md-green{
+  background-color:#80ff80 !important;
+}
+.md-blue{
+  background-color:#80bfff !important;
+}
+.md-yellow{
+  background-color:#ffff00 !important;
+}
+.md-red{
+  background-color:#ff3333 !important;
+  color:white;
+}
+.md-orange{
+  background-color:#ffa500 !important;
+}
+label{
+  text-align:center;
+}
+md-select{
+ padding-left:30px;
+}
