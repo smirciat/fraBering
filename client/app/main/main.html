@@ -22,17 +22,39 @@
         </md-select>
       </md-input-container>
     </div>
-    <div ng-repeat-start="airport in main.airports" layout="row" flex>
-      <md-button flex>{{airport}}</md-button>
-      <md-button class="md-warn md-raised" flex>2nd Button</md-button>
-      <md-button flex>3rd Button</md-button>
-      <md-button flex>{{main.flights[0].flightNum}}</md-button>
+    <div ng-repeat-start="airport in main.assessment.airports track by $index" layout="row" flex>
+      <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+        <md-button class="md-raised" ng-class="main.airportClass($index)" flex 
+           ng-mouseenter="main.openAirportChangeMenu($mdMenu, $event)">
+              Airport:<br>{{airport}}
+        </md-button>
+        <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+          <md-menu-item>
+            <md-button class="md-raised md-accent" ng-click="main.changeAirport($event,$index)">Change Airport</md-button>
+          </md-menu-item>
+        </md-menu-content>
+      </md-menu>
+      
+      <md-button class="md-raised" ng-class="main.visibilityClass($index)" flex>
+        <md-tooltip md-direction="bottom">{{main.assessment.metars[$index]}}</md-tooltip>
+        Visibility<br>{{main.assessment.visibilities[$index]}}
+      </md-button>
+      <md-button class="md-raised" ng-class="main.ceilingClass($index)" flex>Ceiling<br>{{main.assessment.ceilings[$index]}}</md-button>
+      <md-button class="md-raised" ng-class="main.windClass($index)" flex>Wind Gust<br>{{main.assessment.windGusts[$index]}}</md-button>
     </div>
-    <div ng-repeat-end layout="row" flex>
-      <md-button flex>1st Button</md-button>
-      <md-button flex class="md-warn md-raised">2nd Button</md-button>
-      <md-button flex>3rd Button</md-button>
-      <md-button flex>{{main.flights[0].flightNum}}</md-button>
+    <div class="bottom-row" ng-repeat-end layout="row" flex>
+      <md-button flex></md-button>
+      <md-button class="md-raised" ng-class="main.runwayClass($index)" flex class="md-warn md-raised">Runway Condition<br>{{main.assessment.runwayConditions[$index]}}</md-button>
+      <md-button class="md-raised" ng-class="main.freezingClass($index)" flex>Freezing Precip<br>{{main.assessment.freezingPrecipitations[$index]}}</md-button>
+      <md-button class="md-raised" ng-class="main.tafClass($index)" flex>
+        <md-tooltip md-direction="bottom">{{main.assessment.tafs[$index]}}</md-tooltip>
+        TAF</md-button>
+    </div>
+    <div ng-if="main.assessment.flight" layout="row" flex>
+      <md-button class="md-raised md-warn" flex>Add Airport</md-button>
+      <md-button flex></md-button>
+      <md-button flex></md-button>
+      <md-button class="md-raised md-primary" flex>Submit Assessment</md-button>
     </div>
   </md-content>
 </div>

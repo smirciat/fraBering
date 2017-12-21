@@ -7,10 +7,15 @@
   margin-right:2em;
   font-size:120%;
 }
-
-.navbar-text {
-  margin-left: 15px;
+.md-tooltip{
+  font-size:100%;
 }
+.my-button{
+  margin-left:2em;
+  margin-right:2em;
+  font-size:120%;
+}
+
 .md-green{
   background-color:#80ff80 !important;
 }
@@ -32,4 +37,8 @@ label{
 }
 md-select{
  padding-left:30px;
+}
+.bottom-row {
+  padding-bottom:15px;
+  border-bottom: 1px solid black;
 }
