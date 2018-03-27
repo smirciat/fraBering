@@ -4,15 +4,14 @@
 
   class MainController {
 
-    constructor($http, $scope, socket,$mdDialog,$timeout) {
+    constructor($http, $scope, socket,$mdDialog,$timeout,appConfig) {
       this.$http = $http;
       this.scope=$scope;
       this.socket = socket;
       this.mdDialog=$mdDialog;
       this.timeout=$timeout;
-      this.airports=[];
-      this.flights=[];
-      this.pilots=[];
+      this.appConfig=appConfig;
+      
       var vis,ceil,wind,runway,freeze;
       var self=this;
       
@@ -96,24 +95,33 @@
     }
     
     $onInit() {
-      this.$http.get('/api/flights')
-        .then(response => {
-          this.flights = response.data;
+      this.init();
+      //this.$http.get('/api/flights')
+      //  .then(response => {
+      //    console.log(response.data)
+      //    this.flights = response.data;
           //this.socket.syncUpdates('flight', this.flights);
           
-        });
+      //  });
         
-      this.$http.get('/api/pilots')
-        .then(response => {
-          this.pilots = response.data;
-        });
+      //this.$http.get('/api/pilots')
+      //  .then(response => {
+      //    console.log(response.data)
+      //    this.pilots = response.data;
+      //  });
         
+      //this.$http.get('/api/airportRequirements')
+      //  .then(response => {
+      //    console.log(response.data)
+      //    this.airports=response.data;
+      //  });
+    }
+    
+    init(){
+      this.flights=this.appConfig.flights;
+      this.pilots=this.appConfig.pilots;
       this.initAssessment();
-      
-      this.$http.get('/api/airportRequirements')
-        .then(response => {
-          this.airports=response.data;
-        });
+      this.airports=this.appConfig.airportRequirements;
     }
 
     addThing() {
@@ -202,6 +210,29 @@
       this.mdDialog.show(confirm).then(function(result) {
         if (result.length===4){
           self.assessment.airports[index]=result;
+          self.initAirport(result,index);
+        }
+      });
+    }
+    
+    addAirport(ev){
+      var self=this;
+      var confirm = this.mdDialog.prompt()
+        .parent(angular.element(document.body))
+        .title('What is the new airport?')
+        .textContent('Enter a four letter airport code')
+        .placeholder('Airport')
+        .ariaLabel('Airport')
+        .initialValue('')
+        .targetEvent(ev)
+        .required(true)
+        .ok('OK')
+        .cancel('Cancel');
+          
+      this.mdDialog.show(confirm).then(function(result) {
+        if (result.length===4){
+          self.assessment.airports.push(result);
+          self.initAirport(result,self.assessment.airports.length-1);
         }
       });
     }
@@ -255,6 +286,36 @@
     
     tafClass(index){
       return "md-green";
+    }
+    
+    submit(ev){
+      if (this.assessment.pilot===""||this.assessment.flight==="") {
+        var alert = this.mdDialog.alert({
+          title: 'Attention',
+          textContent: 'You need to enter a pilot and a flight number at the top of the page.',
+          ok: 'Close'
+        });
+            
+        this.mdDialog.show(alert).then(function() {
+          
+        });
+      }
+      else {
+        var matchPilots = this.pilots.filter(pilot=>{
+          return pilot.name===this.assessment.pilot;
+        });
+        if (matchPilots.length>0) {
+          this.assessment.level=matchPilots[0].level;
+        }
+        else this.assessment.level="level1";
+        this.assessment.date=new Date();
+        this.$http.post('/api/assessments', this.assessment).then(response=>{
+          this.assessment={};
+          this.init();
+          this.initAssessment();
+        });
+        
+      }
     }
     
   }

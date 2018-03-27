@@ -1,0 +1,148 @@
+<div print-section>
+  <div print-remove>
+    <navbar></navbar>
+    <div class="test-container padding-top">
+        <h1>Payroll Period is: 
+          {{timeclock.startDate.format("MMM DD, YYYY")}} through
+          {{timeclock.lastDate.format("MMM DD, YYYY")}}
+        </h1>
+        <div>
+            <a href='#' ng-click="timeclock.minus()"><i class="fa fa-minus-circle fa-fw fa-2x" aria-hidden="true"></i></a>
+            <a href='#' ng-click="timeclock.plus()"><i class="fa fa-plus-circle fa-fw fa-2x" aria-hidden="true"></i></a>
+            <button print-btn ng-if="nav.hasRole('admin')" class="btn btn-primary space">Print Timesheets</button>
+            <button ng-if="nav.hasRole('admin')" class="btn btn-link space">
+              <ul class="nav navbar-nav">    
+                <li class="dropdown">
+                    <a href="#" data-toggle="dropdown" class="dropdown-toggle">Filter by Employee <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li ng-repeat="employee in timeclock.payrollList">
+                          <a ng-click="timeclock.setEmployee(employee)" href="#">{{employee.employee}}</a>
+                        </li>
+                    </ul>
+                </li>
+              </ul>
+            </button>
+        </div>
+    </div>
+    </br>
+    <div>
+        <!--Print Button, media print layout-->
+        <table class="table table-striped table-responsive table-hover" ng-show="nav.hasRole('admin')">
+          <thead>    
+            <tr>
+                <th>Employee ID</th>
+                <th>Employee</th>
+                <th>Time In</th>
+                <th>Time Out</th>
+                <th>Regular Hours</th>
+                <th>OT Hours</th>
+                <th></th>
+                <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+                <td><input class="form-control" ng-model="timeclock.newRecord.uid" type="number" ng-blur="timeclock.nameLookup(timeclock.newRecord.uid)"></td>
+                <td><input class="form-control" ng-model="timeclock.newRecord.name" type="text"></td>
+                <td><input class="form-control" ng-model="timeclock.newRecord.timeIn" type="text" placeholder="Apr 1, 2017 12:00 PM"></td>
+                <td><input class="form-control" ng-model="timeclock.newRecord.timeOut" type="text" placeholder="Apr 1, 2017 12:00 PM"></td>
+                <td><input class="form-control" ng-model="timeclock.newRecord.regularHours" type="number" step="any" placeholder="0"></td>
+                <td><input class="form-control" ng-model="timeclock.newRecord.otHours" type="number" step="any" placeholder="0"></td>
+                <td><a href="#" ng-click="timeclock.cancel()"><button class="btn btn-danger">Cancel</button></a></td>
+                <td><button class="btn btn-success" ng-click="timeclock.update(timeclock.newRecord)">Add/Update</button></a></td>
+            </tr>
+          </tbody>
+    </div>
+    </br>
+    <div class="alt-container">
+        <!--Time in, Time Out, Hours so far-->
+        <button class="btn btn-success space" ng-hide="timeclock.in" ng-click="timeclock.clockIn()">Clock In</button>
+        <button class="btn btn-danger space"  ng-show="timeclock.in" ng-click="timeclock.clockOut()">Clock Out</button>
+        <h5 ng-show="timeclock.in">{{" Hours worked so far:  " + (timeclock.hours|number:1)}}</h5>
+        <button ng-show="timeclock.in" class="btn btn-default space"  ng-click="timeclock.getCurrent()">Refresh So Far</button>
+    </div>
+    </br>
+    <div>
+        <table class="table table-striped table-responsive table-hover">
+          <thead>    
+            <tr>
+                <th>#</th>
+                <th></th>
+                <th></th>
+                <th ng-show="nav.hasRole('admin')">Employee ID</th>
+                <th>Employee</th>
+                <th>Time In</th>
+                <th>Time Out</th>
+                <th>Regular Hours</th>
+                <th>OT Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="timesheet in timeclock.timesheets">
+                <th scope="row">{{$index+1}}</th>
+                <td><a href="#" ng-show="nav.hasRole('admin')" ng-click="timeclock.delete(timesheet)"><button class="btn btn-danger">Delete</button></a></td>
+                <td><a href="#" ng-show="nav.hasRole('admin')" ng-click="timeclock.edit(timesheet)"><button class="btn btn-warning">Edit</button></a></td>
+                <td ng-show="nav.hasRole('admin')">{{timesheet.uid}}</td>
+                <td>{{timesheet.name}}</td>
+                <td>{{timesheet.timeIn|date:'medium'}}</td>
+                <td>{{timesheet.timeOut|date:'medium'}}</td>
+                <td>{{timesheet.regularHours|number:1}}</td>
+                <td>{{timesheet.otHours|number:1}}</td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+  </div> 
+  <div print-only ng-show="nav.hasRole('admin')" >
+    <div class="full-sheet" ng-repeat="employee in timeclock.employees">
+      <div class="alt-container">
+        <h4 class="space">{{employee.employee}}</h4>
+        <h5 class="space">{{'Payroll Period: ' + timeclock.startDate.format("MMM DD, YYYY") + ' through ' + timeclock.lastDate.format("MMM DD, YYYY")}}</h5>
+      </div>
+      </br>
+      <div> 
+        <table class="table small-table table-bordered">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Time In</th>
+              <th>Time Out</th>
+              <th>Regular Hours</th>
+              <th>OT Hours</th>
+              <th>Total Hours</th>
+            </tr>
+          </thead>
+          <tfoot>
+            <tr class="big-table">
+              <td colspan="3"></td>
+              <td>Total For Period:</td>
+              <td>{{employee.totalRegular|number:1}}</td>
+              <td>{{employee.totalOT|number:1}}</td>
+              <td>{{(employee.totalOT+employee.totalRegular)|number:1}}</td>
+            </tr>
+          </tfoot>
+          <tbody ng-repeat="week in employee.weeks">
+            <tr ng-repeat="timesheet in week.timesheets">
+              <td>{{timesheet.uid}}</td>
+              <td class="small-table">{{timesheet.name}}</td>
+              <td class="small-table">{{timesheet.timeIn|date:'medium'}}</td>
+              <td class="small-table">{{timesheet.timeOut|date:'medium'}}</td>
+              <td>{{timesheet.regularHours|number:1}}</td>
+              <td>{{timesheet.otHours|number:1}}</td>
+              <td>{{(timesheet.regularHours+timesheet.otHours)|number:1}}</td>
+            </tr>
+            <tr>
+              <td colspan="2"></td>
+              <td colspan="2">Week Ending {{week.weekEnd|date:'MMM d, yyyy'}}</td>
+              <td style="text-align:right">{{week.totalRegular|number:1}}</td>
+              <td style="text-align:right">{{week.totalOT|number:1}}</td>
+              <td style="text-align:right">{{(week.totalRegular+week.totalOT)|number:1}}</td>
+            </tr>
+          </tbody>  
+          <tr><td></td></tr>
+        </table>
+      </div>  
+    </div>
+  </div>
+</div>

@@ -14,10 +14,22 @@ export default function(sequelize, DataTypes) {
       type:DataTypes.BOOLEAN,
       defaultValue:false
     },
-    visibilityRequirement: DataTypes.JSON,
-    ceilingRequirement: DataTypes.JSON,
-    windRequirement: DataTypes.JSON,
-    runwayCondition: DataTypes.INTEGER,
+    visibilityRequirement: {
+      type:DataTypes.JSON,
+      defaultValue:{"red":0.5,"yellow":3,"ifr":2,"night":5}
+    },
+    ceilingRequirement: {
+      type:DataTypes.JSON,
+      defaultValue:{"red":200,"yellow":2000,"ifr":1000,"night":3000}
+    },
+    windRequirement: {
+      type:DataTypes.JSON,
+      defaultValue:{"level1":35,"level15":30}
+    },
+    runwayCondition: {
+      type:DataTypes.INTEGER,
+      defaultValue:1
+    },
     forecastRequirement: DataTypes.JSON
   });
 }

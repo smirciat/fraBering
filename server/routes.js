@@ -9,6 +9,10 @@ import path from 'path';
 
 export default function(app) {
   // Insert routes below
+  app.use('/api/timesheets', require('./api/timesheet'));
+  app.use('/api/manifests', require('./api/manifest'));
+  app.use('/api/pfrs', require('./api/pfr'));
+  app.use('/api/reservations', require('./api/reservation'));
   app.use('/api/airportRequirements', require('./api/airportRequirement'));
   app.use('/api/notifications', require('./api/notification'));
   app.use('/api/hazardReports', require('./api/hazardReport'));

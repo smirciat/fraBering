@@ -2,5 +2,211 @@
 
 exports = module.exports = {
   // List of user roles
-  userRoles: ['guest', 'user', 'admin']
+  userRoles: ['guest', 'user', 'admin','superadmin'],
+  
+  angularMomentConfig:{timezone:'America/Anchorage'},
+  
+  flights:[
+    {  flightNum:'605', airports:['PAOT','PAOM'], daysOfWeek:[1,2,3,4,5], departTimes:['17:30']},
+    {  flightNum:'805', airports:['PAOM','PAOT'], daysOfWeek:[1,2,3,4,5], departTimes:['8:20']},
+    {  flightNum:'631', airports:['PAOT','PFNO','PAIK'], daysOfWeek:[1,2,3,4,5,6], departTimes:["10:00:00", "10:45:00", "11:15:00"]},
+    {  flightNum:'621', airports:['PAOT','PAFM','PAGH','PAOB'], daysOfWeek:[1,2,3,4,5,6], departTimes:["08:45:00", "09:35:00", "09:50:00", "10:05:00"]},
+    {  flightNum:'870', airports:['PAOM','PATE','PFKT'], daysOfWeek:[1,2,3,4,5,6], departTimes:['9:45','10:25','10:45']},
+    {  flightNum:'892', airports:['PAOM','PATE','PFKT','PAIW'], daysOfWeek:[1,2,3,4,5,6], departTimes:['15:15','15:55','16:15','16:35']},
+    {  flightNum:'895', airports:['PAOM','PATE','PFKT','PAIW'], daysOfWeek:[7], departTimes:['12:15','12:55','13:15','13:35']},  
+    {  flightNum:'812', airports:['PAOM','PFEL','PAGL','PAWM'], daysOfWeek:[1,2,3,4,5,6], departTimes:['8:30','9:15','9:25','9:40']},
+    {  flightNum:'820', airports:['PAOM','PFEL','PAGL','PAWM'], daysOfWeek:[1,2,3,4,5,6], departTimes:['15:45','16:25','16:40','16:45']},
+    {  flightNum:'825', airports:['PAOM','PFEL','PAGL','PAWM'], daysOfWeek:[7], departTimes:['14:45','12:55','13:15','15:55']}, 
+    {  flightNum:'850', airports:['PAOM','PAGM','PASV'], daysOfWeek:[1,2,3,4,5,6], departTimes:['9:00','10:00','10:30']},
+    {  flightNum:'852', airports:['PAOM','PAGM','PASV'], daysOfWeek:[7], departTimes:['13:30','14:30','15:00']},
+    {  flightNum:'853', airports:['PAOM','PAGM','PASV'], daysOfWeek:[1,2,3,4,5,6], departTimes:['15:00','16:05','16:35']},  
+    {  flightNum:'810', airports:['PAOM','PAKK','PFSH','PAUN'], daysOfWeek:[1,2,3,4,5,6], departTimes:["08:30:00", "09:25:00", "09:55:00"]},
+    {  flightNum:'815', airports:['PAOM','PAKK','PFSH'], daysOfWeek:[7], departTimes:["14:45", "15:45", "17:20"]},
+    {  flightNum:'830', airports:['PAOM','PAMK','WBB','PAUN'], daysOfWeek:[1,2,3,4,5,6], departTimes:['9:30','10:25','10:35','11:15']},
+    {  flightNum:'840', airports:['PAOM','PAMK','WBB','PAUN'], daysOfWeek:[1,2,3,4,5,6,7], departTimes:['15:30','17:05','17:15','17:55']},
+    {  flightNum:'890', airports:['PAOM','PATC','PAIW'], daysOfWeek:[1,2,3,4,5,6], departTimes:['12:15','13:15','13:35']},
+    {  flightNum:'622', airports:['PAOT','PAFM','PAGH','PAOB'], daysOfWeek:[1,2,3,4,5,6], departTimes:["15:00", "15:50", "16:05", "16:20"]},
+    {  flightNum:'625', airports:['PAOT','PAFM','PAGH','PAOB'], daysOfWeek:[7], departTimes:["12:00", "12:50", "13:05", "13:20"]},
+    {  flightNum:'641', airports:['PAOT','PABL','PADE'], daysOfWeek:[1,2,3,4,5,6], departTimes:["9:45", "10:25", "10:45"]},
+    {  flightNum:'642', airports:['PAOT','PABL','PADE'], daysOfWeek:[1,2,3,4,5,6,7], departTimes:["15:30", "16:10", "16:30"]},
+    {  flightNum:'632', airports:['PAOT','PFNO','PAIK'], daysOfWeek:[1,2,3,4,5,6,7], departTimes:["15:45", "16:30", "17:00"]},
+    {  flightNum:'681', airports:['PAOT','PAWM','PAVL'], daysOfWeek:[1,2,3,4,5,6], departTimes:["11:00", "11:30", "12:05"]},
+    {  flightNum:'682', airports:['PAOT','PAWM'], daysOfWeek:[1,2,3,4,5,6], departTimes:["16:45", "17:15"]},
+    {  flightNum:'685', airports:['PAOT','PAWM','PAVL'], daysOfWeek:[7], departTimes:["12:30", "13:00", "13:35"]},
+    {  flightNum:'662', airports:['PAOT','PAVL','PAPO'], daysOfWeek:[1,2,3,4,5,6], departTimes:["15:15", "15:55", "16:35"]},
+    {  flightNum:'661', airports:['PAOT','PAPO','PALU'], daysOfWeek:[1,2,3,4,5,6], departTimes:["9:00", "10:05","10:35"]},
+    {  flightNum:'651', airports:['PAOT','PASK'], daysOfWeek:[1,2,3,4,5,6], departTimes:["9:15", "9:50"]},
+    {  flightNum:'652', airports:['PAOT','PASK'], daysOfWeek:[1,2,3,4,5,6], departTimes:["15:00", "15:40"]},
+    {  flightNum:'655', airports:['PAOT','PASK'], daysOfWeek:[7], departTimes:["12:15", "12:50"]},
+    {  flightNum:'420', airports:['PAUN','PFSH','PAKK'], daysOfWeek:[1,2,3,4,5,6], departTimes:["17:00", "17:30", "18:00"]},
+    {  flightNum:'440', airports:['PAUN','PFSH','PAKK'], daysOfWeek:[1,2,3,4,5,6], departTimes:["11:30", "12:15", "12:45"]}
+    ],
+    
+  pilots:[
+    {name: "Olson, David", level: "level1", active: true},
+    {name: "Kinneen, Fen", level: "level1", active: true},
+    {name: "Eggart, Larry", level: "level1", active: true},
+    {name: "Ahl, Kevin", level: "level1", active: true},
+    {name: "Evans, Mike", level: "level1", active: true},
+    {name: "Henry, Cliff", level: "level1", active: true},
+    {name: "Smith, Jason", level: "level1", active: true},
+    {name: "Morgan, Stan", level: "level1", active: true},
+    {name: "Small, Joe", level: "level1", active: true},
+    {name: "Rowe, Russell", level: "level1", active: true},
+    {name: "Woehler, Ryan", level: "level1", active: true},
+    {name: "Lefebvre, Kyle", level: "level1", active: true},
+    {name: "McIntosh, Brandon", level: "level1", active: true},
+    {name: "Greene, Jade", level: "level1", active: true},
+    {name: "Cox, Steffen", level: "level1", active: true},
+    {name: "Baker, Adam", level: "level1", active: true},
+    {name: "Goodin, Daniel", level: "level1", active: true},
+    {name: "Wright, Franc", level: "level1", active: true},
+    {name: "Wagner, Nate", level: "level1", active: true},
+    {name: "Wasem, John", level: "level1", active: true},
+    {name: "Eckler, Brianna", level: "level1", active: true},
+    {name: "Jones, Sean", level: "level1", active: true},
+    {name: "Olson, Nathaniel", level: "level1", active: true},
+    {name: "Kunkel, Tim", level: "level1", active: true},
+    {name: "Borchardt, Mark", level: "level1", active: true},
+    {name: "Dunkley, Bret", level: "level1", active: true},
+    {name: "Russell, Steve", level: "level1", active: true},
+    {name: "Rohlack, Korey", level: "level1", active: true},
+    {name: "Freckleton, Matt", level: "level1", active: true},
+    {name: "Gardner, Evan", level: "level1", active: true},
+    {name: "Hanson, Ryan", level: "level1", active: true},
+    {name: "Tunley, David", level: "level1", active: true},
+    {name: "Smircich, Andy", level: "level15", active: true}
+
+    ],
+    
+  airportRequirements:[
+    {icao:'PAOT',name:'Kotzebue',base:true,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAOM',name:'Nome',base:true,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAUN',name:'Unalakleet',base:true,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PFKT',name:'Brevig Mission',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'CIL',name:'Council',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PFEL',name:'Elim',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAGM',name:'Gambell',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAGL',name:'Golovin',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAKK',name:'Koyuk',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'DIO',name:'Little Diomede',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAMK',name:'Saint Michael',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PASV',name:'Savoonga',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PFSH',name:'Shaktoolik',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PASH',name:'Shishmaref',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'WBB',name:'Stebbins',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PATE',name:'Teller',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAIW',name:'Wales',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAWM',name:'White Mountain',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAFM',name:'Ambler',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PABL',name:'Buckland',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PADE',name:'Deering',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAIK',name:'Kiana',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAVL',name:'Kivalina',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAOB',name:'Kobuk',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAWN',name:'Noatak',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PFNO',name:'Noorvik',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAPO',name:'Point Hope',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PASK',name:'Selawik',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PAGH',name:'Shungnak',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PATC',name:'Tin City',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PALU',name:'Cape Lisburne',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    },
+    {icao:'PADG',name:'Red Dog',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+      windRequirement:{level1: 35, level15: 30}
+    }
+  ]
 };

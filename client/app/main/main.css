@@ -5,10 +5,15 @@
 .md-button{
   margin-left:2em;
   margin-right:2em;
-  font-size:120%;
+  font-size:110%;
 }
 .md-tooltip{
   font-size:100%;
+}
+
+.tooltip-inner{
+  white-space: pre-line;
+  white-space: pre-wrap;
 }
 .my-button{
   margin-left:2em;
@@ -42,3 +47,10 @@ md-select{
   padding-bottom:15px;
   border-bottom: 1px solid black;
 }
+md-sidenav, 
+md-sidenav.md-locked-open, 
+md-sidenav.md-closed.md-locked-open-add-active {
+    min-width: 200px !important;
+    width: 18vw !important;
+    max-width: 400px !important;
+} 

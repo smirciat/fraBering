@@ -17,8 +17,13 @@ module.exports = {
     uri:  process.env.DATABASE_URL || process.env.SEQUELIZE_URI ||
           'sqlite://',
     options: {
+      dialect:'postgres',
+      protocol:'postgres',
       logging: false,
-      storage: 'dist.sqlite',
+      dialectOptions: {
+          ssl: true
+      },
+      storage: 'dev.sqlite',
       define: {
         timestamps: false
       }
