@@ -12,6 +12,7 @@ export default function(sequelize, DataTypes) {
     level: DataTypes.STRING,
     date: DataTypes.DATE,
     flight: DataTypes.STRING,
+    equipment: DataTypes.STRING,
     airports: DataTypes.ARRAY(DataTypes.STRING),
     metars:DataTypes.ARRAY(DataTypes.STRING),
     tafs: DataTypes.ARRAY(DataTypes.STRING),

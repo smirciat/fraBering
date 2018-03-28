@@ -13,6 +13,15 @@
         </md-select>
       </md-input-container>
       <md-input-container class="bering" flex>
+        <label>Equipment</label>
+        <md-select ng-model="main.assessment.equipment">
+          <md-option ng-repeat="equipment in main.equipment | orderBy: 'name'" ng-value="equipment"
+            ng-selected="{{equipment.name==='Caravan'}}">
+            {{equipment.name}}
+          </md-option>
+        </md-select>
+      </md-input-container>
+      <md-input-container class="bering" flex>
         <label>Flight Number</label>
         <md-select ng-model="main.assessment.flight" ng-change="main.changeFlight($event)">
           <md-option value="Extra"><em>Extra</em></md-option>
@@ -26,7 +35,8 @@
       <div ng-repeat-start="airport in main.assessment.airports track by $index" layout="row" flex>
         <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
           <md-button class="md-raised" ng-class="main.airportClass($index)" flex 
-             ng-click="main.openAirportChangeMenu($mdMenu, $event)">
+             uib-tooltip="{{main.assessment.metars[$index]}}" tooltip-placement="bottom"
+             ng-click="main.openChangeMenu($mdMenu, $event)">
                 Airport:<br>{{airport}}
           </md-button>
           <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
@@ -36,17 +46,69 @@
           </md-menu-content>
         </md-menu>
         
-        <md-button class="md-raised" ng-class="main.visibilityClass($index)" flex uib-tooltip="{{main.assessment.metars[$index]}}" tooltip-placement="bottom">
-          <!--<md-tooltip md-direction="bottom">{{main.assessment.metars[$index]}}</md-tooltip>-->
-          Visibility<br>{{main.assessment.visibilities[$index]}}
-        </md-button>
-        <md-button class="md-raised" ng-class="main.ceilingClass($index)" flex>Ceiling<br>{{main.assessment.ceilings[$index]}}</md-button>
-        <md-button class="md-raised" ng-class="main.windClass($index)" flex>Wind Gust<br>{{main.assessment.windGusts[$index]}}</md-button>
+        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+          <md-button class="md-raised" ng-class="main.visibilityClass($index)" flex 
+             ng-click="main.openChangeMenu($mdMenu, $event)">
+                Visibility<br>{{main.assessment.visibilities[$index]}}
+          </md-button>
+          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+            <md-menu-item>
+              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'visibilities','Visibility')">Change Visibility</md-button>
+            </md-menu-item>
+          </md-menu-content>
+        </md-menu>
+        
+        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+          <md-button class="md-raised" ng-class="main.ceilingClass($index)" flex 
+             ng-click="main.openChangeMenu($mdMenu, $event)">
+                Ceiling<br>{{main.assessment.ceilings[$index]}}
+          </md-button>
+          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+            <md-menu-item>
+              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'ceilings','Ceiling')">Change Ceiling</md-button>
+            </md-menu-item>
+          </md-menu-content>
+        </md-menu>
+        
+        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+          <md-button class="md-raised" ng-class="main.windClass($index)" flex 
+             ng-click="main.openChangeMenu($mdMenu, $event)">
+                Wind Gust<br>{{main.assessment.windGusts[$index]}}
+          </md-button>
+          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+            <md-menu-item>
+              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'windGusts','Wind Gust')">Change Wind Gust</md-button>
+            </md-menu-item>
+          </md-menu-content>
+        </md-menu>
       </div>
       <div class="bottom-row" ng-repeat-end layout="row" flex>
         <md-button flex></md-button>
-        <md-button class="md-raised" ng-class="main.runwayClass($index)" flex class="md-warn md-raised">Runway Condition<br>{{main.assessment.runwayConditions[$index]}}</md-button>
-        <md-button class="md-raised" ng-class="main.freezingClass($index)" flex>Freezing Precip<br>{{main.assessment.freezingPrecipitations[$index]}}</md-button>
+        
+        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+          <md-button class="md-raised" ng-class="main.runwayClass($index)" flex 
+             ng-click="main.openChangeMenu($mdMenu, $event)">
+                Runway Condition<br>{{main.assessment.runwayConditions[$index]}}
+          </md-button>
+          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+            <md-menu-item>
+              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'runwayConditions','Runway Condition')">Change Runway Condition</md-button>
+            </md-menu-item>
+          </md-menu-content>
+        </md-menu>
+        
+        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+          <md-button class="md-raised" ng-class="main.freezingClass($index)" flex 
+             ng-click="main.openChangeMenu($mdMenu, $event)">
+                Freezing Precip<br>{{main.assessment.freezingPrecipitations[$index]}}
+          </md-button>
+          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+            <md-menu-item>
+              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'freezingPrecipitations','Freezing Precip')">Change Freezing Precip</md-button>
+            </md-menu-item>
+          </md-menu-content>
+        </md-menu>
+        
         <md-button class="md-raised" ng-class="main.tafClass($index)" flex uib-tooltip="{{main.assessment.tafs[$index]}}" tooltip-placement="bottom">
           <!--<md-tooltip md-direction="bottom">{{main.assessment.tafs[$index]}}</md-tooltip>-->
           TAF</md-button>

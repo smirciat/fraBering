@@ -6,6 +6,8 @@ exports = module.exports = {
   
   angularMomentConfig:{timezone:'America/Anchorage'},
   
+  equipment:[{id:1,name:"Caravan",wind:30},{id:2,name:"Navajo",wind:35},{id:3,name:"Casa",wind:35},{id:4,name:"King Air",wind:35},{id:5,name:"1900",wind:35}],
+  
   flights:[
     {  flightNum:'605', airports:['PAOT','PAOM'], daysOfWeek:[1,2,3,4,5], departTimes:['17:30']},
     {  flightNum:'805', airports:['PAOM','PAOT'], daysOfWeek:[1,2,3,4,5], departTimes:['8:20']},
@@ -80,16 +82,16 @@ exports = module.exports = {
     ],
     
   airportRequirements:[
-    {icao:'PAOT',name:'Kotzebue',base:true,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
-      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+    {icao:'PAOT',name:'Kotzebue',base:true,ceilingRequirement:{yellow: 1000, red: 263, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.75, ifr: 3, night: 5},
       windRequirement:{level1: 35, level15: 30}
     },
-    {icao:'PAOM',name:'Nome',base:true,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
-      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+    {icao:'PAOM',name:'Nome',base:true,ceilingRequirement:{yellow: 1000, red: 272, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.75, ifr: 3, night: 5},
       windRequirement:{level1: 35, level15: 30}
     },
-    {icao:'PAUN',name:'Unalakleet',base:true,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},
-      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 0.5, ifr: 2, night: 5},
+    {icao:'PAUN',name:'Unalakleet',base:true,ceilingRequirement:{yellow: 1000, red: 340, ifr: 1000, night: 3000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 1, ifr: 3, night: 5},
       windRequirement:{level1: 35, level15: 30}
     },
     {icao:'PFKT',name:'Brevig Mission',base:false,ceilingRequirement:{yellow: 1000, red: 280, ifr: 1000, night: 3000},

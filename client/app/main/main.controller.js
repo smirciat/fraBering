@@ -4,14 +4,21 @@
 
   class MainController {
 
-    constructor($http, $scope, socket,$mdDialog,$timeout,appConfig) {
+    constructor($http, $scope, socket,$mdDialog,$timeout,appConfig,$interval) {
       this.$http = $http;
+      this.interval=$interval;
       this.scope=$scope;
       this.socket = socket;
       this.mdDialog=$mdDialog;
       this.timeout=$timeout;
       this.appConfig=appConfig;
+      this.localAssessments=[];
+      if (window.localStorage.getItem( 'assessments' )===null||window.localStorage.getItem( 'assessments' )==="undefined"){
+        window.localStorage.setItem('assessments',JSON.stringify([]));
+      }
+      else this.localAssessments=JSON.parse(window.localStorage.getItem( 'assessments' ));
       
+      console.log(this.localAssessments)
       var vis,ceil,wind,runway,freeze;
       var self=this;
       
@@ -26,18 +33,41 @@
       $scope.$on('$destroy', ()=> {
         socket.unsyncUpdates('flight');
       });
+      
+      self.scrapeStorage();
+      $interval(function(){
+        self.scrapeStorage();
+      },1800000);//each 30 minutes
+    }
+    
+    scrapeStorage(){
+      var self=this;
+      window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
+      if (Array.isArray(self.localAssessments)) {
+        self.localAssessments.forEach(function(assessment,index){
+          self.$http.post('/api/assessments', assessment)
+            .then(function(response){//success
+              self.localAssessments.splice(index,1);
+              window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
+            },
+            function(response){//fail
+              
+            });
+        });
+      }
     }
     
     initAssessment(){
-      var airports,pilot,flight;
+      var airports,pilot,flight,equipment;
       if (this.assessment) {
         pilot=this.assessment.pilot||"";
         flight=this.assessment.flight||"";
         airports=this.assessment.airports||[];
+        equipment=this.assessment.equipment||{};
       }
       else airports=[];
       this.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],
-        windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilot:pilot,flight:flight
+        windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilot:pilot,flight:flight,equipment:equipment
       };
     }
     
@@ -68,7 +98,8 @@
         self.assessment.freezingPrecipitations[index]=false;
         if (response.data['Other-List'].length>0) {
           response.data['Other-List'].forEach(item=>{
-            var i=item.replace(/[|&;$%@"<>()+,]/g, "");
+            var i=item.replace(/[^a-zA-Z]/g, "");
+            console.log(i)
             if (i.substring(0,2)==="FR") self.assessment.freezingPrecipitations[index]=true;
           });
         }
@@ -91,7 +122,7 @@
           return;
         }
         self.assessment.tafs[index]=response.data['Raw-Report'];
-      });
+      },function(response){self.assessment.tafs[index]=""});
     }
     
     $onInit() {
@@ -122,6 +153,7 @@
       this.pilots=this.appConfig.pilots;
       this.initAssessment();
       this.airports=this.appConfig.airportRequirements;
+      this.equipment=this.appConfig.equipment;
     }
 
     addThing() {
@@ -215,6 +247,27 @@
       });
     }
     
+    changeParam(ev,index,param,title){
+      var self=this;
+      var confirm = this.mdDialog.prompt()
+        .parent(angular.element(document.body))
+        .title('What is the ' + title + ' for ' + self.assessment.airports[index]  + '?')
+        .textContent('Enter ' + title)
+        .placeholder(title)
+        .ariaLabel(title)
+        .initialValue('')
+        .targetEvent(ev)
+        .required(true)
+        .ok('OK')
+        .cancel('Cancel');
+          
+      this.mdDialog.show(confirm).then(function(result) {
+        if (result.length!==""){
+          self.assessment[param][index]=result;
+        }
+      });
+    }
+    
     addAirport(ev){
       var self=this;
       var confirm = this.mdDialog.prompt()
@@ -237,7 +290,7 @@
       });
     }
     
-    openAirportChangeMenu(mdMenu,ev){
+    openChangeMenu(mdMenu,ev){
       this.timeout(()=>{mdMenu.open(ev)},300);
     }
     
@@ -250,6 +303,7 @@
     }
     
     airportClass(index){
+      if (this.assessment.metars[index]==="") return "md-blue";
       return "md-green";
     }
     
@@ -285,10 +339,13 @@
     }
     
     tafClass(index){
-      return "md-green";
+      if (this.assessment.tafs[index]!=="") return "md-green";
+      return "md-blue";
     }
     
     submit(ev){
+      var self=this;
+      self.assessment.equipment=self.assessment.equipment.name;
       if (this.assessment.pilot===""||this.assessment.flight==="") {
         var alert = this.mdDialog.alert({
           title: 'Attention',
@@ -309,11 +366,20 @@
         }
         else this.assessment.level="level1";
         this.assessment.date=new Date();
-        this.$http.post('/api/assessments', this.assessment).then(response=>{
-          this.assessment={};
-          this.init();
-          this.initAssessment();
-        });
+        this.$http.post('/api/assessments', this.assessment)
+          .then(function(response){
+            self.assessment={};
+            self.init();
+            self.initAssessment();
+          },
+          function(response){
+            self.localAssessments.push(self.assessment);
+            window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
+            self.assessment={};
+            self.init();
+            self.initAssessment();
+          }
+        );
         
       }
     }
