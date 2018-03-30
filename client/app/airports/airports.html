@@ -1,0 +1,77 @@
+<table class="table table-striped table-responsive table-hover">
+  <thead>    
+    <tr>
+        <th>Name</th>
+        <th>ICAO</th>
+        <th>Base</th>
+        <th>Visibility Requirement</th>
+        <th>Ceiling Requirement</th>
+        <th></th>
+        <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+        <td><input class="form-control" ng-model="airports.newAirport.name" type="text"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.icao" type="text"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.base" type="text"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirementString" type="text"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirementString" type="text"></td>
+        <td><a href="#" ng-click="airports.cancel()"><button class="btn btn-danger">Cancel</button></a></td>
+        <td><button class="btn btn-success" ng-click="airports.update(airports.newAirport)">Add/Update</button></a></td>
+    </tr>
+    <tr ng-if="airports.newAirport._id">
+        <td></td>
+        <td></td>
+        <td>Yelllow (Caution)</td>
+        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.yellow" type="text" ng-blur="airports.refreshAirport()"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.yellow" type="text" ng-blur="airports.refreshAirport()"></td>
+    </tr>
+    <tr ng-if="airports.newAirport._id">
+        <td></td>
+        <td></td>
+        <td>Red (No-Go)</td>
+        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.red" type="text" ng-blur="airports.refreshAirport()"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.red" type="text" ng-blur="airports.refreshAirport()"></td>
+    </tr>
+    <tr ng-if="airports.newAirport._id">
+        <td></td>
+        <td></td>
+        <td>IFR Required</td>
+        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.ifr" type="text" ng-blur="airports.refreshAirport()"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.ifr" type="text" ng-blur="airports.refreshAirport()"></td>
+    </tr>
+     <tr ng-if="airports.newAirport._id">
+        <td></td>
+        <td></td>
+        <td>IFR Required at Night</td>
+        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.night" type="text"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.night" type="text"></td>
+    </tr>
+  </tbody>
+</table>
+</br>
+<table class="table table-striped table-responsive table-hover">
+  <thead>    
+    <tr>
+        <th></th>
+        <th>Name</th>
+        <th>ICAO</th>
+        <th>Base</th>
+        <th>Visibility Requirement</th>
+        <th>Ceiling Requirement</th>
+        <th>Wind Requirement</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat="airport in airports.airports">
+        <td><a href="#" ng-click="airports.edit(airport,$index)"><button class="btn btn-warning">Edit</button></a></td>
+        <td>{{airport.name}}</td>
+        <td>{{airport.icao}}</td>
+        <td>{{airport.base}}</td>
+        <td>{{airport.visibilityRequirement}}</td>
+        <td>{{airport.ceilingRequirement}}</td>
+        <td>{{airport.windRequirement}}</td>
+    </tr>
+  </tbody>
+</table>

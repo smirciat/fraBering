@@ -11,6 +11,7 @@ export default function(sequelize, DataTypes) {
     name: DataTypes.STRING,
     report: DataTypes.STRING,
     date: DataTypes.DATE,
-    base: DataTypes.STRING
+    base: DataTypes.STRING,
+    location:DataTypes.STRING
   });
 }

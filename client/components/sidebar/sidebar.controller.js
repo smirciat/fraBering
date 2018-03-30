@@ -4,6 +4,7 @@ class SidebarController {
 
   constructor(Auth,$state) {
     this.state=$state;
+    this.Auth=Auth;
   }
   
   main() {
@@ -16,6 +17,22 @@ class SidebarController {
   
   notification() {
     this.state.go('notifications');
+  }
+  
+  viewNotifications() {
+    this.state.go('viewNotifications');
+  }
+  
+  airports(){
+    this.state.go('airports');
+  }
+  
+  viewHazards(){
+    this.state.go('viewHazards');
+  }
+
+  isAdmin(){
+    return this.Auth.isAdmin();
   }
 
 }

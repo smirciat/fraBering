@@ -17,8 +17,6 @@
         window.localStorage.setItem('assessments',JSON.stringify([]));
       }
       else this.localAssessments=JSON.parse(window.localStorage.getItem( 'assessments' ));
-      
-      console.log(this.localAssessments)
       var vis,ceil,wind,runway,freeze;
       var self=this;
       
@@ -63,7 +61,7 @@
         pilot=this.assessment.pilot||"";
         flight=this.assessment.flight||"";
         airports=this.assessment.airports||[];
-        equipment=this.assessment.equipment||{};
+        equipment=this.assessment.equipment||{id:1,name:"Caravan",wind:30};
       }
       else airports=[];
       this.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],
@@ -94,12 +92,18 @@
           self.assessment.visibilities[index] = parseInt(bits[0],10)/parseInt(bits[1],10);
         }
         self.assessment.visibilities[index]=parseFloat(self.assessment.visibilities[index]);
-        self.assessment.runwayConditions[index]=5;
+        self.$http.post('/api/assessments/lookup',{airport:airport}).then(function(res){
+          if (res.data.length>0){
+            var i = res.data[0].airports.indexOf(airport);
+            if (i>-1) self.assessment.runwayConditions[index]=res.data[0].runwayConditions[i];
+            else self.assessment.runwayConditions[index]=5;
+          }
+          else self.assessment.runwayConditions[index]=5;
+        });
         self.assessment.freezingPrecipitations[index]=false;
         if (response.data['Other-List'].length>0) {
           response.data['Other-List'].forEach(item=>{
             var i=item.replace(/[^a-zA-Z]/g, "");
-            console.log(i)
             if (i.substring(0,2)==="FR") self.assessment.freezingPrecipitations[index]=true;
           });
         }
@@ -115,7 +119,7 @@
               
         //  }
         //}
-      });
+      },function(response){self.assessment.metars[index]=""});
       self.$http.get('https://avwx.rest/api/taf/' + airport).then(function(response){
         if (response.data.Error) { 
           //self.airports[index]=self.airportsCopy[index];
@@ -127,32 +131,32 @@
     
     $onInit() {
       this.init();
-      //this.$http.get('/api/flights')
-      //  .then(response => {
-      //    console.log(response.data)
-      //    this.flights = response.data;
-          //this.socket.syncUpdates('flight', this.flights);
-          
-      //  });
-        
-      //this.$http.get('/api/pilots')
-      //  .then(response => {
-      //    console.log(response.data)
-      //    this.pilots = response.data;
-      //  });
-        
-      //this.$http.get('/api/airportRequirements')
-      //  .then(response => {
-      //    console.log(response.data)
-      //    this.airports=response.data;
-      //  });
     }
     
     init(){
-      this.flights=this.appConfig.flights;
-      this.pilots=this.appConfig.pilots;
+      this.$http.get('/api/flights')
+        .then(response => {
+          console.log(response.data)
+          this.flights = response.data;
+          //this.socket.syncUpdates('flight', this.flights);
+          
+        });
+        
+      this.$http.get('/api/pilots')
+        .then(response => {
+          console.log(response.data)
+          this.pilots = response.data;
+        });
+        
+      this.$http.get('/api/airportRequirements')
+        .then(response => {
+          console.log(response.data)
+          this.airports=response.data;
+        });
+      //this.flights=this.appConfig.flights;
+      //this.pilots=this.appConfig.pilots;
       this.initAssessment();
-      this.airports=this.appConfig.airportRequirements;
+      //this.airports=this.appConfig.airportRequirements;
       this.equipment=this.appConfig.equipment;
     }
 
@@ -324,12 +328,13 @@
     }
     
     runwayClass(index){
-      if (this.assessment.runwayConditions[index]<1) return "md-red";
+      if (this.assessment.runwayConditions[index]<2) return "md-red";
+      if (this.assessment.runwayConditions[index]<4) return "md-yellow";
       return "md-green";
     }
     
     windClass(index){
-      if (this.assessment.windGusts[index]>34) return "md-red";
+      if (this.assessment.windGusts[index]>this.assessment.equipment.wind) return "md-red";
       return "md-green";
     }
     

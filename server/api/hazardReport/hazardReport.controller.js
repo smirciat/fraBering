@@ -63,7 +63,7 @@ function handleError(res, statusCode) {
 
 // Gets a list of HazardReports
 export function index(req, res) {
-  return HazardReport.findAll()
+  return HazardReport.findAll({order:[['_id','DESC']]})
     .then(respondWithResult(res))
     .catch(handleError(res));
 }

@@ -9,7 +9,7 @@ export default function(sequelize, DataTypes) {
       autoIncrement: true
     },
     creator: DataTypes.STRING,
-    creadted: DataTypes.DATE,
+    createdAt: DataTypes.DATE,
     title: DataTypes.STRING,
     archived: DataTypes.BOOLEAN,
     notification: DataTypes.STRING,

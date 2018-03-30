@@ -1,19 +1,36 @@
-<div>This is the hazardReport view.</div>
-
 <div flex layout="row">
   <sidebar layout="row"></sidebar>
-  <md-content flex layout="column" id="content">
-    <div layout="row" flex="20">
-      <md-button flex class="md-red md-raised">1st Button</md-button>
-      <md-button flex class="md-orange md-raised">2nd Button</md-button>
-      <md-button flex class="md-blue md-raised">3rd Button</md-button>
-      <md-button flex class="md-yellow md-raised">4th Button</md-button>
-    </div>
+  <div flex layout="column" id="content">
+    <div layout="row" flex="5"></div>
     <div layout="row">
-      <md-button>1st Button</md-button>
-      <md-button class="md-warn md-raised">2nd Button</md-button>
-      <md-button>3rd Button</md-button>
-      <md-button>4th Button</md-button>
+      <md-input-container class="bering" flex>
+        <label>Name</label>
+        <input ng-model="hazard.report.name">
+      </md-input-container>
+      <md-input-container class="bering" flex>
+        <label>Location</label>
+        <input ng-model="hazard.report.location">
+      </md-input-container>
+      <md-input-container class="bering" flex>
+        <label>Base</label>
+        <md-select ng-model="hazard.report.base">
+          <md-option ng-repeat="base in hazard.bases | orderBy:'base' track by $index" ng-value="base">
+            {{base}}
+          </md-option>
+        </md-select>
+      </md-input-container>
+      <md-button class="md-raised md-primary" flex ng-click="hazard.submit($event)">Submit</md-button>
     </div>
-  </md-content>
-</div>
+    <div layout="row" flex>
+        <md-input-container class="bering" flex>
+          <label>Report</label>
+          <textarea ng-model="hazard.report.report" flex>
+        </md-input-container>
+    </div>
+    <div layout="row" flex="20">
+      <h3>Hazard Reports are expected each and every time an unexpected event occurs during operations.  They are not 
+          anonymous, but the intention of the report is to gather data to improve operational procedures.  Therefore, 
+          they should be considered non-punitive.</h3>
+    </div>
+  </div>
+</div>  

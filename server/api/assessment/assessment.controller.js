@@ -69,6 +69,17 @@ export function index(req, res) {
 }
 
 // Gets a single Assessment from the DB
+export function lookup(req, res) {
+  //passed in object is req.body
+  var options={};
+  options.airports={$contains:[req.body.airport]};
+  return Assessment.findAll({where: options,limit:1,order:[['_id','DESC']]} )
+    .then(handleEntityNotFound(res))
+    .then(respondWithResult(res))
+    .catch(handleError(res));
+}
+
+// Gets a single Assessment from the DB
 export function show(req, res) {
   return Assessment.find({
     where: {
