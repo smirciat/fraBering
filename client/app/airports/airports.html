@@ -23,30 +23,30 @@
     <tr ng-if="airports.newAirport._id">
         <td></td>
         <td></td>
-        <td>Yelllow (Caution)</td>
-        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.yellow" type="text" ng-blur="airports.refreshAirport()"></td>
-        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.yellow" type="text" ng-blur="airports.refreshAirport()"></td>
+        <td>Yelllow (IFR & Caution)</td>
+        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.yellow" type="number" step=".01" ng-change="airports.refreshAirport()"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.yellow" type="number" ng-change="airports.refreshAirport()"></td>
     </tr>
     <tr ng-if="airports.newAirport._id">
         <td></td>
         <td></td>
         <td>Red (No-Go)</td>
-        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.red" type="text" ng-blur="airports.refreshAirport()"></td>
-        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.red" type="text" ng-blur="airports.refreshAirport()"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.red" type="number" step=".01" ng-change="airports.refreshAirport()"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.red" type="number" ng-change="airports.refreshAirport()"></td>
     </tr>
     <tr ng-if="airports.newAirport._id">
         <td></td>
         <td></td>
         <td>IFR Required</td>
-        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.ifr" type="text" ng-blur="airports.refreshAirport()"></td>
-        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.ifr" type="text" ng-blur="airports.refreshAirport()"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.ifr" type="number" step=".01" ng-change="airports.refreshAirport()"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.ifr" type="number" type="number" step=".01"></td>
     </tr>
      <tr ng-if="airports.newAirport._id">
         <td></td>
         <td></td>
         <td>IFR Required at Night</td>
-        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.night" type="text"></td>
-        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.night" type="text"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.night" type="number" step=".01" ng-change="airports.refreshAirport()"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.night" type="number" ng-change="airports.refreshAirport()"></td>
     </tr>
   </tbody>
 </table>

@@ -26,7 +26,7 @@ class NotificationsComponent {
     }
     else {
       this.newNotification.createdAt=new Date();
-      this.newNotification.notified=[];
+      this.newNotification.notified=[this.newNotification.creator];
       this.http.post('/api/notifications',this.newNotification).then(function(response){
         self.newNotification={creator:"",title:"",notification:""};
       });

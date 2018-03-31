@@ -4,7 +4,7 @@
 
   class MainController {
 
-    constructor($http, $scope, socket,$mdDialog,$timeout,appConfig,$interval) {
+    constructor($http, $scope, socket,$mdDialog,$timeout,appConfig,$interval,moment) {
       this.$http = $http;
       this.interval=$interval;
       this.scope=$scope;
@@ -12,6 +12,7 @@
       this.mdDialog=$mdDialog;
       this.timeout=$timeout;
       this.appConfig=appConfig;
+      this.moment=moment;
       this.localAssessments=[];
       if (window.localStorage.getItem( 'assessments' )===null||window.localStorage.getItem( 'assessments' )==="undefined"){
         window.localStorage.setItem('assessments',JSON.stringify([]));
@@ -56,16 +57,17 @@
     }
     
     initAssessment(){
-      var airports,pilot,flight,equipment;
+      var airports,pilot,flight,equipment,color;
       if (this.assessment) {
         pilot=this.assessment.pilot||"";
         flight=this.assessment.flight||"";
         airports=this.assessment.airports||[];
         equipment=this.assessment.equipment||{id:1,name:"Caravan",wind:30};
+        color=this.assessment.color||[];
       }
       else airports=[];
       this.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],
-        windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilot:pilot,flight:flight,equipment:equipment
+        windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilot:pilot,flight:flight,equipment:equipment,color:color
       };
     }
     
@@ -136,7 +138,6 @@
     init(){
       this.$http.get('/api/flights')
         .then(response => {
-          console.log(response.data)
           this.flights = response.data;
           //this.socket.syncUpdates('flight', this.flights);
           
@@ -144,13 +145,11 @@
         
       this.$http.get('/api/pilots')
         .then(response => {
-          console.log(response.data)
           this.pilots = response.data;
         });
         
       this.$http.get('/api/airportRequirements')
         .then(response => {
-          console.log(response.data)
           this.airports=response.data;
         });
       //this.flights=this.appConfig.flights;
@@ -267,6 +266,7 @@
           
       this.mdDialog.show(confirm).then(function(result) {
         if (result.length!==""){
+          self.assessment.color[index]="md=green";
           self.assessment[param][index]=result;
         }
       });
@@ -289,6 +289,7 @@
       this.mdDialog.show(confirm).then(function(result) {
         if (result.length===4){
           self.assessment.airports.push(result);
+          self.assessment.color.push('md-green');
           self.initAirport(result,self.assessment.airports.length-1);
         }
       });
@@ -311,40 +312,61 @@
       return "md-green";
     }
     
+    red(i){
+      this.assessment.color[i]='md-red';
+      return 'md-red';
+    }
+    
+    yellow(i){
+      if (this.assessment.color[i]!=='md-red') this.assessment.color[i]='md-yellow';
+      return 'md-yellow';
+    }
+    
+    orange(i){
+      if (this.assessment.color[i]!=='md-red'&&this.assessment.color[i]!=='md-yellow') this.assessment.color[i]='md-orange';
+      return 'md-orange';
+    }
+    
+    green(i){
+      if (this.assessment.color[i]!=='md-red'&&this.assessment.color[i]!=='md-yellow'&&this.assessment.color[i]!=='md-orange') 
+         this.assessment.color[i]='md-green';
+      return 'md-green';
+    }
+    
     visibilityClass(index){
       var airport = this.getAirport(this.assessment.airports[index]);
-      if (airport.visibilityRequirement.red>this.assessment.visibilities[index]) return "md-red";
-      if (airport.visibilityRequirement.ifr>this.assessment.visibilities[index]) return "md-orange";
-      if (airport.visibilityRequirement.yellow>this.assessment.visibilities[index]) return "md-yellow";
-      return "md-green";
+      if (airport.visibilityRequirement.red>this.assessment.visibilities[index]) return this.red(index);
+      if (airport.visibilityRequirement.yellow>this.assessment.visibilities[index]) return this.yellow(index);
+      if (airport.visibilityRequirement.ifr>this.assessment.visibilities[index]) return this.orange(index);
+      return this.green(index);
     }
     
     ceilingClass(index){
       var airport = this.getAirport(this.assessment.airports[index]);
-      if (airport.ceilingRequirement.red>this.assessment.ceilings[index]) return "md-red";
-      if (airport.ceilingRequirement.ifr>this.assessment.ceilings[index]) return "md-orange";
-      if (airport.ceilingRequirement.yellow>this.assessment.ceilings[index]) return "md-yellow";
-      return "md-green";
+      if (airport.ceilingRequirement.red>this.assessment.ceilings[index]) return this.red(index);
+      if (airport.ceilingRequirement.yellow>this.assessment.ceilings[index]) return this.yellow(index);
+      if (airport.ceilingRequirement.ifr>this.assessment.ceilings[index]) return this.orange(index);
+      return this.green(index);
     }
     
     runwayClass(index){
-      if (this.assessment.runwayConditions[index]<2) return "md-red";
-      if (this.assessment.runwayConditions[index]<4) return "md-yellow";
-      return "md-green";
+      if (this.assessment.runwayConditions[index]<2) return this.red(index);
+      if (this.assessment.runwayConditions[index]<4) return this.yellow(index);
+      return this.green(index);
     }
     
     windClass(index){
-      if (this.assessment.windGusts[index]>this.assessment.equipment.wind) return "md-red";
-      return "md-green";
+      if (this.assessment.windGusts[index]>this.assessment.equipment.wind) return this.red(index);
+      return this.green(index);
     }
     
     freezingClass(index){
-      if (this.assessment.freezingPrecipitations[index]) return "md-red";
-      return "md-green";
+      if (this.assessment.freezingPrecipitations[index]) return this.red(index);
+      return this.green(index);
     }
     
     tafClass(index){
-      if (this.assessment.tafs[index]!=="") return "md-green";
+      if (this.assessment.tafs[index]!=="") return this.green(index);
       return "md-blue";
     }
     
@@ -387,6 +409,42 @@
         );
         
       }
+    }
+    
+    checkNotifications(ev){
+      var self=this;
+      self.$http.post('/api/notifications/pilot',{pilot:self.assessment.pilot}).then(function(response){
+        console.log(response.data)
+        var notifications=response.data;
+        var length=notifications.length;
+        var count=0;
+        var confirm=[];
+        notifications.forEach(function(notification,index){
+          confirm[index] = self.mdDialog.confirm({multiple:true})
+                .title('Notification from ' + self.moment(notifications[index].createdAt).format('ddd, MMM Do YYYY, h:mm:ss a') + ' created by ' + notifications[index].creator)
+                .textContent(notifications[index].notification)
+                .ariaLabel('Notification')
+                .targetEvent(ev)
+                .ok('I have read and understood this notification')
+                .cancel('Remind me later');
+        });
+        
+        var showAnother = function(){
+          if (length>0) self.mdDialog.show(confirm[count]).then(function() {
+            notifications[count].notified.push(self.assessment.pilot);
+            self.$http.put('/api/notifications/'+notifications[count]._id, notifications[count]);
+            count++;
+            length--;
+            showAnother();
+          },function(){
+            //do something if user declines to read notification
+          });
+        }
+        
+        showAnother();
+        
+      });
+      
     }
     
   }

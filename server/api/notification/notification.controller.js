@@ -56,7 +56,9 @@ function handleEntityNotFound(res) {
 
 function handleError(res, statusCode) {
   statusCode = statusCode || 500;
+  
   return function(err) {
+    console.log(err)
     res.status(statusCode).send(err);
   };
 }
@@ -64,6 +66,15 @@ function handleError(res, statusCode) {
 // Gets a list of Notifications
 export function index(req, res) {
   return Notification.findAll()
+    .then(respondWithResult(res))
+    .catch(handleError(res));
+}
+
+// Gets a single Assessment from the DB
+export function pilot(req, res) {
+  //passed in object is req.body
+  return Notification.findAll({where: {'$not':{notified:{'$contains':[req.body.pilot]}}},order:[['_id','ASC']]} )
+    .then(handleEntityNotFound(res))
     .then(respondWithResult(res))
     .catch(handleError(res));
 }

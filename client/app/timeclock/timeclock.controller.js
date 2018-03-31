@@ -78,7 +78,7 @@ class TimeclockComponent {
       }
       
       this.startDate=this.moment(this.referenceStartDate);
-      this.endDate=this.moment(this.referenceStartDate).add(13,'days');
+      this.endDate=this.moment(this.referenceStartDate).add(14,'days');
       this.lastDate=this.moment(this.referenceStartDate).add(13,'days');
     };
     

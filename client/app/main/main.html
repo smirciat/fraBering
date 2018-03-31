@@ -6,7 +6,7 @@
     <div layout="row">
       <md-input-container class="bering" flex>
         <label>Pilot</label>
-        <md-select ng-model="main.assessment.pilot">
+        <md-select ng-model="main.assessment.pilot" ng-change="main.checkNotifications($event)">
           <md-option ng-repeat="pilot in main.pilots | orderBy: 'name'" ng-value="pilot.name">
             {{pilot.name}}
           </md-option>
@@ -83,7 +83,7 @@
         </md-menu>
       </div>
       <div class="bottom-row" ng-repeat-end layout="row" flex>
-        <md-button flex></md-button>
+        <md-button class="md-raised" ng-class="main.assessment.color[$index]" flex>Overall</md-button>
         
         <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
           <md-button class="md-raised" ng-class="main.runwayClass($index)" flex 
