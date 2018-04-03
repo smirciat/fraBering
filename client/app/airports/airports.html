@@ -6,6 +6,8 @@
         <th>Base</th>
         <th>Visibility Requirement</th>
         <th>Ceiling Requirement</th>
+        <th>Lat</th>
+        <th>Lon</th>
         <th></th>
         <th></th>
     </tr>
@@ -17,6 +19,8 @@
         <td><input class="form-control" ng-model="airports.newAirport.base" type="text"></td>
         <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirementString" type="text"></td>
         <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirementString" type="text"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.latitude" type="text"></td>
+        <td><input class="form-control" ng-model="airports.newAirport.longitude" type="text"></td>
         <td><a href="#" ng-click="airports.cancel()"><button class="btn btn-danger">Cancel</button></a></td>
         <td><button class="btn btn-success" ng-click="airports.update(airports.newAirport)">Add/Update</button></a></td>
     </tr>
@@ -41,13 +45,14 @@
         <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.ifr" type="number" step=".01" ng-change="airports.refreshAirport()"></td>
         <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.ifr" type="number" type="number" step=".01"></td>
     </tr>
-     <tr ng-if="airports.newAirport._id">
+    <tr ng-if="airports.newAirport._id">
         <td></td>
         <td></td>
         <td>IFR Required at Night</td>
         <td><input class="form-control" ng-model="airports.newAirport.visibilityRequirement.night" type="number" step=".01" ng-change="airports.refreshAirport()"></td>
         <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirement.night" type="number" ng-change="airports.refreshAirport()"></td>
     </tr>
+    
   </tbody>
 </table>
 </br>

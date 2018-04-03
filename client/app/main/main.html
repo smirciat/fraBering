@@ -2,8 +2,22 @@
 <div flex layout="row">
   <sidebar layout="row"></sidebar>
   <div flex layout="column" id="content">
-    <div layout="row" flex="5"></div>
-    <div layout="row">
+    <div ng-if="main.pixelRatio(1)" layout="row" flex="5">
+      <a hide-gt-sm href="#" ng-click="main.toggleMenu()" class="box-shadow-menu">
+        Menu
+      </a>
+    </div>
+    <div ng-if="main.pixelRatio(2)" layout="row" flex="2">
+      <a hide-gt-sm href="#" ng-click="main.toggleMenu()" class="box-shadow-menu">
+        Menu
+      </a>
+    </div>
+    <div ng-if="main.pixelRatio(3)" layout="row" flex="1">
+      <a hide-gt-sm href="#" ng-click="main.toggleMenu()" class="box-shadow-menu">
+        Menu
+      </a>
+    </div>
+    <div layout="row" flex="10">
       <md-input-container class="bering" flex>
         <label>Pilot</label>
         <md-select ng-model="main.assessment.pilot" ng-change="main.checkNotifications($event)">
@@ -14,7 +28,7 @@
       </md-input-container>
       <md-input-container class="bering" flex>
         <label>Equipment</label>
-        <md-select ng-model="main.assessment.equipment" ng-model-options="{trackBy: '$value.id'}">
+        <md-select ng-model="main.assessment.equipment" ng-change="main.changeFlight($event)" ng-model-options="{trackBy: '$value.id'}">
           <md-option ng-repeat="equipment in main.equipment | orderBy: 'name'" ng-value="equipment"
             ng-selected="{{equipment.name==='Caravan'}}">
             {{equipment.name}}
@@ -31,90 +45,119 @@
         </md-select>
       </md-input-container>
     </div>
-    <md-content>
-      <div ng-repeat-start="airport in main.assessment.airports track by $index" layout="row" flex>
-        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
-          <md-button class="md-raised" ng-class="main.airportClass($index)" flex 
-             uib-tooltip="{{main.assessment.metars[$index]}}" tooltip-placement="bottom"
-             ng-click="main.openChangeMenu($mdMenu, $event)">
-                Airport:<br>{{airport}}
-          </md-button>
-          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
-            <md-menu-item>
-              <md-button class="md-raised md-accent" ng-click="main.changeAirport($event,$index)">Change Airport</md-button>
-            </md-menu-item>
-          </md-menu-content>
-        </md-menu>
-        
-        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
-          <md-button class="md-raised" ng-class="main.visibilityClass($index)" flex 
-             ng-click="main.openChangeMenu($mdMenu, $event)">
-                Visibility<br>{{main.assessment.visibilities[$index]}}
-          </md-button>
-          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
-            <md-menu-item>
-              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'visibilities','Visibility')">Change Visibility</md-button>
-            </md-menu-item>
-          </md-menu-content>
-        </md-menu>
-        
-        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
-          <md-button class="md-raised" ng-class="main.ceilingClass($index)" flex 
-             ng-click="main.openChangeMenu($mdMenu, $event)">
-                Ceiling<br>{{main.assessment.ceilings[$index]}}
-          </md-button>
-          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
-            <md-menu-item>
-              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'ceilings','Ceiling')">Change Ceiling</md-button>
-            </md-menu-item>
-          </md-menu-content>
-        </md-menu>
-        
-        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
-          <md-button class="md-raised" ng-class="main.windClass($index)" flex 
-             ng-click="main.openChangeMenu($mdMenu, $event)">
-                Wind Gust<br>{{main.assessment.windGusts[$index]}}
-          </md-button>
-          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
-            <md-menu-item>
-              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'windGusts','Wind Gust')">Change Wind Gust</md-button>
-            </md-menu-item>
-          </md-menu-content>
-        </md-menu>
-      </div>
-      <div class="bottom-row" ng-repeat-end layout="row" flex>
-        <md-button class="md-raised" ng-class="main.assessment.color[$index]" flex>Overall</md-button>
-        
-        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
-          <md-button class="md-raised" ng-class="main.runwayClass($index)" flex 
-             ng-click="main.openChangeMenu($mdMenu, $event)">
-                Runway Condition<br>{{main.assessment.runwayConditions[$index]}}
-          </md-button>
-          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
-            <md-menu-item>
-              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'runwayConditions','Runway Condition')">Change Runway Condition</md-button>
-            </md-menu-item>
-          </md-menu-content>
-        </md-menu>
-        
-        <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
-          <md-button class="md-raised" ng-class="main.freezingClass($index)" flex 
-             ng-click="main.openChangeMenu($mdMenu, $event)">
-                Freezing Precip<br>{{main.assessment.freezingPrecipitations[$index]}}
-          </md-button>
-          <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
-            <md-menu-item>
-              <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'freezingPrecipitations','Freezing Precip')">Change Freezing Precip</md-button>
-            </md-menu-item>
-          </md-menu-content>
-        </md-menu>
-        
-        <md-button class="md-raised" ng-class="main.tafClass($index)" flex uib-tooltip="{{main.assessment.tafs[$index]}}" tooltip-placement="bottom">
-          <!--<md-tooltip md-direction="bottom">{{main.assessment.tafs[$index]}}</md-tooltip>-->
-          TAF</md-button>
-      </div>
-      
-    </md-content>  
+    <div ng-if="main.pixelRatio(1)" hide-gt-sm flex="5"></div>
+    <div ng-if="main.pixelRatio(1)"hide-gt-xs flex="5"></div>
+    <div ng-if="main.pixelRatio(2)" hide-gt-sm flex="2"></div>
+    <div ng-if="main.pixelRatio(2)"hide-gt-xs flex="2"></div>
+    <div ng-if="main.pixelRatio(3)" hide-gt-sm flex="1"></div>
+    <div ng-if="main.pixelRatio(3)"hide-gt-xs flex="1"></div>
+      <md-content flex>
+       <div ng-repeat="airport in main.assessment.airports track by $index" flex lauout="column" ng-class="main.nightClass($index)">
+        <div layout="row" flex>
+          <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+            <md-button class="md-raised" ng-class="main.airportClass($index)" flex 
+               uib-tooltip="{{main.assessment.metars[$index]}}" tooltip-placement="bottom"
+               ng-click="main.openChangeMenu($mdMenu, $event)">
+                  Airport:<br>{{airport}}
+            </md-button>
+            <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+              <md-menu-item>
+                <md-button class="md-raised md-accent" ng-click="main.changeAirport($event,$index)">Change Depart Time/Airport</md-button>
+              </md-menu-item>
+            </md-menu-content>
+          </md-menu>
+          
+          <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+            <md-button class="md-raised" ng-class="main.visibilityClass($index)" flex 
+               ng-click="main.openChangeMenu($mdMenu, $event)">
+                  Visibility<br>{{main.assessment.visibilities[$index]}}
+            </md-button>
+            <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+              <md-menu-item>
+                <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'visibilities','Visibility')">Change Visibility</md-button>
+              </md-menu-item>
+            </md-menu-content>
+          </md-menu>
+          
+          <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+            <md-button class="md-raised" ng-class="main.ceilingClass($index)" flex 
+               ng-click="main.openChangeMenu($mdMenu, $event)">
+                  Ceiling<br>{{main.assessment.ceilings[$index]}}
+            </md-button>
+            <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+              <md-menu-item>
+                <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'ceilings','Ceiling')">Change Ceiling</md-button>
+              </md-menu-item>
+            </md-menu-content>
+          </md-menu>
+          
+          <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+            <md-button class="md-raised" ng-class="main.windClass($index)" flex 
+               ng-click="main.openChangeMenu($mdMenu, $event)">
+                  Wind Gust<br>{{main.assessment.windGusts[$index]}}
+            </md-button>
+            <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+              <md-menu-item>
+                <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'windGusts','Wind Gust')">Change Wind Gust</md-button>
+              </md-menu-item>
+            </md-menu-content>
+          </md-menu>
+        </div>
+        <div class="bottom-row" layout="row" flex>
+          <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+            <md-button class="md-raised" ng-class="main.assessment.color[$index]" flex>
+                  Overall
+            </md-button>
+            <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+              <md-menu-item>
+                <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'windGusts','Wind Gust')">Change Wind Gust</md-button>
+              </md-menu-item>
+            </md-menu-content>
+          </md-menu>
+          
+          <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+            <md-button class="md-raised" ng-class="main.runwayClass($index)" flex 
+               ng-click="main.openChangeMenu($mdMenu, $event)">
+                  Runway Condition<br>{{main.assessment.runwayConditions[$index]}}
+            </md-button>
+            <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+              <md-menu-item>
+                <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'runwayConditions','Runway Condition')">Change Runway Condition</md-button>
+              </md-menu-item>
+            </md-menu-content>
+          </md-menu>
+          
+          <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+            <md-button class="md-raised" ng-class="main.freezingClass($index)" flex 
+               ng-click="main.openChangeMenu($mdMenu, $event)">
+                  Freezing Precip<br>{{main.assessment.freezingPrecipitations[$index]}}
+            </md-button>
+            <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+              <md-menu-item>
+                <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'freezingPrecipitations','Freezing Precip')">Change Freezing Precip</md-button>
+              </md-menu-item>
+            </md-menu-content>
+          </md-menu>
+          
+          <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
+            <md-button class="md-raised" ng-class="main.tafClass($index)" uib-tooltip="{{main.assessment.tafs[$index]}}" tooltip-placement="bottom" flex>
+                  TAF
+            </md-button>
+            <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
+              <md-menu-item>
+                <md-button class="md-raised md-accent" ng-click="main.changeParam($event,$index,'windGusts','Wind Gust')">Change Wind Gust</md-button>
+              </md-menu-item>
+            </md-menu-content>
+          </md-menu>
+        </div>
+       </div>  
+      </md-content>
+    <div ng-if="main.pixelRatio(1)" hide-gt-sm flex="5"></div>
+    <div ng-if="main.pixelRatio(1)"hide-gt-xs flex="5"></div>
+    <div ng-if="main.pixelRatio(2)" hide-gt-sm flex="2"></div>
+    <div ng-if="main.pixelRatio(2)"hide-gt-xs flex="2"></div>
+    <div ng-if="main.pixelRatio(3)" hide-gt-sm flex="1"></div>
+    <div ng-if="main.pixelRatio(3)"hide-gt-xs flex="1"></div>
     <div ng-if="main.assessment.flight" layout="row" flex="10">
       <md-button class="md-raised md-warn" flex ng-click="main.addAirport($event)">Add Airport</md-button>
       <md-button flex></md-button>

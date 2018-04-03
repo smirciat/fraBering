@@ -14,6 +14,8 @@ export default function(sequelize, DataTypes) {
       type:DataTypes.BOOLEAN,
       defaultValue:false
     },
+    latitude: DataTypes.STRING,
+    longitude: DataTypes.STRING,
     visibilityRequirement: {
       type:DataTypes.JSON,
       defaultValue:{"red":0.5,"yellow":3,"ifr":2,"night":5}

@@ -1,28 +1,42 @@
 <div flex layout="row">
   <sidebar layout="row"></sidebar>
-  <div flex layout="column" id="content">
-    <div layout="row" flex="5"></div>
-    <div layout="row">
-      <table class="table table-striped table-responsive table-hover">
-        <thead>    
-          <tr>
-              <th>Creator</th>
-              <th>Title</th>
-              <th>Created At</th>
-              <th>Notification</th>
-              <th>Notified</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr ng-repeat="notification in viewNotifications.notifications">
-              <td>{{notification.creator}}</td>
-              <td>{{notification.title}}</td>
-              <td>{{notification.createdAt|date:'medium'}}</td>
-              <td>{{notification.notification}}</td>
-              <td>{{notification.notifiedString}}</td>
-          </tr>
-        </tbody>
-      </table>
+  <md-content>
+    <div flex layout="column" id="content">
+      <div layout="row" flex="5">
+      <a hide-gt-sm href="#" ng-click="viewNotifications.toggleMenu()" class="box-shadow-menu">
+        Menu
+      </a>
     </div>
-  </div>
+      <div layout="row">
+        <table class="table table-striped table-responsive table-hover">
+          <thead>    
+            <tr>
+                <th>Creator</th>
+                <th>Title</th>
+                <th>Created At</th>
+                <th>Notification</th>
+                <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="notification in viewNotifications.notifications">
+                <td>{{notification.creator}}</td>
+                <td>{{notification.title}}</td>
+                <td>{{notification.createdAt|date:'medium'}}</td>
+                <td>{{notification.notification}}</td>
+                <td><div>
+                  <button class='btn btn-success btn-space' ng-click="viewNotifications.viewNotified('Notified',notification.notified, $event)" 
+                     ng-if="viewNotifications.Auth.isAdmin()">View Notified</button>
+                  <button class='btn btn-danger btn-space' ng-click="viewNotifications.viewNotified('Not Notified',notification.notNotified, $event)" 
+                     ng-if="viewNotifications.Auth.isAdmin()">View Not Notified</button>
+                  <button class='btn btn-warning btn-space' ng-click="viewNotifications.archive($event,notification)" 
+                     ng-if="viewNotifications.Auth.isAdmin()">Archive Notification</button>
+                
+                </div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </md-content>
 </div>

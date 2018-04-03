@@ -13,7 +13,9 @@ class AirportsComponent {
   init(){
     var self=this;
     this.http.get('/api/airportRequirements').then(function(response){
-      self.airports=response.data;
+      self.airports=response.data.sort(function(a,b){
+        return a.name.localeCompare(b.name);
+      });
     });
   }
   
@@ -31,9 +33,9 @@ class AirportsComponent {
   
   update(airport){
     if (airport==="false") airport=false;
-    airport.ceilingRequirement = JSON.parse(airport.ceilingRequirementString);
-    airport.visibilityRequirement = JSON.parse(airport.visibilityRequirementString);
-    airport.windRequirement = JSON.parse(airport.windRequirementString);
+    if (airport.ceilingRequirementString) airport.ceilingRequirement = JSON.parse(airport.ceilingRequirementString);
+    if (airport.visibilityRequirementString) airport.visibilityRequirement = JSON.parse(airport.visibilityRequirementString);
+    if (airport.windRequirementString) airport.windRequirement = JSON.parse(airport.windRequirementString);
     if (airport._id){
       this.http.put('/api/airportRequirements/' + airport._id,airport).then(()=>{
         this.airports[this.index]=angular.copy(airport);
@@ -41,8 +43,8 @@ class AirportsComponent {
       });
     }
     else {
-      this.http.post('/api/airportRequirements',airport).then(()=>{
-        this.airports[this.index]=angular.copy(airport);
+      this.http.post('/api/airportRequirements',airport).then((response)=>{
+        this.airports[this.airports.length]=response.data;
         this.newAirport={};
       });
     }

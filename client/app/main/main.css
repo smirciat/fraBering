@@ -2,11 +2,15 @@
   font-weight:bold;
   font-size:120%;
 }
-.md-button{
-  margin-left:2em;
-  margin-right:2em;
-  font-size:110%;
+@media only screen 
+and (min-width : 1224px) {
+  .md-button{
+    margin-left:2em;
+    margin-right:2em;
+    font-size:110%;
+  }
 }
+
 .md-tooltip{
   font-size:100%;
 }
@@ -40,6 +44,12 @@
 .md-purple{
   background-color:#ff80ff !important;
 }
+.night{
+  background-color:#00008B;
+}
+.day{
+  background-color:white;
+}
 label{
   text-align:center;
 }
@@ -57,3 +67,19 @@ md-sidenav.md-closed.md-locked-open-add-active {
     width: 18vw !important;
     max-width: 400px !important;
 } 
+.box-shadow-menu {
+  position: relative;
+  padding-left: 1.25em;
+}
+.box-shadow-menu:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.25em;
+  width: 1em;
+  height: 0.15em;
+  background: black;
+  box-shadow: 
+    0 0.25em 0 0 black,
+    0 0.5em 0 0 black;
+}

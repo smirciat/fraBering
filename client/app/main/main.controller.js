@@ -4,12 +4,13 @@
 
   class MainController {
 
-    constructor($http, $scope, socket,$mdDialog,$timeout,appConfig,$interval,moment) {
+    constructor($http, $scope, socket,$mdDialog,$mdSidenav,$timeout,appConfig,$interval,moment) {
       this.$http = $http;
       this.interval=$interval;
       this.scope=$scope;
       this.socket = socket;
       this.mdDialog=$mdDialog;
+      this.mdSidenav=$mdSidenav;
       this.timeout=$timeout;
       this.appConfig=appConfig;
       this.moment=moment;
@@ -18,7 +19,6 @@
         window.localStorage.setItem('assessments',JSON.stringify([]));
       }
       else this.localAssessments=JSON.parse(window.localStorage.getItem( 'assessments' ));
-      var vis,ceil,wind,runway,freeze;
       var self=this;
       
       $scope.$watch('main.assessment.pilot',(newVal,oldVal)=>{
@@ -46,6 +46,7 @@
         self.localAssessments.forEach(function(assessment,index){
           self.$http.post('/api/assessments', assessment)
             .then(function(response){//success
+              index=self.localAssessments.indexOf(assessment);
               self.localAssessments.splice(index,1);
               window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
             },
@@ -57,26 +58,67 @@
     }
     
     initAssessment(){
-      var airports,pilot,flight,equipment,color;
+      var airports,pilot,flight,equipment,color,night,times;
       if (this.assessment) {
         pilot=this.assessment.pilot||"";
         flight=this.assessment.flight||"";
         airports=this.assessment.airports||[];
-        equipment=this.assessment.equipment||{id:1,name:"Caravan",wind:30};
+        equipment=this.assessment.equipment||{id:1,name:"Caravan",wind:30,temp:-50};
         color=this.assessment.color||[];
+        night=this.assessment.night||[];
+        times=this.assessment.times||[];
       }
       else airports=[];
-      this.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],
+      this.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],night:night,times:times,
         windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilot:pilot,flight:flight,equipment:equipment,color:color
       };
     }
     
+    initNight(airport,index){
+      var self=this;
+      var year = self.moment().year();
+      var month = self.moment().month()+1;
+      var day = self.moment().date();
+      var date = year + '-' + month + '-' + day;
+      self.assessment.night[index]=false;
+      var airportParams = self.getAirport(airport);
+      self.$http.get('https://api.sunrise-sunset.org/json?lat=' + airportParams.latitude + '&lng=' + airportParams.longitude + '&date=' + date + '&formatted=0').then((response)=>{
+        if (response.data.results.civil_twilight_begin==='1970-01-01T00:00:01+00:00') return;
+        var twilightStart = self.moment(response.data.results.civil_twilight_begin);
+        var twilightEnd = self.moment(response.data.results.civil_twilight_end);
+        if (self.departTimes.length<=index||self.departTimes[index]==="") return;
+        var timeArr=self.departTimes[index].split(':');
+        if (timeArr.length<2) return;
+        var departTime = self.moment(twilightStart).startOf('day').hour(timeArr[0]).minute(timeArr[1]);
+        if (departTime.isBetween(twilightStart,twilightEnd)) self.assessment.night[index]=false;
+        else self.assessment.night[index]=true;
+      });  
+    }
+    
     initAirport(airport,index) {
       var self=this;
+      self.assessment.color[index]="md-green";
       self.assessment.metars[index]="";
       self.assessment.tafs[index]="";
+      //lookup if airport is at night
+      self.initNight(airport,index);
+      if (airport.length!==4) return;
       self.$http.get('https://avwx.rest/api/metar/' + airport).then(function(response){
         if (response.data.Error) return;
+        
+        if ((response.data.Temperature*9/5+32)<self.assessment.equipment.temp) {
+            var alert = self.mdDialog.alert({
+            title: 'Caution',
+            textContent: 'Check the temperature, it may be too cold for this aircraft',
+            ok: 'Close'
+          });
+    
+          self.mdDialog
+            .show( alert )
+            .finally(function() {
+              alert = undefined;
+            }); 
+        }
         self.assessment.metars[index]=response.data['Raw-Report'];
         var len = response.data['Cloud-List'].length;
         if (len===0) self.assessment.ceilings[index]='10000';
@@ -109,26 +151,28 @@
             if (i.substring(0,2)==="FR") self.assessment.freezingPrecipitations[index]=true;
           });
         }
-        //self.airports[index].visibilityColor=self.weatherClass(self.airports[index].visibility,'visibility');
-        //self.airports[index].ceilingColor=self.weatherClass(self.airports[index].ceiling,'ceiling');
-        //self.airports[index].windColor=self.windClass(self.airports[index].wind);
-        //Is a notification required?
-        //if (self.notifications==="YES") {
-        //  if (self.airports[index].ceilingColor!==self.airportsCopy[index].ceilingColor
-        //    ||self.airports[index].windColor!==self.airportsCopy[index].windColor
-        //    ||self.airports[index].visibilityColor!==self.airportsCopy[index].visibilityColor){
-              //send a notification
-              
-        //  }
-        //}
-      },function(response){self.assessment.metars[index]=""});
-      self.$http.get('https://avwx.rest/api/taf/' + airport).then(function(response){
-        if (response.data.Error) { 
-          //self.airports[index]=self.airportsCopy[index];
-          return;
+      },function(response){
+        if (response.status===500){
+          self.timeout(function(){
+            //self.initAirport(airport,index);
+          },20000);
         }
-        self.assessment.tafs[index]=response.data['Raw-Report'];
-      },function(response){self.assessment.tafs[index]=""});
+        else self.assessment.metars[index]="";
+      });
+      if (airport=="PAOM"||airport=="PAOT"||airport=="PAUN"||airport=="PANC"||airport=="PAGA") {
+        self.$http.get('https://avwx.rest/api/taf/' + airport).then(function(response){
+          if (response.data.Error) { 
+            //self.airports[index]=self.airportsCopy[index];
+            return;
+          }
+          self.assessment.tafs[index]=response.data['Raw-Report'];
+        },function(response){
+            if (response.status===500){
+            self.timeout(self.initAirport(airport,index),20000);
+          }
+          else self.assessment.metars[index]="";
+        });
+      }
     }
     
     $onInit() {
@@ -139,18 +183,25 @@
       this.$http.get('/api/flights')
         .then(response => {
           this.flights = response.data;
-          //this.socket.syncUpdates('flight', this.flights);
-          
+          window.localStorage.setItem('flights',JSON.stringify(this.flights));
+        },response=>{
+          this.flights=JSON.parse(window.localStorage.getItem('flights'));
         });
         
       this.$http.get('/api/pilots')
         .then(response => {
           this.pilots = response.data;
+          window.localStorage.setItem('pilots',JSON.stringify(this.pilots));
+        },response=>{
+          this.pilots=JSON.parse(window.localStorage.getItem('pilots'));
         });
         
       this.$http.get('/api/airportRequirements')
         .then(response => {
           this.airports=response.data;
+          window.localStorage.setItem('airports',JSON.stringify(this.airports));
+        },response=>{
+          this.airports=JSON.parse(window.localStorage.getItem('airports'));
         });
       //this.flights=this.appConfig.flights;
       //this.pilots=this.appConfig.pilots;
@@ -158,25 +209,13 @@
       //this.airports=this.appConfig.airportRequirements;
       this.equipment=this.appConfig.equipment;
     }
-
-    addThing() {
-      if (this.newThing) {
-        this.$http.post('/api/things', {
-          name: this.newThing
-        });
-        this.newThing = '';
-      }
-    }
-
-    deleteThing(thing) {
-      this.$http.delete('/api/things/' + thing._id);
-    }
     
     changeFlight(ev) {
+      var self=this;
+      if (!self.assessment.flight||self.assessment.flight==="") return;
     // Appending dialog to document.body to cover sidenav in docs app
     // Modal dialogs should fully cover application
     // to prevent interaction outside of dialog
-      var self=this;
       if (this.assessment.flight==="Extra") {
         //unlisted flight number
         
@@ -200,13 +239,17 @@
           if (flightArr.length>0) {
             newFlight=JSON.parse(JSON.stringify(flightArr[0]));
             newFlight.flightNum=result;
+            self.departTimes=flightArr[0].departTimes;
           }
           self.flights.push(newFlight);
           self.assessment.flight =  result;
           flightArr = self.flights.filter((flt)=>{
             return self.assessment.flight===flt.flightNum;
           });
-          if (flightArr.length>0) self.assessment.airports=JSON.parse(JSON.stringify(flightArr[0].airports));
+          if (flightArr.length>0) {
+            self.assessment.airports=JSON.parse(JSON.stringify(flightArr[0].airports));
+            self.departTimes=flightArr[0].departTimes;
+          }
           self.initAssessment();
           self.assessment.airports.forEach((airport,index)=>{
             self.initAirport(airport,index);
@@ -219,7 +262,10 @@
         var flightArr = self.flights.filter((flt)=>{
           return self.assessment.flight===flt.flightNum;
         });
-        if (flightArr.length>0) self.assessment.airports=JSON.parse(JSON.stringify(flightArr[0].airports));
+        if (flightArr.length>0) {
+          self.assessment.airports=JSON.parse(JSON.stringify(flightArr[0].airports));
+          self.departTimes=flightArr[0].departTimes;
+        }
         self.initAssessment();
         self.assessment.airports.forEach((airport,index)=>{
           self.initAirport(airport,index);
@@ -230,7 +276,19 @@
     
     changeAirport(ev,index){
       var self=this;
-      var confirm = this.mdDialog.prompt()
+      var time=this.mdDialog.prompt({clickOutsideToClose: true,multiple:true})
+        .parent(angular.element(document.body))
+        .title('What is the new departure time for this airport?')
+        .textContent('Enter a departure time in 24 hour time format')
+        .placeholder('16:00')
+        .ariaLabel('Time')
+        .initialValue(self.departTimes[index])
+        .targetEvent(ev)
+        .required(true)
+        .ok('Update Depart Time')
+        .cancel('Change Airport or Cancel');
+        
+      var airport = this.mdDialog.prompt({clickOutsideToClose: true,multiple:true})
         .parent(angular.element(document.body))
         .title('What is the new airport?')
         .textContent('Enter a four letter airport code')
@@ -239,20 +297,27 @@
         .initialValue('')
         .targetEvent(ev)
         .required(true)
-        .ok('OK')
+        .ok('Update Airport Code')
         .cancel('Cancel');
           
-      this.mdDialog.show(confirm).then(function(result) {
-        if (result.length===4){
-          self.assessment.airports[index]=result;
-          self.initAirport(result,index);
+      this.mdDialog.show(time).then(function(result) {
+        if (result!=="") {
+          self.departTimes[index] = result;
+          self.initNight(self.assessment.airports[index],index);
         }
+      },function(){
+        self.mdDialog.show(airport).then(function(result) {
+          if (result.length===4){
+            self.assessment.airports[index]=result;
+            self.initAirport(result,index);
+          }
+        });
       });
     }
     
     changeParam(ev,index,param,title){
       var self=this;
-      var confirm = this.mdDialog.prompt()
+      var confirm = this.mdDialog.prompt({clickOutsideToClose: true})
         .parent(angular.element(document.body))
         .title('What is the ' + title + ' for ' + self.assessment.airports[index]  + '?')
         .textContent('Enter ' + title)
@@ -274,7 +339,7 @@
     
     addAirport(ev){
       var self=this;
-      var confirm = this.mdDialog.prompt()
+      var confirm = this.mdDialog.prompt({clickOutsideToClose: true})
         .parent(angular.element(document.body))
         .title('What is the new airport?')
         .textContent('Enter a four letter airport code')
@@ -337,7 +402,13 @@
       var airport = this.getAirport(this.assessment.airports[index]);
       if (airport.visibilityRequirement.red>this.assessment.visibilities[index]) return this.red(index);
       if (airport.visibilityRequirement.yellow>this.assessment.visibilities[index]) return this.yellow(index);
-      if (airport.visibilityRequirement.ifr>this.assessment.visibilities[index]) return this.orange(index);
+      if (this.assessment.night[index]) {
+        if (airport.visibilityRequirement.night>this.assessment.visibilities[index]) return this.orange(index);
+      }
+      else {
+        if (airport.visibilityRequirement.ifr>this.assessment.visibilities[index]) return this.orange(index);
+      }
+      
       return this.green(index);
     }
     
@@ -345,7 +416,13 @@
       var airport = this.getAirport(this.assessment.airports[index]);
       if (airport.ceilingRequirement.red>this.assessment.ceilings[index]) return this.red(index);
       if (airport.ceilingRequirement.yellow>this.assessment.ceilings[index]) return this.yellow(index);
-      if (airport.ceilingRequirement.ifr>this.assessment.ceilings[index]) return this.orange(index);
+      if (this.assessment.night[index]) {
+        if (airport.ceilingRequirement.night>this.assessment.ceilings[index]) return this.orange(index);
+      }
+      else {
+        if (airport.ceilingRequirement.ifr>this.assessment.ceilings[index]) return this.orange(index);
+      }
+      
       return this.green(index);
     }
     
@@ -368,6 +445,11 @@
     tafClass(index){
       if (this.assessment.tafs[index]!=="") return this.green(index);
       return "md-blue";
+    }
+    
+    nightClass(index){
+      if (this.assessment.night[index]) return "night";
+      else return "day";
     }
     
     submit(ev){
@@ -420,7 +502,7 @@
         var count=0;
         var confirm=[];
         notifications.forEach(function(notification,index){
-          confirm[index] = self.mdDialog.confirm({multiple:true})
+          confirm[index] = self.mdDialog.confirm({clickOutsideToClose:true,multiple:true})
                 .title('Notification from ' + self.moment(notifications[index].createdAt).format('ddd, MMM Do YYYY, h:mm:ss a') + ' created by ' + notifications[index].creator)
                 .textContent(notifications[index].notification)
                 .ariaLabel('Notification')
@@ -445,6 +527,18 @@
         
       });
       
+    }
+    
+    toggleMenu(){
+      var self=this;
+      self.mdSidenav('left').toggle();
+    }
+    
+    pixelRatio(ratio){
+      if (Math.floor(window.devicePixelRatio)===ratio) return true;
+      if (window.devicePixelRatio>3&&ratio===3) return true;
+      if (window.devicePixelRatio<1&&ratio===1) return true;
+      return false;
     }
     
   }

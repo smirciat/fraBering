@@ -65,7 +65,7 @@ function handleError(res, statusCode) {
 
 // Gets a list of Notifications
 export function index(req, res) {
-  return Notification.findAll()
+  return Notification.findAll({where:{'$or':[{archived:null},{archived:false}]},order:[['_id','DESC']]})
     .then(respondWithResult(res))
     .catch(handleError(res));
 }
@@ -73,7 +73,8 @@ export function index(req, res) {
 // Gets a single Assessment from the DB
 export function pilot(req, res) {
   //passed in object is req.body
-  return Notification.findAll({where: {'$not':{notified:{'$contains':[req.body.pilot]}}},order:[['_id','ASC']]} )
+  
+  return Notification.findAll({where: {'$not':{notified:{'$contains':[req.body.pilot]}},'$or':[{archived:null},{archived:false}]},order:[['_id','ASC']]} )
     .then(handleEntityNotFound(res))
     .then(respondWithResult(res))
     .catch(handleError(res));

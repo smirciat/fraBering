@@ -1,10 +1,24 @@
   <md-sidenav class="md-whiteframe-4dp" md-is-locked-open="$mdMedia('gt-sm')"
                 md-component-id="left">
-    <md-button flex class="md-green md-raised" ng-click="side.main()">Flight Risk<br>Assessment</md-button>
-    <md-button flex class="md-red md-raised" ng-click="side.hazard()">Hazard<br>Reports</md-button>
-    <md-button flex class="md-purple md-raised" ng-click="side.viewNotifications()">View Old<br>Notifications</md-button>
-    <md-button flex class="md-blue md-raised" ng-click="side.notification()" ng-if="side.isAdmin()">New<br>Notifications</md-button>
-    <md-button flex ng-hide="side.isAdmin()">.</md-button>
-    <md-button flex class="md-yellow md-raised" ng-click="side.airports()" ng-if="side.isAdmin()">Edit<br>Airports</md-button>
-    <md-button flex class="md-orange md-raised" ng-click="side.viewHazards()" ng-if="side.isAdmin()">View Hazard<br>Reports</md-button>
+      <div flex layout="row">
+        <md-button flex class="md-green md-raised" ng-click="side.main()">Flight Risk<br>Assessment</md-button>
+      </div>
+      <div flex layout="row">
+        <md-button flex class="md-red md-raised" ng-click="side.hazard()">Hazard<br>Reports</md-button>
+      </div>
+      <div flex layout="row">
+        <md-button flex class="md-purple md-raised" ng-click="side.viewNotifications()">View Old<br>Notifications</md-button>
+      </div>
+      <div flex layout="row" ng-if="side.isAdmin()">
+        <md-button flex class="md-blue md-raised" ng-click="side.notification()">New<br>Notifications</md-button>
+      </div>
+      <div flex layout="row" ng-hide="side.isAdmin()">
+        <md-button flex>.</md-button>
+      </div>
+      <div flex layout="row" ng-if="side.isAdmin()">
+        <md-button flex class="md-yellow md-raised" ng-click="side.airports()">Edit<br>Airports</md-button>
+      </div>
+      <div flex layout="row" ng-if="side.isAdmin()">
+        <md-button flex class="md-orange md-raised" ng-click="side.viewHazards()">View Hazard<br>Reports</md-button>
+      </div>
   </md-sidenav>
