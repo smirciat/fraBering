@@ -371,7 +371,7 @@
         return airport.icao.toLowerCase()===icao.toLowerCase();
       });
       if (airportsArr.length>0) return airportsArr[0];
-      else return {icao:icao,visibilityRequirement:{"yellow":3,"red":0.5,"ifr":2,"night":5},ceilingRequirement:{"yellow":1000,"red":280,"ifr":1000,"night":3000}};
+      else return {icao:icao,name:icao,visibilityRequirement:{"yellow":3,"red":0.5,"ifr":2,"night":5},ceilingRequirement:{"yellow":1000,"red":280,"ifr":1000,"night":3000}};
     }
     
     airportClass(index){
@@ -493,14 +493,12 @@
         self.$http.post('/api/assessments', self.assessment)
           .then(function(response){
             self.assessment={};
-            self.init();
             self.initAssessment();
           },
           function(response){
             self.localAssessments.push(self.assessment);
             window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
             self.assessment={};
-            self.init();
             self.initAssessment();
           }
         );

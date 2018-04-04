@@ -46,11 +46,11 @@
       </md-input-container>
     </div>
     <div ng-if="main.pixelRatio(1)" hide-gt-sm flex="5"></div>
-    <div ng-if="main.pixelRatio(1)"hide-gt-xs flex="5"></div>
+    <div ng-if="main.pixelRatio(1)" hide-gt-xs flex="5"></div>
     <div ng-if="main.pixelRatio(2)" hide-gt-sm flex="2"></div>
-    <div ng-if="main.pixelRatio(2)"hide-gt-xs flex="2"></div>
+    <div ng-if="main.pixelRatio(2)" hide-gt-xs flex="2"></div>
     <div ng-if="main.pixelRatio(3)" hide-gt-sm flex="1"></div>
-    <div ng-if="main.pixelRatio(3)"hide-gt-xs flex="1"></div>
+    <div ng-if="main.pixelRatio(3)" hide-gt-xs flex="1"></div>
       <md-content flex>
        <div ng-repeat="airport in main.assessment.airports track by $index" flex lauout="column" ng-class="main.nightClass($index)">
         <div layout="row" flex>
@@ -58,7 +58,7 @@
             <md-button class="md-raised" ng-class="main.airportClass($index)" flex 
                uib-tooltip="{{main.assessment.metars[$index]}}" tooltip-placement="bottom"
                ng-click="main.openChangeMenu($mdMenu, $event)">
-                  Airport:<br>{{airport}}
+                  Airport:<br>{{airport+' '+main.getAirport(airport).name}}
             </md-button>
             <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
               <md-menu-item>
@@ -153,11 +153,11 @@
        </div>  
       </md-content>
     <div ng-if="main.pixelRatio(1)" hide-gt-sm flex="5"></div>
-    <div ng-if="main.pixelRatio(1)"hide-gt-xs flex="5"></div>
+    <div ng-if="main.pixelRatio(1)" hide-gt-xs flex="5"></div>
     <div ng-if="main.pixelRatio(2)" hide-gt-sm flex="2"></div>
-    <div ng-if="main.pixelRatio(2)"hide-gt-xs flex="2"></div>
+    <div ng-if="main.pixelRatio(2)" hide-gt-xs flex="2"></div>
     <div ng-if="main.pixelRatio(3)" hide-gt-sm flex="1"></div>
-    <div ng-if="main.pixelRatio(3)"hide-gt-xs flex="1"></div>
+    <div ng-if="main.pixelRatio(3)" hide-gt-xs flex="1"></div>
     <div ng-if="main.assessment.flight" layout="row" flex="10">
       <md-button class="md-raised md-warn" flex ng-click="main.addAirport($event)">Add Airport</md-button>
       <md-button flex></md-button>
