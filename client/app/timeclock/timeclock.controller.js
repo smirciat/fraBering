@@ -4,135 +4,143 @@
 
 class TimeclockComponent {
   constructor(Auth,User,moment,$http,$timeout,$window,Modal,appConfig) {
-    this.http=$http;
-    this.timeout=$timeout;
-    this.window=$window;
-    this.Modal=Modal;
-    this.Auth=Auth;
-    this.User=User;
-    this.appConfig=appConfig;
-    this.moment=moment;
-    this.timesheets=[];
-    this.employees=[];
-    this.whosClockedIn=[];
-    this.hours=0;
-    this.in=false;
-    this.uid=0;
-    this.user = Auth.getCurrentUser;
-    this.newRecord = {};
-    this.users = User.query();
-    this.now = moment();
-    this.referenceStartDate=moment('2018-03-03');
+    var self=this;
+    self.http=$http;
+    self.timeout=$timeout;
+    self.window=$window;
+    self.Modal=Modal;
+    self.Auth=Auth;
+    self.User=User;
+    self.appConfig=appConfig;
+    self.moment=moment;
+    self.timesheets=[];
+    self.employees=[];
+    self.whosClockedIn=[];
+    self.hours=0;
+    self.in=false;
+    self.uid=0;
+    self.user = Auth.getCurrentUser;
+    self.newRecord = {};
+    self.users = User.query();
+    self.now = moment();
+    self.referenceStartDate=moment('2018-03-03');
     
-    this.setApi();
-    this.getCurrent();
-    this.setPayrollPeriod();
-    this.getRecords(this.uid);
+    self.setApi();
+    self.getCurrent();
+    self.setPayrollPeriod();
+    self.getRecords(self.uid);
   }
   
   quickMessage() { 
-    this.Modal.confirm.quickMessage();
+    var self=this;
+    self.Modal.confirm.quickMessage();
   }
     
     setApi() {
-      if (this.Auth.hasRole('admin')){
-        this.api='/api/timesheets/all';
+      var self=this;
+      if (self.Auth.hasRole('admin')){
+        self.api='/api/timesheets/all';
       }
       else {
-        this.api='/api/timesheets/user';
+        self.api='/api/timesheets/user';
       }
     }
     
     getCurrent() {
-      if (this.user()&&this.user()._id){
-        this.setApi();
-        this.http.post('/api/timesheets/current',{uid:this.user()._id}).then((response)=>{
+      var self=this;
+      if (self.user()&&self.user()._id){
+        self.setApi();
+        self.http.post('/api/timesheets/current',{uid:self.user()._id}).then(function(response){
           
           if (response.data.length===0){
-            this.in=false;
-            this.hours=0;
+            self.in=false;
+            self.hours=0;
           }
           else{
-            this.current = response.data[0];
-            this.in=true;
-            var end = this.moment();
-            this.hours = this.moment.duration(end.diff(this.moment(this.current.timeIn))).asHours();
+            self.current = response.data[0];
+            self.in=true;
+            var end = self.moment();
+            self.hours = self.moment.duration(end.diff(self.moment(self.current.timeIn))).asHours();
           }
-        },(err)=>{console.log(err)});
+        },function(err){console.log(err)});
       }
       else {
-        this.timeout(()=>{
-          this.getCurrent();
-          this.getRecords(this.uid);
+        self.timeout(function(){
+          self.getCurrent();
+          self.getRecords(self.uid);
         },100);
       }
     };
     
     setPayrollPeriod() {
-      while (this.moment(this.now)>=this.moment(this.referenceStartDate).add(14,'days')) {
-        this.referenceStartDate=this.moment(this.referenceStartDate).add(14,'days');
+      var self=this;
+      while (self.moment(self.now)>=self.moment(self.referenceStartDate).add(14,'days')) {
+        self.referenceStartDate=self.moment(self.referenceStartDate).add(14,'days');
       }
       
-      while (this.moment(this.now)<this.moment(this.referenceStartDate).subtract(14,'days')) {
-        this.referenceStartDate=this.moment(this.referenceStartDate).subtract(14,'days');
+      while (self.moment(self.now)<self.moment(self.referenceStartDate).subtract(14,'days')) {
+        self.referenceStartDate=self.moment(self.referenceStartDate).subtract(14,'days');
       }
       
-      this.startDate=this.moment(this.referenceStartDate);
-      this.endDate=this.moment(this.referenceStartDate).add(14,'days');
-      this.lastDate=this.moment(this.referenceStartDate).add(13,'days');
+      self.startDate=self.moment(self.referenceStartDate);
+      self.endDate=self.moment(self.referenceStartDate).add(14,'days');
+      self.lastDate=self.moment(self.referenceStartDate).add(13,'days');
     };
     
     plus() {
-      this.now.add(14,'days');
-      this.setPayrollPeriod();
-      this.getRecords(this.uid);
+      var self=this;
+      self.now.add(14,'days');
+      self.setPayrollPeriod();
+      self.getRecords(self.uid);
     };
     
     minus() {
-      //if (this.moment(this.now).month()===2&&this.moment(this.now).date()<4) this.now.subtract(10,'days');
-      this.now.subtract(14,'days');
-      this.setPayrollPeriod();
-      this.getRecords(this.uid);
+      var self=this;
+      //if (self.moment(self.now).month()===2&&self.moment(self.now).date()<4) self.now.subtract(10,'days');
+      self.now.subtract(14,'days');
+      self.setPayrollPeriod();
+      self.getRecords(self.uid);
     };
     
     getRecords(uid) {
-      this.http.post('/api/timesheets/all',{uid:this.user()._id,date:this.startDate.toDate(),endDate:this.endDate.toDate()}).then(response=>{
-        this.timesheets=response.data;
-        if (uid>0) this.timesheets = this.timesheets.filter((ts)=>{
+      var self=this;
+      self.http.post('/api/timesheets/all',{uid:self.user()._id,date:self.startDate.toDate(),endDate:self.endDate.toDate()}).then(function(response){
+        self.timesheets=response.data;
+        if (uid>0) self.timesheets = self.timesheets.filter(function(ts){
           return ts.uid===uid;
         });
         var employeeIndex,weekIndex;
-        if (this.Auth.hasRole('admin')){
-           this.employees=[];
-           this.timesheets.forEach((timesheet)=>{
+        if (self.Auth.hasRole('admin')){
+           self.employees=[];
+           self.timesheets.forEach(function(timesheet){
              employeeIndex=-1;
              weekIndex=-1;
-             for (var i=0;i<this.employees.length;i++) {
-               for (var j=0;j<this.employees[i].weeks.length;j++) {
-                 for (var k=0;k<this.employees[i].weeks[j].timesheets.length;k++) {
-                   if (this.employees[i].weeks[j].timesheets[k].uid===timesheet.uid) {
+             for (var i=0;i<self.employees.length;i++) {
+               for (var j=0;j<self.employees[i].weeks.length;j++) {
+                 for (var k=0;k<self.employees[i].weeks[j].timesheets.length;k++) {
+                   if (self.employees[i].weeks[j].timesheets[k].uid===timesheet.uid) {
                      employeeIndex=i;
-                     if (this.moment(this.employees[i].weeks[j].timesheets[k].timeIn).week()===this.moment(timesheet.timeIn).week()) weekIndex=j;
+                     if (self.moment(self.employees[i].weeks[j].timesheets[k].timeIn).week()===self.moment(timesheet.timeIn).week()) weekIndex=j;
                    }
                    
                  }  
                }
              }
             if (employeeIndex<0) {
-              this.employees.push({employee:timesheet.name,uid:timesheet.uid,totalRegular:0,totalOT:0,weeks:[{week:this.moment(timesheet.timeIn).week(),weekEnd:this.moment(timesheet.timeIn).endOf('week').startOf('day').toDate(),totalRegular:0,totalOT:0,timesheets:[timesheet]}]});
+              self.employees.push({employee:timesheet.name,uid:timesheet.uid,totalRegular:0,totalOT:0,weeks:[{week:self.moment(timesheet.timeIn).week(),weekEnd:self.moment(timesheet.timeIn).endOf('week').startOf('day').toDate(),totalRegular:0,totalOT:0,timesheets:[timesheet]}]});
             }
             else {
-              if (weekIndex<0) this.employees[employeeIndex].weeks.push({week:this.moment(timesheet.timeIn).week(),weekEnd:this.moment(timesheet.timeIn).endOf('week').startOf('day').toDate(),totalRegular:0,totalOT:0,timesheets:[timesheet]});
+              if (weekIndex<0) self.employees[employeeIndex].weeks.push({week:self.moment(timesheet.timeIn).week(),weekEnd:self.moment(timesheet.timeIn).endOf('week').startOf('day').toDate(),totalRegular:0,totalOT:0,timesheets:[timesheet]});
               else {
-                this.employees[employeeIndex].weeks[weekIndex].timesheets.push(timesheet);
+                self.employees[employeeIndex].weeks[weekIndex].timesheets.push(timesheet);
               }
             }
            });
-           this.whosClockedIn=[];
-           this.employees.forEach((employee)=>{
-             employee.weeks.forEach((week)=>{
-               week.timesheets.forEach((ts)=>{
-                 if (!ts.timeOut) this.whosClockedIn.push(ts);
+           self.whosClockedIn=[];
+           self.employees.forEach(function(employee){
+             employee.weeks.forEach(function(week){
+               week.timesheets.forEach(function(ts){
+                 if (!ts.timeOut) self.whosClockedIn.push(ts);
                  employee.totalRegular+=ts.regularHours;
                  employee.totalOT+=ts.otHours;
                  week.totalRegular+=ts.regularHours;
@@ -142,61 +150,64 @@ class TimeclockComponent {
              });
              employee.weeks.reverse();
            });
-           if (this.user().role!=="admin") {
-             this.timesheets = this.timesheets.filter((ts)=>{
-               return ts.uid===this.user()._id;
+           if (self.user().role!=="admin") {
+             self.timesheets = self.timesheets.filter(function(ts){
+               return ts.uid===self.user()._id;
              });
            }
-           this.payrollList = this.employees.slice(0);
-           this.payrollList.splice(0,0,{employee:"All",uid:0});
+           self.payrollList = self.employees.slice(0);
+           self.payrollList.splice(0,0,{employee:"All",uid:0});
         }
       });
     };
     
     clockIn() {
-      this.http.get('/api/timesheets/ip').then((response)=>{
+      var self=this;
+      self.http.get('/api/timesheets/ip').then(function(response){
         if (response.data) {
-          this.http.post('/api/timesheets/',{name:this.user().name,timeIn:this.moment().toDate(),uid:this.user()._id}).then((response)=>{
-            this.getCurrent();
-            this.getRecords(this.uid);
+          self.http.post('/api/timesheets/',{name:self.user().name,timeIn:self.moment().toDate(),uid:self.user()._id}).then(function(response){
+            self.getCurrent();
+            self.getRecords(self.uid);
           });
         }
-        else this.quickMessage('You must be at Smokey Bay to clock in or out.');
+        else self.quickMessage('You must be at Smokey Bay to clock in or out.');
       });
       
       
     };
     
     clockOut() {
-      this.http.get('/api/timesheets/ip').then((response)=>{
+      var self=this;
+      self.http.get('/api/timesheets/ip').then(function(response){
         if (response.data) {
-          if (this.current){
-            this.current.timeOut = this.moment();
-            this.current = this.update(this.current);
+          if (self.current){
+            self.current.timeOut = self.moment();
+            self.current = self.update(self.current);
           }  
-          else this.in=false;
+          else self.in=false;
         }
-        else this.quickMessage('You must be at Smokey Bay to clock in or out.');
+        else self.quickMessage('You must be at Smokey Bay to clock in or out.');
       });
     };
     
     update(timesheet) {//decide how much of this timesheet record is regular and overtime
+      var self=this;
       var timeOut;
       var dayLength = 10;
-      //if (this.appConfig.eightHourEmployees.indexOf(timesheet.uid) > -1) dayLength=8;
+      //if (self.appConfig.eightHourEmployees.indexOf(timesheet.uid) > -1) dayLength=8;
       if (timesheet.timeOut) {
-        timeOut = this.moment(timesheet.timeOut);
-        timesheet.regularHours =  this.moment.duration(timeOut.diff(this.moment(timesheet.timeIn))).asHours();
+        timeOut = self.moment(timesheet.timeOut);
+        timesheet.regularHours =  self.moment.duration(timeOut.diff(self.moment(timesheet.timeIn))).asHours();
         timesheet.otHours = 0;
         if (timesheet.regularHours>dayLength){
           timesheet.otHours = timesheet.regularHours-dayLength;
           timesheet.regularHours = dayLength;
         }
         timesheet.timeOut = timeOut.toDate();
-        var timeIn = this.moment(timesheet.timeIn);
-        var startDate = this.moment(timeIn).startOf('week').startOf('day');
-        var endDate = this.moment(timeIn).endOf('week').endOf('day');
-        this.http.post('/api/timesheets/user',{uid:timesheet.uid,date:startDate.toDate(),endDate:endDate.toDate()}).then(response=>{
+        var timeIn = self.moment(timesheet.timeIn);
+        var startDate = self.moment(timeIn).startOf('week').startOf('day');
+        var endDate = self.moment(timeIn).endOf('week').endOf('day');
+        self.http.post('/api/timesheets/user',{uid:timesheet.uid,date:startDate.toDate(),endDate:endDate.toDate()}).then(function(response){
           var timesheets = response.data.reverse();
           var index=-1;
           var todaysHours = 0;
@@ -205,9 +216,9 @@ class TimeclockComponent {
                       return element._id===timesheet._id;
                     });
           if (index>-1) timesheets.splice(index,1);
-          timesheets.forEach(ts=>{
+          timesheets.forEach(function(ts){
             totalHours += ts.regularHours;
-            if (this.moment(ts.timeIn).day()===this.moment(timesheet.timeIn).day()){
+            if (self.moment(ts.timeIn).day()===self.moment(timesheet.timeIn).day()){
               todaysHours += ts.regularHours;
             }
           });
@@ -226,69 +237,76 @@ class TimeclockComponent {
               timesheet.regularHours -= over;
             }
           }
-          this.commit(timesheet);
+          self.commit(timesheet);
         });
       }
-      else this.commit(timesheet);
+      else self.commit(timesheet);
     };
     
     commit(timesheet) {
+      var self=this;
       if (timesheet.otHours+timesheet.regularHours<0) {
-        return this.quickMessage('Error in Times, total hours cannot be negative');
+        return self.quickMessage('Error in Times, total hours cannot be negative');
       }
       if (timesheet.regularHours+timesheet.otHours>18) {
-        this.quickMessage('Possible failure to clock out, please double check times!');
+        self.quickMessage('Possible failure to clock out, please double check times!');
       }
       if (timesheet._id){
-        this.http.put('/api/timesheets/' + timesheet._id,timesheet).then(()=>{
-          this.getCurrent();
-          this.getRecords(this.uid);
-          this.newRecord={};
+        self.http.put('/api/timesheets/' + timesheet._id,timesheet).then(function(){
+          self.getCurrent();
+          self.getRecords(self.uid);
+          self.newRecord={};
         });
       }
       else {
-        this.http.post('/api/timesheets',timesheet).then(()=>{
-          this.getCurrent();
-          this.getRecords(this.uid);
-          this.newRecord={};
+        self.http.post('/api/timesheets',timesheet).then(function(){
+          self.getCurrent();
+          self.getRecords(self.uid);
+          self.newRecord={};
         });
       }
     };
     
     cancel() {
-      this.newRecord={};
+      var self=this;
+      self.newRecord={};
     };
     
     edit(timesheet) {
-      if (timesheet.timeIn) timesheet.timeIn = this.moment(timesheet.timeIn).format('MMM DD, YYYY, h:mm:ss A');
-      if (timesheet.timeOut) timesheet.timeOut = this.moment(timesheet.timeOut).format('MMM DD, YYYY, h:mm:ss A');
-      this.newRecord = timesheet;
+      var self=this;
+      if (timesheet.timeIn) timesheet.timeIn = self.moment(timesheet.timeIn).format('MMM DD, YYYY, h:mm:ss A');
+      if (timesheet.timeOut) timesheet.timeOut = self.moment(timesheet.timeOut).format('MMM DD, YYYY, h:mm:ss A');
+      self.newRecord = timesheet;
     };
     
     delete(timesheet) {
-      this.http.delete('/api/timesheets/' + timesheet._id).then(()=>{
-        this.getCurrent();
-        this.getRecords(this.uid);
+      var self=this;
+      self.http.delete('/api/timesheets/' + timesheet._id).then(function(){
+        self.getCurrent();
+        self.getRecords(self.uid);
       });
     };
     
     nameLookup(uid) {
-      this.newRecord.name = "";
-      var index = this.users.findIndex((element)=>{
+      var self=this;
+      self.newRecord.name = "";
+      var index = self.users.findIndex(function(element){
         return element._id===uid;
       });
-      if (index>-1&&(this.users[index].role==='admin'||this.users[index].role==='admin')){
-        this.newRecord.name = this.users[index].name;
+      if (index>-1&&(self.users[index].role==='admin'||self.users[index].role==='admin')){
+        self.newRecord.name = self.users[index].name;
       }
     };
     
     print() {
-      this.$timeout(this.$window.print,500);
+      var self=this;
+      self.$timeout(self.$window.print,500);
     };
     
     setEmployee (employee){
-      this.uid=employee.uid;
-      this.getRecords(this.uid);
+      var self=this;
+      self.uid=employee.uid;
+      self.getRecords(self.uid);
     };
     
     

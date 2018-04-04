@@ -31,6 +31,37 @@ angular.module('workspaceApp')
          * @param  {Function} del - callback, ran when delete is confirmed
          * @return {Function}     - the function to open the modal (ex. myModalFn)
          */
+        quickMessage(del = angular.noop) {
+          /**
+           * Open a delete confirmation modal
+           * @param  {String} name   - name or info to show on modal
+           * @param  {All}           - any additional args are passed straight to del callback
+           */
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                name = args.shift(),
+                quickModal;
+
+            quickModal = openModal({
+              modal: {
+                dismissable: true,
+                title: 'Important Message',
+                html: '<p> <strong>' + name + '</strong> </p>',
+                buttons: [ {
+                  classes: 'btn-success',
+                  text: 'OK',
+                  click: function(event) {
+                    quickModal.close(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+
+            quickModal.result.then(function(event) {
+              del.apply(event, args);
+            });
+          };
+        } ,
         delete(del = angular.noop) {
           /**
            * Open a delete confirmation modal

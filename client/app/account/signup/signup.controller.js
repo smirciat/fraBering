@@ -21,17 +21,17 @@ class SignupController {
           email: this.user.email,
           password: this.user.password
         })
-        .then(() => {
+        .then(function() {
           // Account created, redirect to home
           this.$state.go('main');
         })
-        .catch(err => {
+        .catch(function(err) {
           err = err.data;
           this.errors = {};
 
           // Update validity of form fields that match the sequelize errors
           if (err.name) {
-            angular.forEach(err.fields, field => {
+            angular.forEach(err.fields, function(field) {
               form[field].$setValidity('mongoose', false);
               this.errors[field] = err.message;
             });

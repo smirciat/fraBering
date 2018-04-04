@@ -30,6 +30,10 @@ class SidebarController {
   viewHazards(){
     this.state.go('viewHazards');
   }
+  
+  login(){
+    this.state.go('login');
+  }
 
   isAdmin(){
     return this.Auth.isAdmin();

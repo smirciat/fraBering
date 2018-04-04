@@ -12,13 +12,13 @@
       <div flex layout="row" ng-if="side.isAdmin()">
         <md-button flex class="md-blue md-raised" ng-click="side.notification()">New<br>Notifications</md-button>
       </div>
-      <div flex layout="row" ng-hide="side.isAdmin()">
-        <md-button flex>.</md-button>
-      </div>
       <div flex layout="row" ng-if="side.isAdmin()">
         <md-button flex class="md-yellow md-raised" ng-click="side.airports()">Edit<br>Airports</md-button>
       </div>
       <div flex layout="row" ng-if="side.isAdmin()">
         <md-button flex class="md-orange md-raised" ng-click="side.viewHazards()">View Hazard<br>Reports</md-button>
+      </div>
+      <div flex layout="row" >
+        <md-button flex class="md-green md-raised" ng-click="side.login()">Admin<br>Login</md-button>
       </div>
   </md-sidenav>

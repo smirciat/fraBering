@@ -5,14 +5,14 @@
 class AirportsComponent {
   constructor($http) {
     var self=this;
-    this.http=$http;
-    this.newAirport={};
-    this.init();
+    self.http=$http;
+    self.newAirport={};
+    self.init();
   }
   
   init(){
     var self=this;
-    this.http.get('/api/airportRequirements').then(function(response){
+    self.http.get('/api/airportRequirements').then(function(response){
       self.airports=response.data.sort(function(a,b){
         return a.name.localeCompare(b.name);
       });
@@ -20,38 +20,42 @@ class AirportsComponent {
   }
   
   edit(airport,index){
-    this.index=index;
-    this.newAirport=angular.copy(airport);
-    this.refreshAirport();
+    var self=this;
+    self.index=index;
+    self.newAirport=angular.copy(airport);
+    self.refreshAirport();
   }
   
   refreshAirport(){
-    this.newAirport.ceilingRequirementString = JSON.stringify(this.newAirport.ceilingRequirement);
-    this.newAirport.visibilityRequirementString = JSON.stringify(this.newAirport.visibilityRequirement);
-    this.newAirport.windRequirementString = JSON.stringify(this.newAirport.windRequirement);
+    var self=this;
+    self.newAirport.ceilingRequirementString = JSON.stringify(self.newAirport.ceilingRequirement);
+    self.newAirport.visibilityRequirementString = JSON.stringify(self.newAirport.visibilityRequirement);
+    self.newAirport.windRequirementString = JSON.stringify(self.newAirport.windRequirement);
   }
   
   update(airport){
+    var self=this;
     if (airport==="false") airport=false;
     if (airport.ceilingRequirementString) airport.ceilingRequirement = JSON.parse(airport.ceilingRequirementString);
     if (airport.visibilityRequirementString) airport.visibilityRequirement = JSON.parse(airport.visibilityRequirementString);
     if (airport.windRequirementString) airport.windRequirement = JSON.parse(airport.windRequirementString);
     if (airport._id){
-      this.http.put('/api/airportRequirements/' + airport._id,airport).then(()=>{
-        this.airports[this.index]=angular.copy(airport);
-        this.newAirport={};
+      self.http.put('/api/airportRequirements/' + airport._id,airport).then(function(){
+        self.airports[self.index]=angular.copy(airport);
+        self.newAirport={};
       });
     }
     else {
-      this.http.post('/api/airportRequirements',airport).then((response)=>{
-        this.airports[this.airports.length]=response.data;
-        this.newAirport={};
+      self.http.post('/api/airportRequirements',airport).then(function(response){
+        self.airports[self.airports.length]=response.data;
+        self.newAirport={};
       });
     }
   }
   
   cancel(){
-    this.newAirport={};
+    var self=this;
+    self.newAirport={};
   }
 }
 

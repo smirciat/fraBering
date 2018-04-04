@@ -4,34 +4,21 @@
 
   class MainController {
 
-    constructor($http, $scope, socket,$mdDialog,$mdSidenav,$timeout,appConfig,$interval,moment) {
-      this.$http = $http;
-      this.interval=$interval;
-      this.scope=$scope;
-      this.socket = socket;
-      this.mdDialog=$mdDialog;
-      this.mdSidenav=$mdSidenav;
-      this.timeout=$timeout;
-      this.appConfig=appConfig;
-      this.moment=moment;
-      this.localAssessments=[];
+    constructor($http, $scope,$mdDialog,$mdSidenav,$timeout,appConfig,$interval,moment) {
+      var self=this;
+      self.$http = $http;
+      self.interval=$interval;
+      self.scope=$scope;
+      self.mdDialog=$mdDialog;
+      self.mdSidenav=$mdSidenav;
+      self.timeout=$timeout;
+      self.appConfig=appConfig;
+      self.moment=moment;
+      self.localAssessments=[];
       if (window.localStorage.getItem( 'assessments' )===null||window.localStorage.getItem( 'assessments' )==="undefined"){
         window.localStorage.setItem('assessments',JSON.stringify([]));
       }
-      else this.localAssessments=JSON.parse(window.localStorage.getItem( 'assessments' ));
-      var self=this;
-      
-      $scope.$watch('main.assessment.pilot',(newVal,oldVal)=>{
-        if (!newVal) return;
-        if (this.assessment.flight&&this.assessment.flight!=="Extra") {
-          //Update this.assessment
-        }
-        
-      });
-      
-      $scope.$on('$destroy', ()=> {
-        socket.unsyncUpdates('flight');
-      });
+      else self.localAssessments=JSON.parse(window.localStorage.getItem( 'assessments' ));
       
       self.scrapeStorage();
       $interval(function(){
@@ -58,18 +45,19 @@
     }
     
     initAssessment(){
+      var self=this;
       var airports,pilot,flight,equipment,color,night,times;
-      if (this.assessment) {
-        pilot=this.assessment.pilot||"";
-        flight=this.assessment.flight||"";
-        airports=this.assessment.airports||[];
-        equipment=this.assessment.equipment||{id:1,name:"Caravan",wind:30,temp:-50};
-        color=this.assessment.color||[];
-        night=this.assessment.night||[];
-        times=this.assessment.times||[];
+      if (self.assessment) {
+        pilot=self.assessment.pilot||"";
+        flight=self.assessment.flight||"";
+        airports=self.assessment.airports||[];
+        equipment=self.assessment.equipment||{id:1,name:"Caravan",wind:30,temp:-50};
+        color=self.assessment.color||[];
+        night=self.assessment.night||[];
+        times=self.assessment.times||[];
       }
       else airports=[];
-      this.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],night:night,times:times,
+      self.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],night:night,times:times,
         windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilot:pilot,flight:flight,equipment:equipment,color:color
       };
     }
@@ -82,12 +70,12 @@
       var date = year + '-' + month + '-' + day;
       self.assessment.night[index]=false;
       var airportParams = self.getAirport(airport);
-      self.$http.get('https://api.sunrise-sunset.org/json?lat=' + airportParams.latitude + '&lng=' + airportParams.longitude + '&date=' + date + '&formatted=0').then((response)=>{
+      self.$http.get('https://api.sunrise-sunset.org/json?lat=' + airportParams.latitude + '&lng=' + airportParams.longitude + '&date=' + date + '&formatted=0').then(function(response){
         if (response.data.results.civil_twilight_begin==='1970-01-01T00:00:01+00:00') return;
         var twilightStart = self.moment(response.data.results.civil_twilight_begin);
         var twilightEnd = self.moment(response.data.results.civil_twilight_end);
-        if (self.departTimes.length<=index||self.departTimes[index]==="") return;
-        var timeArr=self.departTimes[index].split(':');
+        if (self.assessment.times.length<=index||self.assessment.times[index]==="") return;
+        var timeArr=self.assessment.times[index].split(':');
         if (timeArr.length<2) return;
         var departTime = self.moment(twilightStart).startOf('day').hour(timeArr[0]).minute(timeArr[1]);
         if (departTime.isBetween(twilightStart,twilightEnd)) self.assessment.night[index]=false;
@@ -95,7 +83,8 @@
       });  
     }
     
-    initAirport(airport,index) {
+    initAirport(airport,index,count) {
+      count++;
       var self=this;
       self.assessment.color[index]="md-green";
       self.assessment.metars[index]="";
@@ -109,7 +98,7 @@
         if ((response.data.Temperature*9/5+32)<self.assessment.equipment.temp) {
             var alert = self.mdDialog.alert({
             title: 'Caution',
-            textContent: 'Check the temperature, it may be too cold for this aircraft',
+            textContent: 'Check the temperature, it may be too cold for self aircraft',
             ok: 'Close'
           });
     
@@ -146,7 +135,7 @@
         });
         self.assessment.freezingPrecipitations[index]=false;
         if (response.data['Other-List'].length>0) {
-          response.data['Other-List'].forEach(item=>{
+          response.data['Other-List'].forEach(function(item){
             var i=item.replace(/[^a-zA-Z]/g, "");
             if (i.substring(0,2)==="FR") self.assessment.freezingPrecipitations[index]=true;
           });
@@ -154,7 +143,7 @@
       },function(response){
         if (response.status===500){
           self.timeout(function(){
-            //self.initAirport(airport,index);
+            if (count<6) self.initAirport(airport,index,count);
           },20000);
         }
         else self.assessment.metars[index]="";
@@ -162,52 +151,54 @@
       if (airport=="PAOM"||airport=="PAOT"||airport=="PAUN"||airport=="PANC"||airport=="PAGA") {
         self.$http.get('https://avwx.rest/api/taf/' + airport).then(function(response){
           if (response.data.Error) { 
-            //self.airports[index]=self.airportsCopy[index];
+            self.airports[index]=self.airportsCopy[index];
             return;
           }
           self.assessment.tafs[index]=response.data['Raw-Report'];
         },function(response){
             if (response.status===500){
-            self.timeout(self.initAirport(airport,index),20000);
+            if (count<6) self.timeout(self.initAirport(airport,index),20000);
           }
-          else self.assessment.metars[index]="";
+          else self.assessment.tafs[index]="";
         });
       }
     }
     
     $onInit() {
-      this.init();
+      var self=this;
+      self.init();
     }
     
     init(){
-      this.$http.get('/api/flights')
-        .then(response => {
-          this.flights = response.data;
-          window.localStorage.setItem('flights',JSON.stringify(this.flights));
-        },response=>{
-          this.flights=JSON.parse(window.localStorage.getItem('flights'));
+      var self=this;
+      self.$http.get('/api/flights')
+        .then(function(response) {
+          self.flights = response.data;
+          window.localStorage.setItem('flights',JSON.stringify(self.flights));
+        },function(response){
+          self.flights=JSON.parse(window.localStorage.getItem('flights'));
         });
         
-      this.$http.get('/api/pilots')
-        .then(response => {
-          this.pilots = response.data;
-          window.localStorage.setItem('pilots',JSON.stringify(this.pilots));
-        },response=>{
-          this.pilots=JSON.parse(window.localStorage.getItem('pilots'));
+      self.$http.get('/api/pilots')
+        .then(function(response) {
+          self.pilots = response.data;
+          window.localStorage.setItem('pilots',JSON.stringify(self.pilots));
+        },function(response){
+          self.pilots=JSON.parse(window.localStorage.getItem('pilots'));
         });
         
-      this.$http.get('/api/airportRequirements')
-        .then(response => {
-          this.airports=response.data;
-          window.localStorage.setItem('airports',JSON.stringify(this.airports));
-        },response=>{
-          this.airports=JSON.parse(window.localStorage.getItem('airports'));
+      self.$http.get('/api/airportRequirements')
+        .then(function(response) {
+          self.airports=response.data;
+          window.localStorage.setItem('airports',JSON.stringify(self.airports));
+        },function(response){
+          self.airports=JSON.parse(window.localStorage.getItem('airports'));
         });
-      //this.flights=this.appConfig.flights;
-      //this.pilots=this.appConfig.pilots;
-      this.initAssessment();
-      //this.airports=this.appConfig.airportRequirements;
-      this.equipment=this.appConfig.equipment;
+      //self.flights=self.appConfig.flights;
+      //self.pilots=self.appConfig.pilots;
+      self.initAssessment();
+      //self.airports=self.appConfig.airportRequirements;
+      self.equipment=self.appConfig.equipment;
     }
     
     changeFlight(ev) {
@@ -216,10 +207,10 @@
     // Appending dialog to document.body to cover sidenav in docs app
     // Modal dialogs should fully cover application
     // to prevent interaction outside of dialog
-      if (this.assessment.flight==="Extra") {
+      if (self.assessment.flight==="Extra") {
         //unlisted flight number
         
-        var confirm = this.mdDialog.prompt()
+        var confirm = self.mdDialog.prompt()
             .parent(angular.element(document.body))
             .title('What is the new flight number?')
             .textContent('Enter a three or four digit flight number.')
@@ -231,44 +222,52 @@
             .ok('OK')
             .cancel('Cancel');
             
-        this.mdDialog.show(confirm).then(function(result) {
+        self.mdDialog.show(confirm).then(function(result) {
           var newFlight={flightNum:result};
-          var flightArr=self.flights.filter((flight)=>{
+          var flightArr=self.flights.filter(function(flight){
             return flight.flightNum===result.slice(-3);
           });
           if (flightArr.length>0) {
             newFlight=JSON.parse(JSON.stringify(flightArr[0]));
             newFlight.flightNum=result;
-            self.departTimes=flightArr[0].departTimes;
+            self.assessment.times=flightArr[0].departTimes;
+          }
+          else {
+            newFlight={};
+            newFlight.flightNum=result;
+            if (result.substring(0,1)==='5') newFlight.airports=['PAOT'];
+            else if (result.substring(0,1)==='7') newFlight.airports=['PAOM'];
+                else newFlight.airports=[];
+            newFlight.departTimes=[self.moment().format('HH:mm').toString()];
           }
           self.flights.push(newFlight);
           self.assessment.flight =  result;
-          flightArr = self.flights.filter((flt)=>{
+          flightArr = self.flights.filter(function(flt){
             return self.assessment.flight===flt.flightNum;
           });
           if (flightArr.length>0) {
             self.assessment.airports=JSON.parse(JSON.stringify(flightArr[0].airports));
-            self.departTimes=flightArr[0].departTimes;
+            self.assessment.times=flightArr[0].departTimes;
           }
           self.initAssessment();
-          self.assessment.airports.forEach((airport,index)=>{
-            self.initAirport(airport,index);
+          self.assessment.airports.forEach(function(airport,index){
+            self.initAirport(airport,index,0);
           });
         }, function() {
           self.assessment.flight = "";
         });
       }
       else {
-        var flightArr = self.flights.filter((flt)=>{
+        var flightArr = self.flights.filter(function(flt){
           return self.assessment.flight===flt.flightNum;
         });
         if (flightArr.length>0) {
           self.assessment.airports=JSON.parse(JSON.stringify(flightArr[0].airports));
-          self.departTimes=flightArr[0].departTimes;
+          self.assessment.times=flightArr[0].departTimes;
         }
         self.initAssessment();
-        self.assessment.airports.forEach((airport,index)=>{
-          self.initAirport(airport,index);
+        self.assessment.airports.forEach(function(airport,index){
+          self.initAirport(airport,index,0);
         });
       }
       
@@ -276,19 +275,19 @@
     
     changeAirport(ev,index){
       var self=this;
-      var time=this.mdDialog.prompt({clickOutsideToClose: true,multiple:true})
+      var time=self.mdDialog.prompt({clickOutsideToClose: true,multiple:true})
         .parent(angular.element(document.body))
-        .title('What is the new departure time for this airport?')
+        .title('What is the new departure time for self airport?')
         .textContent('Enter a departure time in 24 hour time format')
         .placeholder('16:00')
         .ariaLabel('Time')
-        .initialValue(self.departTimes[index])
+        .initialValue(self.assessment.times[index])
         .targetEvent(ev)
         .required(true)
         .ok('Update Depart Time')
         .cancel('Change Airport or Cancel');
         
-      var airport = this.mdDialog.prompt({clickOutsideToClose: true,multiple:true})
+      var airport = self.mdDialog.prompt({clickOutsideToClose: true,multiple:true})
         .parent(angular.element(document.body))
         .title('What is the new airport?')
         .textContent('Enter a four letter airport code')
@@ -300,16 +299,16 @@
         .ok('Update Airport Code')
         .cancel('Cancel');
           
-      this.mdDialog.show(time).then(function(result) {
+      self.mdDialog.show(time).then(function(result) {
         if (result!=="") {
-          self.departTimes[index] = result;
+          self.assessment.times[index] = result;
           self.initNight(self.assessment.airports[index],index);
         }
       },function(){
         self.mdDialog.show(airport).then(function(result) {
           if (result.length===4){
             self.assessment.airports[index]=result;
-            self.initAirport(result,index);
+            self.initAirport(result,index,0);
           }
         });
       });
@@ -317,7 +316,7 @@
     
     changeParam(ev,index,param,title){
       var self=this;
-      var confirm = this.mdDialog.prompt({clickOutsideToClose: true})
+      var confirm = self.mdDialog.prompt({clickOutsideToClose: true})
         .parent(angular.element(document.body))
         .title('What is the ' + title + ' for ' + self.assessment.airports[index]  + '?')
         .textContent('Enter ' + title)
@@ -329,7 +328,7 @@
         .ok('OK')
         .cancel('Cancel');
           
-      this.mdDialog.show(confirm).then(function(result) {
+      self.mdDialog.show(confirm).then(function(result) {
         if (result.length!==""){
           self.assessment.color[index]="md=green";
           self.assessment[param][index]=result;
@@ -339,7 +338,7 @@
     
     addAirport(ev){
       var self=this;
-      var confirm = this.mdDialog.prompt({clickOutsideToClose: true})
+      var confirm = self.mdDialog.prompt({clickOutsideToClose: true})
         .parent(angular.element(document.body))
         .title('What is the new airport?')
         .textContent('Enter a four letter airport code')
@@ -351,21 +350,24 @@
         .ok('OK')
         .cancel('Cancel');
           
-      this.mdDialog.show(confirm).then(function(result) {
+      self.mdDialog.show(confirm).then(function(result) {
         if (result.length===4){
           self.assessment.airports.push(result);
           self.assessment.color.push('md-green');
-          self.initAirport(result,self.assessment.airports.length-1);
+          self.assessment.times.push(self.moment().format('HH:mm').toString());
+          self.initAirport(result,self.assessment.airports.length-1,0);
         }
       });
     }
     
     openChangeMenu(mdMenu,ev){
-      this.timeout(()=>{mdMenu.open(ev)},300);
+      var self=this;
+      self.timeout(function(){mdMenu.open(ev)},300);
     }
     
     getAirport(icao){
-      var airportsArr = this.airports.filter(airport=>{
+      var self=this;
+      var airportsArr = self.airports.filter(function(airport){
         return airport.icao.toLowerCase()===icao.toLowerCase();
       });
       if (airportsArr.length>0) return airportsArr[0];
@@ -373,109 +375,122 @@
     }
     
     airportClass(index){
-      if (this.assessment.metars[index]==="") return "md-blue";
+      var self=this;
+      if (self.assessment.metars[index]==="") return "md-blue";
       return "md-green";
     }
     
     red(i){
-      this.assessment.color[i]='md-red';
+      var self=this;
+      self.assessment.color[i]='md-red';
       return 'md-red';
     }
     
     yellow(i){
-      if (this.assessment.color[i]!=='md-red') this.assessment.color[i]='md-yellow';
+      var self=this;
+      if (self.assessment.color[i]!=='md-red') self.assessment.color[i]='md-yellow';
       return 'md-yellow';
     }
     
     orange(i){
-      if (this.assessment.color[i]!=='md-red'&&this.assessment.color[i]!=='md-yellow') this.assessment.color[i]='md-orange';
+      var self=this;
+      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow') self.assessment.color[i]='md-orange';
       return 'md-orange';
     }
     
     green(i){
-      if (this.assessment.color[i]!=='md-red'&&this.assessment.color[i]!=='md-yellow'&&this.assessment.color[i]!=='md-orange') 
-         this.assessment.color[i]='md-green';
+      var self=this;
+      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow'&&self.assessment.color[i]!=='md-orange') 
+         self.assessment.color[i]='md-green';
       return 'md-green';
     }
     
     visibilityClass(index){
-      var airport = this.getAirport(this.assessment.airports[index]);
-      if (airport.visibilityRequirement.red>this.assessment.visibilities[index]) return this.red(index);
-      if (airport.visibilityRequirement.yellow>this.assessment.visibilities[index]) return this.yellow(index);
-      if (this.assessment.night[index]) {
-        if (airport.visibilityRequirement.night>this.assessment.visibilities[index]) return this.orange(index);
+      var self=this;
+      var airport = self.getAirport(self.assessment.airports[index]);
+      if (airport.visibilityRequirement.red>self.assessment.visibilities[index]) return self.red(index);
+      if (airport.visibilityRequirement.yellow>self.assessment.visibilities[index]) return self.yellow(index);
+      if (self.assessment.night[index]) {
+        if (airport.visibilityRequirement.night>self.assessment.visibilities[index]) return self.orange(index);
       }
       else {
-        if (airport.visibilityRequirement.ifr>this.assessment.visibilities[index]) return this.orange(index);
+        if (airport.visibilityRequirement.ifr>self.assessment.visibilities[index]) return self.orange(index);
       }
       
-      return this.green(index);
+      return self.green(index);
     }
     
     ceilingClass(index){
-      var airport = this.getAirport(this.assessment.airports[index]);
-      if (airport.ceilingRequirement.red>this.assessment.ceilings[index]) return this.red(index);
-      if (airport.ceilingRequirement.yellow>this.assessment.ceilings[index]) return this.yellow(index);
-      if (this.assessment.night[index]) {
-        if (airport.ceilingRequirement.night>this.assessment.ceilings[index]) return this.orange(index);
+      var self=this;
+      var airport = self.getAirport(self.assessment.airports[index]);
+      if (airport.ceilingRequirement.red>self.assessment.ceilings[index]) return self.red(index);
+      if (airport.ceilingRequirement.yellow>self.assessment.ceilings[index]) return self.yellow(index);
+      if (self.assessment.night[index]) {
+        if (airport.ceilingRequirement.night>self.assessment.ceilings[index]) return self.orange(index);
       }
       else {
-        if (airport.ceilingRequirement.ifr>this.assessment.ceilings[index]) return this.orange(index);
+        if (airport.ceilingRequirement.ifr>self.assessment.ceilings[index]) return self.orange(index);
       }
       
-      return this.green(index);
+      return self.green(index);
     }
     
     runwayClass(index){
-      if (this.assessment.runwayConditions[index]<2) return this.red(index);
-      if (this.assessment.runwayConditions[index]<4) return this.yellow(index);
-      return this.green(index);
+      var self=this;
+      if (self.assessment.runwayConditions[index]<2) return self.red(index);
+      if (self.assessment.runwayConditions[index]<4) return self.yellow(index);
+      return self.green(index);
     }
     
     windClass(index){
-      if (this.assessment.windGusts[index]>this.assessment.equipment.wind) return this.red(index);
-      return this.green(index);
+      var self=this;
+      if (self.assessment.windGusts[index]>self.assessment.equipment.wind) return self.red(index);
+      return self.green(index);
     }
     
     freezingClass(index){
-      if (this.assessment.freezingPrecipitations[index]) return this.red(index);
-      return this.green(index);
+      var self=this;
+      if (self.assessment.freezingPrecipitations[index]) return self.red(index);
+      return self.green(index);
     }
     
     tafClass(index){
-      if (this.assessment.tafs[index]!=="") return this.green(index);
+      var self=this;
+      if (self.assessment.tafs[index]!=="") return self.green(index);
       return "md-blue";
     }
     
     nightClass(index){
-      if (this.assessment.night[index]) return "night";
+      var self=this;
+      if (self.assessment.night[index]) return "night";
       else return "day";
     }
     
     submit(ev){
       var self=this;
       self.assessment.equipment=self.assessment.equipment.name;
-      if (this.assessment.pilot===""||this.assessment.flight==="") {
-        var alert = this.mdDialog.alert({
+      if (self.assessment.pilot===""||self.assessment.flight==="") {
+        var alert = self.mdDialog.alert({
           title: 'Attention',
           textContent: 'You need to enter a pilot and a flight number at the top of the page.',
           ok: 'Close'
         });
             
-        this.mdDialog.show(alert).then(function() {
+        self.mdDialog.show(alert).then(function() {
           
         });
       }
       else {
-        var matchPilots = this.pilots.filter(pilot=>{
-          return pilot.name===this.assessment.pilot;
+        var matchPilots = self.pilots.filter(function(pilot){
+          return pilot.name===self.assessment.pilot;
         });
         if (matchPilots.length>0) {
-          this.assessment.level=matchPilots[0].level;
+          self.assessment.level=matchPilots[0].level;
         }
-        else this.assessment.level="level1";
-        this.assessment.date=new Date();
-        this.$http.post('/api/assessments', this.assessment)
+        else self.assessment.level="level1";
+        self.assessment.date=new Date();
+        self.assessment.departTimes=self.assessment.times;
+        self.$http.post('/api/assessments', self.assessment)
           .then(function(response){
             self.assessment={};
             self.init();
@@ -496,7 +511,6 @@
     checkNotifications(ev){
       var self=this;
       self.$http.post('/api/notifications/pilot',{pilot:self.assessment.pilot}).then(function(response){
-        console.log(response.data)
         var notifications=response.data;
         var length=notifications.length;
         var count=0;
@@ -507,7 +521,7 @@
                 .textContent(notifications[index].notification)
                 .ariaLabel('Notification')
                 .targetEvent(ev)
-                .ok('I have read and understood this notification')
+                .ok('I have read and understood self notification')
                 .cancel('Remind me later');
         });
         
@@ -521,7 +535,7 @@
           },function(){
             //do something if user declines to read notification
           });
-        }
+        };
         
         showAnother();
         

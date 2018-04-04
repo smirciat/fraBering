@@ -88,6 +88,29 @@ export function destroy(req, res) {
     .catch(handleError(res));
 }
 
+export function adminChangeRole(req, res, next) {
+  var userId = req.body.user;
+  var newRole = req.body.role;
+
+  User.find({
+    where: {
+      _id: userId
+    }
+  })
+    .then(user => {
+      if (true) {
+        user.role = newRole;
+        return user.save()
+          .then(() => {
+            res.status(204).end();
+          })
+          .catch(validationError(res));
+      } else {
+        return res.status(403).end();
+      }
+    });
+}
+
 /**
  * Change a users password
  */

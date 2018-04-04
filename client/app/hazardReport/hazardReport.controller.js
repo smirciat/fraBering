@@ -4,14 +4,14 @@
 
 class HazardReportComponent {
   constructor($http,$mdDialog,$mdSidenav,$interval) {
-    this.mdDialog=$mdDialog;
-    this.mdSidenav=$mdSidenav;
-    this.http=$http;
-    this.report={name:"",base:"",location:"",report:""};
-    this.bases=['Nome','Kotzebue','Unalakleet'];
     var self=this;
-    if (window.localStorage.getItem('hazardReports')===null||window.localStorage.getItem('hazardReports')==="undefined") this.hazardReports =[];
-    else this.hazardReports = JSON.parse(window.localStorage.getItem('hazardReports'));
+    self.mdDialog=$mdDialog;
+    self.mdSidenav=$mdSidenav;
+    self.http=$http;
+    self.report={name:"",base:"",location:"",report:""};
+    self.bases=['Nome','Kotzebue','Unalakleet'];
+    if (window.localStorage.getItem('hazardReports')===null||window.localStorage.getItem('hazardReports')==="undefined") self.hazardReports =[];
+    else self.hazardReports = JSON.parse(window.localStorage.getItem('hazardReports'));
     
     self.scrapeStorage();
     $interval(function(){
@@ -21,9 +21,9 @@ class HazardReportComponent {
   
   submit(ev){
     var self=this;
-    if (this.report.name===""||this.report.base===""||this.report.location===""||this.report.report==="") {
-      this.mdDialog.show(
-        this.mdDialog.alert()
+    if (self.report.name===""||self.report.base===""||self.report.location===""||self.report.report==="") {
+      self.mdDialog.show(
+        self.mdDialog.alert()
           .parent(angular.element(document.body))
           .clickOutsideToClose(true)
           .title('Incomplete Submission')
@@ -34,8 +34,8 @@ class HazardReportComponent {
       );
     }
     else {
-      this.report.date=new Date();
-      this.http.post('/api/hazardReports',this.report).then(function(response){
+      self.report.date=new Date();
+      self.http.post('/api/hazardReports',self.report).then(function(response){
         self.report={name:"",base:"",location:"",report:""};
       },function(response){
         self.hazardReports.push(self.report);

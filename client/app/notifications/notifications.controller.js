@@ -5,11 +5,11 @@
 class NotificationsComponent {
   constructor($http,$mdDialog,$interval) {
     var self=this;
-    this.http=$http;
-    this.mdDialog=$mdDialog;
-    this.newNotification={creator:"",title:"",notification:""};
-    if (window.localStorage.getItem('notifications')===null||window.localStorage.getItem('notifications')==="undefined") this.notifications =[];
-    else this.notifications = JSON.parse(window.localStorage.getItem('notifications'));
+    self.http=$http;
+    self.mdDialog=$mdDialog;
+    self.newNotification={creator:"",title:"",notification:""};
+    if (window.localStorage.getItem('notifications')===null||window.localStorage.getItem('notifications')==="undefined") self.notifications =[];
+    else self.notifications = JSON.parse(window.localStorage.getItem('notifications'));
     
     self.scrapeStorage();
     $interval(function(){
@@ -19,9 +19,9 @@ class NotificationsComponent {
   
   submit(ev){
     var self=this;
-    if (this.newNotification.creator===""||this.newNotification.title===""||this.newNotification.notification==="") {
-      this.mdDialog.show(
-        this.mdDialog.alert()
+    if (self.newNotification.creator===""||self.newNotification.title===""||self.newNotification.notification==="") {
+      self.mdDialog.show(
+        self.mdDialog.alert()
           .parent(angular.element(document.body))
           .clickOutsideToClose(true)
           .title('Incomplete Submission')
@@ -32,9 +32,9 @@ class NotificationsComponent {
       );
     }
     else {
-      this.newNotification.createdAt=new Date();
-      this.newNotification.notified=[this.newNotification.creator];
-      this.http.post('/api/notifications',this.newNotification).then(function(response){
+      self.newNotification.createdAt=new Date();
+      self.newNotification.notified=[self.newNotification.creator];
+      self.http.post('/api/notifications',self.newNotification).then(function(response){
         self.newNotification={creator:"",title:"",notification:""};
       });
     }

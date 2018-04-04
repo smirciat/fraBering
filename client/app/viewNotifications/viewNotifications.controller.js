@@ -9,7 +9,7 @@ class ViewNotificationsComponent {
     self.pilotList=[];
     self.mdDialog=$mdDialog;
     self.mdSidenav=$mdSidenav;
-    this.http=$http;
+    self.http=$http;
     $http.get('/api/pilots').then(function(response){
       self.pilots=response.data;
       $http.get('/api/notifications').then(function(response){

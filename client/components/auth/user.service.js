@@ -12,6 +12,12 @@
           controller: 'password'
         }
       },
+      adminChangeRole: {
+        method: 'PUT',
+        params: {
+          controller:'changerole'
+        }
+      },
       get: {
         method: 'GET',
         params: {

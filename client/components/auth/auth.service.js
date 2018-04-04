@@ -100,6 +100,13 @@
        * @param  {Function|*} callback - optional, funciton(user)
        * @return {Object|Promise}
        */
+      adminChangeRole(userId,role,callback) {
+        return User.adminChangeRole({ id: currentUser._id }, {user: userId,role:role}, function() {
+          return safeCb(callback)(null);
+        }, function(err) {
+          return safeCb(callback)(err);
+        }).$promise;
+      },
       getCurrentUser(callback) {
         if (arguments.length === 0) {
           return currentUser;
