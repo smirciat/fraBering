@@ -38,7 +38,7 @@
       <md-input-container class="bering" flex>
         <label>Flight Number</label>
         <md-select ng-model="main.assessment.flight" ng-change="main.changeFlight($event)">
-          <md-option value="Extra"><em>Extra</em></md-option>
+          <md-option value="Extra"><em>Extra/Charter</em></md-option>
           <md-option ng-repeat="flight in main.flights | orderBy:'flightNum' track by $index" ng-value="flight.flightNum">
             {{flight.flightNum}}
           </md-option>

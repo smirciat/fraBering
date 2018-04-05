@@ -148,7 +148,8 @@
         }
         else self.assessment.metars[index]="";
       });
-      if (airport=="PAOM"||airport=="PAOT"||airport=="PAUN"||airport=="PANC"||airport=="PAGA") {
+      if (airport.toUpperCase()=="PAOM"||airport.toUpperCase()=="PAOT"||
+          airport.toUpperCase()=="PAUN"||airport.toUpperCase()=="PANC"||airport.toUpperCase()=="PAGA") {
         self.$http.get('https://avwx.rest/api/taf/' + airport).then(function(response){
           if (response.data.Error) { 
             self.airports[index]=self.airportsCopy[index];
