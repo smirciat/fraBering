@@ -20,8 +20,9 @@
     <div layout="row" flex="10">
       <md-input-container class="bering" flex>
         <label>Pilot</label>
-        <md-select ng-model="main.assessment.pilot" ng-change="main.checkNotifications($event)">
-          <md-option ng-repeat="pilot in main.pilots | orderBy: 'name'" ng-value="pilot.name">
+        <md-select ng-model="main.assessment.pilot" ng-change="main.checkNotifications($event)" ng-model-options="{trackBy: '$value._id'}">
+          <md-option ng-repeat="pilot in main.pilots | orderBy: 'name'" ng-value="pilot"
+              ng-selected="main.checkPilot(pilot.name)">
             {{pilot.name}}
           </md-option>
         </md-select>

@@ -6,6 +6,8 @@
 
     constructor($http, $scope,$mdDialog,$mdSidenav,$timeout,appConfig,$interval,moment) {
       var self=this;
+      self.tempPilot={name:"hi"};
+      if (window.localStorage.getItem('pilot')!==null&&window.localStorage.getItem('pilot')!=='undefined') self.tempPilot=JSON.parse(window.localStorage.getItem('pilot'));
       self.$http = $http;
       self.interval=$interval;
       self.scope=$scope;
@@ -38,28 +40,35 @@
               window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
             },
             function(response){//fail
-              
+              console.log(response)
             });
         });
       }
     }
     
     initAssessment(){
+      
       var self=this;
       var airports,pilot,flight,equipment,color,night,times;
       if (self.assessment) {
         pilot=self.assessment.pilot||"";
         flight=self.assessment.flight||"";
         airports=self.assessment.airports||[];
-        equipment=self.assessment.equipment||{id:1,name:"Caravan",wind:30,temp:-50};
+        equipment=self.assessment.equipment||{id:1,name:"Caravan",wind:35,temp:-50};
         color=self.assessment.color||[];
         night=self.assessment.night||[];
         times=self.assessment.times||[];
       }
-      else airports=[];
+      else {
+        airports=[];
+      }
       self.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],night:night,times:times,
         windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilot:pilot,flight:flight,equipment:equipment,color:color
       };
+      self.timeout(function(){
+        //if (self.assessment.pilot===""||self.assessment.pilot===undefined) self.assessment.pilot=angular.copy(self.tempPilot);
+      },300);
+  
     }
     
     initNight(airport,index){
@@ -137,7 +146,7 @@
         if (response.data['Other-List'].length>0) {
           response.data['Other-List'].forEach(function(item){
             var i=item.replace(/[^a-zA-Z]/g, "");
-            if (i.substring(0,2)==="FR") self.assessment.freezingPrecipitations[index]=true;
+            if (i.substring(0,2)==="FZ") self.assessment.freezingPrecipitations[index]=true;
           });
         }
       },function(response){
@@ -183,9 +192,15 @@
       self.$http.get('/api/pilots')
         .then(function(response) {
           self.pilots = response.data;
+          self.timeout(function(){
+            if (self.assessment.pilot===""||self.assessment.pilot===undefined) self.assessment.pilot=angular.copy(self.tempPilot);
+          },0);
           window.localStorage.setItem('pilots',JSON.stringify(self.pilots));
         },function(response){
           self.pilots=JSON.parse(window.localStorage.getItem('pilots'));
+          self.timeout(function(){
+            if (self.assessment.pilot===""||self.assessment.pilot===undefined) self.assessment.pilot=angular.copy(self.tempPilot);
+          },0);
         });
         
       self.$http.get('/api/airportRequirements')
@@ -470,6 +485,7 @@
     submit(ev){
       var self=this;
       self.assessment.equipment=self.assessment.equipment.name;
+      
       if (self.assessment.pilot===""||self.assessment.flight==="") {
         var alert = self.mdDialog.alert({
           title: 'Attention',
@@ -482,6 +498,7 @@
         });
       }
       else {
+        self.assessment.pilot=self.assessment.pilot.name;
         var matchPilots = self.pilots.filter(function(pilot){
           return pilot.name===self.assessment.pilot;
         });
@@ -509,7 +526,11 @@
     
     checkNotifications(ev){
       var self=this;
-      self.$http.post('/api/notifications/pilot',{pilot:self.assessment.pilot}).then(function(response){
+      if (self.assessment.pilot===undefined) return;
+      self.tempPilot=angular.copy(self.assessment.pilot);
+      window.localStorage.setItem('pilot',JSON.stringify(self.assessment.pilot));
+      self.$http.post('/api/notifications/pilot',{pilot:self.assessment.pilot.name}).then(function(response){
+        console.log(response.data)
         var notifications=response.data;
         var length=notifications.length;
         var count=0;
@@ -520,7 +541,7 @@
                 .textContent(notifications[index].notification)
                 .ariaLabel('Notification')
                 .targetEvent(ev)
-                .ok('I have read and understood self notification')
+                .ok('I have read and understood this notification')
                 .cancel('Remind me later');
         });
         
@@ -552,6 +573,11 @@
       if (window.devicePixelRatio>3&&ratio===3) return true;
       if (window.devicePixelRatio<1&&ratio===1) return true;
       return false;
+    }
+ 
+    checkPilot(name){
+      var self=this;
+      return name===self.tempPilot.name;
     }
     
   }
