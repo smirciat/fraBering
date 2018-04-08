@@ -13,7 +13,6 @@
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
     <!-- build:css(client) app/vendor.css -->
       <!-- bower:css -->
-      <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" />
       <link rel="stylesheet" href="bower_components/angular-material/angular-material.css" />
       <link rel="stylesheet" href="bower_components/ui-select/dist/select.css" />
       <link rel="stylesheet" href="bower_components/selectize/dist/css/selectize.css" />
@@ -21,6 +20,7 @@
       <link rel="stylesheet" href="bower_components/angularPrint/angularPrint.css" />
       <!-- endbower -->
     <!-- endbuild -->
+    <link rel="stylesheet" media="all" href="bower_components/bootswatch-dist/css/bootstrap.css" />
     <!-- build:css({.tmp,client}) app/app.css -->
       <link rel="stylesheet" href="app/app.css">
       <!-- injector:css -->
@@ -31,6 +31,7 @@
       <link rel="stylesheet" href="app/main/main.css">
       <link rel="stylesheet" href="app/notifications/notifications.css">
       <link rel="stylesheet" href="app/timeclock/timeclock.css">
+      <link rel="stylesheet" href="app/viewAssessments/viewAssessments.css">
       <link rel="stylesheet" href="app/viewHazards/viewHazards.css">
       <link rel="stylesheet" href="app/viewNotifications/viewNotifications.css">
       <link rel="stylesheet" href="components/footer/footer.css">
@@ -89,13 +90,14 @@
       <!-- endbower -->
       <!--<script src="bower_components/socket.io-client/dist/socket.io.js"></script>
     <!-- endbuild -->
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <!-- build:js(.tmp) app/app.js -->
       <script src="app/app.js"></script>
       <!-- injector:js -->
       <script src="app/admin/admin.module.js"></script>
       <script src="components/auth/auth.module.js"></script>
       <script src="components/util/util.module.js"></script>
-      <script src="app/viewHazards/viewHazards.controller.js"></script>
+      <script src="app/viewAssessments/viewAssessments.js"></script>
       <script src="app/admin/admin.controller.js"></script>
       <script src="app/account/account.js"></script>
       <script src="app/admin/admin.router.js"></script>
@@ -110,7 +112,9 @@
       <script src="app/notifications/notifications.js"></script>
       <script src="app/timeclock/timeclock.controller.js"></script>
       <script src="app/timeclock/timeclock.js"></script>
+      <script src="app/viewAssessments/viewAssessments.controller.js"></script>
       <script src="app/account/login/login.controller.js"></script>
+      <script src="app/viewHazards/viewHazards.controller.js"></script>
       <script src="app/viewHazards/viewHazards.js"></script>
       <script src="app/viewNotifications/viewNotifications.controller.js"></script>
       <script src="app/viewNotifications/viewNotifications.js"></script>

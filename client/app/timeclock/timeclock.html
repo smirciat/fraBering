@@ -142,6 +142,17 @@
           </tbody>  
           <tr><td></td></tr>
         </table>
+        </br>
+        <table class="table small-table table-bordered">
+          <tr class="big-table">
+            <td>Total Hours:</td>
+            <td>{{employee.totalRegular|number:1}}</td>
+            <td>Hourly Rate:</td>
+            <td>$50/hr</td>
+            <td>Total Due:</td>
+            <td>${{timeclock.precisionRound(employee.totalRegular,1)*50|number:2}}</td>
+          </tr>
+        </table>
       </div>  
     </div>
   </div>

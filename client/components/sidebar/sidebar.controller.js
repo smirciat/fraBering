@@ -23,6 +23,10 @@ class SidebarController {
     this.state.go('viewNotifications');
   }
   
+  viewAssessments() {
+    this.state.go('viewAssessments');
+  }
+  
   airports(){
     this.state.go('airports');
   }

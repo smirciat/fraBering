@@ -14,7 +14,7 @@ class SignupController {
 
   register(form) {
     this.submitted = true;
-
+    var self=this;
     if (form.$valid) {
       this.Auth.createUser({
           name: this.user.name,
@@ -23,11 +23,12 @@ class SignupController {
         })
         .then(function() {
           // Account created, redirect to home
-          this.$state.go('main');
+          self.$state.go('main');
         })
         .catch(function(err) {
           err = err.data;
-          this.errors = {};
+          console.log(err);
+          self.errors = {};
 
           // Update validity of form fields that match the sequelize errors
           if (err.name) {

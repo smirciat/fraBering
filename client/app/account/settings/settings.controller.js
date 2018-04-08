@@ -10,16 +10,16 @@ class SettingsController {
 
   changePassword(form) {
     this.submitted = true;
-
+    var self=this;
     if (form.$valid) {
       this.Auth.changePassword(this.user.oldPassword, this.user.newPassword)
         .then(function() {
-          this.message = 'Password successfully changed.';
+          self.message = 'Password successfully changed.';
         })
         .catch(function() {
           form.password.$setValidity('mongoose', false);
-          this.errors.other = 'Incorrect password';
-          this.message = '';
+          self.errors.other = 'Incorrect password';
+          self.message = '';
         });
     }
   }

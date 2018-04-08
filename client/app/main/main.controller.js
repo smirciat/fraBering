@@ -137,7 +137,10 @@
         self.$http.post('/api/assessments/lookup',{airport:airport}).then(function(res){
           if (res.data.length>0){
             var i = res.data[0].airports.indexOf(airport);
-            if (i>-1) self.assessment.runwayConditions[index]=res.data[0].runwayConditions[i];
+            if (i>-1) {
+              if (res.data[0].runwayConditions[i]) self.assessment.runwayConditions[index]=res.data[0].runwayConditions[i];
+              else self.assessment.runwayConditions[index]=5;
+            }
             else self.assessment.runwayConditions[index]=5;
           }
           else self.assessment.runwayConditions[index]=5;
@@ -526,7 +529,7 @@
     
     checkNotifications(ev){
       var self=this;
-      if (self.assessment.pilot===undefined) return;
+      if (!self.assessment.pilot) return;
       self.tempPilot=angular.copy(self.assessment.pilot);
       window.localStorage.setItem('pilot',JSON.stringify(self.assessment.pilot));
       self.$http.post('/api/notifications/pilot',{pilot:self.assessment.pilot.name}).then(function(response){

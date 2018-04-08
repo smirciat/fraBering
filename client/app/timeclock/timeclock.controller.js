@@ -309,6 +309,11 @@ class TimeclockComponent {
       self.getRecords(self.uid);
     };
     
+    precisionRound(number, precision) {
+      var factor = Math.pow(10, precision);
+      return Math.round(number * factor) / factor;
+    }
+    
     
   
 }

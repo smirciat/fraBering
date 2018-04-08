@@ -60,11 +60,13 @@
        * @return {Promise}
        */
       createUser(user, callback) {
+        console.log(user)
         return User.save(user, function(data) {
             $cookies.put('token', data.token);
             currentUser = User.get();
             return safeCb(callback)(null, user);
           }, function(err) {
+            console.log(err)
             Auth.logout();
             return safeCb(callback)(err);
           })
