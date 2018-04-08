@@ -22,7 +22,7 @@
         <label>Pilot</label>
         <md-select ng-model="main.assessment.pilot" ng-change="main.checkNotifications($event)" ng-model-options="{trackBy: '$value._id'}">
           <md-option ng-repeat="pilot in main.pilots | orderBy: 'name'" ng-value="pilot"
-              ng-selected="main.checkPilot(pilot.name)">
+              ng-selected="main.checkPilot(pilot.name)" ng-if="pilot.active">
             {{pilot.name}}
           </md-option>
         </md-select>

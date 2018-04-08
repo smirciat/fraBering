@@ -63,7 +63,7 @@ function handleError(res, statusCode) {
 
 // Gets a list of Assessments
 export function index(req, res) {
-  return Assessment.findAll()
+  return Assessment.findAll({order:[['_id','DESC']]})
     .then(respondWithResult(res))
     .catch(handleError(res));
 }

@@ -20,7 +20,7 @@ class ViewAssessmentsComponent {
     $http.get('/api/pilots').then(response=>{
       this.pilots=response.data;
       this.pilots.unshift({name:''});
-      this.pilots.unshift({name:'Show All Pilots'});
+      this.pilots.unshift({name:'--Show All Pilots'});
     });
     this.colorList=[{color:'Red',class:'md-red'},
                     {color:'Yellow',class:'md-yellow'},
@@ -45,13 +45,16 @@ class ViewAssessmentsComponent {
   }
   
   setPilot(pilotName){
-    if (pilotName==="Show All Pilots") this.pilotFilter="";
+    if (pilotName==="--Show All Pilots") this.pilotFilter="";
     else this.pilotFilter=pilotName;
     this.filter();
   }
   
   setDate(choice){
-    if (choice==="All") this.dateFilter=null;
+    if (choice==="All") {
+      this.dateFilter=null;
+      this.myDate=new Date();
+    }
     else this.dateFilter=this.myDate;
     this.filter();
   }

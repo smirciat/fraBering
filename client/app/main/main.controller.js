@@ -6,7 +6,7 @@
 
     constructor($http, $scope,$mdDialog,$mdSidenav,$timeout,appConfig,$interval,moment) {
       var self=this;
-      self.tempPilot={name:"hi"};
+      self.tempPilot={name:""};
       if (window.localStorage.getItem('pilot')!==null&&window.localStorage.getItem('pilot')!=='undefined') self.tempPilot=JSON.parse(window.localStorage.getItem('pilot'));
       self.$http = $http;
       self.interval=$interval;
@@ -65,12 +65,27 @@
       self.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],night:night,times:times,
         windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilot:pilot,flight:flight,equipment:equipment,color:color
       };
-      self.timeout(function(){
-        //if (self.assessment.pilot===""||self.assessment.pilot===undefined) self.assessment.pilot=angular.copy(self.tempPilot);
-      },300);
+      if (self.assessment.pilot===""||self.assessment.pilot===undefined||self.assessment.pilot.name==='z') self.initPilots();
   
     }
     
+    initPilots(){
+      var self=this;
+      self.$http.get('/api/pilots')
+        .then(function(response) {
+          self.pilots = response.data;
+          self.timeout(function(){
+            if (self.assessment.pilot===""||self.assessment.pilot===undefined) self.assessment.pilot=angular.copy(self.tempPilot);
+          },1000);
+          window.localStorage.setItem('pilots',JSON.stringify(self.pilots));
+        },function(response){
+          self.pilots=JSON.parse(window.localStorage.getItem('pilots'));
+          self.timeout(function(){
+            if (self.assessment.pilot===""||self.assessment.pilot===undefined) self.assessment.pilot=angular.copy(self.tempPilot);
+          },1000);
+        });
+    }
+
     initNight(airport,index){
       var self=this;
       var year = self.moment().year();
@@ -192,19 +207,7 @@
           self.flights=JSON.parse(window.localStorage.getItem('flights'));
         });
         
-      self.$http.get('/api/pilots')
-        .then(function(response) {
-          self.pilots = response.data;
-          self.timeout(function(){
-            if (self.assessment.pilot===""||self.assessment.pilot===undefined) self.assessment.pilot=angular.copy(self.tempPilot);
-          },0);
-          window.localStorage.setItem('pilots',JSON.stringify(self.pilots));
-        },function(response){
-          self.pilots=JSON.parse(window.localStorage.getItem('pilots'));
-          self.timeout(function(){
-            if (self.assessment.pilot===""||self.assessment.pilot===undefined) self.assessment.pilot=angular.copy(self.tempPilot);
-          },0);
-        });
+      self.initPilots();
         
       self.$http.get('/api/airportRequirements')
         .then(function(response) {
@@ -489,10 +492,17 @@
       var self=this;
       self.assessment.equipment=self.assessment.equipment.name;
       
-      if (self.assessment.pilot===""||self.assessment.flight==="") {
+      if (!self.assessment||
+             !self.assessment.pilot||
+             !self.assessment.pilot.name||
+             !self.assessment.flight||
+             !self.assessment.equipment||
+             self.assessment.pilot.name===""||
+             self.assessment.flight===""||
+             self.assessment.equipment==="") {
         var alert = self.mdDialog.alert({
           title: 'Attention',
-          textContent: 'You need to enter a pilot and a flight number at the top of the page.',
+          textContent: 'You need to enter a pilot, an aircraft, and a flight number at the top of the page.',
           ok: 'Close'
         });
             
@@ -529,18 +539,21 @@
     
     checkNotifications(ev){
       var self=this;
-      if (!self.assessment.pilot) return;
+      if (!self.assessment.pilot||self.assessment.pilot.name==='z') return;
       self.tempPilot=angular.copy(self.assessment.pilot);
       window.localStorage.setItem('pilot',JSON.stringify(self.assessment.pilot));
       self.$http.post('/api/notifications/pilot',{pilot:self.assessment.pilot.name}).then(function(response){
-        console.log(response.data)
+        console.log(response.data);
         var notifications=response.data;
         var length=notifications.length;
         var count=0;
         var confirm=[];
         notifications.forEach(function(notification,index){
           confirm[index] = self.mdDialog.confirm({clickOutsideToClose:true,multiple:true})
-                .title('Notification from ' + self.moment(notifications[index].createdAt).format('ddd, MMM Do YYYY, h:mm:ss a') + ' created by ' + notifications[index].creator)
+                .title(notifications[index].title
+                    + '   :::   '
+                    + 'Notification from ' + notifications[index].creator + ', created on ' 
+                    + self.moment(notifications[index].createdAt).format('ddd, MMM Do YYYY, h:mm:ss a'))
                 .textContent(notifications[index].notification)
                 .ariaLabel('Notification')
                 .targetEvent(ev)
@@ -550,7 +563,7 @@
         
         var showAnother = function(){
           if (length>0) self.mdDialog.show(confirm[count]).then(function() {
-            notifications[count].notified.push(self.assessment.pilot);
+            notifications[count].notified.push(self.assessment.pilot.name);
             self.$http.put('/api/notifications/'+notifications[count]._id, notifications[count]);
             count++;
             length--;

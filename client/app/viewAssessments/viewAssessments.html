@@ -17,8 +17,9 @@
             <a href="#" data-toggle="dropdown" class="dropdown-toggle">Filter by Date <b class="caret"></b></a>
             <ul class="dropdown-menu">
                 <li>
-                  <a ng-click="viewAssessments.setDate('All')" href="#">Show All Dates</a>
+                  <a ng-click="viewAssessments.setDate('All')" href="#">--Show All Dates</a>
                 </li>
+                <li><br></li>
                 <li>
                   <md-datepicker ng-change="viewAssessments.setDate('One')" ng-model="viewAssessments.myDate" md-placeholder="Enter date"></md-datepicker>
                 </li>
