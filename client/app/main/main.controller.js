@@ -352,9 +352,29 @@
           
       self.mdDialog.show(confirm).then(function(result) {
         if (result.length!==""){
-          self.assessment.color[index]="md=green";
+          self.assessment.color[index]="md-green";
           self.assessment[param][index]=result;
         }
+      });
+    }
+    
+    changeFreezing(ev,index){
+      var self=this;
+      var confirm = self.mdDialog.confirm({clickOutsideToClose: true})
+            .parent(angular.element(document.body))
+            .title('Is there Freezing Precipitation for ' + self.assessment.airports[index]  + '?')
+            .textContent('Tap True or False')
+            .ariaLabel('Freezing Precipitation')
+            .targetEvent(ev)
+            .ok('True')
+            .cancel('False');
+              
+      self.mdDialog.show(confirm).then(function() {
+          self.assessment.color[index]="md-red";
+          self.assessment.freezingPrecipitations[index]=true;
+      },function(){
+          self.assessment.color[index]="md-green";
+          self.assessment.freezingPrecipitations[index]=false;
       });
     }
     
@@ -416,7 +436,8 @@
     
     orange(i){
       var self=this;
-      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow') self.assessment.color[i]='md-orange';
+      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow') 
+        self.assessment.color[i]='md-orange';
       return 'md-orange';
     }
     
@@ -427,9 +448,16 @@
       return 'md-green';
     }
     
+    blue(i){
+      var self=this;
+      
+      return 'md-blue';
+    }
+    
     visibilityClass(index){
       var self=this;
       var airport = self.getAirport(self.assessment.airports[index]);
+      if (!self.assessment.visibilities[index]) return self.blue(index);
       if (airport.visibilityRequirement.red>self.assessment.visibilities[index]) return self.red(index);
       if (airport.visibilityRequirement.yellow>self.assessment.visibilities[index]) return self.yellow(index);
       if (self.assessment.night[index]) {
@@ -445,6 +473,7 @@
     ceilingClass(index){
       var self=this;
       var airport = self.getAirport(self.assessment.airports[index]);
+      if (!self.assessment.ceilings[index]) return self.blue(index);
       if (airport.ceilingRequirement.red>self.assessment.ceilings[index]) return self.red(index);
       if (airport.ceilingRequirement.yellow>self.assessment.ceilings[index]) return self.yellow(index);
       if (self.assessment.night[index]) {
@@ -466,6 +495,7 @@
     
     windClass(index){
       var self=this;
+      if (!self.assessment.windGusts[index]) return self.blue(index);
       if (self.assessment.windGusts[index]>self.assessment.equipment.wind) return self.red(index);
       return self.green(index);
     }

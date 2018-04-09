@@ -1,11 +1,11 @@
 'use strict';
 
 class LoginController {
-  constructor(Auth, $state) {
+  constructor(Auth, $state,$mdSidenav) {
     this.user = {};
     this.errors = {};
     this.submitted = false;
-
+    this.mdSidenav=$mdSidenav;
     this.Auth = Auth;
     this.$state = $state;
   }
@@ -27,6 +27,18 @@ class LoginController {
         });
     }
   }
+  
+  toggleMenu(){
+      var self=this;
+      self.mdSidenav('left').toggle();
+    }
+    
+  pixelRatio(ratio){
+      if (Math.floor(window.devicePixelRatio)===ratio) return true;
+      if (window.devicePixelRatio>3&&ratio===3) return true;
+      if (window.devicePixelRatio<1&&ratio===1) return true;
+      return false;
+    }
 }
 
 angular.module('workspaceApp')

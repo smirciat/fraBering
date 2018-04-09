@@ -70,8 +70,26 @@ export function index(req, res) {
     .catch(handleError(res));
 }
 
+// Gets a list of Notifications
+export function secret(req, res) {
+  console.log(req.body);
+  if (!req.body.password||req.body.password!==process.env.PASSWORD) {
+    res.status(501).end();
+    return null;
+  }
+  //passed in object is req.body
+  return Notification.findAll({where:{'$or':[{archived:null},{archived:false}]},order:[['_id','DESC']]})
+    .then(respondWithResult(res))
+    .catch(handleError(res));
+}
+
 // Gets a single Assessment from the DB
 export function pilot(req, res) {
+  console.log(req.body);
+  if (!req.body.password||req.body.password!==process.env.PASSWORD) {
+    res.status(501).end();
+    return null;
+  }
   //passed in object is req.body
   return Notification.findAll({where: {'$not':{notified:{'$contains':[req.body.pilot]}},'$or':[{archived:null},{archived:false}]},order:[['_id','ASC']]} )
     .then(handleEntityNotFound(res))
