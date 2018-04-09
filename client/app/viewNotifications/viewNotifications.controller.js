@@ -10,9 +10,33 @@ class ViewNotificationsComponent {
     self.mdDialog=$mdDialog;
     self.mdSidenav=$mdSidenav;
     self.http=$http;
+    self.apiPassword="";
+      
+    self.promptForPassword=function(){
+      var confirm = self.mdDialog.prompt()
+          .parent(angular.element(document.body))
+          .title('What is the passwordr?')
+          .textContent('You only need to enter this once per device.  The device will remember until the password is changed.')
+          .placeholder('password')
+          .ariaLabel('password')
+          .initialValue('')
+          .required(true)
+          .ok('Store')
+          .cancel('Cancel');
+          
+      self.mdDialog.show(confirm).then(function(result) {
+        window.localStorage.setItem('api',result);
+        self.apiPassword=result;
+      });
+    };
+    
+    if (window.localStorage.getItem( 'api' )===null||window.localStorage.getItem( 'api' )==="undefined"){
+      self.promptForPassword();
+    }
+    else self.apiPassword=window.localStorage.getItem( 'api' );
     $http.get('/api/pilots').then(function(response){
       self.pilots=response.data;
-      $http.get('/api/notifications').then(function(response){
+      $http.post('/api/notifications/secret',{password:self.apiPassword}).then(function(response){
         self.notifications=response.data;
         self.notifications.forEach(function(notification){
           if (notification.notified) {
@@ -33,6 +57,8 @@ class ViewNotificationsComponent {
             notification.notNotifiedString=notification.notNotified.toString();
           }
         });
+      },function(response){
+        if (response.status===501) self.promptForPassword();
       });
     });
     

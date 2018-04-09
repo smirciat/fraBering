@@ -17,6 +17,30 @@
       self.appConfig=appConfig;
       self.moment=moment;
       self.localAssessments=[];
+      self.apiPassword="";
+      
+      self.promptForPassword=function(){
+        var confirm = self.mdDialog.prompt()
+            .parent(angular.element(document.body))
+            .title('What is the passwordr?')
+            .textContent('You only need to enter this once per device.  The device will remember until the password is changed.')
+            .placeholder('password')
+            .ariaLabel('password')
+            .initialValue('')
+            .required(true)
+            .ok('Store')
+            .cancel('Cancel');
+            
+        self.mdDialog.show(confirm).then(function(result) {
+          window.localStorage.setItem('api',result);
+          self.apiPassword=result;
+        });
+      };
+      
+      if (window.localStorage.getItem( 'api' )===null||window.localStorage.getItem( 'api' )==="undefined"){
+        self.promptForPassword();
+      }
+      else self.apiPassword=window.localStorage.getItem( 'api' );
       if (window.localStorage.getItem( 'assessments' )===null||window.localStorage.getItem( 'assessments' )==="undefined"){
         window.localStorage.setItem('assessments',JSON.stringify([]));
       }
@@ -551,16 +575,20 @@
         else self.assessment.level="level1";
         self.assessment.date=new Date();
         self.assessment.departTimes=self.assessment.times;
+        self.assessment.password=self.apiPassword;
         self.$http.post('/api/assessments', self.assessment)
           .then(function(response){
             self.assessment={};
             self.initAssessment();
           },
           function(response){
-            self.localAssessments.push(self.assessment);
-            window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
-            self.assessment={};
-            self.initAssessment();
+            if (response.status===501) self.promptForPassword();
+            else {
+              self.localAssessments.push(self.assessment);
+              window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
+              self.assessment={};
+              self.initAssessment();
+            }
           }
         );
         
@@ -572,7 +600,7 @@
       if (!self.assessment.pilot||self.assessment.pilot.name==='z') return;
       self.tempPilot=angular.copy(self.assessment.pilot);
       window.localStorage.setItem('pilot',JSON.stringify(self.assessment.pilot));
-      self.$http.post('/api/notifications/pilot',{pilot:self.assessment.pilot.name}).then(function(response){
+      self.$http.post('/api/notifications/pilot',{pilot:self.assessment.pilot.name,password:self.apiPassword}).then(function(response){
         console.log(response.data);
         var notifications=response.data;
         var length=notifications.length;
@@ -605,6 +633,8 @@
         
         showAnother();
         
+      },function(response){
+            if (response.status===501) self.promptForPassword();
       });
       
     }
