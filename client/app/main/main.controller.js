@@ -139,14 +139,14 @@
       self.assessment.tafs[index]="";
       //lookup if airport is at night
       self.initNight(airport,index);
-      if (airport.length!==4) return;
+      if (airport.length<3) return;
       self.$http.get('https://avwx.rest/api/metar/' + airport).then(function(response){
         if (response.data.Error) return;
         
         if ((response.data.Temperature*9/5+32)<self.assessment.equipment.temp) {
             var alert = self.mdDialog.alert({
             title: 'Caution',
-            textContent: 'Check the temperature, it may be too cold for self aircraft',
+            textContent: 'Check the temperature, it may be too cold for this aircraft',
             ok: 'Close'
           });
     
@@ -250,6 +250,12 @@
     changeFlight(ev) {
       var self=this;
       if (!self.assessment.flight||self.assessment.flight==="") return;
+      if (self.assessment.flight.substring(0,2)==="85"&&self.assessment.equipment.name==="Caravan") {
+        self.assessment={};
+        self.init();
+        self.caravanAlert();
+        return;
+      }
     // Appending dialog to document.body to cover sidenav in docs app
     // Modal dialogs should fully cover application
     // to prevent interaction outside of dialog
@@ -418,10 +424,20 @@
           
       self.mdDialog.show(confirm).then(function(result) {
         if (result.length===4){
-          self.assessment.airports.push(result);
-          self.assessment.color.push('md-green');
-          self.assessment.times.push(self.moment().format('HH:mm').toString());
-          self.initAirport(result,self.assessment.airports.length-1,0);
+          if ((result.toUpperCase()==="PASA"||result.toUpperCase()==="PAGM")&&self.assessment.equipment.name==="Caravan") {
+            self.caravanAlert();
+          }
+          else {
+            var index=-1;
+            self.flights.forEach(function(flight,i){
+              if (flight.flightNum===self.assessment.flight) index=i;
+            });
+            if (index>-1) self.flights[index].airports.push(result);
+            self.assessment.airports.push(result);
+            self.assessment.color.push('md-green');
+            self.assessment.times.push(self.moment().format('HH:mm').toString());
+            self.initAirport(result,self.assessment.airports.length-1,0);
+          }
         }
       });
     }
@@ -540,6 +556,19 @@
       var self=this;
       if (self.assessment.night[index]) return "night";
       else return "day";
+    }
+    
+    caravanAlert(){
+      var self=this;
+      var alert = self.mdDialog.alert({
+            title: 'Pick another aircraft',
+            textContent: 'You cannot take a Caravan to Gambell or Savoonga.',
+            ok: 'Close'
+          });
+              
+          self.mdDialog.show(alert).then(function() {
+            
+          });
     }
     
     submit(ev){
