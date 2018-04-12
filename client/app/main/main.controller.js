@@ -250,9 +250,10 @@
     changeFlight(ev) {
       var self=this;
       if (!self.assessment.flight||self.assessment.flight==="") return;
-      if (self.assessment.flight.substring(0,2)==="85"&&self.assessment.equipment.name==="Caravan") {
+      if ((self.assessment.flight.substring(0,2)==="85"||self.assessment.flight.substring(1,3)==="85")
+            &&self.assessment.equipment.name==="Caravan") {
         self.assessment={};
-        self.init();
+        self.initAssessment();
         self.caravanAlert();
         return;
       }
@@ -275,6 +276,12 @@
             .cancel('Cancel');
             
         self.mdDialog.show(confirm).then(function(result) {
+          if (result.substring(1,3)==="85"&&self.assessment.equipment.name==="Caravan") {
+            self.assessment={};
+            self.initAssessment();
+            self.caravanAlert();
+            return;
+          }
           var newFlight={flightNum:result};
           var flightArr=self.flights.filter(function(flight){
             return flight.flightNum===result.slice(-3);
@@ -358,7 +365,7 @@
         }
       },function(){
         self.mdDialog.show(airport).then(function(result) {
-          if (result.length===4){
+          if (result.length>2){
             self.assessment.airports[index]=result;
             self.initAirport(result,index,0);
           }
@@ -396,8 +403,8 @@
             .textContent('Tap True or False')
             .ariaLabel('Freezing Precipitation')
             .targetEvent(ev)
-            .ok('True')
-            .cancel('False');
+            .ok('Yes')
+            .cancel('None');
               
       self.mdDialog.show(confirm).then(function() {
           self.assessment.color[index]="md-red";
@@ -423,7 +430,7 @@
         .cancel('Cancel');
           
       self.mdDialog.show(confirm).then(function(result) {
-        if (result.length===4){
+        if (result.length>2){
           if ((result.toUpperCase()==="PASA"||result.toUpperCase()==="PAGM")&&self.assessment.equipment.name==="Caravan") {
             self.caravanAlert();
           }
@@ -683,6 +690,11 @@
     checkPilot(name){
       var self=this;
       return name===self.tempPilot.name;
+    }
+    
+    freezeResult(bool){
+      if (bool) return 'Yes';
+      return 'None';
     }
     
   }

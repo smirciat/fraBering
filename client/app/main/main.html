@@ -131,7 +131,7 @@
           <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
             <md-button class="md-raised" ng-class="main.freezingClass($index)" flex 
                ng-click="main.openChangeMenu($mdMenu, $event)">
-                  Freezing Precip<br>{{main.assessment.freezingPrecipitations[$index]}}
+                  Freezing Precip<br>{{main.freezeResult(main.assessment.freezingPrecipitations[$index])}}
             </md-button>
             <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
               <md-menu-item>
