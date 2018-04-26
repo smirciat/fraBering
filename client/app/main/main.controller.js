@@ -16,6 +16,7 @@
       self.timeout=$timeout;
       self.appConfig=appConfig;
       self.moment=moment;
+      moment.tz.setDefault("America/Anchorage");
       self.localAssessments=[];
       self.apiPassword="";
       
@@ -140,65 +141,61 @@
       //lookup if airport is at night
       self.initNight(airport,index);
       if (airport.length<3) return;
-      self.$http.get('https://avwx.rest/api/metar/' + airport).then(function(response){
-        if (response.data.Error) return;
-        
-        if ((response.data.Temperature*9/5+32)<self.assessment.equipment.temp) {
-            var alert = self.mdDialog.alert({
-            title: 'Caution',
-            textContent: 'Check the temperature, it may be too cold for this aircraft',
-            ok: 'Close'
-          });
-    
-          self.mdDialog
-            .show( alert )
-            .finally(function() {
-              alert = undefined;
-            }); 
-        }
-        self.assessment.metars[index]=response.data['Raw-Report'];
-        var len = response.data['Cloud-List'].length;
-        if (len===0) self.assessment.ceilings[index]='10000';
-        else if (len>-1&&(response.data['Cloud-List'][0][0]==='BKN'||response.data['Cloud-List'][0][0]==='OVC'||response.data['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=response.data['Cloud-List'][0][1]+'00';
-        else if (len>=2&&(response.data['Cloud-List'][1][0]==='BKN'||response.data['Cloud-List'][1][0]==='OVC'||response.data['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=response.data['Cloud-List'][1][1]+'00';
-        else if (len>=3&&(response.data['Cloud-List'][2][0]==='BKN'||response.data['Cloud-List'][2][0]==='OVC'||response.data['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=response.data['Cloud-List'][2][1]+'00';
-        else if (len>=4&&(response.data['Cloud-List'][3][0]==='BKN'||response.data['Cloud-List'][3][0]==='OVC'||response.data['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=response.data['Cloud-List'][3][1]+'00';
-        else self.assessment.ceilings[index]='10000';
-        self.assessment.ceilings[index] = self.assessment.ceilings[index].replace(/^0+/, '');
-        if (response.data['Wind-Gust']==="") self.assessment.windGusts[index]=response.data['Wind-Speed'];
-        else self.assessment.windGusts[index]=response.data['Wind-Gust'];
-        self.assessment.visibilities[index]=response.data.Visibility;
-        if (self.assessment.visibilities[index].includes('/')) {
-          var bits = self.assessment.visibilities[index].split("/");
-          self.assessment.visibilities[index] = parseInt(bits[0],10)/parseInt(bits[1],10);
-        }
-        self.assessment.visibilities[index]=parseFloat(self.assessment.visibilities[index]);
-        self.$http.post('/api/assessments/lookup',{airport:airport}).then(function(res){
-          if (res.data.length>0){
-            var i = res.data[0].airports.indexOf(airport);
-            if (i>-1) {
-              if (res.data[0].runwayConditions[i]) self.assessment.runwayConditions[index]=res.data[0].runwayConditions[i];
+      self.$http.post('/api/airportRequirements/adds',{airport:airport}).then(function(response){
+        console.log(response.data)
+        var metar=response.data;
+        if (metar) {
+          var metarObj=self.parseADDS(metar);
+          if ((metarObj.Temperature*9/5+32)<self.assessment.equipment.temp) {
+              var alert = self.mdDialog.alert({
+              title: 'Caution',
+              textContent: 'Check the temperature, it may be too cold for this aircraft',
+              ok: 'Close'
+            });
+      
+            self.mdDialog
+              .show( alert )
+              .finally(function() {
+                alert = undefined;
+              }); 
+          }
+          self.assessment.metars[index]=metarObj['Raw-Report'];
+          var len = metarObj['Cloud-List'].length;
+          if (len===0) self.assessment.ceilings[index]='10000';
+          else if (len>-1&&(metarObj['Cloud-List'][0][0]==='BKN'||metarObj['Cloud-List'][0][0]==='OVC'||metarObj['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=metarObj['Cloud-List'][0][1]+'00';
+          else if (len>=2&&(metarObj['Cloud-List'][1][0]==='BKN'||metarObj['Cloud-List'][1][0]==='OVC'||metarObj['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=metarObj['Cloud-List'][1][1]+'00';
+          else if (len>=3&&(metarObj['Cloud-List'][2][0]==='BKN'||metarObj['Cloud-List'][2][0]==='OVC'||metarObj['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=metarObj['Cloud-List'][2][1]+'00';
+          else if (len>=4&&(metarObj['Cloud-List'][3][0]==='BKN'||metarObj['Cloud-List'][3][0]==='OVC'||metarObj['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=metarObj['Cloud-List'][3][1]+'00';
+          else self.assessment.ceilings[index]='10000';
+          self.assessment.ceilings[index] = self.assessment.ceilings[index].replace(/^0+/, '');
+          if (metarObj['Wind-Gust']==="") self.assessment.windGusts[index]=metarObj['Wind-Speed'];
+          else self.assessment.windGusts[index]=metarObj['Wind-Gust'];
+          self.assessment.visibilities[index]=metarObj.Visibility;
+          if (self.assessment.visibilities[index].includes('/')) {
+            var bits = self.assessment.visibilities[index].split("/");
+            self.assessment.visibilities[index] = parseInt(bits[0],10)/parseInt(bits[1],10);
+          }
+          self.assessment.visibilities[index]=parseFloat(self.assessment.visibilities[index]);
+          self.$http.post('/api/assessments/lookup',{airport:airport}).then(function(res){
+            if (res.data.length>0){
+              var i = res.data[0].airports.indexOf(airport);
+              if (i>-1) {
+                if (res.data[0].runwayConditions[i]) self.assessment.runwayConditions[index]=res.data[0].runwayConditions[i];
+                else self.assessment.runwayConditions[index]=5;
+              }
               else self.assessment.runwayConditions[index]=5;
             }
             else self.assessment.runwayConditions[index]=5;
-          }
-          else self.assessment.runwayConditions[index]=5;
-        });
-        self.assessment.freezingPrecipitations[index]=false;
-        if (response.data['Other-List'].length>0) {
-          response.data['Other-List'].forEach(function(item){
-            var i=item.replace(/[^a-zA-Z]/g, "");
-            if (i.substring(0,2)==="FZ") self.assessment.freezingPrecipitations[index]=true;
           });
+          self.assessment.freezingPrecipitations[index]=false;
+          if (metarObj['Other-List'].length>0) {
+            metarObj['Other-List'].forEach(function(item){
+              var i=item.replace(/[^a-zA-Z]/g, "");
+              if (i.substring(0,2)==="FZ") self.assessment.freezingPrecipitations[index]=true;
+            });
+          }
         }
-      },function(response){
-        if (response.status===500){
-          self.timeout(function(){
-            if (count<6) self.initAirport(airport,index,count);
-          },20000);
-        }
-        else self.assessment.metars[index]="";
-      });
+      },function(response){console.log(response)});
       if (airport.toUpperCase()=="PAOM"||airport.toUpperCase()=="PAOT"||
           airport.toUpperCase()=="PAUN"||airport.toUpperCase()=="PANC"||airport.toUpperCase()=="PAGA") {
         self.$http.get('https://avwx.rest/api/taf/' + airport).then(function(response){
@@ -214,6 +211,64 @@
           else self.assessment.tafs[index]="";
         });
       }
+    }
+    
+    parseADDS(metar){
+      var self=this;
+      var obs={};
+      obs['Raw-Report']=metar;
+      var metarArray=metar.split(' ');
+      var tempMetar=metarArray.shift();//identifier
+      if (tempMetar==="METAR"||tempMetar==="SPECI") metarArray.shift();//if prefaced by 'METAR'
+      metarArray.shift();//date/time
+      obs.wind=metarArray.shift();//wind
+      if (obs.wind==="AUTO"||obs.wind==="SPECI") obs.wind=metarArray.shift();//if there is AUTO of SPECI, remove it
+      obs['Wind-Direction']=obs.wind.substring(0,3);
+      var windArr=obs.wind.substring(3).split('G');
+      obs['Wind-Speed']=windArr[0].replace(/[^0-9]/g, '');
+      if (windArr.length>1) obs['Wind-Gust']=windArr[1].replace(/[^0-9]/g, '');
+      else obs['Wind-Gust']="";
+      obs.vis=metarArray.shift();//visibility
+      if (obs.vis.split('V').length>1&&obs.vis.split('V')[0].length===3&&obs.vis.split('V')[1].length===3) obs.vis=metarArray.shift();//variable winds, ignore
+      var visArray=obs.vis.split('/');
+      if (visArray.length>1) obs.Visibility=visArray[0].replace(/[^0-9]/g, '') + '/' + visArray[1].replace(/[^0-9]/g, '');
+      else obs.Visibility=obs.vis.replace(/[^0-9]/g, '');//remove leading M and trailing SM
+      obs['Other-List']=[];
+      obs['Cloud-List']=[];
+      var unknown=metarArray.shift();//let's test this
+      var test=(unknown.split('/').length<2)||unknown.substring(0,1)==='R';
+      while (test){//when this is 2, we are on the temperature section
+        if (self.testSky(unknown)) {
+          var cloudArr=[];
+          cloudArr.push(unknown.substring(0,3));
+          if (cloudArr[0].substring(0.3)!=="CLR") {
+            if (cloudArr[0].substring(0.2)==="VV") {
+              cloudArr[0]="VV";
+              cloudArr.push(unknown.substring(2))
+            }
+            else {
+              cloudArr.push(unknown.substring(3))
+            }
+          }
+          obs['Cloud-List'].push(cloudArr);
+        }
+        else {
+          obs['Other-List'].push(unknown);
+        }
+        unknown=metarArray.shift();
+        if (unknown.substring(0,1)!=='A'&&unknown.substring(0,3)!=='RMK') test=(unknown.split('/').length<2)||unknown.substring(0,1)==='R';
+        else test=false;
+      }
+      obs.tempDew=unknown;
+      obs.Temperature=obs.tempDew.split('/')[0];
+      if (obs.Temperature.substring(0,1)==="M") obs.Temperature="-" + obs.Temperature.substring(1);
+      return obs;
+    }
+    
+    testSky(str) {
+      var skyArr=["VV","CL","FE","BK","OV","SC"];
+      if (skyArr.indexOf(str.substring(0,2))<0) return false;
+      return true;
     }
     
     $onInit() {
@@ -366,8 +421,13 @@
       },function(){
         self.mdDialog.show(airport).then(function(result) {
           if (result.length>2){
-            self.assessment.airports[index]=result;
-            self.initAirport(result,index,0);
+            if ((result.toUpperCase()==="PASA"||result.toUpperCase()==="PAGM")&&self.assessment.equipment.name==="Caravan") {
+                self.caravanAlert();
+            }
+            else {
+              self.assessment.airports[index]=result;
+              self.initAirport(result,index,0);
+            }
           }
         });
       });
@@ -400,7 +460,7 @@
       var confirm = self.mdDialog.confirm({clickOutsideToClose: true})
             .parent(angular.element(document.body))
             .title('Is there Freezing Precipitation for ' + self.assessment.airports[index]  + '?')
-            .textContent('Tap True or False')
+            .textContent('Tap "Yes" or "None"')
             .ariaLabel('Freezing Precipitation')
             .targetEvent(ev)
             .ok('Yes')

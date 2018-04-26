@@ -13,6 +13,7 @@ class TimeclockComponent {
     self.User=User;
     self.appConfig=appConfig;
     self.moment=moment;
+    moment.tz.setDefault("America/Anchorage");
     self.timesheets=[];
     self.employees=[];
     self.whosClockedIn=[];
@@ -106,6 +107,10 @@ class TimeclockComponent {
       var self=this;
       self.http.post('/api/timesheets/all',{uid:self.user()._id,date:self.startDate.toDate(),endDate:self.endDate.toDate()}).then(function(response){
         self.timesheets=response.data;
+        self.timesheets.forEach(timesheet=>{
+          timesheet.timeIn=self.moment(timesheet.timeIn);
+          timesheet.timeOut=self.moment(timesheet.timeOut);
+        });
         if (uid>0) self.timesheets = self.timesheets.filter(function(ts){
           return ts.uid===uid;
         });
@@ -251,6 +256,9 @@ class TimeclockComponent {
       if (timesheet.regularHours+timesheet.otHours>18) {
         self.quickMessage('Possible failure to clock out, please double check times!');
       }
+      timesheet.timeIn=self.moment(timesheet.timeIn+ ' GMT-0800').toDate();
+      if (timesheet.timeOut&&timesheet.timeOut!=="Invalid Date") timesheet.timeOut=self.moment(timesheet.timeOut+ ' GMT-0800').toDate();
+      if (timesheet.timeOut==="Invalid Date") timesheet.timeOut=undefined;
       if (timesheet._id){
         self.http.put('/api/timesheets/' + timesheet._id,timesheet).then(function(){
           self.getCurrent();

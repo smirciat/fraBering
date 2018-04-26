@@ -23,7 +23,8 @@
     "components-font-awesome": "^4.7.0",
     "angular-moment": "^1.2.0",
     "angularPrint": "^0.3.8",
-    "bootswatch-dist": "spacelab"
+    "bootswatch-dist": "spacelab",
+    "moment-timezone": "^0.5.16"
   },
   "devDependencies": {
     "angular-mocks": "~1.5.11"
