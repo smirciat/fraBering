@@ -21,7 +21,7 @@
     "angular-ui-router": "~0.4.0",
     "angular-validation-match": "~1.5.2",
     "components-font-awesome": "^4.7.0",
-    "angular-moment": "^1.2.0",
+    "angular-moment": "^1.0.1",
     "angularPrint": "^0.3.8",
     "bootswatch-dist": "spacelab",
     "moment-timezone": "^0.5.16"

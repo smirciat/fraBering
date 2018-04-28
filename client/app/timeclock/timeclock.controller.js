@@ -52,13 +52,13 @@ class TimeclockComponent {
       if (self.user()&&self.user()._id){
         self.setApi();
         self.http.post('/api/timesheets/current',{uid:self.user()._id}).then(function(response){
-          
           if (response.data.length===0){
             self.in=false;
             self.hours=0;
           }
           else{
             self.current = response.data[0];
+            self.current.timeIn=self.moment(self.current.timeIn);
             self.in=true;
             var end = self.moment();
             self.hours = self.moment.duration(end.diff(self.moment(self.current.timeIn))).asHours();
@@ -109,7 +109,7 @@ class TimeclockComponent {
         self.timesheets=response.data;
         self.timesheets.forEach(timesheet=>{
           timesheet.timeIn=self.moment(timesheet.timeIn);
-          timesheet.timeOut=self.moment(timesheet.timeOut);
+          if (timesheet.timeOut) timesheet.timeOut=self.moment(timesheet.timeOut);
         });
         if (uid>0) self.timesheets = self.timesheets.filter(function(ts){
           return ts.uid===uid;
@@ -199,8 +199,16 @@ class TimeclockComponent {
       var self=this;
       var timeOut;
       var dayLength = 10;
+      if (typeof timesheet.timeIn==='string') {
+        timesheet.timeIn+=" GMT-0800";
+        timesheet.timeIn=self.moment(timesheet.timeIn)
+      }
       //if (self.appConfig.eightHourEmployees.indexOf(timesheet.uid) > -1) dayLength=8;
-      if (timesheet.timeOut) {
+      if (timesheet.timeOut&&timesheet.timeOut!=="") {
+        if (typeof timesheet.timeOut==='string') {
+          timesheet.timeOut+=" GMT-0800";
+          timesheet.timeOut=self.moment(timesheet.timeOut)
+        }
         timeOut = self.moment(timesheet.timeOut);
         timesheet.regularHours =  self.moment.duration(timeOut.diff(self.moment(timesheet.timeIn))).asHours();
         timesheet.otHours = 0;
@@ -245,10 +253,15 @@ class TimeclockComponent {
           self.commit(timesheet);
         });
       }
-      else self.commit(timesheet);
+      else {
+        console.log(timesheet.timeIn)
+        timesheet.timeOut===null;
+        self.commit(timesheet);
+      }
     };
     
     commit(timesheet) {
+      console.log(timesheet)
       var self=this;
       if (timesheet.otHours+timesheet.regularHours<0) {
         return self.quickMessage('Error in Times, total hours cannot be negative');
@@ -256,9 +269,9 @@ class TimeclockComponent {
       if (timesheet.regularHours+timesheet.otHours>18) {
         self.quickMessage('Possible failure to clock out, please double check times!');
       }
-      timesheet.timeIn=self.moment(timesheet.timeIn+ ' GMT-0800').toDate();
-      if (timesheet.timeOut&&timesheet.timeOut!=="Invalid Date") timesheet.timeOut=self.moment(timesheet.timeOut+ ' GMT-0800').toDate();
-      if (timesheet.timeOut==="Invalid Date") timesheet.timeOut=undefined;
+      timesheet.timeIn=self.moment(timesheet.timeIn).toDate();
+      if (timesheet.timeOut&&timesheet.timeOut!=="Invalid Date") timesheet.timeOut=self.moment(timesheet.timeOut).toDate();
+      else timesheet.timeOut=null;
       if (timesheet._id){
         self.http.put('/api/timesheets/' + timesheet._id,timesheet).then(function(){
           self.getCurrent();

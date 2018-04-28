@@ -142,9 +142,8 @@
       self.initNight(airport,index);
       if (airport.length<3) return;
       self.$http.post('/api/airportRequirements/adds',{airport:airport}).then(function(response){
-        console.log(response.data)
         var metar=response.data;
-        if (metar) {
+        if (metar&&metar!=="") {
           var metarObj=self.parseADDS(metar);
           if ((metarObj.Temperature*9/5+32)<self.assessment.equipment.temp) {
               var alert = self.mdDialog.alert({
@@ -230,9 +229,17 @@
       else obs['Wind-Gust']="";
       obs.vis=metarArray.shift();//visibility
       if (obs.vis.split('V').length>1&&obs.vis.split('V')[0].length===3&&obs.vis.split('V')[1].length===3) obs.vis=metarArray.shift();//variable winds, ignore
+      if (obs.vis.slice(-2)!=="SM") obs.vis = obs.vis + ' ' + metarArray.shift();//this covers visibilities such as "1 3/4SM"
       var visArray=obs.vis.split('/');
-      if (visArray.length>1) obs.Visibility=visArray[0].replace(/[^0-9]/g, '') + '/' + visArray[1].replace(/[^0-9]/g, '');
+      if (visArray.length>1) obs.Visibility=visArray[0].replace(/[^0-9 ]/g, '') + '/' + visArray[1].replace(/[^0-9]/g, '');
       else obs.Visibility=obs.vis.replace(/[^0-9]/g, '');//remove leading M and trailing SM
+      visArray=obs.Visibility.split(' ');
+      if (visArray.length>1) {//turn 1 1/2 into 3/2
+        var number = parseInt(visArray[0],10);
+        var top = parseInt(visArray[1].substring(0,1),10);
+        var bottom = parseInt(visArray[1].slice(-1),10);
+        obs.Visibility= (top+number*bottom) + '/' + bottom;
+      }
       obs['Other-List']=[];
       obs['Cloud-List']=[];
       var unknown=metarArray.shift();//let's test this

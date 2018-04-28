@@ -12,7 +12,6 @@
 import _ from 'lodash';
 import {AirportRequirement} from '../../sqldb';
 const axios = require("axios");
-var parser = require('xml2js').parseString;;
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -125,16 +124,8 @@ export function adds(req,res) {
   url="https://api.mesowest.net/v2/stations/timeseries?stid=" + airport  + "&recent=70&vars=metar&obtimezone=UTC&token=" + process.env.TOKEN;
   axios.get(url)
   .then(response => {
-    console.log(response.data.STATION[0])
     var index=response.data.STATION[0].OBSERVATIONS.metar_set_1.length-1;
     res.json(response.data.STATION[0].OBSERVATIONS.metar_set_1[index]);
-    //parser(response.data, function (err, result) {
-    //    if (err) {
-    //      console.log(err);
-    //      throw err;
-    //    }
-    //    res.json(result.response.data[0].METAR[0]['raw_text'][0]);
-    //});
     
   },handleError(res));  
 }
