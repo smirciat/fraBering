@@ -1,0 +1,16 @@
+<md-dialog aria-label="options dialog">
+    <md-dialog-content layout-padding>
+      <div layout="row">
+          <h2 class="md-title">Choose Airports to Add</h2>
+          <md-button class="md-raised md-primary" ng-click="answer()">Submit</md-button>
+      </div>
+      <md-select ng-model="dialogAirports" placeholder="Choose" multiple>
+        <md-option class="dialog-options" ng-value="airport.icao" ng-repeat="airport in main.airports | orderBy: 'name'">
+            {{airport.name + ': ' + airport.icao}}</md-option>
+      </md-select>
+    </md-dialog-content>
+    <md-dialog-actions>
+      <span flex></span>
+      <md-button class="md-raised md-primary" ng-click="answer()">Submit</md-button>
+    </md-dialog-actions>
+</md-dialog>

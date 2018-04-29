@@ -124,8 +124,18 @@ export function adds(req,res) {
   url="https://api.mesowest.net/v2/stations/timeseries?stid=" + airport  + "&recent=70&vars=metar&obtimezone=UTC&token=" + process.env.TOKEN;
   axios.get(url)
   .then(response => {
-    var index=response.data.STATION[0].OBSERVATIONS.metar_set_1.length-1;
-    res.json(response.data.STATION[0].OBSERVATIONS.metar_set_1[index]);
+    var jsonResponse;
+    if (!response.data.STATION) jsonResponse="";
+    else {
+      if (response.data.STATION[0]) {
+        var index=response.data.STATION[0].OBSERVATIONS.metar_set_1.length-1;
+        jsonResponse=response.data.STATION[0].OBSERVATIONS.metar_set_1[index];
+      }
+      else {
+        jsonResponse="missing";
+      }
+    }
+    res.json(jsonResponse);
     
   },handleError(res));  
 }

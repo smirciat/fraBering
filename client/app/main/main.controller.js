@@ -18,6 +18,7 @@
       self.moment=moment;
       moment.tz.setDefault("America/Anchorage");
       self.localAssessments=[];
+      self.dialogAirports=[];
       self.apiPassword="";
       
       self.promptForPassword=function(){
@@ -143,19 +144,26 @@
       if (airport.length<3) return;
       self.$http.post('/api/airportRequirements/adds',{airport:airport}).then(function(response){
         var metar=response.data;
+        if (metar==="missing") {
+          console.log('Metar missing');
+          if (count<6) {
+            self.timeout(function(){self.initAirport(airport,index,count)},20000);
+          }
+          return;
+        }
         if (metar&&metar!=="") {
           var metarObj=self.parseADDS(metar);
           if ((metarObj.Temperature*9/5+32)<self.assessment.equipment.temp) {
               var alert = self.mdDialog.alert({
-              title: 'Caution',
-              textContent: 'Check the temperature, it may be too cold for this aircraft',
-              ok: 'Close'
-            });
+                title: 'Caution',
+                textContent: 'Check the temperature, it may be too cold for this aircraft',
+                ok: 'Close'
+              });
       
-            self.mdDialog
-              .show( alert )
-              .finally(function() {
-                alert = undefined;
+              self.mdDialog
+                .show( alert )
+                .finally(function() {
+                  alert = undefined;
               }); 
           }
           self.assessment.metars[index]=metarObj['Raw-Report'];
@@ -251,10 +259,10 @@
           if (cloudArr[0].substring(0.3)!=="CLR") {
             if (cloudArr[0].substring(0.2)==="VV") {
               cloudArr[0]="VV";
-              cloudArr.push(unknown.substring(2))
+              cloudArr.push(unknown.substring(2));
             }
             else {
-              cloudArr.push(unknown.substring(3))
+              cloudArr.push(unknown.substring(3));
             }
           }
           obs['Cloud-List'].push(cloudArr);
@@ -484,21 +492,19 @@
     
     addAirport(ev){
       var self=this;
-      var confirm = self.mdDialog.prompt({clickOutsideToClose: true})
-        .parent(angular.element(document.body))
-        .title('What is the new airport?')
-        .textContent('Enter a four letter airport code')
-        .placeholder('Airport')
-        .ariaLabel('Airport')
-        .initialValue('')
-        .targetEvent(ev)
-        .required(true)
-        .ok('OK')
-        .cancel('Cancel');
-          
-      self.mdDialog.show(confirm).then(function(result) {
-        if (result.length>2){
-          if ((result.toUpperCase()==="PASA"||result.toUpperCase()==="PAGM")&&self.assessment.equipment.name==="Caravan") {
+      self.mdDialog.show({
+        controller: self.DialogController,
+        templateUrl: 'app/main/addAirport.html',
+        parent: angular.element(document.body),
+        scope: self.scope,
+        preserveScope: true,
+        targetEvent: ev,
+        clickOutsideToClose:true,
+        fullscreen: true
+      })
+      .then(function(addedAirports) {
+        addedAirports.forEach(function(airport){
+          if ((airport.toUpperCase()==="PASA"||airport.toUpperCase()==="PAGM")&&self.assessment.equipment.name==="Caravan") {
             self.caravanAlert();
           }
           else {
@@ -506,14 +512,21 @@
             self.flights.forEach(function(flight,i){
               if (flight.flightNum===self.assessment.flight) index=i;
             });
-            if (index>-1) self.flights[index].airports.push(result);
-            self.assessment.airports.push(result);
+            if (index>-1) self.flights[index].airports.push(airport);
+            self.assessment.airports.push(airport);
             self.assessment.color.push('md-green');
             self.assessment.times.push(self.moment().format('HH:mm').toString());
-            self.initAirport(result,self.assessment.airports.length-1,0);
+            self.initAirport(airport,self.assessment.airports.length-1,0);
           }
-        }
+        });
       });
+    }
+    
+    DialogController($scope, $mdDialog) {
+      $scope.dialogAirports=[];
+      $scope.answer=function(){
+        $mdDialog.hide($scope.dialogAirports);
+      };
     }
     
     openChangeMenu(mdMenu,ev){
@@ -681,21 +694,40 @@
         self.assessment.password=self.apiPassword;
         self.$http.post('/api/assessments', self.assessment)
           .then(function(response){
-            self.assessment={};
-            self.initAssessment();
+            self.alertSubmitSuccess();
           },
           function(response){
             if (response.status===501) self.promptForPassword();
             else {
               self.localAssessments.push(self.assessment);
               window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
-              self.assessment={};
-              self.initAssessment();
+              self.alertSubmitSuccess();
             }
           }
         );
         
       }
+    }
+    
+    clear(){
+      var self=this;
+      self.assessment={};
+      self.initAssessment();
+    }
+    
+    alertSubmitSuccess(){
+      var self=this;
+      var alert = self.mdDialog.alert({
+        title: 'Success!',
+        htmlContent: 'Your Flight Risk Assessment has been successfully submitted.<br> To clear the assessment, click the purple "Clear Assessment" button',
+        ok: 'Close'
+      });
+
+      self.mdDialog
+        .show( alert )
+        .finally(function() {
+          alert = undefined;
+      }); 
     }
     
     checkNotifications(ev){
