@@ -24,7 +24,7 @@
       self.promptForPassword=function(){
         var confirm = self.mdDialog.prompt()
             .parent(angular.element(document.body))
-            .title('What is the passwordr?')
+            .title('What is the password?')
             .textContent('You only need to enter this once per device.  The device will remember until the password is changed.')
             .placeholder('password')
             .ariaLabel('password')
@@ -493,7 +493,7 @@
     addAirport(ev){
       var self=this;
       self.mdDialog.show({
-        controller: self.DialogController,
+        controller: 'DialogController',
         templateUrl: 'app/main/addAirport.html',
         parent: angular.element(document.body),
         scope: self.scope,
@@ -520,13 +520,6 @@
           }
         });
       });
-    }
-    
-    DialogController($scope, $mdDialog) {
-      $scope.dialogAirports=[];
-      $scope.answer=function(){
-        $mdDialog.hide($scope.dialogAirports);
-      };
     }
     
     openChangeMenu(mdMenu,ev){
@@ -804,4 +797,20 @@
       controller: MainController,
       controllerAs: 'main'
     });
+})();
+
+(function() {
+
+angular.module('workspaceApp')
+    .controller('DialogController', DialogController);
+
+  DialogController.$inject = ['$scope', '$mdDialog'];
+  
+  function DialogController($scope, $mdDialog) {
+        $scope.dialogAirports=[];
+        $scope.answer=function(){
+          $mdDialog.hide($scope.dialogAirports);
+        };
+      
+  }
 })();

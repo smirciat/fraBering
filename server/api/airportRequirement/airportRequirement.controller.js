@@ -117,11 +117,10 @@ export function destroy(req, res) {
 }
 
 export function adds(req,res) {
-  if (!req.body.airport) res.status(404).end();
+  if (!req.body||!req.body.airport||req.body.airport==="") res.status(404).end();
   var airport=req.body.airport;
-  //var url="https://www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecent=true&stationString="+airport;
-  var url="https://api.weather.gov/stations/" + airport + "/observations/current";
-  url="https://api.mesowest.net/v2/stations/timeseries?stid=" + airport  + "&recent=70&vars=metar&obtimezone=UTC&token=" + process.env.TOKEN;
+  var url="https://api.mesowest.net/v2/stations/timeseries?stid=" + airport  
+      + "&recent=70&vars=metar&obtimezone=UTC&token=" + process.env.TOKEN;
   axios.get(url)
   .then(response => {
     var jsonResponse;
