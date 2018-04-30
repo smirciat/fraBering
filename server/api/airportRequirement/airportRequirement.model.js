@@ -14,6 +14,8 @@ export default function(sequelize, DataTypes) {
       type:DataTypes.BOOLEAN,
       defaultValue:false
     },
+    baseGroup: DataTypes.STRING,
+    runways: DataTypes.ARRAY(DataTypes.INTEGER),
     latitude: DataTypes.STRING,
     longitude: DataTypes.STRING,
     visibilityRequirement: {

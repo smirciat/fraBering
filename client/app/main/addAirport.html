@@ -1,15 +1,29 @@
 <md-dialog aria-label="options dialog">
     <md-dialog-content layout-padding>
       <div layout="row">
-          <h2 class="md-title">Choose Airports to Add</h2>
+          <h2 class="md-title">Click below for a pulldown list of airports</h2>
           <md-button class="md-raised md-primary" ng-click="answer()">Submit</md-button>
       </div>
       <md-select ng-model="dialogAirports" placeholder="Choose" multiple>
-        <md-option class="dialog-options" ng-value="airport.icao" ng-repeat="airport in main.airports | orderBy: 'name'">
-            {{airport.name + ': ' + airport.icao}}</md-option>
+        <md-optgroup label="Kotzebue">
+          <md-option class="dialog-options" ng-value="airport.icao" ng-repeat="airport in main.airports | 
+              orderBy:'-longitude' | filter: {baseGroup:'PAOT'} ">
+                  {{airport.name + ': ' + airport.icao}}</md-option>
+        </md-optgroup>
+        <md-optgroup label="Nome">
+          <md-option class="dialog-options" ng-value="airport.icao" ng-repeat="airport in main.airports | 
+              orderBy:'-longitude' | filter: {baseGroup:'PAOM'} ">
+                  {{airport.name + ': ' + airport.icao}}</md-option>
+        </md-optgroup>
+        <md-optgroup label="Unalakleet">
+          <md-option class="dialog-options" ng-value="airport.icao" ng-repeat="airport in main.airports | 
+              orderBy:'-longitude' | filter: {baseGroup:'PAUN'} ">
+                  {{airport.name + ': ' + airport.icao}}</md-option>
+        </md-optgroup>
       </md-select>
     </md-dialog-content>
     <md-dialog-actions>
+      <md-button class="md-raised md-accent" ng-click="manual()">Manual Entry</md-button>
       <span flex></span>
       <md-button class="md-raised md-primary" ng-click="answer()">Submit</md-button>
     </md-dialog-actions>

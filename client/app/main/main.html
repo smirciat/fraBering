@@ -95,7 +95,7 @@
           <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
             <md-button class="md-raised" ng-class="main.windClass($index)" flex 
                ng-click="main.openChangeMenu($mdMenu, $event)">
-                  Wind Gust<br>{{main.assessment.windGusts[$index]}}
+                  Wind Gust / XWind<br>{{main.assessment.windGusts[$index]+' / '+main.assessment.crossWinds[$index]}}
             </md-button>
             <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
               <md-menu-item>
@@ -161,8 +161,8 @@
     <div ng-if="main.pixelRatio(3)" hide-gt-xs flex="1"></div>
     <div ng-if="main.assessment.flight" layout="row" flex="10">
       <md-button class="md-raised md-warn" flex ng-click="main.addAirport($event)">Add Airport</md-button>
-      <md-button flex></md-button>
-      <md-button class="md-raised md-purple" flex ng-click="main.clear()">Clear Assessment</md-button>
+      <md-button class="md-raised md-purple" flex ng-click="main.changeFlight($event)">Refresh Assessment</md-button>
+      <md-button class="md-raised md-accent" flex ng-click="main.clear()">Clear Assessment</md-button>
       <md-button class="md-raised md-primary" flex ng-click="main.submit($event)">Submit Assessment</md-button>
     </div>
   </div>

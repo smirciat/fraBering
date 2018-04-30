@@ -13,6 +13,8 @@
                 <th>Ceiling Requirement</th>
                 <th>Lat</th>
                 <th>Lon</th>
+                <th>Base Group</th>
+                <th>Runways</th>
                 <th></th>
                 <th></th>
             </tr>
@@ -26,6 +28,8 @@
                 <td><input class="form-control" ng-model="airports.newAirport.ceilingRequirementString" type="text"></td>
                 <td><input class="form-control" ng-model="airports.newAirport.latitude" type="text"></td>
                 <td><input class="form-control" ng-model="airports.newAirport.longitude" type="text"></td>
+                <td><input class="form-control" ng-model="airports.newAirport.baseGroup" type="text"></td>
+                <td><input class="form-control" ng-model="airports.newAirport.runways" type="text"></td>
                 <td><a href="#" ng-click="airports.cancel()"><button class="btn btn-danger">Cancel</button></a></td>
                 <td><button class="btn btn-success" ng-click="airports.update(airports.newAirport)">Add/Update</button></a></td>
             </tr>
