@@ -9,8 +9,8 @@ exports = module.exports = {
   equipment:[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50},
        {id:2,name:"Navajo",wind:40,xwind:30,temp:-35},
        {id:3,name:"Casa",wind:35,xwind:25,temp:-50},
-       {id:4,name:"King Air",wind:40,xwind:30,temp:-50},
-       {id:5,name:"1900",wind:40,xwind:30, temp:-50}],
+       {id:4,name:"King Air",wind:40,xwind:35,temp:-50},
+       {id:5,name:"1900",wind:40,xwind:35, temp:-50}],
   
   flights:[
     {  flightNum:'605', airports:['PAOT','PAOM'], daysOfWeek:[1,2,3,4,5], departTimes:['17:30','18:45']},

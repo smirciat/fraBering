@@ -11,6 +11,23 @@ and (min-width : 1224px) {
   }
 }
 
+@media only screen 
+and (max-width : 640px) 
+and (min-width : 481px) {
+  .md-button{
+    font-weight:bold;
+    font-size:75%;
+  }
+}
+
+@media only screen 
+and (max-width : 480px) {
+  .md-button{
+    font-weight:bold;
+    font-size:65%;
+  }
+}
+
 .md-tooltip{
   font-size:100%;
 }
