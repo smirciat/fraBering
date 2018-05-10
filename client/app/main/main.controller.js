@@ -20,11 +20,20 @@
       self.localAssessments=[];
       self.dialogAirports=[];
       self.apiPassword="";
+      this.submitDisabled=false;
+      self.fourteenHours=$interval(function(){
+        self.init();
+      },50400000);//each 14 hours
+      self.scrape=$interval(function(){
+        self.scrapeStorage();
+      },1800000);//each 30 minutes
       
       $scope.$on(
           "$destroy",
           function( event ) {
               $timeout.cancel( self.timer );
+              $interval.cancel(self.fourteenHours);
+              $interval.cancel(self.scrape);
           }
       );
       
@@ -55,10 +64,6 @@
       }
       else self.localAssessments=JSON.parse(window.localStorage.getItem( 'assessments' ));
       
-      self.scrapeStorage();
-      $interval(function(){
-        self.scrapeStorage();
-      },1800000);//each 30 minutes
     }
     
     scrapeStorage(){
@@ -73,7 +78,7 @@
               window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
             },
             function(response){//fail
-              console.log(response)
+              console.log(response);
             });
         });
       }
@@ -249,11 +254,7 @@
           self.assessment.tafs[index]=response.data['Raw-Report'];
           var year=self.moment().tz('UTC').year();
           var month=self.moment().tz('UTC').month()+1;
-          var day=self.moment().tz('UTC').date();
-          var hour=self.moment().tz('UTC').hour();
-          var forecastMonth,forecastDay,forecastHour,monthStr,dayStr,hourStr,initialForecastTime;
-          var visibility=10;
-          var icing=false;
+          var forecastMonth,monthStr,dayStr,hourStr,initialForecastTime;
           var scheduledTime=self.assessment.times[index];
           if (index===0) scheduledTime=self.assessment.times[self.assessment.times.length-1];
           var scheduledTimeArr=scheduledTime.split(':');
@@ -262,9 +263,7 @@
             //forecast['Start-Time'], ['Other-List'], ['Visibility']
             //start time is in ddhh format
             dayStr=forecast['Start-Time'].substring(0,2);
-            forecastDay=parseInt(dayStr,10);
             hourStr=forecast['Start-Time'].substring(2,4);
-            forecastHour=parseInt(hourStr,10);
             forecastMonth=month;
             if (forecastMonth<10) monthStr='0'+forecastMonth;
             else monthStr=forecastMonth.toString();
@@ -362,6 +361,9 @@
     $onInit() {
       var self=this;
       self.init();
+      self.fourteenHours;
+      self.scrapeStorage();
+      self.scrape;
     }
     
     init(){
@@ -503,7 +505,7 @@
         .ok('Update Airport Code')
         .cancel('Cancel');
           
-      self.mdDialog.show(time).then(function(result) {
+      self.mdDialog.show(time).then(function(result) {io
         if (result!=="") {
           self.assessment.times[index] = result;
           self.initNight(self.assessment.airports[index],index);
@@ -526,11 +528,15 @@
     changeParam(ev,index,param,title){
       var self=this;
       var cancel="Cancel";
-      if (param==="runwayConditions") cancel="View Runway Report";
+      var extra="";
+      if (param==="runwayConditions") {
+        cancel="View Runway Report";
+        extra=" 1 for closed, 5 for good runway";
+      }
       var confirm = self.mdDialog.prompt({clickOutsideToClose: true})
         .parent(angular.element(document.body))
-        .title('What is the ' + title + ' for ' + self.assessment.airports[index]  + '?')
-        .textContent('Enter ' + title)
+        .textContent('What is the ' + title + ' for ' + self.assessment.airports[index]  + '?' + extra)
+        .title('Enter ' + title)
         .placeholder(title)
         .ariaLabel(title)
         .initialValue('')
@@ -786,7 +792,7 @@
     
     windClass(index){
       var self=this;
-      if (!self.assessment.windGusts[index]) return self.blue(index);
+      if (self.assessment.windGusts[index]===undefined) return self.blue(index);
       if (self.assessment.windGusts[index]>self.assessment.equipmentObj.wind) return self.red(index);
       if (self.assessment.crossWinds[index]>self.assessment.equipmentObj.xwind) return self.red(index);
       return self.green(index);
@@ -848,6 +854,7 @@
         });
       }
       else {
+        self.submitDisabled=true;
         self.assessment.pilot=self.assessment.pilotObj.name;
         var matchPilots = self.pilots.filter(function(pilot){
           return pilot.name===self.assessment.pilot;
@@ -862,13 +869,18 @@
         self.$http.post('/api/assessments', self.assessment)
           .then(function(response){
             self.alertSubmitSuccess();
+            self.submitDisabled=false;
           },
           function(response){
-            if (response.status===501) self.promptForPassword();
+            if (response.status===501) {
+              self.promptForPassword();
+              self.submitDisabled=false;
+            }
             else {
               self.localAssessments.push(self.assessment);
               window.localStorage.setItem( 'assessments', JSON.stringify(self.localAssessments) );
               self.alertSubmitSuccess();
+              self.submitDisabled=false;
             }
           }
         );

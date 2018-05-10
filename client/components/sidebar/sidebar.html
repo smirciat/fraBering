@@ -16,6 +16,9 @@
         <md-button flex class="md-yellow md-raised" ng-click="side.airports()">Edit<br>Airports</md-button>
       </div>
       <div flex layout="row" ng-if="side.isAdmin()">
+        <md-button flex class="md-accent md-raised" ng-click="side.scheduled()">Edit<br>Flights</md-button>
+      </div>
+      <div flex layout="row" ng-if="side.isAdmin()">
         <md-button flex class="md-purple md-raised" ng-click="side.viewHazards()">View Hazard<br>Reports</md-button>
       </div>
       <div flex layout="row" ng-if="side.isAdmin()">

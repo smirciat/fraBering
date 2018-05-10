@@ -3,8 +3,9 @@
 (function(){
 
 class AirportsComponent {
-  constructor($http) {
+  constructor($http,Auth) {
     var self=this;
+    self.isAdmin=Auth.isAdmin;
     self.http=$http;
     self.newAirport={};
     self.init();

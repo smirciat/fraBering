@@ -1,9 +1,9 @@
 <div flex layout="row">
   <sidebar layout="row"></sidebar>
-  <div flex layout="column" id="content">
-    <div flex layout='column' class="space">
-     <md-content flex>
-        <table class="table table-striped table-responsive table-hover">
+  <div flex layout="row" id="content" ng-if="airports.isAdmin()">
+    <div flex layout="column">
+     <md-content flex class="space">
+        <table flex class="table table-striped table-responsive table-hover">
           <thead>    
             <tr>
                 <th>Name</th>
@@ -65,7 +65,7 @@
           </tbody>
         </table>
         </br>
-        <table class="table table-striped table-responsive table-hover">
+        <table flex class="table table-striped table-responsive table-hover">
           <thead>    
             <tr>
                 <th></th>

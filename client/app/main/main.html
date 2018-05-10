@@ -1,4 +1,3 @@
-
 <div flex layout="row">
   <sidebar layout="row"></sidebar>
   <div flex layout="column" id="content">
@@ -53,11 +52,11 @@
     <div ng-if="main.pixelRatio(3)" hide-gt-sm flex="1"></div>
     <div ng-if="main.pixelRatio(3)" hide-gt-xs flex="1"></div>
       <md-content flex>
-       <div ng-repeat="airport in main.assessment.airports track by $index" flex lauout="column" ng-class="main.nightClass($index)">
+       <div ng-repeat="airport in main.assessment.airports track by $index" flex layout="column" ng-class="main.nightClass($index)">
         <div layout="row" flex>
           <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
             <md-button class="md-raised" ng-class="main.airportClass($index)" flex 
-               uib-tooltip="{{main.assessment.metars[$index]}}" tooltip-placement="bottom"
+               uib-tooltip="{{main.assessment.metars[$index]}}" tooltip-placement="auto + bottom"
                ng-click="main.openChangeMenu($mdMenu, $event)">
                   Airport:<br>{{airport+' '+main.getAirport(airport).name}}
             </md-button>
@@ -141,7 +140,7 @@
           </md-menu>
           
           <md-menu md-position-mode="target-left bottom" flex="25" layout="column" >
-            <md-button class="md-raised" ng-class="main.tafClass($index)" uib-tooltip="{{main.assessment.tafs[$index]}}" tooltip-placement="bottom" flex>
+            <md-button class="md-raised" ng-class="main.tafClass($index)" uib-tooltip="{{main.assessment.tafs[$index]}}" tooltip-placement="auto + bottom" flex>
                   TAF
             </md-button>
             <md-menu-content width="4" ng-mouseleave="$mdMenu.close()">
@@ -164,7 +163,7 @@
       <md-button class="md-raised md-blue" flex ng-click="main.addComment($event)">Assessment <br>Comment</md-button>
       <md-button class="md-raised md-purple" flex ng-click="main.changeFlight($event)">Refresh<br> Assessment</md-button>
       <md-button class="md-raised md-accent" flex ng-click="main.clear()">Clear<br> Assessment</md-button>
-      <md-button class="md-raised md-primary" flex ng-click="main.submit($event)">Submit<br> Assessment</md-button>
+      <md-button class="md-raised md-primary" flex ng-click="main.submit($event)" ng-disabled="main.submitDisabled">Submit<br> Assessment</md-button>
     </div>
   </div>
 </div>

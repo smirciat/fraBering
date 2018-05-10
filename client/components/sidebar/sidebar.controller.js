@@ -31,6 +31,10 @@ class SidebarController {
     this.state.go('airports');
   }
   
+  scheduled(){
+    this.state.go('scheduledFlights');
+  }
+  
   viewHazards(){
     this.state.go('viewHazards');
   }

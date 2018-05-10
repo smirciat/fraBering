@@ -1,0 +1,66 @@
+<div flex layout="row">
+  <sidebar layout="row"></sidebar>
+  <div flex layout="column" id="content" ng-if="scheduled.isAdmin()">
+    <div flex layout='column' class="space">
+     <md-content flex>
+        <table class="table table-striped table-responsive table-hover">
+          <thead>    
+            <tr>
+                <th>Flight#</th>
+                <th>Days of Week</th>
+                <th>Airports</th>
+                <th>Depart Times</th>
+                <th></th>
+                <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+                <td><input class="form-control" ng-model="scheduled.newFlight.flightNum" ng-change="scheduled.newFlightInit()" type="text"></td>
+                <td><input class="form-control" ng-model="scheduled.newFlight.daysOfWeekString" type="text"></td>
+                <td><input class="form-control" ng-model="scheduled.newFlight.airportsString" type="text"></td>
+                <td><input class="form-control" ng-model="scheduled.newFlight.departTimesString" type="text"></td>
+                <td><a href="#" ng-click="scheduled.cancel()"><button class="btn btn-danger">Cancel</button></a></td>
+                <td><button class="btn btn-success" ng-click="scheduled.update(scheduled.newFlight)">Add/Update</button></a></td>
+            </tr>
+            <tr ng-repeat="airport in scheduled.newFlight.airports track by $index">
+                <td></td>
+                <td></td>
+                <td><input ng-model="scheduled.newFlight.airports[$index]" ng-change="scheduled.refreshFlight()" type="text"></td>
+                <td><input ng-model="scheduled.newFlight.departTimes[$index]" ng-change="scheduled.refreshFlight()" type="text"></td>
+            </tr>
+            <tr ng-if="scheduled.newFlight.flightNum.length>0">
+                <td></td>
+                <td></td>
+                <td><input ng-model="scheduled.newAirport" ng-blur="scheduled.addAirport()" type="text"></td>
+                <td><input ng-model="scheduled.newDepartTime" ng-blur="scheduled.addDepartTime()" type="text"></td>
+            </tr>
+            
+          </tbody>
+        </table>
+        </br>
+        <table class="table table-striped table-responsive table-hover">
+          <thead>    
+            <tr>
+                <th></th>
+                <th>Flight#</th>
+                <th>Days of Week</th>
+                <th>Airports</th>
+                <th>Depart Times</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="flight in scheduled.flights">
+                <td><a href="#" ng-click="scheduled.edit(flight,$index)"><button class="btn btn-warning">Edit</button></a></td>
+                <td>{{flight.flightNum}}</td>
+                <td>{{flight.daysOfWeek}}</td>
+                <td>{{flight.airports}}</td>
+                <td>{{airport.departTimes}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </md-content>
+     </div>
+    </div>
+</div>
+
