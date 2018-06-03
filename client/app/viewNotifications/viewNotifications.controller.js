@@ -113,15 +113,8 @@ class ViewNotificationsComponent {
            pilots: self.pilotList,
            title: self.title
          },
-         controller: DialogController
+         controller: 'DialogControllerNotifications'
       });
-      function DialogController($scope, $mdDialog,pilots,title) {
-        $scope.pilotList = pilots;
-        $scope.title=title;
-        $scope.closeDialog = function() {
-          $mdDialog.hide();
-        }
-      }
   }
   
   toggleMenu(){
@@ -138,4 +131,16 @@ angular.module('workspaceApp')
     controllerAs: 'viewNotifications'
   });
 
+})();
+
+(function() {
+
+angular.module('workspaceApp')
+    .controller('DialogControllerNotifications', function ($scope, $mdDialog,pilots,title) {
+        $scope.pilotList = pilots;
+        $scope.title=title;
+        $scope.closeDialog = function() {
+          $mdDialog.hide();
+        };
+  });
 })();

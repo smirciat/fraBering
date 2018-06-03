@@ -328,8 +328,8 @@
         if (self.testSky(unknown)) {
           var cloudArr=[];
           cloudArr.push(unknown.substring(0,3));
-          if (cloudArr[0].substring(0.3)!=="CLR") {
-            if (cloudArr[0].substring(0.2)==="VV") {
+          if (cloudArr[0].substring(0,3)!=="CLR") {
+            if (cloudArr[0].substring(0,2)==="VV") {
               cloudArr[0]="VV";
               cloudArr.push(unknown.substring(2));
             }
@@ -353,6 +353,7 @@
     }
     
     testSky(str) {
+      str=str.toUpperCase();
       var skyArr=["VV","CL","FE","BK","OV","SC"];
       if (skyArr.indexOf(str.substring(0,2))<0) return false;
       return true;
