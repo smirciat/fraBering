@@ -67,6 +67,9 @@ and (max-width : 480px) {
 .day{
   background-color:white;
 }
+.submitted{
+  background-color:yellow;
+}
 label{
   text-align:center;
 }

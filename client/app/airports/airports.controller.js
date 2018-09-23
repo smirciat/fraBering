@@ -41,8 +41,10 @@ class AirportsComponent {
     if (airport.visibilityRequirementString) airport.visibilityRequirement = JSON.parse(airport.visibilityRequirementString);
     if (airport.windRequirementString) airport.windRequirement = JSON.parse(airport.windRequirementString);
     if (airport.runways&&airport.runways!=="") {
-      if (airport.runways.substring(0,1)!=='[') airport.runways = '['+airport.runways+']';
-      airport.runways = JSON.parse(airport.runways);
+      if (!Array.isArray(airport.runways)) {
+        if (airport.runways.substring(0,1)!=='[') airport.runways = '['+airport.runways+']';
+        airport.runways = JSON.parse(airport.runways);
+      }
     }
     if (airport._id){
       self.http.put('/api/airportRequirements/' + airport._id,airport).then(function(){

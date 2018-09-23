@@ -158,7 +158,7 @@
     <div ng-if="main.pixelRatio(2)" hide-gt-xs flex="2"></div>
     <div ng-if="main.pixelRatio(3)" hide-gt-sm flex="1"></div>
     <div ng-if="main.pixelRatio(3)" hide-gt-xs flex="1"></div>
-    <div ng-if="main.assessment.flight" layout="row" flex="15">
+    <div ng-if="main.assessment.flight" ng-class="main.checkSubmitted()" layout="row" flex="15">
       <md-button class="md-raised md-warn" flex ng-click="main.addAirport($event)">Add<br> Airport</md-button>
       <md-button class="md-raised md-blue" flex ng-click="main.addComment($event)">Assessment <br>Comment</md-button>
       <md-button class="md-raised md-purple" flex ng-click="main.changeFlight($event)">Refresh<br> Assessment</md-button>

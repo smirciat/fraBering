@@ -89,6 +89,7 @@
       var self=this;
       self.timeout.cancel(self.timer);
       var airports,pilot,flight,equipment,color,night,times;
+      self.isSubmitted=false;
       if (self.assessment) {
         pilot=self.assessment.pilotObj||"";
         flight=self.assessment.flight||"";
@@ -196,13 +197,17 @@
           self.assessment.windDirections[index]=metarObj['Wind-Direction'];
           //crosswind limit
           var ap = self.getAirport(self.assessment.airports[index]);
-          var xwindAngle=90;
-          var direction=parseInt(self.assessment.windDirections[index],10);
-          ap.runways.forEach(function(runway){
-            if (Math.abs(direction-runway*10)<xwindAngle) xwindAngle = Math.abs(direction-runway*10);
-            if (Math.abs(direction+360-runway*10)<xwindAngle) xwindAngle = Math.abs(direction+360-runway*10);
-            if (Math.abs(direction-360-runway*10)<xwindAngle) xwindAngle = Math.abs(direction-360-runway*10);
-          });
+          var xwindAngle=0;
+          var direction=0;
+          if (ap.runways) {
+            xwindAngle=90;
+            direction=parseInt(self.assessment.windDirections[index],10);
+            ap.runways.forEach(function(runway){
+              if (Math.abs(direction-runway*10)<xwindAngle) xwindAngle = Math.abs(direction-runway*10);
+              if (Math.abs(direction+360-runway*10)<xwindAngle) xwindAngle = Math.abs(direction+360-runway*10);
+              if (Math.abs(direction-360-runway*10)<xwindAngle) xwindAngle = Math.abs(direction-360-runway*10);
+            });
+          }
           self.assessment.crossWinds[index] = Math.round(self.assessment.windGusts[index]*Math.sin(xwindAngle*(Math.PI/180)));
           self.assessment.visibilities[index]=metarObj.Visibility;
           if (self.assessment.visibilities[index].includes('/')) {
@@ -244,9 +249,9 @@
           }
         }
       },function(response){console.log(response)});
-      if (airport.toUpperCase()=="PAOM"||airport.toUpperCase()=="PAOT"||
-          airport.toUpperCase()=="PAUN"||airport.toUpperCase()=="PANC"||airport.toUpperCase()=="PAGA") {
-        self.$http.get('https://avwx.rest/api/taf/' + airport).then(function(response){
+      if (true){//airport.toUpperCase()=="PAOM"||airport.toUpperCase()=="PAOT"||airport.toUpperCase()=="PAFA"||
+          //airport.toUpperCase()=="PAUN"||airport.toUpperCase()=="PANC"||airport.toUpperCase()=="PAGA") {
+        self.$http.get('https://avwx.rest/api/taf/' + airport.toUpperCase()).then(function(response){
           if (response.data.Error) { 
             //self.airports[index]=self.airportsCopy[index];
             return;
@@ -294,6 +299,7 @@
     
     parseADDS(metar){
       var self=this;
+      var temp="";
       var obs={};
       obs['Raw-Report']=metar;
       var metarArray=metar.split(' ');
@@ -309,7 +315,15 @@
       else obs['Wind-Gust']="";
       obs.vis=metarArray.shift();//visibility
       if (obs.vis.split('V').length>1&&obs.vis.split('V')[0].length===3&&obs.vis.split('V')[1].length===3) obs.vis=metarArray.shift();//variable winds, ignore
-      if (obs.vis.slice(-2)!=="SM") obs.vis = obs.vis + ' ' + metarArray.shift();//this covers visibilities such as "1 3/4SM"
+      if (obs.vis.slice(-2)!=="SM") {
+        temp=metarArray.shift();
+        if (temp.slice(-2)==="SM") obs.vis = obs.vis + ' ' + temp;//this covers visibilities such as "1 3/4SM"
+        else {
+          metarArray.unshift(temp);
+          metarArray.unshift(obs.vis);
+          obs.vis="";
+        }
+      }
       var visArray=obs.vis.split('/');
       if (visArray.length>1) obs.Visibility=visArray[0].replace(/[^0-9 ]/g, '') + '/' + visArray[1].replace(/[^0-9]/g, '');
       else obs.Visibility=obs.vis.replace(/[^0-9]/g, '');//remove leading M and trailing SM
@@ -398,7 +412,7 @@
       self.timeout.cancel(self.timer);
       if (!self.assessment.flight||self.assessment.flight==="") return;
       if ((self.assessment.flight.substring(0,2)==="85"||self.assessment.flight.substring(1,3)==="85")
-            &&self.assessment.equipmentObj.name==="Caravan") {
+            &&self.assessment.flight!=="685"&&self.assessment.flight!=="885"&&self.assessment.equipmentObj.name==="Caravan") {
         self.assessment={};
         self.initAssessment();
         self.caravanAlert();
@@ -856,6 +870,7 @@
       }
       else {
         self.submitDisabled=true;
+        self.isSubmitted=true;
         self.assessment.pilot=self.assessment.pilotObj.name;
         var matchPilots = self.pilots.filter(function(pilot){
           return pilot.name===self.assessment.pilot;
@@ -974,6 +989,12 @@
     freezeResult(bool){
       if (bool) return 'Yes';
       return 'None';
+    }
+    
+    checkSubmitted(){
+      var self=this;
+      if (self.isSubmitted) return "submitted";
+      else return;
     }
     
   }

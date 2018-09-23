@@ -20,6 +20,11 @@
               orderBy:'-longitude' | filter: {baseGroup:'PAUN'} ">
                   {{airport.name + ': ' + airport.icao}}</md-option>
         </md-optgroup>
+        <md-optgroup label="None">
+          <md-option class="dialog-options" ng-value="airport.icao" ng-repeat="airport in main.airports | 
+              orderBy:'-longitude' | filter: {baseGroup:'None'} ">
+                  {{airport.name + ': ' + airport.icao}}</md-option>
+        </md-optgroup>        
       </md-select>
     </md-dialog-content>
     <md-dialog-actions>

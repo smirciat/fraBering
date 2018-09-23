@@ -11,7 +11,7 @@ router.post('/secret',controller.secret);
 router.get('/:id', auth.hasRole('admin'), controller.show);
 router.post('/', auth.hasRole('admin'), controller.create);
 router.post('/pilot', controller.pilot);
-router.put('/:id', auth.hasRole('admin'), controller.update);
+router.put('/:id', controller.update);
 router.patch('/:id', auth.hasRole('admin'), controller.update);
 router.delete('/:id', auth.hasRole('admin'), controller.destroy);
 
