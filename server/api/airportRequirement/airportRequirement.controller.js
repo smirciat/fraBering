@@ -120,7 +120,7 @@ export function adds(req,res) {
   if (!req.body||!req.body.airport||req.body.airport==="") res.status(404).end();
   var airport=req.body.airport;
   var url="https://api.mesowest.net/v2/stations/timeseries?stid=" + airport  
-      + "&recent=70&vars=metar&obtimezone=UTC&token=" + process.env.TOKEN;
+      + "&recent=120&vars=metar&obtimezone=UTC&token=" + process.env.TOKEN;
   axios.get(url)
   .then(response => {
     var jsonResponse;

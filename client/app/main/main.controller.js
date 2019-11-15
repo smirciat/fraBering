@@ -251,12 +251,13 @@
       },function(response){console.log(response)});
       if (true){//airport.toUpperCase()=="PAOM"||airport.toUpperCase()=="PAOT"||airport.toUpperCase()=="PAFA"||
           //airport.toUpperCase()=="PAUN"||airport.toUpperCase()=="PANC"||airport.toUpperCase()=="PAGA") {
-        self.$http.get('https://avwx.rest/api/taf/' + airport.toUpperCase()).then(function(response){
+        self.$http.get('https://avwx.rest/api/taf/' + airport.toUpperCase() + '?token=' + self.appConfig.token).then(function(response){
+          console.log(response.data);
           if (response.data.Error) { 
             //self.airports[index]=self.airportsCopy[index];
             return;
           }
-          self.assessment.tafs[index]=response.data['Raw-Report'];
+          self.assessment.tafs[index]=response.data['raw'];
           var year=self.moment().tz('UTC').year();
           var month=self.moment().tz('UTC').month()+1;
           var forecastMonth,monthStr,dayStr,hourStr,initialForecastTime;
@@ -264,11 +265,11 @@
           if (index===0) scheduledTime=self.assessment.times[self.assessment.times.length-1];
           var scheduledTimeArr=scheduledTime.split(':');
           var forecastTime;
-          response.data.Forecast.forEach(function(forecast,i){
+          if (response.data.forecast) response.data.forecast.forEach(function(forecast,i){
             //forecast['Start-Time'], ['Other-List'], ['Visibility']
             //start time is in ddhh format
-            dayStr=forecast['Start-Time'].substring(0,2);
-            hourStr=forecast['Start-Time'].substring(2,4);
+            dayStr=forecast['start_time'].dt.substring(0,2);
+            hourStr=forecast['start_time'].dt.substring(2,4);
             forecastMonth=month;
             if (forecastMonth<10) monthStr='0'+forecastMonth;
             else monthStr=forecastMonth.toString();
@@ -277,11 +278,12 @@
             scheduledTime = self.moment(initialForecastTime).startOf('day').hour(scheduledTimeArr[0]).minute(scheduledTimeArr[1]);
             if (scheduledTime.isAfter(forecastTime)) {
               self.assessment.forecastFreezingPrecipitations[index]=null;
-              forecast['Other-List'].forEach(function(item){
+              forecast['other'].forEach(function(item){
                 var i=item.replace(/[^a-zA-Z]/g, "");
                 if (i.substring(0,2)==="FZ") self.assessment.forecastFreezingPrecipitations[index]=true;
               });
-              self.assessment.forecastVisibilities[index]=forecast.Visibility;
+              if (forecast.visibility) self.assessment.forecastVisibilities[index]=forecast.visibility.repr;
+              else self.assessment.forecastVisibilities[index]="6";
               if (self.assessment.forecastVisibilities[index].includes('/')) {
                 var bits = self.assessment.forecastVisibilities[index].split("/");
                 self.assessment.forecastVisibilities[index] = parseInt(bits[0],10)/parseInt(bits[1],10);

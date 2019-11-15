@@ -4,10 +4,12 @@ exports = module.exports = {
   // List of user roles
   userRoles: ['guest', 'user', 'admin','superadmin'],
   
+  token: process.env.AVWX_TOKEN,
+  
   angularMomentConfig:{timezone:'America/Anchorage'},
   
   equipment:[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50},
-       {id:2,name:"Navajo",wind:40,xwind:30,temp:-35},
+       {id:2,name:"Navajo",wind:40,xwind:30,temp:-40},
        {id:3,name:"Casa",wind:35,xwind:25,temp:-50},
        {id:4,name:"King Air",wind:40,xwind:35,temp:-50},
        {id:5,name:"1900",wind:40,xwind:35, temp:-50}],
