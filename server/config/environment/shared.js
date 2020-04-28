@@ -4,7 +4,7 @@ exports = module.exports = {
   // List of user roles
   userRoles: ['guest', 'user', 'admin','superadmin'],
   
-  token: process.env.AVWX_TOKEN,
+  token: 'm9TUQnVSdDaYtfxoWkee7EOWe5LhFfQYq7DjB05h3C0',
   
   angularMomentConfig:{timezone:'America/Anchorage'},
   

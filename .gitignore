@@ -8,3 +8,6 @@ dist
 /server/config/environment/development.js
 npm-debug.log
 coverage
+Dockerfile
+docker.env
+*.sqlite
