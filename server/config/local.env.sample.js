@@ -10,5 +10,8 @@ module.exports = {
   SESSION_SECRET:   'workspace-secret',
 
   // Control debug level for modules using visionmedia/debug
-  DEBUG: ''
+  DEBUG: '',
+  TOKEN:'',//mesonet token
+  SEQUELIZE_URI:'',
+  PASSWORD:''
 };

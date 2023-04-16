@@ -385,6 +385,12 @@
     
     init(){
       var self=this;
+      //console.log(this.appConfig);
+      //this.appConfig.pilots.forEach(pilot=>{
+      //  self.$http.post('/api/pilots',pilot).then(function(response){
+      //    console.log(pilot);
+      //  });
+      //});  
       self.$http.get('/api/flights')
         .then(function(response) {
           self.flights = response.data;
@@ -933,7 +939,7 @@
       self.tempPilot=angular.copy(self.assessment.pilotObj);
       window.localStorage.setItem('pilot',JSON.stringify(self.assessment.pilotObj));
       self.$http.post('/api/notifications/pilot',{pilot:self.assessment.pilotObj.name,password:self.apiPassword}).then(function(response){
-        console.log(response.data);
+        //console.log(response.data);
         var notifications=response.data;
         var length=notifications.length;
         var count=0;

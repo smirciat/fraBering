@@ -5,19 +5,24 @@
 'use strict';
 
 import express from 'express';
+import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
-import http from 'http';
-
+import https from 'https';
+var privateKey  = fs.readFileSync('/etc/letsencrypt/live/beringair.ddns.net/privkey.pem', 'utf8');
+var certificate = fs.readFileSync('/etc/letsencrypt/live/beringair.ddns.net/fullchain.pem', 'utf8');
+var credentials = {key: privateKey, cert: certificate};
 // Populate databases with sample data
 if (config.seedDB) { require('./config/seed'); }
 
 // Setup server
 var app = express();
+
 var cors = require('cors');
 app.use(cors());
 app.options('*', cors());
-var server = http.createServer(app);
+//var server = http.createServer(app);
+var server = https.createServer(credentials,app);
 var socketio = require('socket.io')(server, {
   serveClient: config.env !== 'production',
   path: '/socket.io-client'
