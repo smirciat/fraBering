@@ -119,19 +119,22 @@ export function destroy(req, res) {
 export function adds(req,res) {
   if (!req.body||!req.body.airport||req.body.airport==="") res.status(404).end();
   var airport=req.body.airport;
-  var url="https://api.mesowest.net/v2/stations/timeseries?stid=" + airport  
-      + "&recent=120&vars=metar&obtimezone=UTC&token=" + process.env.TOKEN;
+  var url="https://api.synopticdata.com/v2/stations/latest?stid=" + airport  
+      + "&within=120&vars=metar&token=" + process.env.TOKEN;
   axios.get(url)
   .then(response => {
-    var jsonResponse;
-    if (!response.data.STATION) jsonResponse="";
+    var jsonResponse={};
+    if (!response.data.STATION) jsonResponse={};
     else {
       if (response.data.STATION[0]) {
-        var index=response.data.STATION[0].OBSERVATIONS.metar_set_1.length-1;
-        jsonResponse=response.data.STATION[0].OBSERVATIONS.metar_set_1[index];
+        //var index=response.data.STATION[0].OBSERVATIONS.metar_set_1.length-1;
+        //jsonResponse.metar=response.data.STATION[0].OBSERVATIONS.metar_set_1[index];
+        jsonResponse.metar=response.data.STATION[0].OBSERVATIONS.metar_value_1.value;
+        jsonResponse.latitude=response.data.STATION[0].LATITUDE;
+        jsonResponse.longitude=response.data.STATION[0].LONGITUDE;
       }
       else {
-        jsonResponse="missing";
+        jsonResponse.metar="missing";
       }
     }
     res.json(jsonResponse);

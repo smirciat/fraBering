@@ -158,7 +158,9 @@
       self.initNight(airport,index);
       if (airport.length<3) return;
       self.$http.post('/api/airportRequirements/adds',{airport:airport}).then(function(response){
-        var metar=response.data;
+        var metar=response.data.metar;
+        var longitude=response.data.longitude;
+        var latitude=response.data.latitude;
         if (metar==="missing") {
           console.log('Metar missing');
           if (count<6) {
@@ -197,6 +199,13 @@
           self.assessment.windDirections[index]=metarObj['Wind-Direction'];
           //crosswind limit
           var ap = self.getAirport(self.assessment.airports[index]);
+          if (latitude&&!ap.latitude) {
+            ap.latitude=latitude;
+            ap.longitude=longitude;
+            self.$http.put('/api/airportRequirements/'+ap._id,ap).then(function(res){
+              console.log(res);
+            });
+          }
           var xwindAngle=0;
           var direction=0;
           if (ap.runways) {
