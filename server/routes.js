@@ -24,6 +24,7 @@ export default function(app) {
   
    app.use(lusca.csrf({angular:true}));
   // Insert routes below
+  app.use('/api/monitors', require('./api/monitor'));
   app.use('/api/timesheets', require('./api/timesheet'));
   app.use('/api/manifests', require('./api/manifest'));
   app.use('/api/pfrs', require('./api/pfr'));

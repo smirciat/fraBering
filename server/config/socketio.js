@@ -17,6 +17,7 @@ function onConnect(socket) {
   });
 
   // Insert sockets below
+  require('../api/monitor/monitor.socket').register(socket);
   require('../api/timesheet/timesheet.socket').register(socket);
   require('../api/manifest/manifest.socket').register(socket);
   require('../api/pfr/pfr.socket').register(socket);

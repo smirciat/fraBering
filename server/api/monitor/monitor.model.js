@@ -1,20 +1,22 @@
 'use strict';
 
 export default function(sequelize, DataTypes) {
-  return sequelize.define('Pilot', {
+  return sequelize.define('Monitor', {
     _id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true,
       autoIncrement: true
     },
-    name: DataTypes.STRING,
-    level: DataTypes.STRING,
+    pilot: DataTypes.STRING,
+    airport: DataTypes.STRING,
     phone: DataTypes.STRING,
     email: DataTypes.STRING,
+    watchedThreshold: DataTypes.STRING,
+    watchedParameter: DataTypes.STRING,
     active: {
-      type:DataTypes.BOOLEAN,
-      defaultValue:true
+      type: DataTypes.BOOLEAN ,
+      defaultValue: true
     }
   });
 }

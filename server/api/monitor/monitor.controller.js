@@ -1,16 +1,20 @@
 /**
  * Using Rails-like standard naming convention for endpoints.
- * GET     /api/pilots              ->  index
- * POST    /api/pilots              ->  create
- * GET     /api/pilots/:id          ->  show
- * PUT     /api/pilots/:id          ->  update
- * DELETE  /api/pilots/:id          ->  destroy
+ * GET     /api/monitors              ->  index
+ * POST    /api/monitors              ->  create
+ * GET     /api/monitors/:id          ->  show
+ * PUT     /api/monitors/:id          ->  update
+ * DELETE  /api/monitors/:id          ->  destroy
  */
 
 'use strict';
 
 import _ from 'lodash';
-import {Pilot} from '../../sqldb';
+import {Monitor} from '../../sqldb';
+var client = require('twilio')(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -61,16 +65,16 @@ function handleError(res, statusCode) {
   };
 }
 
-// Gets a list of Pilots
+// Gets a list of Monitors
 export function index(req, res) {
-  return Pilot.findAll()
+  return Monitor.findAll()
     .then(respondWithResult(res))
     .catch(handleError(res));
 }
 
-// Gets a single Pilot from the DB
+// Gets a single Monitor from the DB
 export function show(req, res) {
-  return Pilot.find({
+  return Monitor.find({
     where: {
       _id: req.params.id
     }
@@ -80,20 +84,39 @@ export function show(req, res) {
     .catch(handleError(res));
 }
 
-// Creates a new Pilot in the DB
+export function twilio(req,res){
+  var params = {
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: req.body.to,
+    //mediaUrl:req.body.mediaUrl,
+    body: req.body.body
+  };
+  client.messages
+  .create(params)
+  .then(message => {
+    console.log('Twilio message sent successfully');
+    res.sendStatus(200);
+  })
+  .catch((error) => {
+    // You can implement your fallback code here
+    console.log(error);
+  });
+  
+}
+
+// Creates a new Monitor in the DB
 export function create(req, res) {
-  return Pilot.create(req.body)
+  return Monitor.create(req.body)
     .then(respondWithResult(res, 201))
     .catch(handleError(res));
 }
 
-// Updates an existing Pilot in the DB
+// Updates an existing Monitor in the DB
 export function update(req, res) {
   if (req.body._id) {
     delete req.body._id;
   }
-  
-  return Pilot.find({
+  return Monitor.find({
     where: {
       _id: req.params.id
     }
@@ -104,9 +127,9 @@ export function update(req, res) {
     .catch(handleError(res));
 }
 
-// Deletes a Pilot from the DB
+// Deletes a Monitor from the DB
 export function destroy(req, res) {
-  return Pilot.find({
+  return Monitor.find({
     where: {
       _id: req.params.id
     }

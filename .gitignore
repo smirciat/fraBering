@@ -11,3 +11,4 @@ coverage
 Dockerfile
 docker.env
 *.sqlite
+package.dist.json

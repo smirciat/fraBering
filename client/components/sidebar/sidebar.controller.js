@@ -11,6 +11,10 @@ class SidebarController {
     this.state.go('main');
   }
   
+  monitor() {
+    this.state.go('monitor');
+  }
+  
   hazard() {
     this.state.go('hazardReport');
   }

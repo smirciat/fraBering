@@ -14,6 +14,7 @@ var db = {
 };
 
 // Insert models below
+db.Monitor = db.sequelize.import('../api/monitor/monitor.model');
 db.Timesheet = db.sequelize.import('../api/timesheet/timesheet.model');
 db.Manifest = db.sequelize.import('../api/manifest/manifest.model');
 db.Pfr = db.sequelize.import('../api/pfr/pfr.model');

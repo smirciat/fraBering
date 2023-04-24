@@ -1,0 +1,88 @@
+<div flex layout="row">
+  <sidebar layout="row"></sidebar>
+  <div flex layout="row" id="content" ng-if="monitor.isAdmin()">
+    <div flex layout="column">
+     <md-content flex class="space">
+        <table flex class="table table-striped table-responsive table-hover">
+          <thead>    
+            <tr>
+                <th>Pilot</th>
+                <th>Phone</th>
+                <th>Airport 4-Letter</th>
+                <th>Parameter</th>
+                <th>Threshold</th>
+                <th>Active</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+                <td><input class="form-control" ng-model="monitor.newMonitor.pilot" type="text"></td>
+                <td><input class="form-control" ng-model="monitor.newMonitor.phone" type="text"></td>
+                <td><input class="form-control" ng-model="monitor.newMonitor.airport" type="text" ng-blur="monitor.getMetar(monitor.newMonitor.airport)"></td>
+                <td>
+                    <input type="text" ng-model="monitor.newMonitor.watchedParameter" list="mylist" 
+                        class="form-control" ng-focus="monitor.clearParam()" ng-blur="monitor.checkIcing()">
+                      <datalist id="mylist" >
+                        <option ng-repeat="param in monitor.params" ng-value="param"></option>
+                      </datalist>
+                </td>
+                <td><input class="form-control" ng-model="monitor.newMonitor.watchedThreshold" type="text"></td>
+                <td><input class="form-control" ng-model="monitor.newMonitor.active" type="checkbox"></td>
+                <td><a href="#" ng-click="monitor.cancel()"><button class="btn btn-danger">Cancel</button></a></td>
+                <td><button class="btn btn-success" ng-click="monitor.update(monitor.newMonitor)">Add/Update</button></td>
+            </tr>
+        
+            <tr>
+              <td>
+                <button class="btn" ng-class="monitor.classAirport()" style="width:100%" uib-tooltip="{{monitor.metarObj['Raw-Report']}}" tooltip-placement="auto + bottom">
+                    Airport: {{monitor.newMonitor.airport.toUpperCase()}}</button>
+              </td>
+              <td>
+                <button class="btn" ng-class="monitor.classVisibility()" style="width:100%" uib-tooltip="{{monitor.metarObj['vis']}}" tooltip-placement="auto + bottom">
+                    Visibility: {{monitor.metarObj.Visibility}}</button>   
+              </td>
+              <td>
+                <button class="btn" ng-class="monitor.classCeiling()" style="width:100%" uib-tooltip="{{monitor.metarObj['Cloud-List']}}" tooltip-placement="auto + bottom">
+                    Ceiling: {{monitor.metarObj.Ceiling}}</button>   
+              </td>
+              <td>
+                <button class="btn" ng-class="monitor.classWind()" style="width:100%" uib-tooltip="{{monitor.metarObj['wind']}}" tooltip-placement="auto + bottom">
+                    Wind: {{monitor.metarObj['Wind-Gust']}}</button>
+              </td>
+              <td>
+                <button class="btn" ng-class="monitor.classIcing()" style="width:100%" uib-tooltip="{{monitor.metarObj['Other-List']}}" tooltip-placement="auto + bottom">
+                    Icing: {{monitor.metarObj.Freezing}}</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        </br>
+        <table flex class="table table-striped table-responsive table-hover">
+          <thead>    
+            <tr>
+                <th></th>
+                <th>Pilot</th>
+                <th>Phone</th>
+                <th>Airport 4-Letter</th>
+                <th>Parameter</th>
+                <th>Threshold</th>
+                <th>Active</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="mon in monitor.monitors">
+                <td><a href="#" ng-click="monitor.edit(mon,$index)"><button class="btn btn-warning">Edit</button></a></td>
+                <td>{{mon.pilot}}</td>
+                <td>{{mon.phone}}</td>
+                <td>{{mon.airport}}</td>
+                <td>{{mon.watchedParameter}}</td>
+                <td>{{mon.watchedThreshold}}</td>
+                <td><input class="form-control" ng-model="mon.active" type="checkbox" ng-click="monitor.toggle($index)"></td>
+            </tr>
+          </tbody>
+        </table>
+      </md-content>
+     </div>
+    </div>
+</div>
+

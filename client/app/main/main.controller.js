@@ -4,7 +4,7 @@
 
   class MainController {
 
-    constructor($http, $scope,$mdDialog,$mdSidenav,$timeout,appConfig,$interval,moment) {
+    constructor($http, $scope,$mdDialog,$mdSidenav,$timeout,appConfig,$interval,moment,metar) {
       var self=this;
       self.tempPilot={name:""};
       if (window.localStorage.getItem('pilot')!==null&&window.localStorage.getItem('pilot')!=='undefined') self.tempPilot=JSON.parse(window.localStorage.getItem('pilot'));
@@ -16,6 +16,7 @@
       self.timeout=$timeout;
       self.appConfig=appConfig;
       self.moment=moment;
+      self.metar=metar;
       moment.tz.setDefault("America/Anchorage");
       self.localAssessments=[];
       self.dialogAirports=[];
@@ -170,7 +171,7 @@
           return;
         }
         if (metar&&metar!=="") {
-          var metarObj=self.parseADDS(metar);
+          var metarObj=self.metar.parseADDS(metar);
           if ((metarObj.Temperature*9/5+32)<self.assessment.equipmentObj.temp) {
               var alert = self.mdDialog.alert({
                 title: 'Caution',
@@ -261,7 +262,7 @@
       if (true){//airport.toUpperCase()=="PAOM"||airport.toUpperCase()=="PAOT"||airport.toUpperCase()=="PAFA"||
           //airport.toUpperCase()=="PAUN"||airport.toUpperCase()=="PANC"||airport.toUpperCase()=="PAGA") {
         self.$http.get('https://avwx.rest/api/taf/' + airport.toUpperCase() + '?token=' + self.appConfig.token).then(function(response){
-          console.log(response.data);
+          //console.log(response.data);
           if (response.data.Error) { 
             //self.airports[index]=self.airportsCopy[index];
             return;
@@ -306,82 +307,6 @@
           else self.assessment.tafs[index]="";
         });
       }
-    }
-    
-    parseADDS(metar){
-      var self=this;
-      var temp="";
-      var obs={};
-      obs['Raw-Report']=metar;
-      var metarArray=metar.split(' ');
-      var tempMetar=metarArray.shift();//identifier
-      if (tempMetar==="METAR"||tempMetar==="SPECI") metarArray.shift();//if prefaced by 'METAR'
-      metarArray.shift();//date/time
-      obs.wind=metarArray.shift();//wind
-      if (obs.wind==="AUTO"||obs.wind==="SPECI") obs.wind=metarArray.shift();//if there is AUTO of SPECI, remove it
-      obs['Wind-Direction']=obs.wind.substring(0,3);
-      var windArr=obs.wind.substring(3).split('G');
-      obs['Wind-Speed']=windArr[0].replace(/[^0-9]/g, '');
-      if (windArr.length>1) obs['Wind-Gust']=windArr[1].replace(/[^0-9]/g, '');
-      else obs['Wind-Gust']="";
-      obs.vis=metarArray.shift();//visibility
-      if (obs.vis.split('V').length>1&&obs.vis.split('V')[0].length===3&&obs.vis.split('V')[1].length===3) obs.vis=metarArray.shift();//variable winds, ignore
-      if (obs.vis.slice(-2)!=="SM") {
-        temp=metarArray.shift();
-        if (temp.slice(-2)==="SM") obs.vis = obs.vis + ' ' + temp;//this covers visibilities such as "1 3/4SM"
-        else {
-          metarArray.unshift(temp);
-          metarArray.unshift(obs.vis);
-          obs.vis="";
-        }
-      }
-      var visArray=obs.vis.split('/');
-      if (visArray.length>1) obs.Visibility=visArray[0].replace(/[^0-9 ]/g, '') + '/' + visArray[1].replace(/[^0-9]/g, '');
-      else obs.Visibility=obs.vis.replace(/[^0-9]/g, '');//remove leading M and trailing SM
-      visArray=obs.Visibility.split(' ');
-      if (visArray.length>1) {//turn 1 1/2 into 3/2
-        var number = parseInt(visArray[0],10);
-        var top = parseInt(visArray[1].substring(0,1),10);
-        var bottom = parseInt(visArray[1].slice(-1),10);
-        obs.Visibility= (top+number*bottom) + '/' + bottom;
-      }
-      obs['Other-List']=[];
-      obs['Cloud-List']=[];
-      var unknown=metarArray.shift();//let's test this
-      var test=(unknown.split('/').length<2)||unknown.substring(0,1)==='R';
-      while (test){//when this is 2, we are on the temperature section
-        if (self.testSky(unknown)) {
-          var cloudArr=[];
-          cloudArr.push(unknown.substring(0,3));
-          if (cloudArr[0].substring(0,3)!=="CLR") {
-            if (cloudArr[0].substring(0,2)==="VV") {
-              cloudArr[0]="VV";
-              cloudArr.push(unknown.substring(2));
-            }
-            else {
-              cloudArr.push(unknown.substring(3));
-            }
-          }
-          obs['Cloud-List'].push(cloudArr);
-        }
-        else {
-          obs['Other-List'].push(unknown);
-        }
-        unknown=metarArray.shift();
-        if (unknown.substring(0,1)!=='A'&&unknown.substring(0,3)!=='RMK') test=(unknown.split('/').length<2)||unknown.substring(0,1)==='R';
-        else test=false;
-      }
-      obs.tempDew=unknown;
-      obs.Temperature=obs.tempDew.split('/')[0];
-      if (obs.Temperature.substring(0,1)==="M") obs.Temperature="-" + obs.Temperature.substring(1);
-      return obs;
-    }
-    
-    testSky(str) {
-      str=str.toUpperCase();
-      var skyArr=["VV","CL","FE","BK","OV","SC"];
-      if (skyArr.indexOf(str.substring(0,2))<0) return false;
-      return true;
     }
     
     $onInit() {
