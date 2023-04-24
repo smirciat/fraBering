@@ -4,7 +4,7 @@
           <h2 class="md-title">Click below for a pulldown list of airports</h2>
           <md-button class="md-raised md-primary" ng-click="answer()">Submit</md-button>
       </div>
-      <md-select ng-model="dialogAirports" placeholder="Choose" multiple>
+      <md-select ng-change="answer()" ng-model="dialogAirports" placeholder="Choose" multiple>
         <md-optgroup label="Kotzebue">
           <md-option class="dialog-options" ng-value="airport.icao" ng-repeat="airport in main.airports | 
               orderBy:'-longitude' | filter: {baseGroup:'PAOT'} ">
@@ -24,7 +24,11 @@
           <md-option class="dialog-options" ng-value="airport.icao" ng-repeat="airport in main.airports | 
               orderBy:'-longitude' | filter: {baseGroup:'None'} ">
                   {{airport.name + ': ' + airport.icao}}</md-option>
-        </md-optgroup>        
+        </md-optgroup>    
+        <md-optgroup label="Done">
+          <md-option class="dialog-options">
+                  <button class="btn btn-primary" ng-click="answer()">Finished</button></md-option>
+        </md-optgroup>   
       </md-select>
     </md-dialog-content>
     <md-dialog-actions>

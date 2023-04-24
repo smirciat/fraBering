@@ -20,9 +20,9 @@ class MonitorComponent {
   init(){
     var self=this;
     self.http.get('/api/monitors').then(function(response){
-      self.monitors=response.data;//.sort(function(a,b){
-        //return a.name.localeCompare(b.name);
-      //});
+      self.monitors=response.data.sort(function(a,b){
+        return b._id-a._id;//a.name.localeCompare(b.name);
+      });
     });
     
   }
@@ -35,6 +35,12 @@ class MonitorComponent {
     self.newMonitor=angular.copy(monitor);
     self.getMetar(self.newMonitor.airport);
     self.refreshMonitor();
+  }
+  
+  deleteMonitor(id,index){
+    this.http.delete('/api/monitors/'+id).then(res=>{
+      this.monitors.splice(index,1);
+    });
   }
   
   refreshMonitor(){
@@ -91,7 +97,7 @@ class MonitorComponent {
   
   cancel(){
     var self=this;
-    self.newMonitor={active:true};
+    self.newMonitor={active:true,pilot:self.tempPilot.name,phone:self.tempPilot.phone};
     self.metarObj={};
   }
   
@@ -109,7 +115,12 @@ class MonitorComponent {
   
   checkIcing(){
     var self=this;
-    self.timeout(function(){if (self.newMonitor.watchedParameter==="Icing") self.newMonitor.watchedThreshold="false";},0);
+    self.timeout(function(){
+      if (self.newMonitor.watchedParameter==="Icing") self.newMonitor.watchedThreshold="false";
+      if (self.newMonitor.watchedParameter==="Ceiling") self.newMonitor.watchedThreshold="500";
+      if (self.newMonitor.watchedParameter==="Visibility") self.newMonitor.watchedThreshold="1";
+      if (self.newMonitor.watchedParameter==="Wind") self.newMonitor.watchedThreshold="35";
+    },0);
   }
   
   getMetar(airport){
