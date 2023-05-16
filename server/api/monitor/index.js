@@ -7,6 +7,7 @@ var router = express.Router();
 
 router.get('/', controller.index);
 router.get('/:id', controller.show);
+router.post('/monitor', controller.monitor);
 router.post('/twilio', controller.twilio);
 router.post('/', controller.create);
 router.put('/:id', controller.update);

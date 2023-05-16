@@ -8,6 +8,7 @@ var router = express.Router();
 router.get('/', controller.index);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
+router.post('/autoCheck', controller.autoCheck);
 router.post('/adds', controller.adds);
 router.put('/:id', controller.update);
 router.patch('/:id', controller.update);

@@ -93,7 +93,7 @@ export function show(req, res) {
 
 // Creates a new Assessment in the DB
 export function create(req, res) {
-  console.log(req.body);
+  //console.log(req.body);
   if (!req.body.password||req.body.password!==process.env.PASSWORD) {
     res.status(501).end();
     return null;

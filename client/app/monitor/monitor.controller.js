@@ -19,6 +19,9 @@ class MonitorComponent {
   
   init(){
     var self=this;
+    //self.http.post('/api/monitors/monitor',{}).then(res=>{
+    //  console.log('monitor started');
+    //});
     self.http.get('/api/monitors').then(function(response){
       self.monitors=response.data.sort(function(a,b){
         return b._id-a._id;//a.name.localeCompare(b.name);
@@ -52,6 +55,8 @@ class MonitorComponent {
   
   update(monitor){
     var self=this;
+    monitor.password="";
+    if (window.localStorage.getItem('api')) monitor.password=window.localStorage.getItem('api');
     if (monitor==="false") monitor=false;
     //if (monitor.ceilingRequirementString) monitor.ceilingRequirement = JSON.parse(monitor.ceilingRequirementString);
     //if (monitor.visibilityRequirementString) monitor.visibilityRequirement = JSON.parse(monitor.visibilityRequirementString);
@@ -62,27 +67,33 @@ class MonitorComponent {
     //    monitor.runways = JSON.parse(monitor.runways);
     //  }
     //}
-    if (monitor._id){
+    if (monitor._id){//updated existing monitor
       self.http.put('/api/monitors/' + monitor._id,monitor).then(()=>{
         self.monitors[self.index]=angular.copy(monitor);
         self.newMonitor={active:true};
         self.metarObj={};
         if (monitor.active) {
-          self.metar.startMonitor(angular.copy(monitor));
+          //self.metar.startMonitor(angular.copy(monitor));
+          self.http.post('/api/airportRequirements/autoCheck',{monitor:angular.copy(monitor)}).then(res=>{
+            console.log(res);  
+          });
           monitor.active=false;
         }
       });
     }
-    else {
+    else {//newly created monitor
       self.http.post('/api/monitors',monitor).then((response)=>{
         self.monitors.push(response.data);
         self.newMonitor={active:true};
         self.metarObj={};
         if (response.data.active) {
-          self.metar.startMonitor(response.data);
+          //self.metar.startMonitor(response.data);
+          self.http.post('/api/airportRequirements/autoCheck',{monitor:angular.copy(monitor)}).then(res=>{
+            console.log(res);  
+          });
           //monitor.active=false;
         }
-        if (self.tempPilot&&self.tempPilot._id){
+        if (self.tempPilot&&self.tempPilot._id){//add phone number to pilot if it doesn't already exist
           self.http.get('/api/pilots/'+self.tempPilot._id).then(res=>{
             
             res.data.phone=response.data.phone.toString();
@@ -142,7 +153,7 @@ class MonitorComponent {
     return "btn-success";
   }
   classVisibility(){
-    var num=this.metarObj.Visibility*1;
+    var num=this.metarObj.Visibility;
     if (num<1) {
       this.class="danger"
       return "btn-danger";

@@ -11,7 +11,15 @@
 
 import _ from 'lodash';
 import {AirportRequirement} from '../../sqldb';
+import config from '../../config/environment';
+const baseUrl = 'https://localhost:' + config.port;
+const url1="https://api.synopticdata.com/v2/stations/latest?stid=";
+const url2="&within=120&vars=metar&token=" + process.env.TOKEN;
 const axios = require("axios");
+const https = require("https");
+const agent = new https.Agent({
+    rejectUnauthorized: false
+});
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -119,8 +127,7 @@ export function destroy(req, res) {
 export function adds(req,res) {
   if (!req.body||!req.body.airport||req.body.airport==="") res.status(404).end();
   var airport=req.body.airport;
-  var url="https://api.synopticdata.com/v2/stations/latest?stid=" + airport  
-      + "&within=120&vars=metar&token=" + process.env.TOKEN;
+  var url = url1 + airport + url2;
   axios.get(url)
   .then(response => {
     var jsonResponse={};
@@ -140,4 +147,43 @@ export function adds(req,res) {
     res.json(jsonResponse);
     
   },handleError(res));  
+}
+
+export function autoCheck(req,res){
+  if (!req.body.monitor.password||req.body.monitor.password!==process.env.PASSWORD) {
+    res.status(501).end();
+    return null;
+  }
+  var monitor=req.body.monitor;
+  const myInterval=setInterval(()=>{
+      var mon=_.cloneDeep(monitor);
+      //test parameter and threshold by current condition
+      //get current condition through api
+      if (mon.airport&&mon.airport!==""&&mon.airport.length>2) {
+        axios.post(baseUrl + '/api/airportRequirements/adds',{airport:mon.airport}, { httpsAgent: agent }).then((response)=>{
+          if (!response.data.metar||response.data.metar==="missing") return;
+          var metar=response.data.metar;
+          //parse result
+          var metarObj=config.parseADDS(metar);
+          //test threshold
+          if (config.testThreshold(metarObj,mon.watchedParameter,mon.watchedThreshold)) {
+            //if failed, do nothing.  if passed, stop interval and notify and update monitor record in api
+            mon.active=false;
+            if (monitor.active){
+              axios.put(baseUrl + '/api/monitors/' + mon._id,mon, { httpsAgent: agent }).then(()=>{
+                monitor.active=false;
+                console.log("Monitor Updated in database");
+              });
+              axios.post(baseUrl + '/api/monitors/twilio',{to:mon.phone,body:metar}, { httpsAgent: agent }).then((res)=>{
+                console.log('Twilio message sent');
+              },function(err){
+                console.log(err);
+              });
+            }
+            clearInterval(myInterval);
+          }
+        });
+      }
+    },1000*60);
+  res.sendStatus(200);
 }

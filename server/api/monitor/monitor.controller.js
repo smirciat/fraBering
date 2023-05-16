@@ -11,6 +11,13 @@
 
 import _ from 'lodash';
 import {Monitor} from '../../sqldb';
+import config from '../../config/environment';
+const port = config.port;
+const axios = require("axios");
+const https = require("https");
+const agent = new https.Agent({
+    rejectUnauthorized: false
+});
 var client = require('twilio')(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
@@ -82,6 +89,28 @@ export function show(req, res) {
     .then(handleEntityNotFound(res))
     .then(respondWithResult(res))
     .catch(handleError(res));
+}
+
+export function monitor(req,res){
+  //var i=0;
+  //const monitorInterval=setInterval(()=>{
+  //  console.log('interval fired #' + i);
+  //  i++;
+  //  if (i>10) {
+  //    clearInterval(monitorInterval);
+  //    console.log('interval completed');
+  //  }
+  //},1000);
+ axios.post('https://localhost:' + port + '/api/airportRequirements/adds', {airport:'paot'}, { httpsAgent: agent })
+   .then(function(res){
+     console.log(res);
+   }).catch(function(err){
+     console.log('ERROR!');
+     console.log(err);
+   });
+
+ res.sendStatus(200);
+ 
 }
 
 export function twilio(req,res){

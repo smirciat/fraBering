@@ -1,6 +1,6 @@
 <div flex layout="row">
   <sidebar layout="row"></sidebar>
-  <div flex layout="row" id="content" ng-if="monitor.isAdmin()">
+  <div flex layout="row" id="content">
     <div flex layout="column">
      <md-content flex class="space">
         <table flex class="table table-striped table-responsive table-hover">
@@ -71,7 +71,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr ng-repeat="mon in monitor.monitors">
+            <tr ng-repeat="mon in monitor.monitors | orderBy : '_id' : true">
                 <td><a href="#" ng-click="monitor.edit(mon,$index)"><button class="btn btn-default">Edit</button></a></td>
                 <td>{{mon.pilot}}</td>
                 <td>{{mon.phone}}</td>

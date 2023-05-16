@@ -22,7 +22,7 @@ export default function(app) {
   app.use('/auth/mobile', require('./auth/mobile').default);
   app.use('/auth', require('./auth').default);
   
-   app.use(lusca.csrf({angular:true}));
+   //app.use(lusca.csrf({angular:true}));
   // Insert routes below
   app.use('/api/monitors', require('./api/monitor'));
   app.use('/api/timesheets', require('./api/timesheet'));
@@ -35,6 +35,7 @@ export default function(app) {
   app.use('/api/flights', require('./api/flight'));
   app.use('/api/pilots', require('./api/pilot'));
   app.use('/api/assessments', require('./api/assessment'));
+  app.use(lusca.csrf({angular:true}));
   app.use('/api/users', require('./api/user'));
 
 

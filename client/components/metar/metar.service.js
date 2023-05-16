@@ -6,64 +6,12 @@ function metarService($http,$interval) {
 
   var self=this;
   
-  function testThreshold(metarObj,parameter,threshold){
-    var result=false;
-    threshold=threshold*1;
-    if (parameter==='Ceiling') {
-      if (metarObj.Ceiling*1>=threshold) result=true;
-    }
-    if (parameter==='Visibility') {
-      if (metarObj.Visibility*1>=threshold) result=true;
-    }
-    if (parameter==='Wind') {
-      if (metarObj['Wind-Gust']*1<=threshold) result=true;
-    }
-    if (parameter==='Icing') {
-      if (metarObj.Freezing) result=true;
-    }
-    return result;
-  }
-  
-  function startMonitor(monitor){
-    var myInterval;
-    this.monitor=angular.copy(monitor);
-    $interval.cancel(myInterval);
-    myInterval=$interval(()=>{
-      var mon=angular.copy(this.monitor);
-      //test parameter and threshold by current condition
-      //get current condition through api
-      if (mon.airport&&mon.airport!==""&&mon.airport.length>2) {
-        $http.post('/api/airportRequirements/adds',{airport:mon.airport}).then((response)=>{
-          if (!response.data.metar||response.data.metar==="missing") return;
-          var metar=response.data.metar;
-          //parse result
-          var metarObj=parseADDS(metar);
-          //test threshold
-          if (testThreshold(metarObj,mon.watchedParameter,mon.watchedThreshold)) {
-            //if failed, do nothing.  if passed, stop interval and notify and update monitor record in api
-            mon.active=false;
-            if (this.monitor.active){
-              $http.put('/api/monitors/' + mon._id,mon).then(()=>{
-                this.monitor.active=false;
-                console.log("Monitor Updated in database");
-              });
-              $http.post('/api/monitors/twilio',{to:mon.phone,body:metar}).then((res)=>{
-                console.log('Twilio message sent');
-              },function(err){
-                console.log(err);
-              });
-            }
-            $interval.cancel(myInterval);
-          }
-        });
-      }
-    },1000*60);
-  }
-  
   function parseADDS(metar){
     //var self=this;
     var temp="";
     var obs={};
+    //metar="METAR PASK 082000Z AUTO 26015KT 1 1\/4SM -SN BR BKN017 OVC023 M08\/M09 A3028";
+    //metar="PAOT 021617Z 05004KT 1\/4SM R09\/1600V2000FT FZFG VV002 M02\/M02  A2944 RMK AO2 I1001 T10221022";
     obs['Raw-Report']=metar;
     var metarArray=metar.split(' ');
     var tempMetar=metarArray.shift();//identifier
@@ -77,6 +25,7 @@ function metarService($http,$interval) {
     if (windArr.length>1) obs['Wind-Gust']=windArr[1].replace(/[^0-9]/g, '');
     else obs['Wind-Gust']=obs['Wind-Speed'];
     obs.vis=metarArray.shift();//visibility
+    //obs.vis="1/2SM";
     if (obs.vis.split('V').length>1&&obs.vis.split('V')[0].length===3&&obs.vis.split('V')[1].length===3) obs.vis=metarArray.shift();//variable winds, ignore
     if (obs.vis.slice(-2)!=="SM") {
       temp=metarArray.shift();
@@ -88,14 +37,21 @@ function metarService($http,$interval) {
       }
     }
     var visArray=obs.vis.split('/');
-    if (visArray.length>1) obs.Visibility=visArray[0].replace(/[^0-9 ]/g, '') + '/' + visArray[1].replace(/[^0-9]/g, '');
-    else obs.Visibility=obs.vis.replace(/[^0-9]/g, '');//remove leading M and trailing SM
-    visArray=obs.Visibility.split(' ');
-    if (visArray.length>1) {//turn 1 1/2 into 3/2
-      var number = parseInt(visArray[0],10);
-      var top = parseInt(visArray[1].substring(0,1),10);
-      var bottom = parseInt(visArray[1].slice(-1),10);
-      obs.Visibility= (top+number*bottom) + '/' + bottom;
+    var number, top, bottom;
+    if (visArray.length>1) {
+      obs.Visibility=visArray[0].replace(/[^0-9 ]/g, '') + '/' + visArray[1].replace(/[^0-9]/g, '');
+      var visArray1=obs.Visibility.split(' ');
+      if (visArray1.length>1) {//turn 1 1/2 into 3/2
+        number = parseInt(visArray1[0],10);
+        top = parseInt(visArray1[1].substring(0,1),10);
+        bottom = parseInt(visArray1[1].slice(-1),10);
+        //obs.Visibility= (top+number*bottom) + '/' + bottom;
+        obs.Visibility=(top+number*bottom)/bottom;
+      }
+      else obs.Visibility=(visArray[0].replace(/[^0-9 ]/g, '')/visArray[1].replace(/[^0-9]/g, '')).toString();
+    }
+    else {
+      obs.Visibility=obs.vis.replace(/[^0-9]/g, '');
     }
     obs['Other-List']=[];
     obs['Cloud-List']=[];
@@ -156,8 +112,7 @@ function metarService($http,$interval) {
     someMethod: function () {
       return 42;
     },
-    parseADDS,
-    startMonitor
+    parseADDS
   };
 }
 
