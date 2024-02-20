@@ -5,6 +5,7 @@
 class MonitorComponent {
   constructor($http,Auth,$timeout,metar) {
     var self=this;
+    self.tempPilot={name:"",phone:""};
     if (window.localStorage.getItem('pilot')!==null&&window.localStorage.getItem('pilot')!=='undefined') self.tempPilot=JSON.parse(window.localStorage.getItem('pilot'));
     self.isAdmin=Auth.isAdmin;
     self.metar=metar;

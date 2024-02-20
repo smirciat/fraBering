@@ -105,7 +105,7 @@
       }
       self.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],night:night,times:times,crossWinds:[],runwayConditionComments:[],
         windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilotObj:pilot,flight:flight,equipmentObj:equipment,
-        color:color,forecastFreezingPrecipitations:[],forecastVisibilities:[]
+        color:color,forecastFreezingPrecipitations:[],forecastVisibilities:[],dawn:[],dusk:[]
       };
       if (self.assessment.pilotObj===""||self.assessment.pilotObj===undefined||self.assessment.pilotObj.name==='z') self.initPilots();
   
@@ -130,23 +130,17 @@
 
     initNight(airport,index){
       var self=this;
-      var year = self.moment().year();
-      var month = self.moment().month()+1;
-      var day = self.moment().date();
-      var date = year + '-' + month + '-' + day;
       self.assessment.night[index]=false;
       var airportParams = self.getAirport(airport);
-      self.$http.get('https://api.sunrise-sunset.org/json?lat=' + airportParams.latitude + '&lng=' + airportParams.longitude + '&date=' + date + '&formatted=0').then(function(response){
-        if (response.data.results.civil_twilight_begin==='1970-01-01T00:00:01+00:00') return;
-        var twilightStart = self.moment(response.data.results.civil_twilight_begin);
-        var twilightEnd = self.moment(response.data.results.civil_twilight_end);
-        if (self.assessment.times.length<=index||self.assessment.times[index]==="") return;
-        var timeArr=self.assessment.times[index].split(':');
-        if (timeArr.length<2) return;
-        var departTime = self.moment(twilightStart).startOf('day').hour(timeArr[0]).minute(timeArr[1]);
-        if (departTime.isBetween(twilightStart,twilightEnd)) self.assessment.night[index]=false;
-        else self.assessment.night[index]=true;
-      });  
+      let times=SunCalc.getTimes(new Date(),airportParams.latitude,airportParams.longitude);
+      var twilightStart = self.moment(times.dawn);
+      var twilightEnd = self.moment(times.dusk);
+      if (self.assessment.times.length<=index||self.assessment.times[index]==="") return;
+      var timeArr=self.assessment.times[index].split(':');
+      if (timeArr.length<2) return;
+      var departTime = self.moment(twilightStart).startOf('day').hour(timeArr[0]).minute(timeArr[1]);
+      if (departTime.isBetween(twilightStart,twilightEnd)) self.assessment.night[index]=false;
+      else self.assessment.night[index]=true;
     }
     
     initAirport(airport,index,count) {
@@ -162,6 +156,13 @@
         var metar=response.data.metar;
         var longitude=response.data.longitude;
         var latitude=response.data.latitude;
+        let metarDate=self.moment(response.data.date);
+        let now=self.moment();
+        let metarAge = self.moment.duration(now.diff(metarDate));
+        let minutes = metarAge.asMinutes();
+        let times=SunCalc.getTimes(new Date(),latitude,longitude);
+        self.assessment.dusk[index]=self.moment(times.dusk).format("hh:mm A");
+        self.assessment.dawn[index]=self.moment(times.dawn).format("hh:mm A");
         if (metar==="missing") {
           console.log('Metar missing');
           if (count<6) {
@@ -170,7 +171,7 @@
           }
           return;
         }
-        if (metar&&metar!=="") {
+        if (metar&&metar!==""&&minutes<=120) {
           var metarObj=self.metar.parseADDS(metar);
           if ((metarObj.Temperature*9/5+32)<self.assessment.equipmentObj.temp) {
               var alert = self.mdDialog.alert({
@@ -750,8 +751,16 @@
     windClass(index){
       var self=this;
       if (self.assessment.windGusts[index]===undefined) return self.blue(index);
+      if (self.assessment.airports[index]==="PADG") {
+        if (self.assessment.windGusts[index]>30) return self.red(index);
+        if (self.assessment.crossWinds[index]>15) return self.red(index);
+        if (self.assessment.windGusts[index]>25) return self.yellow(index);
+        if (self.assessment.crossWinds[index]>12) return self.yellow(index);
+      }
       if (self.assessment.windGusts[index]>self.assessment.equipmentObj.wind) return self.red(index);
       if (self.assessment.crossWinds[index]>self.assessment.equipmentObj.xwind) return self.red(index);
+      if (self.assessment.windGusts[index]>(self.assessment.equipmentObj.wind-5)) return self.yellow(index);
+      if (self.assessment.crossWinds[index]>(self.assessment.equipmentObj.xwind-5)) return self.yellow(index);
       return self.green(index);
     }
     

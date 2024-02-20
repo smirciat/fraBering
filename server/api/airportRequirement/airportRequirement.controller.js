@@ -14,7 +14,7 @@ import {AirportRequirement} from '../../sqldb';
 import config from '../../config/environment';
 const baseUrl = 'https://localhost:' + config.port;
 const url1="https://api.synopticdata.com/v2/stations/latest?stid=";
-const url2="&within=120&vars=metar&token=" + process.env.TOKEN;
+const url2="&vars=metar&token=" + process.env.TOKEN;//"&within=120&vars=metar&token=" + process.env.TOKEN;
 const axios = require("axios");
 const https = require("https");
 const agent = new https.Agent({
@@ -139,6 +139,7 @@ export function adds(req,res) {
         jsonResponse.metar=response.data.STATION[0].OBSERVATIONS.metar_value_1.value;
         jsonResponse.latitude=response.data.STATION[0].LATITUDE;
         jsonResponse.longitude=response.data.STATION[0].LONGITUDE;
+        jsonResponse.date=response.data.STATION[0].OBSERVATIONS.metar_value_1.date_time;
       }
       else {
         jsonResponse.metar="missing";

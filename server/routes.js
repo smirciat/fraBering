@@ -45,7 +45,8 @@ export default function(app) {
 
   // All other routes should redirect to the index.html
   app.route('/*')
-    .get((req, res) => {
-      res.sendFile(path.resolve(app.get('appPath') + '/index.html'));
-    });
+    .get(errors[404]);
+    //.get((req, res) => {
+    //  res.sendFile(path.resolve(app.get('appPath') + '/index.html'));
+    //});
 }

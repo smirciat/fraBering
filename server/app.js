@@ -9,8 +9,8 @@ import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
 import https from 'https';
-var privateKey  = fs.readFileSync('/etc/letsencrypt/live/beringair.ddns.net/privkey.pem', 'utf8');
-var certificate = fs.readFileSync('/etc/letsencrypt/live/beringair.ddns.net/fullchain.pem', 'utf8');
+var privateKey  = fs.readFileSync('/etc/letsencrypt/live/bering.ddns.net/privkey.pem', 'utf8');
+var certificate = fs.readFileSync('/etc/letsencrypt/live/bering.ddns.net/fullchain.pem', 'utf8');
 var credentials = {key: privateKey, cert: certificate};
 // Populate databases with sample data
 if (config.seedDB) { require('./config/seed'); }
