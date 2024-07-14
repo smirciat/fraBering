@@ -105,7 +105,7 @@
       }
       self.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],night:night,times:times,crossWinds:[],runwayConditionComments:[],
         windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilotObj:pilot,flight:flight,equipmentObj:equipment,
-        color:color,forecastFreezingPrecipitations:[],forecastVisibilities:[],dawn:[],dusk:[]
+        color:color,forecastFreezingPrecipitations:[],forecastVisibilities:[],dawn:[],dusk:[],altimeters:[]
       };
       if (self.assessment.pilotObj===""||self.assessment.pilotObj===undefined||self.assessment.pilotObj.name==='z') self.initPilots();
   
@@ -133,14 +133,17 @@
       self.assessment.night[index]=false;
       var airportParams = self.getAirport(airport);
       let times=SunCalc.getTimes(new Date(),airportParams.latitude,airportParams.longitude);
-      var twilightStart = self.moment(times.dawn);
-      var twilightEnd = self.moment(times.dusk);
-      if (self.assessment.times.length<=index||self.assessment.times[index]==="") return;
-      var timeArr=self.assessment.times[index].split(':');
-      if (timeArr.length<2) return;
-      var departTime = self.moment(twilightStart).startOf('day').hour(timeArr[0]).minute(timeArr[1]);
-      if (departTime.isBetween(twilightStart,twilightEnd)) self.assessment.night[index]=false;
-      else self.assessment.night[index]=true;
+      if (times.dawn instanceof Date && !isNaN(times.dawn)&&times.dusk instanceof Date && !isNaN(times.dusk)) {
+        var twilightStart = self.moment(times.dawn);
+        var twilightEnd = self.moment(times.dusk);
+        if (self.assessment.times.length<=index||self.assessment.times[index]==="") return;
+        var timeArr=self.assessment.times[index].split(':');
+        if (timeArr.length<2) return;
+        var departTime = self.moment(twilightStart).startOf('day').hour(timeArr[0]).minute(timeArr[1]);
+        if (departTime.isBetween(twilightStart,twilightEnd)) self.assessment.night[index]=false;
+        else self.assessment.night[index]=true;
+      }
+      else self.assessment.night[index]=false;
     }
     
     initAirport(airport,index,count) {
@@ -188,7 +191,7 @@
           }
           self.assessment.metars[index]=metarObj['Raw-Report'];
           var len = metarObj['Cloud-List'].length;
-          if (len===0) self.assessment.ceilings[index]='10000';
+          if (len===0) self.assessment.ceilings[index]='9999';
           else if (len>-1&&(metarObj['Cloud-List'][0][0]==='BKN'||metarObj['Cloud-List'][0][0]==='OVC'||metarObj['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=metarObj['Cloud-List'][0][1]+'00';
           else if (len>=2&&(metarObj['Cloud-List'][1][0]==='BKN'||metarObj['Cloud-List'][1][0]==='OVC'||metarObj['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=metarObj['Cloud-List'][1][1]+'00';
           else if (len>=3&&(metarObj['Cloud-List'][2][0]==='BKN'||metarObj['Cloud-List'][2][0]==='OVC'||metarObj['Cloud-List'][0][0]==='VV')) self.assessment.ceilings[index]=metarObj['Cloud-List'][2][1]+'00';
@@ -220,12 +223,14 @@
             });
           }
           self.assessment.crossWinds[index] = Math.round(self.assessment.windGusts[index]*Math.sin(xwindAngle*(Math.PI/180)));
+          self.assessment.altimeters[index]=metarObj.altimeter;
           self.assessment.visibilities[index]=metarObj.Visibility;
           if (self.assessment.visibilities[index].includes('/')) {
             var bits = self.assessment.visibilities[index].split("/");
             self.assessment.visibilities[index] = parseInt(bits[0],10)/parseInt(bits[1],10);
           }
           self.assessment.visibilities[index]=parseFloat(self.assessment.visibilities[index]);
+          
           self.$http.post('/api/assessments/lookup',{airport:airport}).then(function(res){
             if (res.data.length>0){
               var i = res.data[0].airports.indexOf(airport);
@@ -257,6 +262,9 @@
               var i=item.replace(/[^a-zA-Z]/g, "");
               if (i.substring(0,2)==="FZ") self.assessment.freezingPrecipitations[index]=true;
             });
+          }
+          if (!self.assessment.altimeters||!self.assessment.altimeters[index]) {
+            self.assessment.color[index]="md-purple";
           }
         }
       },function(response){console.log(response)});
@@ -685,20 +693,20 @@
     
     yellow(i){
       var self=this;
-      if (self.assessment.color[i]!=='md-red') self.assessment.color[i]='md-yellow';
+      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-purple') self.assessment.color[i]='md-yellow';
       return 'md-yellow';
     }
     
     orange(i){
       var self=this;
-      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow') 
+      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow'&&self.assessment.color[i]!=='md-purple') 
         self.assessment.color[i]='md-orange';
       return 'md-orange';
     }
     
     green(i){
       var self=this;
-      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow'&&self.assessment.color[i]!=='md-orange') 
+      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow'&&self.assessment.color[i]!=='md-orange'&&self.assessment.color[i]!=='md-purple') 
          self.assessment.color[i]='md-green';
       return 'md-green';
     }
@@ -709,11 +717,18 @@
       return 'md-blue';
     }
     
+    purple(i){
+      var self=this;
+      
+      return 'md-purple';
+    }
+    
     visibilityClass(index){
       var self=this;
       var airport = self.getAirport(self.assessment.airports[index]);
       if (!self.assessment.visibilities[index]) return self.blue(index);
       if (airport.visibilityRequirement.red>self.assessment.visibilities[index]) return self.red(index);
+      if (self.assessment.visibilities[index]==="99") return self.purple(index);
       if (airport.visibilityRequirement.yellow>self.assessment.visibilities[index]) return self.yellow(index);
       if (self.assessment.night[index]) {
         if (airport.visibilityRequirement.night>self.assessment.visibilities[index]) return self.orange(index);
@@ -721,7 +736,6 @@
       else {
         if (airport.visibilityRequirement.ifr>self.assessment.visibilities[index]) return self.orange(index);
       }
-      
       return self.green(index);
     }
     
@@ -730,6 +744,7 @@
       var airport = self.getAirport(self.assessment.airports[index]);
       if (!self.assessment.ceilings[index]) return self.blue(index);
       if (airport.ceilingRequirement.red>self.assessment.ceilings[index]) return self.red(index);
+      if (self.assessment.ceilings[index]==="9999") return self.purple(index);
       if (airport.ceilingRequirement.yellow>self.assessment.ceilings[index]) return self.yellow(index);
       if (self.assessment.night[index]) {
         if (airport.ceilingRequirement.night>self.assessment.ceilings[index]) return self.orange(index);
@@ -737,7 +752,6 @@
       else {
         if (airport.ceilingRequirement.ifr>self.assessment.ceilings[index]) return self.orange(index);
       }
-      
       return self.green(index);
     }
     

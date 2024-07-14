@@ -14,6 +14,9 @@ function metarService($http,$interval) {
     //metar="PAOT 021617Z 05004KT 1\/4SM R09\/1600V2000FT FZFG VV002 M02\/M02  A2944 RMK AO2 I1001 T10221022";
     obs['Raw-Report']=metar;
     var metarArray=metar.split(' ');
+    metarArray.forEach(m=>{
+      if (m.substring(0,1)==='A'&&m.length===5) obs.altimeter=m;
+    });
     var tempMetar=metarArray.shift();//identifier
     if (tempMetar==="METAR"||tempMetar==="SPECI") metarArray.shift();//if prefaced by 'METAR'
     metarArray.shift();//date/time
@@ -33,7 +36,7 @@ function metarService($http,$interval) {
       else {
         metarArray.unshift(temp);
         metarArray.unshift(obs.vis);
-        obs.vis="";
+        obs.vis="99";
       }
     }
     var visArray=obs.vis.split('/');
@@ -53,6 +56,7 @@ function metarService($http,$interval) {
     else {
       obs.Visibility=obs.vis.replace(/[^0-9]/g, '');
     }
+    //if (obs.Visibility==="") obs.Visibility="99";
     obs['Other-List']=[];
     obs['Cloud-List']=[];
     var unknown=metarArray.shift();//let's test this
@@ -90,7 +94,7 @@ function metarService($http,$interval) {
           });
         }
     var len = obs['Cloud-List'].length;
-        if (len===0) obs.Ceiling='10000';
+        if (len===0) obs.Ceiling='9999';
         else if (len>-1&&(obs['Cloud-List'][0][0]==='BKN'||obs['Cloud-List'][0][0]==='OVC'||obs['Cloud-List'][0][0]==='VV')) obs.Ceiling=obs['Cloud-List'][0][1]+'00';
         else if (len>=2&&(obs['Cloud-List'][1][0]==='BKN'||obs['Cloud-List'][1][0]==='OVC'||obs['Cloud-List'][0][0]==='VV')) obs.Ceiling=obs['Cloud-List'][1][1]+'00';
         else if (len>=3&&(obs['Cloud-List'][2][0]==='BKN'||obs['Cloud-List'][2][0]==='OVC'||obs['Cloud-List'][0][0]==='VV')) obs.Ceiling=obs['Cloud-List'][2][1]+'00';
