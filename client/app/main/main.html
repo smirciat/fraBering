@@ -30,7 +30,7 @@
         <label>Equipment</label>
         <md-select ng-model="main.assessment.equipmentObj" ng-change="main.changeFlight($event)" ng-model-options="{trackBy: '$value.id'}">
           <md-option ng-repeat="equipment in main.equipment | orderBy: 'name'" ng-value="equipment"
-            ng-selected="{{equipment.name==='Caravan'}}">
+            ng-selected="{{equipment.name==='1900'}}">
             {{equipment.name}}
           </md-option>
         </md-select>

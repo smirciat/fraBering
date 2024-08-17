@@ -12,6 +12,7 @@ function metarService($http,$interval) {
     var obs={};
     //metar="METAR PASK 082000Z AUTO 26015KT 1 1\/4SM -SN BR BKN017 OVC023 M08\/M09 A3028";
     //metar="PAOT 021617Z 05004KT 1\/4SM R09\/1600V2000FT FZFG VV002 M02\/M02  A2944 RMK AO2 I1001 T10221022";
+    //metar="PAOT 021617Z 05004KT CLR M02\/M02  A2944 RMK AO2 I1001 T10221022";
     obs['Raw-Report']=metar;
     var metarArray=metar.split(' ');
     metarArray.forEach(m=>{

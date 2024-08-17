@@ -95,7 +95,7 @@
         pilot=self.assessment.pilotObj||"";
         flight=self.assessment.flight||"";
         airports=self.assessment.airports||[];
-        equipment=self.assessment.equipmentObj||{id:1,name:"Caravan",wind:35,xwind:25,temp:-50};
+        equipment=self.assessment.equipmentObj||{id:5,name:"1900",wind:40,xwind:35,temp:-50};
         color=self.assessment.color||[];
         night=self.assessment.night||[];
         times=self.assessment.times||[];
@@ -728,7 +728,7 @@
       var airport = self.getAirport(self.assessment.airports[index]);
       if (!self.assessment.visibilities[index]) return self.blue(index);
       if (airport.visibilityRequirement.red>self.assessment.visibilities[index]) return self.red(index);
-      if (self.assessment.visibilities[index]==="99") return self.purple(index);
+      if (self.assessment.visibilities[index]===99) return self.purple(index);
       if (airport.visibilityRequirement.yellow>self.assessment.visibilities[index]) return self.yellow(index);
       if (self.assessment.night[index]) {
         if (airport.visibilityRequirement.night>self.assessment.visibilities[index]) return self.orange(index);
