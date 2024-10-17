@@ -11,19 +11,25 @@ import * as auth from './auth/auth.service';
 
 export default function(app) {
   
-  app.use('/api/airportRequirements/mobile', require('./api/airportRequirement/mobile'));
-  app.use('/api/notifications/mobile', require('./api/notification/mobile'));
-  app.use('/api/hazardReports/mobile', require('./api/hazardReport/mobile'));
-  app.use('/api/flights/mobile', require('./api/flight/mobile'));
-  app.use('/api/pilots/mobile', require('./api/pilot/mobile'));
-  app.use('/api/assessments/mobile', require('./api/assessment/mobile'));
-  app.use('/api/users/mobile', require('./api/user/mobile'));
+  //app.use('/api/airportRequirements/mobile', require('./api/airportRequirement/mobile'));
+  //app.use('/api/notifications/mobile', require('./api/notification/mobile'));
+  //app.use('/api/hazardReports/mobile', require('./api/hazardReport/mobile'));
+  //app.use('/api/flights/mobile', require('./api/flight/mobile'));
+  //app.use('/api/pilots/mobile', require('./api/pilot/mobile'));
+  //app.use('/api/assessments/mobile', require('./api/assessment/mobile'));
+  //app.use('/api/users/mobile', require('./api/user/mobile'));
 
-  app.use('/auth/mobile', require('./auth/mobile').default);
+  //app.use('/auth/mobile', require('./auth/mobile').default);
   app.use('/auth', require('./auth').default);
   
-   //app.use(lusca.csrf({angular:true}));
+  app.use(lusca.csrf({angular:true}));
   // Insert routes below
+  app.get('/fileserver', function(req, res){
+    if (req.query) res.sendFile("./fileserver/" + req.query.filename, {root: __dirname});
+    else res.status(500);
+  });
+  app.use('/api/calendar', require('./api/calendar'));
+  app.use('/api/airplanes', require('./api/airplane'));
   app.use('/api/monitors', require('./api/monitor'));
   app.use('/api/timesheets', require('./api/timesheet'));
   app.use('/api/manifests', require('./api/manifest'));
@@ -35,7 +41,7 @@ export default function(app) {
   app.use('/api/flights', require('./api/flight'));
   app.use('/api/pilots', require('./api/pilot'));
   app.use('/api/assessments', require('./api/assessment'));
-  app.use(lusca.csrf({angular:true}));
+  //app.use(lusca.csrf({angular:true}));
   app.use('/api/users', require('./api/user'));
 
 
@@ -45,8 +51,8 @@ export default function(app) {
 
   // All other routes should redirect to the index.html
   app.route('/*')
-    .get(errors[404]);
-    //.get((req, res) => {
-    //  res.sendFile(path.resolve(app.get('appPath') + '/index.html'));
-    //});
+    //.get(errors[404]);
+    .get((req, res) => {
+      res.sendFile(path.resolve(app.get('appPath') + '/index.html'));
+    });
 }

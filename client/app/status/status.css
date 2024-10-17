@@ -1,0 +1,91 @@
+.layout-OME {
+  width: 100%;
+
+  display: grid;
+  grid:
+    ". . . . ."
+    / 2fr 1fr 1fr 1fr 2fr 1fr;
+  gap: 8px;
+}
+
+.layout-OTZ {
+  width: 100%;
+
+  display: grid;
+  grid:
+    ". . . . ."
+    / 2fr 1fr 1fr 1fr 2fr;
+  gap: 8px;
+}
+
+.layout-HEL {
+  width: 100%;
+
+  display: grid;
+  grid:
+    ". . . . ."
+    / 1fr 1fr 1fr 2fr;
+  gap: 8px;
+}
+
+.sidebar { grid-area: sidebar; }
+.body { grid-area: body; }
+
+.status-column{
+    height:100vh;
+    font-size:1.5em;
+}
+
+.smaller{
+  font-size:0.75em;
+  font-weight:bold;
+  color:red;
+}
+
+.grid-parent{
+  display: grid; 
+  grid-template-columns: 1fr 3fr; 
+  grid-gap: 0px; 
+  border: 1px solid black; 
+  width: 100%; 
+}
+
+.grid-parent-right{
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  grid-gap: 0px; 
+  border: 1px solid black; 
+  width: 100%; 
+}
+
+.grid-parent-navbar{
+  display: grid; 
+  grid-template-columns: 4fr 1fr;
+  grid-gap: 0px;
+}
+
+.comment{
+  text-align:center;
+  background: rgba(51, 170, 51, .02);
+}
+
+.airport{
+  text-align:center;
+}
+
+.airport-green{
+  background-color:lightgreen;
+}
+
+.airport-pink{
+  background-color:pink;
+}
+
+.airport-yellow{
+  background-color:yellow;
+}
+
+.chosen{
+  border:2px dashed green;  
+  padding:0.03em 0.25em;
+}

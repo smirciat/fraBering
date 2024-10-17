@@ -106,3 +106,6 @@ md-sidenav.md-closed.md-locked-open-add-active {
 .dialog-options{
   font-size:150%;
 }
+.navbar{
+  margin-bottom: 0px;
+}

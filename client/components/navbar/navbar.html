@@ -1,5 +1,5 @@
 <div class="navbar navbar-default navbar-static-top" ng-controller="NavbarController">
-  <div class="container">
+  <div class="container" style="width:95%;padding:0px;">
     <div class="navbar-header">
       <button class="navbar-toggle" type="button" ng-click="nav.isCollapsed = !nav.isCollapsed">
         <span class="sr-only">Toggle navigation</span>
@@ -7,7 +7,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a href="/" class="navbar-brand">workspace</a>
+      <!--<a href="/" class="navbar-brand">Assessment and Status</a>-->
     </div>
     <div uib-collapse="nav.isCollapsed" class="navbar-collapse collapse" id="navbar-main">
       <ul class="nav navbar-nav">
@@ -15,6 +15,41 @@
             <a ui-sref="{{item.state}}">{{item.title}}</a>
         </li>
         <li ng-show="nav.isAdmin()" ui-sref-active="active"><a ui-sref="admin">Admin</a></li>
+        <li style="padding-left:5em;padding-top:7px;">
+          <div >
+            <a style="float:left" href='#' ng-click="nav.minusDate()"><i class="fa fa-angle-left fa-autosize space-if" aria-hidden="true"></i></a>
+            <a style="float:right" href='#' ng-click="nav.plusDate()"><i class="fa fa-angle-right fa-autosize space-if" aria-hidden="true"></i></a>
+              <!--<datepicker date-format="EEEE MMM d, yyyy" >
+                  <input class="form-control" ng-model="nav.date" ng-change="nav.upDate()" type="text"/>
+              </datepicker>-->
+              <div style="padding-left:10px;padding-top:0px;width:85%" class="input-group">
+                <input class="form-control" type="text" ng-model="nav.dateString" ng-blur="nav.upDate()">
+                <!--<span class="input-group-btn">
+                  <button type="button" class="btn btn-default" ng-click="nav.isDatepickerOpen = !nav.isDatepickerOpen">
+                    <i class="glyphicon glyphicon-calendar"></i>
+                  </button>
+                </span>-->
+                <!--<input style="display:none" type="text" class="form-control" uib-datepicker-popup="EEEE MMM d, yyyy" ng-model="nav.date" ng-change="nav.upDate()" 
+                   is-open="nav.isDatepickerOpen" datepicker-options="nav.datepickerOptions" ng-required="true" close-text="Close" 
+                   alt-input-formats="altInputFormats"/>-->
+              </div>
+              <!--<h5 ng-class="nav.socket">S</h5>-->
+          </div>
+        </li>
+        <li style="padding-top:7px;padding-left:5em;">
+          <ui-select style="width:20em;" ng-model="nav.base" theme="selectize" ng-disabled="disabled" ng-change="nav.updateBase()">
+              <ui-select-match placeholder="Choose...">{{$select.selected.base}}</ui-select-match>
+              <ui-select-choices repeat="base in nav.bases" >
+                <div ng-bind-html="base.base | highlight: $select.search"></div>
+              </ui-select-choices>
+          </ui-select>
+        </li>
+        <li ng-if="nav.isAdmin()" style="padding-top:7px;padding-left:5em;">
+          <div class="grid-parent-navbar">
+            <input class="form-control" tooltip-placement="bottom" uib-tooltip="Upload Pilot Schedule CSV File Here" type="file" id="file" name="file" ng-model="nav.file"/>
+            <button ng-if="nav.fileExists" class="btn btn-default" ng-click="nav.uploadCSV()">Upload CSV</button>
+          </div>
+        </li>
       </ul>
 
       <ul class="nav navbar-nav navbar-right">

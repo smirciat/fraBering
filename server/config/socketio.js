@@ -17,6 +17,8 @@ function onConnect(socket) {
   });
 
   // Insert sockets below
+  require('../api/calendar/calendar.socket').register(socket);
+  require('../api/airplane/airplane.socket').register(socket);
   require('../api/monitor/monitor.socket').register(socket);
   require('../api/timesheet/timesheet.socket').register(socket);
   require('../api/manifest/manifest.socket').register(socket);

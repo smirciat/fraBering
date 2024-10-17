@@ -11,6 +11,10 @@ class SidebarController {
     this.state.go('main');
   }
   
+  status() {
+    this.state.go('status');
+  }
+  
   monitor() {
     this.state.go('monitor');
   }

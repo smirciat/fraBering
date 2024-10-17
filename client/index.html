@@ -32,6 +32,7 @@
       <link rel="stylesheet" href="app/monitor/monitor.css">
       <link rel="stylesheet" href="app/notifications/notifications.css">
       <link rel="stylesheet" href="app/scheduledFlights/scheduledFlights.css">
+      <link rel="stylesheet" href="app/status/status.css">
       <link rel="stylesheet" href="app/timeclock/timeclock.css">
       <link rel="stylesheet" href="app/viewAssessments/viewAssessments.css">
       <link rel="stylesheet" href="app/viewHazards/viewHazards.css">
@@ -85,6 +86,7 @@
       <script src="bower_components/microplugin/src/microplugin.js"></script>
       <script src="bower_components/sifter/sifter.js"></script>
       <script src="bower_components/selectize/dist/js/selectize.js"></script>
+      <script src="bower_components/angular-socket-io/socket.js"></script>
       <script src="bower_components/angular-ui-router/release/angular-ui-router.js"></script>
       <script src="bower_components/angular-validation-match/dist/angular-validation-match.min.js"></script>
       <script src="bower_components/moment/moment.js"></script>
@@ -92,8 +94,9 @@
       <script src="bower_components/angularPrint/angularPrint.js"></script>
       <script src="bower_components/moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js"></script>
       <!-- endbower -->
-      <!--<script src="bower_components/socket.io-client/dist/socket.io.js"></script>
+      <script src="socket.io-client/socket.io.js"></script>
     <!-- endbuild -->
+    <!--<script src="bower_components/socket.io-client/dist/socket.io.js"></script>-->
     <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <!-- build:js(.tmp) app/app.js -->
       <script src="app/app.js"></script>
@@ -118,6 +121,8 @@
       <script src="app/notifications/notifications.js"></script>
       <script src="app/scheduledFlights/scheduledFlights.controller.js"></script>
       <script src="app/scheduledFlights/scheduledFlights.js"></script>
+      <script src="app/status/status.controller.js"></script>
+      <script src="app/status/status.js"></script>
       <script src="app/timeclock/timeclock.controller.js"></script>
       <script src="app/account/login/login.controller.js"></script>
       <script src="app/viewAssessments/viewAssessments.controller.js"></script>
@@ -139,6 +144,7 @@
       <script src="components/navbar/navbar.directive.js"></script>
       <script src="components/sidebar/sidebar.controller.js"></script>
       <script src="components/sidebar/sidebar.directive.js"></script>
+      <script src="components/socket/socket.service.js"></script>
       <script src="app/account/signup/signup.controller.js"></script>
       <script src="components/util/util.service.js"></script>
       <!-- endinjector -->

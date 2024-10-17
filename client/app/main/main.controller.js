@@ -6,6 +6,12 @@
 
     constructor($http, $scope,$mdDialog,$mdSidenav,$timeout,appConfig,$interval,moment,metar) {
       var self=this;
+      let pilotNames="Adam Baker,Andy Smircich,Brandon McIntosh,Brett Dunkley,Brian Weckwerth,Chad Antill,Charlton Heckman,Chris Shannon,Cole Thomas,Dan Roberts,David Olson,David Swenson,Dawson Evans,Drake Broussard,Fen Kinneen,Frank Parker,Jacob Larson,Jade Greene,Jay Barton,Jeff Higginbotham,Joe Small,Joel Karinen,Jonathan Hanson,Josh Krebiehl,Junyor Erikson,Justin Laws,Korey Rohlack,Kyle Lefebvre,Lance Bickford,Larry Eggart,Logan Bagley,Luke Murkowski,Matt Freckleton,Mike K. Evans,Mike R. Evans,Nathaniel Olson,Neill Toelle,Nick Hajdukovich,Patrik Toerdal,Phuongkonth Bunyi,Russell Rowe,Ryan Hanson,Ryan Woehler,Rylan Rickett,Sam Kendall,Savanna Paulsen,Scott Gordon,Seth Thomas,Sophia Hobbs,Tim Hopley,Tim Kunkel,Tim Smith,Tru Tripple";
+      let pilotArr=pilotNames.split(',');
+      this.pilotNames=[];
+      pilotArr.forEach(pilot=>{
+        this.pilotNames.push(pilot);
+      });
       self.tempPilot={name:""};
       if (window.localStorage.getItem('pilot')!==null&&window.localStorage.getItem('pilot')!=='undefined') self.tempPilot=JSON.parse(window.localStorage.getItem('pilot'));
       self.$http = $http;
@@ -114,7 +120,7 @@
     initPilots(){
       var self=this;
       self.$http.get('/api/pilots')
-        .then(function(response) {
+        .then(function(response){
           self.pilots = response.data;
           self.timeout(function(){
             if (self.assessment.pilotObj===""||self.assessment.pilotObj===undefined) self.assessment.pilotObj=angular.copy(self.tempPilot);
@@ -156,6 +162,7 @@
       self.initNight(airport,index);
       if (airport.length<3) return;
       self.$http.post('/api/airportRequirements/adds',{airport:airport}).then(function(response){
+        
         var metar=response.data.metar;
         var longitude=response.data.longitude;
         var latitude=response.data.latitude;

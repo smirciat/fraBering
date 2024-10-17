@@ -1,0 +1,69 @@
+<navbar></navbar>
+<section ng-class="status.getLayout()">
+  <div ng-if="status.fixedWing()" class="status-column">
+      <div class="grid-parent" ng-repeat="airport in status.airports">
+        <div class="airport" ng-class="status.airportClass(airport.runwayScore)" ng-click="status.enterScore(airport)" 
+               tooltip-placement="right" uib-tooltip="Latest Runway Score (1-5) is: {{airport.runwayScore}}">  
+          <h1>{{airport.threeLetter}}</h1>
+        </div>
+        <div class="comment" ng-click="status.addEditComment(airport)">
+          <p>{{airport.comment}}</p>
+        </div>
+      </div>
+  </div>
+  <div class="status-column">
+    <div ng-repeat="pilot in status.sortedPilots track by $index">
+      <h1 ng-if="status.showHeader('sortedPilots','header',$index)">{{pilot.header}}</h1>
+      <h1 ng-if="status.fixedWing('HEL')&&$index===0">Helicopter Pilots</h1>
+      <p uib-tooltip="{{pilot.medicalClass}}" ng-click="status.choose('sortedPilots',pilot._id)" 
+            ng-class="status.chosenClass(pilot.chosen)">{{pilot.name}}</p>
+    </div>
+  </div>
+  <div class="status-column">
+    <h1>Base Aircraft</h1>
+    <div ng-repeat="airplane in status.displayedAircraft track by $index">
+      <p ng-if="status.showHeader('displayedAircraft','acftType',$index)" class="smaller">{{airplane.acftType}}</p>
+      <p uib-tooltip="{{airplane.acftType}}" ng-click="status.choose('displayedAircraft',airplane._id)"
+           ng-class="status.chosenClass(airplane.chosen)">{{airplane._id}}</p>
+    </div>
+  </div>
+  <div class="status-column">
+    <h1 ng-if="status.fixedWing()">Unassigned Flights</h1>
+    <h1 ng-if="!status.fixedWing()">Unassigned Missions</h1>
+    <div ng-repeat="flight in status.unassignedFlights track by $index">
+      <p uib-tooltip="{{flight.airports.toString()}}" ng-click="status.choose('unassignedFlights',flight._id)"
+           ng-class="status.chosenClass(flight.chosen)">{{flight.flightNum}}</p>
+    </div>
+  </div>
+  <div class="status-column">
+    <h1 ng-if="status.fixedWing()">Assigned Flights</h1>
+    <h1 ng-if="!status.fixedWing()">Assigned Missions</h1>
+    <div ng-repeat="flight in status.assignedFlights track by $index">
+      <p>{{'Flight: '+flight.flightNum+', Captain: '+flight.chosenPilot.name+', Aircraft:'+flight.chosenAircraft._id}}</p>
+    </div>
+  </div>
+  <div ng-if="status.fixedWing('OME')" class="status-column">
+    <div style="width:100%;text-align:center;">
+      <h1>Beech 1900s</h1>
+    </div>
+    <div class="grid-parent-right" ng-repeat="airplane in status.airplanesB190">
+      <div class="airport">
+        <h1>{{airplane.registration}}</h1>
+      </div>
+      <div class="comment" ng-click="status.editConfiguration(airplane)">
+        <p>{{airplane.status}}</p>
+      </div>
+    </div>
+    <div style="width:100%;text-align:center;">
+      <h1>King Air 200s</h1>
+    </div>
+    <div class="grid-parent-right" ng-repeat="airplane in status.airplanesBE20">
+      <div class="airport">
+        <h1>{{airplane.registration}}</h1>
+      </div>
+      <div class="comment" ng-click="status.editConfiguration(airplane)">
+        <p>{{airplane.status}}</p>
+      </div>
+    </div>
+  </div>
+</section>

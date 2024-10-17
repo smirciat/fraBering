@@ -74,7 +74,7 @@ export default function(app) {
   }
 
   if ('development' === env) {
-    app.use(require('connect-livereload')({port: 8081}));
+    //app.use(require('connect-livereload')({port: 8081}));
   }
 
   if ('development' === env || 'test' === env) {

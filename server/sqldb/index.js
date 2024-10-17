@@ -14,6 +14,8 @@ var db = {
 };
 
 // Insert models below
+db.Calendar = db.sequelize.import('../api/calendar/calendar.model');
+db.Airplane = db.sequelize.import('../api/airplane/airplane.model');
 db.Monitor = db.sequelize.import('../api/monitor/monitor.model');
 db.Timesheet = db.sequelize.import('../api/timesheet/timesheet.model');
 db.Manifest = db.sequelize.import('../api/manifest/manifest.model');

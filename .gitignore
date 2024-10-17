@@ -4,8 +4,11 @@ public
 .idea
 client/bower_components
 dist
-/server/config/local.env.js
-/server/config/environment/development.js
+server/firebase.json
+server/config/local.env.js
+server/config/environment/development.js
+server/fileserver/*
+!server/fileserver/.gitkeep
 npm-debug.log
 coverage
 Dockerfile

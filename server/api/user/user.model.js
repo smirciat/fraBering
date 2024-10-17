@@ -178,11 +178,11 @@ module.exports = function(sequelize, DataTypes) {
         var salt = new Buffer(this.salt, 'base64');
 
         if (!callback) {
-          return crypto.pbkdf2Sync(password, salt, defaultIterations, defaultKeyLength)
+          return crypto.pbkdf2Sync(password, salt, defaultIterations, defaultKeyLength,null)
                        .toString('base64');
         }
 
-        return crypto.pbkdf2(password, salt, defaultIterations, defaultKeyLength,
+        return crypto.pbkdf2(password, salt, defaultIterations, defaultKeyLength,null,
           function(err, key) {
             if (err) {
               callback(err);

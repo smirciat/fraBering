@@ -9,13 +9,19 @@ export default function(sequelize, DataTypes) {
       autoIncrement: true
     },
     name: DataTypes.STRING,
+    threeLetter: DataTypes.STRING,
     icao: DataTypes.STRING,
     base: {
       type:DataTypes.BOOLEAN,
       defaultValue:false
     },
     baseGroup: DataTypes.STRING,
+    comment: DataTypes.STRING,
     runways: DataTypes.ARRAY(DataTypes.INTEGER),
+    runwayScore: {
+      type: DataTypes.STRING,
+      defaultValue:"5"
+    },
     latitude: DataTypes.STRING,
     longitude: DataTypes.STRING,
     visibilityRequirement: {
