@@ -89,3 +89,7 @@
   border:2px dashed green;  
   padding:0.03em 0.25em;
 }
+
+.light-border{
+  border:1px solid black;
+}

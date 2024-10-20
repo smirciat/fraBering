@@ -38,9 +38,13 @@
   <div class="status-column">
     <h1 ng-if="status.fixedWing()">Assigned Flights</h1>
     <h1 ng-if="!status.fixedWing()">Assigned Missions</h1>
-    <div ng-repeat="flight in status.assignedFlights track by $index">
-      <p>{{'Flight: '+flight.flightNum+', Captain: '+flight.chosenPilot.name+', Aircraft:'+flight.chosenAircraft._id}}</p>
+    <div class="light-border" ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightFilter | orderBy:'departTimes[0]'">
+      <p>{{flight.flightNum+ ' ' + flight.pilot }}</p>
+      <p class='smaller'>{{flight.airports.toString()}}</p>
     </div>
+    <!--<div ng-repeat="flight in status.assignedFlights track by $index">
+      <p>{{'Flight: '+flight.flightNum+', Captain: '+flight.chosenPilot.name+', Aircraft:'+flight.chosenAircraft._id}}</p>
+    </div>-->
   </div>
   <div ng-if="status.fixedWing('OME')" class="status-column">
     <div style="width:100%;text-align:center;">

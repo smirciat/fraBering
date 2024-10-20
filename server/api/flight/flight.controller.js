@@ -117,45 +117,51 @@ export function destroy(req, res) {
 }
 
 export function tf(req,res) {
-  let data=fs.readFileSync(__dirname+'/../../fileserver/current.csv', 'utf-8');
-  let arr=data.split('\r\n');
-  let dateArr=arr[4].split(' ');
-  let date=new Date(dateArr[3]+' '+dateArr[4]+' '+dateArr[5]).toLocaleDateString();
-  if (date!==req.body.dateString) {
-    res.status(404);
-    return;
-  }
-  console.log('parsing flight summary');
-  let flightArr=[];
-  let pilot,lastAirport,lastTime;
-  let flight={airports:[],departTimes:[]};
-  
-  for (let x=7;x<arr.length;x++){
-    let flightList=arr[x].split(',');
-    if (!flightList[1]||flightList[1]==="") {
-      //blank line, new pilot coming up
-      if (flight&&flight.flightNum) {
-        
+  try {
+    let data=fs.readFileSync(__dirname+'/../../fileserver/current.csv', 'utf-8');
+    let arr=data.split('\r\n');
+    let dateArr=arr[4].split(' ');
+    let date=new Date(dateArr[3]+' '+dateArr[4]+' '+dateArr[5]).toLocaleDateString();
+    if (date!==req.body.dateString) {
+      res.status(404);
+      return;
+    }
+    console.log('parsing flight summary');
+    let flightArr=[];
+    let pilot,lastAirport,lastTime;
+    let flight={airports:[],departTimes:[]};
+    
+    for (let x=7;x<arr.length;x++){
+      let flightList=arr[x].split(',');
+      if (!flightList[1]||flightList[1]==="") {
+        //blank line, new pilot coming up
+        if (flight&&flight.flightNum) {
+          
+        }
+        flight={airports:[],departTimes:[]};
+        continue;
       }
-      flight={airports:[],departTimes:[]};
-      continue;
+      if (!flight.pilot) flight.pilot=flightList[0];
+      if (!flight.flightNum&&flightList[8]) {
+        //indicates new flight number
+        flight.flightNum=flightList[8].split('.')[0];
+      }
+      flight.airports.push(flightList[6]);
+      lastAirport=flightList[7];
+      flight.departTimes.push(new Date(flightList[2]).toTimeString().slice(0,8));
+      lastTime=new Date(flightList[2]).toTimeString().slice(0,8);
+      //check if its the last one
+      if (x===arr.length-1||(flightList[8].split('.')[0]!==arr[x+1].split(',')[8].split('.')[0])) {
+        flight.airports.push(lastAirport);
+        //flight.departTimes.push(lastTime);
+        flightArr.push(flight);
+        flight={airports:[],departTimes:[],pilot:flight.pilot};
+      }
     }
-    if (!flight.pilot) flight.pilot=flightList[0];
-    if (!flight.flightNum&&flightList[8]) {
-      //indicates new flight number
-      flight.flightNum=flightList[8].split('.')[0];
-    }
-    flight.airports.push(flightList[6]);
-    lastAirport=flightList[7];
-    flight.departTimes.push(new Date(flightList[2]).toTimeString().slice(0,8));
-    lastTime=new Date(flightList[2]).toTimeString().slice(0,8);
-    //check if its the last one
-    if (x===arr.length-1||(flightList[8].split('.')[0]!==arr[x+1].split(',')[8].split('.')[0])) {
-      flight.airports.push(lastAirport);
-      //flight.departTimes.push(lastTime);
-      flightArr.push(flight);
-      flight={airports:[],departTimes:[],pilot:flight.pilot};
-    }
+    res.status(200).json(flightArr);
   }
-  res.status(200).json(flightArr);
+  catch(err){
+    console.log(err);
+    res.status(404).json('Failed to load CSV file from Takeflite');
+  }
 }

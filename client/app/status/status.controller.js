@@ -23,10 +23,16 @@ class StatusComponent {
     $scope.$on('$destroy', function() {
         socket.unsyncUpdates('calendar');
     });
+    $scope.$on('$destroy', function() {
+        socket.unsyncUpdates('todaysFlight');
+    });
   }
   
   $onInit() {
-    this.tfInterval=this.interval(()=>{this.getTakeflite()},5*60*1000);
+    this.tfInterval=this.interval(()=>{
+      //this.getTakeflite({dateString:this.dateString,file:'current\q.csv'});
+      
+    },5*60*1000);
     this.http.post('/api/airplanes/firebaseLimited',{collection:'flights',limit:50}).then(res=>{
       this.recentFlights=res.data.filter(flight=>{
         return flight.legArray.at(-1).onTime;
@@ -34,7 +40,7 @@ class StatusComponent {
       this.recentFlights.sort((a,b)=>{
         return a.legArray.at(-1).onTime._seconds-b.legArray.at(-1).onTime._seconds;
       });
-      console.log(this.recentFlights.filter(a=>{return a.acftNumber==='N408BA'}));
+      //console.log(this.recentFlights.filter(a=>{return a.acftNumber==='N408BA'}));
       this.setAirplaneList();
     });
     this.http.post('/api/airplanes/firebase',{collection:'pilots'}).then(res=>{
@@ -73,11 +79,21 @@ class StatusComponent {
       this.setAvailableFlights();
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
-      this.getTakeflite();
+      //this.getTakeflite({dateString:'10/20/2024',file:'tomorrow.csv'});
+      if (!newVal||newVal==='') return;
       this.dateString=newVal;
       this.date=new Date(this.dateString);
       this.setPilotList();
       this.setAvailableFlights();
+      this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
+        this.todaysFlights=res.data;
+        this.socket.unsyncUpdates('todaysFlight');
+        this.socket.syncUpdates('todaysFlight', this.todaysFlights,(event,item,array)=>{
+          console.log('todaysFlights Updated ' + event);
+          console.log(item);
+          this.todaysFlights=array;
+        });
+      });
     });
     this.scope.$watch('status.chosenFlight',(newVal,oldVal)=>{
       let index;
@@ -348,12 +364,28 @@ class StatusComponent {
     return flight.flightNum;
   }
   
-  getTakeflite(){
+  getTakeflite(obj){
     if (!this.date) return;
-    this.http.post('/api/flights/tf',{dateString:new Date(this.date).toLocaleDateString()}).then(res=>{
+    this.dateString=new Date(this.date).toLocaleDateString();
+    if (this.dateString==="Invalid Date") return;
+    this.http.post('/api/todaysFlights/tf',obj).then(res=>{
       console.log(res.data);
+    })
+    .catch(err=>{
+      console.log(err);
     });
   }
+  
+  todaysFlightFilter(flight) {
+    let inBase;
+    if (window.base&&window.base.base==='HEL') inBase=false;
+    else if (window.base&&window.base.base==='OTZ')  {
+      inBase=flight.airports[0]==='Kotzebue';
+    }
+    else inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet';
+    return flight.date===window.dateString&&inBase;
+  }
+  
 }
 
 angular.module('workspaceApp')
