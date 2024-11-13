@@ -20,6 +20,8 @@ const https = require("https");
 const agent = new https.Agent({
     rejectUnauthorized: false
 });
+let allAirports=[];
+let count=0;
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -124,7 +126,73 @@ export function destroy(req, res) {
     .catch(handleError(res));
 }
 
-export function adds(req,res) {
+export async function metars(req,res) {
+  try {
+    const hour=new Date().getHours();
+    if (hour<6||hour>18) {
+      console.log('no metar fetching at night');
+      return res.status(201).json('No Metars at night');
+    }
+    //initialize airport list from database table if it is empty
+    if (allAirports.length===0||count>=24) {
+      allAirports=[];
+      count=0;
+      let instance=await AirportRequirement.findAll({});
+      instance.forEach(i=>{
+        if (i.dataValues) allAirports.push(i.dataValues);
+      });
+    }
+    count++;
+    //go through list of airports and grab current weather observations
+    for (const airport of allAirports) {
+      if (airport.icao&&airport.icao.length==4&&airport.icao!=="PAOB") airport.currentMetarObj = await getMetar(airport.icao);
+      if (!airport.currentMetarObj) continue;
+      airport.currentMetar=airport.currentMetarObj.metar;
+      let metarDate=new Date(airport.currentMetarObj.date);
+      if (metarDate<new Date(new Date().getTime()-120*60*1000)) airport.currentMetar='missing';
+      let id=airport._id;
+      //delete airport._id;
+      delete airport.currentMetarObj;
+      let tempAirport=JSON.parse(JSON.stringify(airport));
+      delete tempAirport._id;
+      AirportRequirement.find({
+        where: {
+          _id: id
+        }
+      }).then(saveUpdates(tempAirport))
+        .catch(handleError(res));
+      //});
+    }
+    console.log('Metars updated for array of length ' + allAirports.length);
+    res.status(200).json('allAirports array populated with ' + allAirports.length + ' elements');
+  }
+  catch(err){
+    console.log(err);
+    res.status(404).json('Failed update metars for allAirports array');
+  }
+} 
+
+async function getMetar(airport) {
+  let url = url1 + airport + url2;
+  let response = await axios.get(url);
+  let jsonResponse={};
+    if (!response.data.STATION) jsonResponse={};
+    else {
+      if (response.data.STATION[0]) {
+        jsonResponse.airport=airport;
+        jsonResponse.metar=response.data.STATION[0].OBSERVATIONS.metar_value_1.value;
+        jsonResponse.latitude=response.data.STATION[0].LATITUDE;
+        jsonResponse.longitude=response.data.STATION[0].LONGITUDE;
+        jsonResponse.date=response.data.STATION[0].OBSERVATIONS.metar_value_1.date_time;
+      }
+      else {
+        jsonResponse.metar="missing";
+      }
+    }
+    return jsonResponse;
+}
+
+export async function adds(req,res) {
   if (!req.body||!req.body.airport||req.body.airport==="") res.status(404).end();
   var airport=req.body.airport;
   var url = url1 + airport + url2;

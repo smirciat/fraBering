@@ -40,6 +40,7 @@ export default function(sequelize, DataTypes) {
       type:DataTypes.INTEGER,
       defaultValue:1
     },
-    forecastRequirement: DataTypes.JSON
+    forecastRequirement: DataTypes.JSON,
+    currentMetar: DataTypes.STRING
   });
 }

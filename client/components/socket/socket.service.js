@@ -36,7 +36,8 @@ angular.module('workspaceApp')
           var oldItem = _.find(array, {
             _id: item._id
           });
-          var index = array.indexOf(oldItem);
+          var index = -1;
+          if (array) index=array.indexOf(oldItem);
           var event = 'created';
 
           // replace oldItem if it exists
@@ -45,7 +46,7 @@ angular.module('workspaceApp')
             array.splice(index, 1, item);
             event = 'updated';
           } else {
-            array.push(item);
+            if (array) array.push(item);
           }
 
           cb(event, item, array);

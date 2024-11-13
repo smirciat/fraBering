@@ -3,17 +3,24 @@
 (function(){
 
 class StatusComponent {
-  constructor($http,$scope,$interval,$timeout,socket) {
+  constructor($http,$scope,$interval,$timeout,socket,metar,$location,$anchorScroll,moment) {
     this.http=$http;
     this.interval=$interval;
     this.scope=$scope;
     this.timeout=$timeout;
     this.socket=socket;
+    this.metar=metar;
+    this.$location=$location;
+    this.anchorScroll=$anchorScroll;
+    this.moment=moment;
     this.date=new Date();
     this.assignedFlights=[];
+    this.updateArray=[];
     this.chosenPilot={};
     this.chosenAircraft={},
     this.chosenFlight={};
+    this.clicked;
+    this.stopped;
     $scope.$on('$destroy', function() {
         socket.unsyncUpdates('airportRequirement');
     });
@@ -29,10 +36,20 @@ class StatusComponent {
   }
   
   $onInit() {
-    this.tfInterval=this.interval(()=>{
+    this.stoppedInterval=this.interval(()=>{
       //this.getTakeflite({dateString:this.dateString,file:'current\q.csv'});
-      
+      this.http.get('/api/todaysFlights/stopped').then(res=>{
+        if (res.data.stopped) {
+          this.stopped=true;
+          if (!this.clicked) this.clicked=confirm('The Takeflite Flight Summary report, which should automatically update every 3 minutes, has stopped.  Flight information may not be current until this is resolved.');
+        } 
+        else {
+          this.clicked=undefined;
+          this.stopped=undefined;         
+        }
+      });
     },5*60*1000);
+    this.scrollInterval=this.interval(()=>{this.scroll()},60*60*1000);
     this.http.post('/api/airplanes/firebaseLimited',{collection:'flights',limit:50}).then(res=>{
       this.recentFlights=res.data.filter(flight=>{
         return flight.legArray.at(-1).onTime;
@@ -47,6 +64,7 @@ class StatusComponent {
       this.allPilots=res.data;
       window.allPilots=res.data;
       this.setPilotList();
+      this.todaysFlights=this.filterTodaysFlights(this.todaysFlights);
     });
     this.http.post('/api/airplanes/firebase',{collection:'aircraft'}).then(res=>{
       this.allAircraft=res.data;
@@ -77,6 +95,7 @@ class StatusComponent {
       this.setPilotList();
       this.setAirplaneList();
       this.setAvailableFlights();
+      this.scroll();
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
       //this.getTakeflite({dateString:'10/20/2024',file:'tomorrow.csv'});
@@ -86,12 +105,14 @@ class StatusComponent {
       this.setPilotList();
       this.setAvailableFlights();
       this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
-        this.todaysFlights=res.data;
+        this.todaysFlights=this.filterTodaysFlights(res.data);
+        console.log(this.todaysFlights);
+        this.scroll();
         this.socket.unsyncUpdates('todaysFlight');
         this.socket.syncUpdates('todaysFlight', this.todaysFlights,(event,item,array)=>{
           console.log('todaysFlights Updated ' + event);
           console.log(item);
-          this.todaysFlights=array;
+          this.todaysFlights=this.filterTodaysFlights(array);
         });
       });
     });
@@ -120,7 +141,20 @@ class StatusComponent {
       this.socket.unsyncUpdates('airportRequirement');
       this.socket.syncUpdates('airportRequirement', this.masterAirports,(event,item,array)=>{
         this.masterAirports=array;
-        this.airports=this.setBase(array);
+        this.updateArray.push(item);
+        let localLength=angular.copy(this.updateArray.length);
+        this.timeout(()=>{
+          if (localLength===this.updateArray.length){
+            console.log(this.updateArray);
+            this.updateArray=[];
+            localLength=0;
+            console.log('updating airportRequirements');
+            this.airports=this.setBase(array);
+          }
+        },2000);
+    
+        
+        
       });
     });
     this.http.get('/api/flights').then(res=>{
@@ -139,8 +173,86 @@ class StatusComponent {
     });
   }
   
+  filterTodaysFlights(array){
+    if (!this.dateString||!this.allPilots||this.allPilots.length===0||!array) return array;
+    let index,displayName;
+    array.forEach(flight=>{
+      if (this.dateString!==flight.date) {
+        flight=undefined;
+        return;
+      }
+      if (!flight.flightId) flight.active==='false';
+      //import pilot
+      if (flight.pilot&&flight.pilot!=='No Pilot Assigned') {
+        if (flight.pilot.substring(0,1)==="m"&&flight.pilot.slice(-5)==="evans") {
+          displayName='M. '+flight.pilot.substring(1,2).toUpperCase()+'. Evans';
+        }
+        else displayName=flight.pilot.substring(0,1).toUpperCase()+'. '+flight.pilot.substring(1,2).toUpperCase()+flight.pilot.slice(2);
+        index = this.allPilots.map(e => e.displayName).indexOf(displayName);
+        if (index>-1) flight.pilotObject=angular.copy(this.allPilots[index]);
+      }
+      //import coPilot
+      if (flight.coPilot) {
+        if (flight.coPilot.substring(0,1)==="m"&&flight.coPilot.slice(-5)==="evans") {
+          displayName='M. '+flight.coPilot.substring(1,2).toUpperCase()+'. Evans';
+        }
+        else if (flight.coPilot.substring(0,1)==="k"&&flight.coPilot.slice(-9)==="showalter") {
+          displayName='D. Showalter';
+        }
+        else displayName=flight.coPilot.substring(0,1).toUpperCase()+'. '+flight.coPilot.substring(1,2).toUpperCase()+flight.coPilot.slice(2);
+        index = this.allPilots.map(e => e.displayName).indexOf(displayName);
+        if (index>-1) flight.coPilotObject=angular.copy(this.allPilots[index]);
+      }
+      //attach routing to airportRequirements
+      flight.airportObjs=[];
+      flight.airports.forEach((a,listIndex)=>{
+      //for (let a of flight.airports) {
+        if (!this.masterAirports) return;
+        let i=this.masterAirports.map(e=>e.name).indexOf(a);
+        if (i>-1) {
+          let night=false;
+          //let timeArr=flight.departTimes[listIndex].split(':');
+          //let time=new Date(this.dateString).setHours(timeArr[0],timeArr[1],timeArr[2]);
+          if (flight.departTimes.length>listIndex&&this.masterAirports[i].metarObj) night=this.isItNight(this.masterAirports[i].metarObj.airport,flight.departTimes[listIndex]);
+          flight.airportObjs.push(angular.copy(this.masterAirports[i].metarObj));
+          if (flight.airportObjs[listIndex]) flight.airportObjs[listIndex].night=night;
+        }
+        else flight.airportObjs.push({airport:{threeLetter:a}});
+      });
+    });
+    array=array.filter(flight=>{return flight});
+    return array;
+  }
+  
+  isItNight(airport,time){
+      let night=false;
+      let thisDate=new Date(this.dateString).setHours('10','00','00');
+      if (!airport) return night;
+      let times=SunCalc.getTimes(thisDate,airport.latitude,airport.longitude);
+      if (times.dawn instanceof Date && !isNaN(times.dawn)&&times.dusk instanceof Date && !isNaN(times.dusk)) {
+        var twilightStart = this.moment(times.dawn);
+        var twilightEnd = this.moment(times.dusk);
+        if (!time||time==="") return night;
+        let timeArr=time.split(':');
+        if (timeArr.length<2) return night;
+        let departTime = this.moment(thisDate).startOf('day').hour(timeArr[0]).minute(timeArr[1]);
+        if (departTime.isBetween(twilightStart,twilightEnd)) night=false;
+        else night=true;
+      }
+      return night;
+    }
+  
   setBase(airports){
     this.timeout(()=>{
+      if (!airports) return;
+      airports.forEach(airport=>{
+        if (!airport) return;
+        airport.metarObj={};
+        if (airport.currentMetar&&airport.currentMetar!=='missing') {
+          airport.metarObj=this.metar.parseADDS(airport.currentMetar);
+        }
+        airport.metarObj.airport=angular.copy(airport);
+      });
       if (this.scope.nav.base.four==="PAOM") {
         this.airports=airports.filter(e=>{
           return e.threeLetter&&e.threeLetter!==""&&(e.baseGroup===window.base.four||e.baseGroup==="PAUN");
@@ -154,7 +266,85 @@ class StatusComponent {
       this.airports.sort((a,b)=>{
         return a.threeLetter.localeCompare(b.threeLetter);
       });
+      this.todaysFlights=this.filterTodaysFlights(this.todaysFlights);
+      //console.log(this.airports);
     },0);
+  }
+  
+  scroll(){
+    if (!this) {
+      console.log('check scope');
+      return;
+    }
+    this.timeout(()=>{
+      if (!this.todaysFlights) return;
+      let scrollDate=new Date();
+      let filteredFlights=this.todaysFlights.filter(this.todaysFlightDisplayFilter);
+      filteredFlights.sort((a,b)=>{
+        let aSplit=a.departTimes[0].split(':');
+        let bSplit=b.departTimes[0].split(':');
+        let aTime=scrollDate.setHours(aSplit[0],aSplit[1],aSplit[2]);
+        let bTime=scrollDate.setHours(bSplit[0],bSplit[1],bSplit[2]);
+        return aTime-bTime;
+      });
+      if (filteredFlights.length===0) return;
+      let scrollId;
+      if (new Date().toLocaleDateString()!==this.dateString) scrollId=filteredFlights[0]._id;
+      filteredFlights.forEach(flight=>{
+        let fSplit=flight.departTimes[0].split(':');
+        if (!scrollId&&fSplit.length===3&&new Date()<scrollDate.setHours(fSplit[0],fSplit[1],fSplit[2])) scrollId=flight._id;
+      });
+      if (!scrollId) scrollId=filteredFlights.at(-1)._id;
+      //this.$location.hash(scrollId);
+      //this.anchorScroll.yOffset=500;
+      //this.anchorScroll();
+      console.log('auto scrolling');
+      let element = document.getElementById(scrollId);
+      //element.scrollIntoView();
+      element.scrollIntoView({ behavior: 'smooth' });
+    },1000);
+  }
+  
+  overallRiskClass(metarObj){
+    let returnString="";
+    if (metarObj.night) returnString+=' night';
+    if (!metarObj) return returnString+=' airport-green';
+    let colors=['airport-green','airport-yellow','airport-pink'];
+    let color="airport-green";
+    let tempColor="airport-green";
+    //runway
+    tempColor=this.returnColor({yellow:5,red:2},metarObj.airport.runwayScore,'above');
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //if (airport.name==='Gambell') console.log(airport);
+    //possibly no metarObj
+    if (!metarObj||!metarObj['Raw-Report']) return returnString+=' '+color;
+    //visibility
+    tempColor=this.returnColor(metarObj.airport.visibilityRequirement,metarObj.Visibility,'above');
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //ceiling
+    tempColor=this.returnColor(metarObj.airport.ceilingRequirement,metarObj.Ceiling,'above');
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //wind
+    tempColor=this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //return
+    metarObj.color=color;
+    return returnString+=' '+color;
+  }
+  
+  returnColor(limitObj,observation,direction){
+    if (!observation||!limitObj) return 'airport-green';
+    if (!direction) direction="above";
+    let color="airport-green";
+    if (direction==="above"){
+      if ((observation*1)<limitObj.yellow) color="airport-yellow";
+      if ((observation*1)<limitObj.red) color="airport-pink";
+    }
+    else {
+      if ((observation*1)>limitObj.yellow) color="airport-yellow";
+      if ((observation*1)>limitObj.red) color="airport-pink";
+    }
+    return color;
   }
   
   airportClass(score){
@@ -171,7 +361,9 @@ class StatusComponent {
     if (isNaN(parseInt(response,10))) alert("Enter a number 1-5 for the runway score.");
     if (response||response==="") {
       this.airports[index].runwayScore=response;
-      this.http.patch('/api/airportRequirements/'+this.airports[index]._id,this.airports[index]);
+      let newAirport=angular.copy(this.airports[index]);
+      delete newAirport.metarObj;
+      this.http.patch('/api/airportRequirements/'+newAirport._id,newAirport);
     }
   }
   
@@ -181,7 +373,9 @@ class StatusComponent {
     let response=prompt("Create or Update the Comment for " + airport.threeLetter,airport.comment);
     if (response||response==="") {
       this.airports[index].comment=response;
-      this.http.patch('/api/airportRequirements/'+this.airports[index]._id,this.airports[index]);
+      let newAirport=angular.copy(this.airports[index]);
+      delete newAirport.metarObj;
+      this.http.patch('/api/airportRequirements/'+newAirport._id,newAirport);
     }
   }
   
@@ -210,6 +404,7 @@ class StatusComponent {
       this.calendar[index].availablePilots.forEach(pilot=>{
         pilotIndex = this.allPilots.map(e => e.name).indexOf(pilot.name);
         let p=this.allPilots[pilotIndex];
+        p.header='';
         p.code=pilot.code;
         if (pilot.pilotBase===this.base.base&&p) {
           if (p.code==='OC') p.header='OC';
@@ -376,16 +571,100 @@ class StatusComponent {
     });
   }
   
-  todaysFlightFilter(flight) {
+  todaysFlightDisplayFilter(flight) {
     let inBase;
     if (window.base&&window.base.base==='HEL') inBase=false;
     else if (window.base&&window.base.base==='OTZ')  {
-      inBase=flight.airports[0]==='Kotzebue';
+      inBase=flight.airports[0]==='Kotzebue'||flight.airports.at(-1)==='Kotzebue';
     }
-    else inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet';
-    return flight.date===window.dateString&&inBase;
+    else inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
+    return (flight.date===window.dateString)&&inBase&&flight.active==='true';
   }
   
+  activeClass(active){
+    if (active!=="true") return "inactive";
+  }
+  
+  amIStopped(){
+    if (this.stopped) return "stopped";
+  }
+  
+  visibilityClass(index){
+      
+    var airport = this.getAirport(this.assessment.airports[index]);
+    if (!this.assessment.visibilities[index]) return this.blue(index);
+    if (airport.visibilityRequirement.red>this.assessment.visibilities[index]) return this.red(index);
+    if (this.assessment.visibilities[index]===99) return this.purple(index);
+    if (airport.visibilityRequirement.yellow>this.assessment.visibilities[index]) return this.yellow(index);
+    if (this.assessment.night[index]) {
+      if (airport.visibilityRequirement.night>this.assessment.visibilities[index]) return this.orange(index);
+    }
+    else {
+      if (airport.visibilityRequirement.ifr>this.assessment.visibilities[index]) return this.orange(index);
+    }
+    return this.green(index);
+  }
+  
+  ceilingClass(index){
+    
+    var airport = this.getAirport(this.assessment.airports[index]);
+    if (!this.assessment.ceilings[index]) return this.blue(index);
+    if (airport.ceilingRequirement.red>this.assessment.ceilings[index]) return this.red(index);
+    if (this.assessment.ceilings[index]==="9999") return this.purple(index);
+    if (airport.ceilingRequirement.yellow>this.assessment.ceilings[index]) return this.yellow(index);
+    if (this.assessment.night[index]) {
+      if (airport.ceilingRequirement.night>this.assessment.ceilings[index]) return this.orange(index);
+    }
+    else {
+      if (airport.ceilingRequirement.ifr>this.assessment.ceilings[index]) return this.orange(index);
+    }
+    return this.green(index);
+  }
+  
+  runwayClass(index){
+    
+    if (this.assessment.runwayConditions[index]<2) return this.red(index);
+    if (this.assessment.runwayConditions[index]<4) return this.yellow(index);
+    return this.green(index);
+  }
+  
+  windClass(index){
+    
+    if (this.assessment.windGusts[index]===undefined) return this.blue(index);
+    if (this.assessment.airports[index]==="PADG") {
+      if (this.assessment.windGusts[index]>30) return this.red(index);
+      if (this.assessment.crossWinds[index]>15) return this.red(index);
+      if (this.assessment.windGusts[index]>25) return this.yellow(index);
+      if (this.assessment.crossWinds[index]>12) return this.yellow(index);
+    }
+    if (this.assessment.windGusts[index]>this.assessment.equipmentObj.wind) return this.red(index);
+    if (this.assessment.crossWinds[index]>this.assessment.equipmentObj.xwind) return this.red(index);
+    if (this.assessment.windGusts[index]>(this.assessment.equipmentObj.wind-5)) return this.yellow(index);
+    if (this.assessment.crossWinds[index]>(this.assessment.equipmentObj.xwind-5)) return this.yellow(index);
+    return this.green(index);
+  }
+  
+  freezingClass(index){
+    
+    if (this.assessment.freezingPrecipitations[index]) return this.red(index);
+    return this.green(index);
+  }
+  
+  tafClass(index){
+    
+    if (this.assessment.tafs[index]!=="") {
+      if (this.assessment.forecastVisibilities&&this.assessment.forecastVisibilities[index]<1) return this.yellow(index);
+      if (this.assessment.forecastFreezingPrecipitations&&this.assessment.forecastFreezingPrecipitations[index]) return this.yellow(index);
+      return this.green(index);
+    }
+    return "md-blue";
+  }
+  
+  nightClass(index){
+    
+    if (this.assessment.night[index]) return "night";
+    else return "day";
+  }
 }
 
 angular.module('workspaceApp')

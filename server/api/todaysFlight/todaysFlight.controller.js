@@ -12,6 +12,15 @@
 import _ from 'lodash';
 import {TodaysFlight} from '../../sqldb';
 import fs from 'fs';
+import config from '../../config/environment';
+const baseUrl = 'https://localhost:' + config.port;
+const axios = require("axios");
+const https = require("https");
+const agent = new https.Agent({
+    rejectUnauthorized: false
+});
+let stopped=false;
+let staleFile=false;
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -67,6 +76,11 @@ export function index(req, res) {
   return TodaysFlight.findAll()
     .then(respondWithResult(res))
     .catch(handleError(res));
+}
+
+//gets the current value of the stopped boolean
+export function returnStopped(req,res){
+  res.status(200).json({stopped:staleFile});
 }
 
 // Gets a list of TodaysFlights
@@ -132,11 +146,40 @@ export async function tf(req,res) {
   try {
     let file=req.body.file||"current.csv";
     let data=fs.readFileSync(__dirname+'/../../fileserver/'+file, 'utf-8');
-    //console.log(todaysFlights);
+    let stats=fs.statSync(__dirname+'/../../fileserver/'+file, 'utf-8');
+    console.log('Timestamp of current.csv is: ' + new Date(stats.ctimeMs).toLocaleString());
+    const tenMinutesAgo = new Date(new Date().getTime() - 10 * 60 * 1000); // 10 minutes in milliseconds
+    const hour=new Date().getHours();
+    if (stats.ctimeMs < tenMinutesAgo) {
+      staleFile=true;
+      if (hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
+        
+        axios.post(baseUrl + '/api/monitors/twilio',{to:"+19073992019",body:"Takeflite updating has stopped"}, { httpsAgent: agent }).then((res)=>{
+                stopped=true;
+                console.log('Twilio message sent');
+              },function(err){
+                console.log(err);
+              });
+      }
+      console.log('Stopped value is: ' + staleFile.toString());
+      res.status(404).json('Current.csv has stopped updating');
+      return;
+    }
+    else {
+      stopped=false;
+      staleFile=false;
+    }
+    console.log('Stopped value is: ' + staleFile.toString());
     let arr=data.split('\r\n');
     let dateArr=arr[1].split(' ');
-    let date=new Date(dateArr[2]+' '+dateArr[3]+' '+dateArr[4]).toLocaleDateString();
-    let date2=new Date(dateArr[6]+' '+dateArr[7]+' '+dateArr[8]).toLocaleDateString();
+    let date=new Date(dateArr[2]+' '+dateArr[3]+' '+dateArr[4]);
+    let date2=new Date(date);
+    date2.setDate(date2.getDate()+1);
+    date2=date2.toLocaleDateString();
+    let date3=new Date(date);
+    date3.setDate(date3.getDate()+2);
+    date3=date3.toLocaleDateString();
+    date=date.toLocaleDateString();
     arr.splice(0,8);
     let marker=0;
     let npa=[];
@@ -152,18 +195,45 @@ export async function tf(req,res) {
     npa.sort((a,b)=>{
       let aArr=a.split(',');
       let bArr=b.split(',');
+      if (aArr.length<11||bArr.length<11) return 0;
+      //make sure earlier date is before later date
+      let aDate=new Date(aArr[1]).toLocaleDateString();
+      let bDate=new Date(bArr[1]).toLocaleDateString();
+      if (aDate!==bDate) return new Date(aArr[1])-new Date(bArr[1]);
+      //same flightId, must be a charter
+      if (aArr[10]===bArr[10]) {
+        let aStringTime=aArr[1].split(' ');
+        let bStringTime=bArr[1].split(' ');
+        if (aStringTime.length<4||bStringTime.length<4||aStringTime[3].split(':').length<2||bStringTime[3].split(':').length<2) return 0;
+        let atime=new Date();
+        let btime=new Date();
+        atime.setHours(aStringTime[3].split(':')[0],aStringTime[3].split(':')[1],0);
+        btime.setHours(bStringTime[3].split(':')[0],bStringTime[3].split(':')[1],0);
+        return atime-btime;
+      }
+      //put flights with flight numbers ahead of those without
+      if (aArr[8]&&bArr[8]) return aArr[8].localeCompare(bArr[8]);
+      if (aArr[8]&&!bArr[8]) return -1;
+      if (!aArr[8]&&bArr[8]) return 1;
+      //if neither has a flight number, compare flightIds
       return aArr[10]-bArr[10];
     });
+    //npa.forEach(n=>{console.log(n)});
     arr=npa.concat(arr);
     //console.log(arr);
     if (false){//(req.body.dateString&&date!==req.body.dateString) {
       //res.status(404).json('Invalid Date.  File is from ' + date + ', current date is ' + req.body.dateString);
       //return;
     }
-    let instance=await TodaysFlight.findAll();
+    let instance=await TodaysFlight.findAll({
+      order: [['_id', 'DESC']],
+      limit: 3000
+    });
     let todaysFlights=[];
+    let allFlights=[];
     instance.forEach(i=>{
-      if (i.dataValues&&(i.dataValues.date===date||i.dataValues.date===date2)) todaysFlights.push(i.dataValues);
+      if (i.dataValues&&(i.dataValues.date===date||i.dataValues.date===date2||i.dataValues.date===date3)) todaysFlights.push(i.dataValues);
+      if (i.dataValues) allFlights.push(i.dataValues);
     });
     console.log('parsing flight summary');
     let flightArr=[];
@@ -215,7 +285,27 @@ export async function tf(req,res) {
         flight={airports:[],departTimes:[],pilot:flight.pilot,coPilot:flight.coPilot,flightId:flight.flightId};
       }
     }
-    console.log(flightArr)
+    //find any duplicate flightIds
+    let seenFlightIds=[];
+    let duplicatesToBeRemoved=[];
+    let seenIndex=-1;
+    flightArr.forEach((f,idx)=>{
+      seenIndex=seenFlightIds.map(e=>e.flight.flightId).indexOf(f.flightId);
+      if (seenIndex<0) {
+        seenFlightIds.push({index:idx,flight:f});
+      }
+      else {//remove one from flightArr
+        if (f.pilot==='No Pilot Assigned'&&seenFlightIds[seenIndex].flight.pilot!=='No Pilot Assigned') duplicatesToBeRemoved.push(idx);
+        else duplicatesToBeRemoved.push(seenFlightIds[seenIndex].index);
+      }
+      if (!f.flightId) duplicatesToBeRemoved.push(idx);
+    });
+    duplicatesToBeRemoved.forEach(d=>{
+      flightArr[d]=undefined;
+    });
+    flightArr=flightArr.filter(f=>{
+      return f;
+    });
     let updated=[];
     todaysFlights.forEach(f=>{
       let fa=flightArr.filter(x=>{
@@ -228,42 +318,57 @@ export async function tf(req,res) {
       else active="true";
       if (active!==f.active) {
         f.active=active;
+        console.log(f._id+' active');
         updated.push(f._id);
       }
     });
     flightArr.forEach(flight=>{
+      if (!flight) return;
       let index=todaysFlights.map(e=>e.flightId).indexOf(flight.flightId);
       if (index<0) {
-        console.log('creating flight:');
-        console.log(flight);
-        TodaysFlight.create(flight);
+        index=allFlights.map(e=>e.flightId).indexOf(flight.flightId);
+        if (index<0) {
+          console.log('creating flight:');
+          console.log(flight);
+          TodaysFlight.create(flight);
+        }
+        else {
+          index=todaysFlights.push(allFlights[index])-1;
+        }
       }
-      else {
+      if (index>-1) {
         if (todaysFlights[index].date!==flight.date) {
+          //console.log(todaysFlights[index]._id+' date'); 
           updated.push(todaysFlights[index]._id);
           todaysFlights[index].date=flight.date;
         }
         if (todaysFlights[index].flightNum!==flight.flightNum) {
+          //console.log(todaysFlights[index]._id+' flightNum'); 
           updated.push(todaysFlights[index]._id);
           todaysFlights[index].flightNum=flight.flightNum;
         }
         if (todaysFlights[index].pilot!==flight.pilot){
+          //console.log(todaysFlights[index]._id+' pilot'); 
           updated.push(todaysFlights[index]._id);
           todaysFlights[index].pilot=flight.pilot;
         }
         if (todaysFlights[index].coPilot!==flight.coPilot){
+          //console.log(todaysFlights[index]._id+' copilot'); 
           updated.push(todaysFlights[index]._id);
           todaysFlights[index].coPilot=flight.coPilot;
         }
         if (todaysFlights[index].aircraft!==flight.aircraft){
+          //console.log(todaysFlights[index]._id+' aircraft'); 
           updated.push(todaysFlights[index]._id);
           todaysFlights[index].aircraft=flight.aircraft;
         }
         if (todaysFlights[index].departTimes[0]!==flight.departTimes[0]){
+          //console.log(todaysFlights[index]._id+' departTimes'); 
           updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
         if (JSON.stringify(todaysFlights[index].airports)!==JSON.stringify(flight.airports)){
+          //console.log(todaysFlights[index]._id+' airports'); 
           updated.push(todaysFlights[index]._id);
           todaysFlights[index].airports=flight.airports;
           todaysFlights[index].departTimes=flight.departTimes;

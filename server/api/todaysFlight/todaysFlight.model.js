@@ -17,7 +17,10 @@ export default function(sequelize, DataTypes) {
     coPilot: DataTypes.STRING,
     aircraft: DataTypes.STRING,
     flightNum: DataTypes.STRING,
-    flightId: DataTypes.STRING,
+    flightId: {
+      type:DataTypes.STRING,
+      unique:true
+    },
     daysOfWeek: DataTypes.ARRAY(DataTypes.INTEGER),
     airports: DataTypes.ARRAY(DataTypes.STRING),
     departTimes: DataTypes.ARRAY(DataTypes.TIME),

@@ -3,8 +3,8 @@
 
   display: grid;
   grid:
-    ". . . . ."
-    / 2fr 1fr 1fr 1fr 2fr 1fr;
+    ". . . ."
+    / 2fr 1fr 1fr 3fr 1fr;
   gap: 8px;
 }
 
@@ -13,8 +13,8 @@
 
   display: grid;
   grid:
-    ". . . . ."
-    / 2fr 1fr 1fr 1fr 2fr;
+    ". . . ."
+    / 2fr 1fr 1fr 3fr;
   gap: 8px;
 }
 
@@ -23,8 +23,8 @@
 
   display: grid;
   grid:
-    ". . . . ."
-    / 1fr 1fr 1fr 2fr;
+    ". . . ."
+    / 1fr 1fr 3fr;
   gap: 8px;
 }
 
@@ -32,14 +32,39 @@
 .body { grid-area: body; }
 
 .status-column{
-    height:100vh;
+    height:calc(100vh - 50px);
     font-size:1.5em;
+    overflow:auto;
+}
+
+.status-column-header{
+    font-size:2em;
+}
+
+.below-header{
+  position:sticky;
+  top:10vh;
+}
+
+.status-header{
+  position:sticky;
+  top: 0;
 }
 
 .smaller{
   font-size:0.75em;
   font-weight:bold;
   color:red;
+}
+
+.airport-card{
+  display:inline-block;
+  margin-left:0.5em;
+  border:1px solid black;
+}
+
+.night{
+  border:5px solid black;
 }
 
 .grid-parent{
@@ -54,6 +79,7 @@
   display: grid; 
   grid-template-columns: 1fr 1fr; 
   grid-gap: 0px; 
+  align-items:center;
   border: 1px solid black; 
   width: 100%; 
 }
@@ -64,12 +90,22 @@
   grid-gap: 0px;
 }
 
+.inactive{
+  background-color: lightgray;
+  opacity: 0.5;
+}
+
+.stopped{
+  background-color: pink;
+}
+
 .comment{
   text-align:center;
   background: rgba(51, 170, 51, .02);
 }
 
 .airport{
+  font-size:1.5em;
   text-align:center;
 }
 
@@ -85,11 +121,20 @@
   background-color:yellow;
 }
 
+.airport-orange{
+  background-color:orange;
+}
+
+.airport-blue{
+  background-color:lightblue;
+}
+
 .chosen{
   border:2px dashed green;  
   padding:0.03em 0.25em;
 }
 
 .light-border{
+  font-size: 0.75em;
   border:1px solid black;
 }

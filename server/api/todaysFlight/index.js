@@ -6,6 +6,7 @@ var controller = require('./todaysFlight.controller');
 var router = express.Router();
 
 router.get('/', controller.index);
+router.get('/stopped', controller.returnStopped);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);

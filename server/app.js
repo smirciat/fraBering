@@ -41,7 +41,15 @@ let callbackFunction=()=>{
         .then((response)=>{
           console.log('interval going');
         })
-        .catch(err=>{console.log(err)});
+        .catch(err=>{console.log(err.response.data)});
+};
+
+let metarFunction=()=>{
+  axios.post(baseUrl + '/api/airportRequirements/metars',{}, { httpsAgent: agent })
+        .then((response)=>{
+          console.log('metar interval going at ' +new Date().toLocaleString());
+        })
+        .catch(err=>{console.log(err.response.data)});
 };
 
 // Start server
@@ -49,7 +57,9 @@ function startServer() {
   app.angularFullstack = server.listen(config.port, config.ip, function() {
     console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
     callbackFunction();
-    setInterval(callbackFunction,5*60*1000);  
+    metarFunction();
+    setInterval(callbackFunction,1*60*1000); 
+    setInterval(metarFunction,5*60*1001);  
   });
 }
 

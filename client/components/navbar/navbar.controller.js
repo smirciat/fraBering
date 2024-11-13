@@ -226,6 +226,7 @@ class NavbarController {
       let csv = e.target.result;
       let arr=csv.split('\r\n');
       let header=arr.shift().split(',');
+      header[0]+=' '+header[7];
       let headerArr=header[0].split(' ');
       let month,year,first,last,pilotArr,index,lastDay,monthNumber,date;
       headerArr.every(el=>{
@@ -259,6 +260,7 @@ class NavbarController {
       this.http.get('/api/calendar').then(res=>{
         let existing=res.data;
         let index;
+        console.log(this.calendar);
         this.calendar.forEach(day=>{
           index = existing.map(e => e.date).indexOf(day.date);
           if (index<0) {//day does not yet exist in the collection

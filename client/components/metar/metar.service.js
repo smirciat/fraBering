@@ -10,6 +10,7 @@ function metarService($http,$interval) {
     //var self=this;
     var temp="";
     var obs={};
+    if (metar==='missing') return obs;
     //metar="METAR PASK 082000Z AUTO 26015KT 1 1\/4SM -SN BR BKN017 OVC023 M08\/M09 A3028";
     //metar="PAOT 021617Z 05004KT 1\/4SM R09\/1600V2000FT FZFG VV002 M02\/M02  A2944 RMK AO2 I1001 T10221022";
     //metar="PAOT 021617Z 05004KT CLR M02\/M02  A2944 RMK AO2 I1001 T10221022";
@@ -30,8 +31,8 @@ function metarService($http,$interval) {
     else obs['Wind-Gust']=obs['Wind-Speed'];
     obs.vis=metarArray.shift();//visibility
     //obs.vis="1/2SM";
-    if (obs.vis.split('V').length>1&&obs.vis.split('V')[0].length===3&&obs.vis.split('V')[1].length===3) obs.vis=metarArray.shift();//variable winds, ignore
-    if (obs.vis.slice(-2)!=="SM") {
+    if (obs.vis&&obs.vis.split('V').length>1&&obs.vis.split('V')[0].length===3&&obs.vis.split('V')[1].length===3) obs.vis=metarArray.shift();//variable winds, ignore
+    if (obs.vis&&obs.vis.slice(-2)!=="SM") {
       temp=metarArray.shift();
       if (temp.slice(-2)==="SM") obs.vis = obs.vis + ' ' + temp;//this covers visibilities such as "1 3/4SM"
       else {
@@ -40,7 +41,8 @@ function metarService($http,$interval) {
         obs.vis="99";
       }
     }
-    var visArray=obs.vis.split('/');
+    var visArray=[];
+    if (obs.vis) visArray=obs.vis.split('/');
     var number, top, bottom;
     if (visArray.length>1) {
       obs.Visibility=visArray[0].replace(/[^0-9 ]/g, '') + '/' + visArray[1].replace(/[^0-9]/g, '');
