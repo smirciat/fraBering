@@ -95,8 +95,8 @@ export function show(req, res) {
 export function create(req, res) {
   //console.log(req.body);
   if (!req.body.password||req.body.password!==process.env.PASSWORD) {
-    res.status(501).end();
-    return null;
+    //res.status(501).end();
+    //return null;
   }
   return Assessment.create(req.body)
     .then(respondWithResult(res, 201))

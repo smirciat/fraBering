@@ -180,6 +180,9 @@
       isAdmin() {
         return Auth.hasRole.apply(Auth, [].concat.apply(['admin'], arguments));
       },
+      isSuperAdmin() {
+        return Auth.hasRole.apply(Auth, [].concat.apply(['superadmin'], arguments));
+      },
 
       /**
        * Get auth token

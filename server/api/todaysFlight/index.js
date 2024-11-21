@@ -11,6 +11,7 @@ router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);
 router.post('/dayFlights', controller.dayFlights);
+router.post('/record', controller.recordAssessments);
 router.put('/:id', controller.update);
 router.patch('/:id', controller.update);
 router.delete('/:id', controller.destroy);

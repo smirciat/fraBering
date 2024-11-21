@@ -17,6 +17,8 @@ export default function(sequelize, DataTypes) {
     },
     baseGroup: DataTypes.STRING,
     comment: DataTypes.STRING,
+    signature: DataTypes.STRING,
+    timestamp: DataTypes.DATE,
     runways: DataTypes.ARRAY(DataTypes.INTEGER),
     runwayScore: {
       type: DataTypes.STRING,
@@ -41,6 +43,9 @@ export default function(sequelize, DataTypes) {
       defaultValue:1
     },
     forecastRequirement: DataTypes.JSON,
-    currentMetar: DataTypes.STRING
+    currentMetar: DataTypes.STRING,
+    metarObj: DataTypes.JSONB,
+    currentTaf: DataTypes.STRING,
+    currentTafObject: DataTypes.JSONB
   });
 }

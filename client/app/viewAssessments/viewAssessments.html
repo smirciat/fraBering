@@ -5,7 +5,7 @@
             <a href="#" data-toggle="dropdown" class="dropdown-toggle">Filter by Pilot <b class="caret"></b></a>
             <ul class="dropdown-menu">
                 <li ng-repeat="pilot in viewAssessments.pilots">
-                  <a ng-click="viewAssessments.setPilot(pilot.name)" href="#">{{pilot.name}}</a>
+                  <a ng-click="viewAssessments.setPilot(pilot.displayName)" href="#">{{pilot.displayName}}</a>
                 </li>
             </ul>
         </li>
@@ -47,34 +47,34 @@
     <tbody>
       
           <tr ng-repeat-start="assessment in viewAssessments.assessmentsDisplay track by $index">    
-            <td><button class="btn btn-success" ng-click="viewAssessments.expand($index)">Expand</button></td>
-            <td>{{assessment.date|date:'medium'}}</td>
-            <td>{{assessment.flight}}</td>
-            <td>{{assessment.pilot}}</td>
-            <td>{{assessment.equipment}}</td>
-            <td>Airports</td>
-            <td>Metar</td>
-            <td>Taf</td>
-            <td>Vis</td>
-            <td>Ceil</td>
-            <td>Wind</td>
-            <td>Runway</td>
-            <td>FZ</td>
+            <td><button class="btn btn-success assess" style="padding-top:12px;" ng-click="viewAssessments.expand($index)">Expand</button></td>
+            <td><div ng-class="assessment.color" class="assess">{{assessment.date|date:'medium'}}</div></td>
+            <td><div class="assess">{{assessment.flight}}</div></td>
+            <td><div class="assess">{{assessment.pilot}}</div></td>
+            <td><div class="assess">{{assessment.equipment}}</div></td>
+            <td><div class="assess">Airports</div></td>
+            <td><div class="assess">Metar</div></td>
+            <td><div class="assess">Taf</div></td>
+            <td><div class="assess">Vis</div></td>
+            <td><div class="assess">Ceil</div></td>
+            <td><div class="assess">Wind</div></td>
+            <td><div class="assess">Runway</div></td>
+            <td><div class="assess">FZ</div></td>
           </tr>
-          <tr ng-repeat-end ng-repeat="airport in assessment.airports track by $index" ng-if="assessment.expand" ng-class="assessment.color[$index]">
+          <tr ng-repeat-end ng-repeat="airport in assessment.airports track by $index" ng-if="assessment.expand">
               <td></td>
               <td></td>
               <td></td>
               <td></td>
               <td></td>
-              <td>{{airport}}</td>
-              <td uib-tooltip="{{assessment.metars[$index]}}" tooltip-placement="bottom"><button>metar</button></td>
-              <td uib-tooltip="{{assessment.tafs[$index]}}" tooltip-placement="bottom"><button>taf</button></td>
-              <td>{{assessment.visibilities[$index]}}</td>
-              <td>{{assessment.ceilings[$index]}}</td>
-              <td>{{assessment.windGusts[$index]}}</td>
-              <td>{{assessment.runwayConditions[$index]}}</td>
-              <td>{{assessment.freezingPrecipitations[$index]}}</td>
+              <td><div ng-class="assessment.colors[$index]" class="assess">{{airport}}</div></td>
+              <td><div class="assess" uib-tooltip="{{assessment.metars[$index]}}" tooltip-placement="bottom"><button>metar</button></div></td>
+              <td><div class="assess" uib-tooltip="{{assessment.tafs[$index]}}" tooltip-placement="bottom"><button>taf</button></div></td>
+              <td><div class="assess">{{assessment.visibilities[$index]}}</div></td>
+              <td><div class="assess">{{assessment.ceilings[$index]}}</div></td>
+              <td><div class="assess">{{assessment.windGusts[$index]}}</div></td>
+              <td><div class="assess">{{assessment.runwayConditions[$index]}}</div></td>
+              <td><div class="assess">{{assessment.freezingPrecipitations[$index]}}</div></td>
           </tr>
       
     </tbody>

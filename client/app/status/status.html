@@ -1,30 +1,17 @@
 <navbar></navbar>
-<!--<section ng-class="status.getLayout()">
-  <div ng-if="status.fixedWing()" class="status-column-header">
-    <h1>Runway Conditions</h1>
-  </div>
-  <div class="status-column-header">
-    <h1>Base Pilots</h1>
-  </div>
-  <div class="status-column-header">
-    <h1>Base Aircraft</h1>
-  </div>
-  <div class="status-column-header">
-    <h1 ng-if="status.fixedWing()" ng-class="status.amIStopped()">Base Flights</h1>
-    <h1 ng-if="!status.fixedWing()">Assigned Missions</h1>
-  </div>
-  <div ng-if="status.fixedWing('OME')" class="status-column-header">
-    <h1>Beech Aircraft</h1>
-  </div>
-</section>-->
 <section ng-class="status.getLayout()">
   <div ng-if="status.fixedWing()" class="status-column">
       <div class="grid-parent" ng-repeat="airport in status.airports">
-        <div class="airport" ng-class="status.airportClass(airport.runwayScore)" ng-click="status.enterScore(airport)" 
-               tooltip-placement="right" uib-tooltip="Latest Runway Score (1-5) is: {{airport.runwayScore}}">  
-          <h1>{{airport.threeLetter}}</h1>
+        <div class="airport" ng-class="status.airportClass(airport.runwayScore)"
+              tooltip-placement="right" uib-tooltip="{{airport.metarObj.taf}}">
+          <h1 ng-mousedown="status.handleClick($event,airport,'taf')" id="airport{{airport._id}}">{{airport.threeLetter}}</h1>
         </div>
-        <div class="comment" ng-click="status.addEditComment(airport)">
+        <div class="comment" ng-click="status.sign(airport)">
+          <p class="tiny">ReportedBy:</p>
+          <p class="tiny">{{airport.signature}}</p>
+          <p class="tiny" ng-if="airport.signature">{{status.getDate(airport.timestamp)}}</p>
+        </div>
+        <div class="comment" ng-click="status.sign(airport)">
           <p>{{airport.comment}}</p>
         </div>
       </div>
@@ -33,7 +20,7 @@
     <div ng-repeat="pilot in status.sortedPilots track by $index">
       <h1 ng-if="status.showHeader('sortedPilots','header',$index)">{{pilot.header}}</h1>
       <h1 ng-if="status.fixedWing('HEL')&&$index===0">Helicopter Pilots</h1>
-      <p uib-tooltip="{{pilot.medicalClass}}" ng-click="status.choose('sortedPilots',pilot._id)" 
+      <p ng-hide="status.toggleAssigned&&pilot.assigned" uib-tooltip="{{pilot.medicalClass}}" ng-click="status.choose('sortedPilots',pilot._id)" 
             ng-class="status.chosenClass(pilot.chosen)">{{pilot.name + '-' + pilot.code}}</p>
     </div>
   </div>
@@ -41,7 +28,7 @@
     
     <div ng-repeat="airplane in status.displayedAircraft track by $index">
       <p ng-if="status.showHeader('displayedAircraft','acftType',$index)" class="smaller">{{airplane.acftType}}</p>
-      <p uib-tooltip="{{airplane.acftType}}" ng-click="status.choose('displayedAircraft',airplane._id)"
+      <p ng-hide="status.toggleAssigned&&airplane.assigned" uib-tooltip="{{airplane.acftType}}" ng-click="status.choose('displayedAircraft',airplane._id)"
            ng-class="status.chosenClass(airplane.chosen)">{{airplane._id}}</p>
     </div>
   </div>
@@ -53,42 +40,59 @@
            ng-class="status.chosenClass(flight.chosen)">{{flight.flightNum}}</p>
     </div>
   </div>-->
-  <div class="status-column">
+  <div class="status-column-flights">
+    <div class="todays-flights">
      <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" id="{{flight._id}}">
       <div ng-if="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
-        <div style="padding-left:0.5em">
-          <p style="margin:0px">{{'BRG' + flight.flightNum + ', ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + (flight.coPilotObject.displayName||flight.coPilot)}}</p>
-          <div style="display:inline-block;">
-            <p>{{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}</p>
+        <div class="grid-parent-airport">
+          <div>
+            <p ng-class="status.flightRiskClass(flight.airportObjs)" style="margin:10px; padding:10px; border:1px solid black; text-align:center; min-width:6em;">
+              {{'BRG' + flight.flightNum}}
+            </p>
           </div>
-          <div class="airport-card" ng-repeat="metarObj in flight.airportObjs track by $index">
-            <div ng-class="status.overallRiskClass(metarObj)">
-              <p style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}">{{metarObj.airport.threeLetter}}</p>
+          <div style="padding-left:0.5em;">
+            <p style="margin:0px; border:none; display:inline-block;">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + (flight.coPilotObject.displayName||flight.coPilot)}}</p>
+            <br>
+            <div style="display:inline-block;">
+              <p style="border:none;">{{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}</p>
             </div>
-          </div>
+            <div class="airport-card" ng-repeat="metarObj in flight.airportObjs track by $index">
+              <div ng-class="status.overallRiskClass(metarObj)">
+                <p style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
+                      ng-mousedown="status.handleClick($event,metarObj,'metar',flight._id,$index)">{{metarObj.airport.threeLetter}}</p>
+              </div>
+            </div>
+          </div>  
         </div>
       </div>
     </div>
     <div ng-repeat="n in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]" style="height:3em"></div>
-    <!--<div ng-repeat="flight in status.assignedFlights track by $index">
-      <p>{{'Flight: '+flight.flightNum+', Captain: '+flight.chosenPilot.name+', Aircraft:'+flight.chosenAircraft._id}}</p>
-    </div>-->
+   </div>
+   <div class="alts">
+     <div><h1 style="width:100%; text-align:center;">Alternate Airports</h1></div>
+     <div class="alternate-airport" ng-class="status.altClass(alt)" ng-repeat="alt in status.alternateAirports | orderBy:'_id'"
+             uib-tooltip="{{alt.metarObj.taf}}" 
+             ng-click="status.tafDisplay('The TAF for ' +alt.name+' is: ',status.getNextTAF(alt.metarObj.TAF).raw)">
+       {{alt.threeLetter}}
+     </div>
+   </div>
   </div>
-  <div ng-if="status.fixedWing('OME')" class="status-column">
-    <div style="width:100%;text-align:center;">
-      <h1>Beech 1900s</h1>
-    </div>
-    <div class="grid-parent-right" ng-repeat="airplane in status.airplanesB190">
-      <div class="airport" style="align-self:center">
-        <p>{{airplane.registration}}</p>
+  <div ng-if="status.fixedWing()" class="status-column">
+    <div ng-if="status.base.base==='OME'">
+      <div style="width:100%;text-align:center;">
+        <h1>Beech 1900s</h1>
       </div>
-      <div class="comment"  style="align-self:center"ng-click="status.editConfiguration(airplane)">
-        <p>{{airplane.status}}</p>
+      <div class="grid-parent-right" ng-repeat="airplane in status.airplanesB190">
+        <div class="airport" style="align-self:center">
+          <p>{{airplane.registration}}</p>
+        </div>
+        <div class="comment"  style="align-self:center"ng-click="status.editConfiguration(airplane)">
+          <p>{{airplane.status}}</p>
+        </div>
       </div>
-    </div>
-    <div style="width:100%;text-align:center;">
-      <h1>King Air 200s</h1>
-    </div>
+      <div style="width:100%;text-align:center;">
+        <h1>King Air 200s</h1>
+      </div>
       <div class="grid-parent-right" ng-repeat="airplane in status.airplanesBE20">
         <div class="airport" style="align-self:center">
           <p>{{airplane.registration}}</p>
@@ -96,6 +100,52 @@
         <div class="comment" style="align-self:center" ng-click="status.editConfiguration(airplane)">
           <p>{{airplane.status}}</p>
         </div>
+        </div>
       </div>
+    <div style="width:100%;text-align:center;">
+      <h1>Airport Legend</h1>
+    </div>
+      <div class="grid-parent-right">
+        <div class="comment" style="align-self:center">
+          <p class="airport-green">Green</p>
+        </div>
+        <div class="comment" style="align-self:center" >
+          <p>Low Risk</p>
+        </div>
+      </div>
+      <div class="grid-parent-right">
+        <div class="comment" style="align-self:center">
+          <p class="airport-yellow">Yellow</p>
+        </div>
+        <div class="comment" style="align-self:center" >
+          <p>Med Risk</p>
+        </div>
+      </div>
+      <div class="grid-parent-right">
+        <div class="comment" style="align-self:center">
+          <p class="airport-pink">Red</p>
+        </div>
+        <div class="comment" style="align-self:center" >
+          <p>Hi Risk</p>
+        </div>
+      </div>
+      <div class="grid-parent-right">
+        <div class="comment" style="align-self:center">
+          <p class="airport-blue">Blue</p>
+        </div>
+        <div class="comment" style="align-self:center" >
+          <p>Missing Report</p>
+        </div>
+      </div>
+      <div class="grid-parent-right">
+        <div class="comment" style="align-self:center">
+          <p class="airport-purple">Purple</p>
+        </div>
+        <div class="comment" style="align-self:center" >
+          <p>Missing Ceil/Vis/Altm</p>
+        </div>
+      </div>
+      
+      
   </div>
 </section>

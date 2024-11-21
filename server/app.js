@@ -42,6 +42,11 @@ let callbackFunction=()=>{
           console.log('interval going');
         })
         .catch(err=>{console.log(err.response.data)});
+  axios.post(baseUrl + '/api/todaysFlights/record',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
+        .then((response)=>{
+          console.log('recordAssessment function successfully run');
+        })
+        .catch(err=>{console.log(err.response.data)});
 };
 
 let metarFunction=()=>{
@@ -52,14 +57,24 @@ let metarFunction=()=>{
         .catch(err=>{console.log(err.response.data)});
 };
 
+let tafFunction=()=>{
+  axios.post(baseUrl + '/api/airportRequirements/tafs',{}, { httpsAgent: agent })
+        .then((response)=>{
+          console.log('taf interval going at ' +new Date().toLocaleString());
+        })
+        .catch(err=>{console.log(err)});
+};
+
 // Start server
 function startServer() {
   app.angularFullstack = server.listen(config.port, config.ip, function() {
     console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
     callbackFunction();
     metarFunction();
+    tafFunction();
     setInterval(callbackFunction,1*60*1000); 
     setInterval(metarFunction,5*60*1001);  
+    setTimeout(()=>{setInterval(tafFunction,(5*60*1000))},2*60*1000);  
   });
 }
 

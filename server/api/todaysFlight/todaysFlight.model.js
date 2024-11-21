@@ -26,6 +26,8 @@ export default function(sequelize, DataTypes) {
     departTimes: DataTypes.ARRAY(DataTypes.TIME),
     base: DataTypes.STRING,
     status: DataTypes.STRING,
-    json: DataTypes.JSONB
+    json: DataTypes.JSONB,
+    color: DataTypes.STRING,
+    airportObjs: DataTypes.JSONB
   });
 }

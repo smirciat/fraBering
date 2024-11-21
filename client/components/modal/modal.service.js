@@ -61,6 +61,78 @@ angular.module('workspaceApp')
               del.apply(event, args);
             });
           };
+        },
+        quickShow(del = angular.noop) {
+          /**
+           * Open a delete confirmation modal
+           * @param  {String} name   - name or info to show on modal
+           * @param  {All}           - any additional args are passed straight to del callback
+           */
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                airport = args.shift(),
+                taf = args.shift(),
+                quickModal;
+
+            quickModal = openModal({
+              modal: {
+                dismissable: true,
+                show:false,
+                title: airport,
+                html: '<p> <strong>' + taf + '</strong> </p>',
+                buttons: [ {
+                  classes: 'btn-success',
+                  text: 'OK',
+                  click: function(event) {
+                    quickModal.close(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+
+            quickModal.result.then(function(event) {
+              del.apply(event, args);
+            });
+          };
+        } ,
+        runway: function(cb) {
+          cb = cb || angular.noop;
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                airport = args.shift(),
+                formData = args.shift()||{},
+                quickModal;
+            quickModal = openModal({
+              modal: {
+                airport:airport,
+                formData:formData,
+                dismissable: true,
+                show:false,
+                runway:true,
+                getMyDate:function(d){return new Date(d).toLocaleString()},
+                title: 'Enter the Runway Conditions for ' + airport.name,
+                buttons: [ {//this is where you define you buttons and their appearances
+                  classes: 'btn-primary',
+                  text: 'Confirm/Save',
+                  click: function(event) {
+                    quickModal.close(event);
+                  }
+                }, {
+                  classes: 'btn-danger',
+                  text: 'Cancel',
+                  click: function(event) {
+                    quickModal.dismiss(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+
+            quickModal.result.then(function(event) {
+              cb.apply(event, [formData]); //this is where all callback is actually called
+            }).catch(err=>{
+              console.log(err);
+            });
+          };
         } ,
         delete(del = angular.noop) {
           /**

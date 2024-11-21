@@ -13,5 +13,6 @@ router.patch('/:id', controller.update);
 router.delete('/:id', controller.destroy);
 router.post('/firebase',controller.firebase);
 router.post('/firebaseLimited',controller.firebaseLimited);
+router.post('/firebaseQuery',controller.firebaseQuery);
 router.post('/updateFirebase',controller.updateFirebase);
 module.exports = router;

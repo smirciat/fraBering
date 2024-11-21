@@ -18,6 +18,16 @@
   gap: 8px;
 }
 
+.layout-UNK {
+  width: 100%;
+
+  display: grid;
+  grid:
+    ". . . ."
+    / 2fr 1fr 1fr 3fr;
+  gap: 8px;
+}
+
 .layout-HEL {
   width: 100%;
 
@@ -35,6 +45,19 @@
     height:calc(100vh - 50px);
     font-size:1.5em;
     overflow:auto;
+}
+
+.status-column-flights{
+    font-size:1.5em;
+}
+
+.todays-flights{
+  height:70vh;
+  overflow:auto;
+}
+
+.alts{
+  height:30vh;
 }
 
 .status-column-header{
@@ -69,10 +92,19 @@
 
 .grid-parent{
   display: grid; 
-  grid-template-columns: 1fr 3fr; 
+  grid-template-columns: 2fr 1fr 6fr; 
   grid-gap: 0px; 
   border: 1px solid black; 
   width: 100%; 
+}
+
+.grid-parent-airport{
+  display: grid; 
+  grid-template-columns: 1fr 9fr; 
+  grid-gap: 0px; 
+  width: 100%; 
+  padding-left:0.5em;
+  align-items:center;
 }
 
 .grid-parent-right{
@@ -109,6 +141,14 @@
   text-align:center;
 }
 
+.alternate-airport{
+  display:inline-block;
+  font-size:1.5em;
+  text-align:center;
+  margin:10px;
+  padding:10px;
+}
+
 .airport-green{
   background-color:lightgreen;
 }
@@ -129,6 +169,10 @@
   background-color:lightblue;
 }
 
+.airport-purple{
+  background-color:#DAB1DA;
+}
+
 .chosen{
   border:2px dashed green;  
   padding:0.03em 0.25em;
@@ -137,4 +181,14 @@
 .light-border{
   font-size: 0.75em;
   border:1px solid black;
+}
+
+.assess{
+  padding:7px;
+  margin:7px;
+}
+
+.tiny{
+  font-size:.5em;
+  margin:0px;
 }

@@ -18,12 +18,14 @@ class NavbarController {
     this.interval=$interval;
     this.http=$http;
     this.scope=$scope;
-    this.bases=[{base:"OME",four:"PAOM"},{base:"OTZ",four:"PAOT"},{base:"HEL",four:"HELI"}];
+    this.bases=[{base:"OME",four:"PAOM"},{base:"OTZ",four:"PAOT"},{base:"UNK",four:"PAUN"},{base:"HEL",four:"HELI"}];
     this.base=this.bases[0];
     window.base=this.base;
     this.date=new Date();
     this.dateString=this.date.toLocaleDateString();
     window.dateString=this.dateString;
+    this.isToggleAssigned=true;
+    window.toggleAssigned=true;
     this.pairs=[{v:'ST MICHAEL',c:'PAMK'},
                {v:'NOME',c:'PAOM'},
                {v:'SHISHMAREF',C:'PASH'},
@@ -57,6 +59,14 @@ class NavbarController {
   }
   
   $onInit() {
+    this.interval(()=>{
+      const hour=new Date().getHours();
+      if (hour===1||hour===2) {
+        this.date=new Date();
+        this.dateString=this.date.toLocaleDateString();
+        window.dateString=this.dateString;
+      }
+    },60*60*1000);
     this.dateString=this.date.toLocaleDateString();
     this.myInterval=this.interval(()=>{
       let fileWatch;
@@ -67,6 +77,9 @@ class NavbarController {
         this.interval.cancel(this.myInterval);
       }
     },1000);
+    this.scope.$watch('status.toggleAssigned',(newVal,oldVal)=>{
+      this.isToggleAssigned=newVal;
+    });
   }
 
   minusDate(){
@@ -84,6 +97,7 @@ class NavbarController {
   upDate(){
     this.date=new Date(this.dateString);
     this.dateString=this.date.toLocaleDateString();
+    window.dateString=this.dateString;
   }
   
   updateBase(){
@@ -253,7 +267,7 @@ class NavbarController {
         index = window.allPilots.map(e => e.name).indexOf(first + ' ' + last);
         if (index>-1) {
           for (let x=0;x<lastDay;x++){
-            if (pilotArr[x+2]&&pilotArr[x+2]!=='T'&&pilotArr[x+2].toUpperCase()!=='V') this.calendar[x].availablePilots.push({code:pilotArr[x+2],name:first + ' ' + last,pilotBase:window.allPilots[index].pilotBase});
+            if (pilotArr[x+2]&&pilotArr[x+2]!=='T'&&pilotArr[x+2].toUpperCase()!=='V'&&pilotArr[x+2].toUpperCase()!=='OFF') this.calendar[x].availablePilots.push({code:pilotArr[x+2],name:first + ' ' + last,pilotBase:window.allPilots[index].pilotBase});
           }
         }
       });
@@ -278,6 +292,26 @@ class NavbarController {
     inputFile.value='';
     this.fileExists=false;
     
+  }
+  
+  buttonClass(toggle){
+    if (toggle) return 'airport-green';
+    return 'airport-pink';
+  }
+  
+  toggle(){
+    window.toggle=!window.toggle;
+    this.isToggle=window.toggle;
+  }
+  
+  toggleAssigned(){
+    window.toggleAssigned=!window.toggleAssigned;
+    this.isToggleAssigned=window.toggleAssigned;
+  }
+  
+  showHide(bool){
+    if (bool) return "Hide";
+    return "Show";
   }
 }
 

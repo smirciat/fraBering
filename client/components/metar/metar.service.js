@@ -10,10 +10,11 @@ function metarService($http,$interval) {
     //var self=this;
     var temp="";
     var obs={};
-    if (metar==='missing') return obs;
+    if (!metar||metar==='missing') return obs;
     //metar="METAR PASK 082000Z AUTO 26015KT 1 1\/4SM -SN BR BKN017 OVC023 M08\/M09 A3028";
     //metar="PAOT 021617Z 05004KT 1\/4SM R09\/1600V2000FT FZFG VV002 M02\/M02  A2944 RMK AO2 I1001 T10221022";
     //metar="PAOT 021617Z 05004KT CLR M02\/M02  A2944 RMK AO2 I1001 T10221022";
+    //metar='METAR PAOM 191615Z AUTO 15017G22KT 3SM -FZRA BR OVC004 M04/M05 A3025';
     obs['Raw-Report']=metar;
     var metarArray=metar.split(' ');
     metarArray.forEach(m=>{
@@ -57,18 +58,20 @@ function metarService($http,$interval) {
       else obs.Visibility=(visArray[0].replace(/[^0-9 ]/g, '')/visArray[1].replace(/[^0-9]/g, '')).toString();
     }
     else {
-      obs.Visibility=obs.vis.replace(/[^0-9]/g, '');
+      if (obs.vis) obs.Visibility=obs.vis.replace(/[^0-9]/g, '');
     }
+    if (!obs.Visibility&&obs.vis==="10SM") obs.Visibility=10;
     //if (obs.Visibility==="") obs.Visibility="99";
     obs['Other-List']=[];
     obs['Cloud-List']=[];
     var unknown=metarArray.shift();//let's test this
-    var test=(unknown.split('/').length<2)||unknown.substring(0,1)==='R';
+    var test=false;
+    if (unknown) test=(unknown.split('/').length<2)||unknown.substring(0,1)==='R';
     while (test){//when this is 2, we are on the temperature section
       if (testSky(unknown)) {
         var cloudArr=[];
         cloudArr.push(unknown.substring(0,3));
-        if (cloudArr[0].substring(0,3)!=="CLR") {
+        if (cloudArr[0].substring(0,3)!=="CLR"||cloudArr[0].substring(0,3)!=="SKC") {
           if (cloudArr[0].substring(0,2)==="VV") {
             cloudArr[0]="VV";
             cloudArr.push(unknown.substring(2));
@@ -87,8 +90,8 @@ function metarService($http,$interval) {
       else test=false;
     }
     obs.tempDew=unknown;
-    obs.Temperature=obs.tempDew.split('/')[0];
-    if (obs.Temperature.substring(0,1)==="M") obs.Temperature="-" + obs.Temperature.substring(1);
+    if (obs.tempDew) obs.Temperature=obs.tempDew.split('/')[0];
+    if (obs.Temperature&&obs.Temperature.substring(0,1)==="M") obs.Temperature="-" + obs.Temperature.substring(1);
     obs.Freezing=false;
         if (obs['Other-List'].length>0) {
           obs['Other-List'].forEach(function(item){
@@ -109,7 +112,7 @@ function metarService($http,$interval) {
     
   function testSky(str) {
     str=str.toUpperCase();
-    var skyArr=["VV","CL","FE","BK","OV","SC"];
+    var skyArr=["VV","CL","FE","BK","OV","SC","SK"];
     if (skyArr.indexOf(str.substring(0,2))<0) return false;
     return true;
   }

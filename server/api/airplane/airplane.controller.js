@@ -122,6 +122,23 @@ export function destroy(req, res) {
     .catch(handleError(res));
 }
 
+async function getCollectionQuery(collectionName,limit,parameter,operator,value,timestampBoolean) {
+  try {
+    for (let s of [collectionName,limit,parameter,operator,value,timestampBoolean]){
+      console.log(s);
+    }
+    if (timestampBoolean) value=admin.firestore.Timestamp.fromDate(new Date(value));
+    const collectionRef = firebase_db.collection(collectionName);
+    const querySnapshot = await collectionRef.where(parameter, operator , value).orderBy('date', 'desc').limit(limit).get();
+    querySnapshot.forEach((doc) => {
+      //console.log(doc.id, '=>', doc.data());
+    });
+    return querySnapshot;
+  } catch (error) {
+    console.error('Error getting collection:', error);
+  }
+}
+
 async function getCollectionLimited(collectionName,limit) {
   try {
     const collectionRef = firebase_db.collection(collectionName);
@@ -174,9 +191,27 @@ export async function firebase(req,res){
   res.status(200).json(array);
 }
 
+export async function firebaseQuery(req,res){
+  let collection=req.body.collection;
+  let limit=req.body.limit||50;
+  let parameter=req.body.parameter||'pilotEmployeeNumber';
+  let operator=req.body.operator||'==';
+  let value=req.body.value;
+  let timestampBoolean=req.body.timestampBoolean||false;
+  const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean);
+  let array=[];
+  result.forEach(doc=>{
+    let obj=doc.data();
+    obj._id=doc.id;
+    array.push(obj);
+  });
+  //console.log(array);
+  res.status(200).json(array);
+}
+
 export async function firebaseLimited(req,res){
   let collection=req.body.collection;
-  let limit=req.body.limit;
+  let limit=req.body.limit||50;
   const result=await getCollectionLimited(collection,limit);
   let array=[];
   result.forEach(doc=>{

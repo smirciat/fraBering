@@ -68,14 +68,12 @@ class StatusComponent {
         this.minuteInterval=this.interval(()=>{
           let seconds=new Date().getSeconds();
           if (seconds>50||seconds<10) {
-            //console.log('closing interval, try again in 30 seconds');
+            console.log('closing interval, try again in 30 seconds');
             this.interval.cancel(this.minuteInterval);
             this.timeout(()=>{
-              //console.log('try again for interval');
-              //this.recordAssessment();
-              this.interval(()=>{
-                //this.recordAssessment()
-              },60*1000);
+              console.log('try again for interval');
+              this.recordAssessment();
+              this.interval(()=>{this.recordAssessment()},60*1000);
             },30*1000);
           }
           else this.recordAssessment();
@@ -89,21 +87,6 @@ class StatusComponent {
     this.renewFirebase();
     this.quickModal=this.Modal.confirm.quickMessage(response=>{this.clicked=true;});
     this.tafDisplay=this.Modal.confirm.quickShow(response=>{});
-    this.runwayModal=this.Modal.confirm.runway(res=>{
-      res.timestamp=new Date();
-      if (!res.comment) res.comment='';
-      if (!res.signature) res.signature='';
-      let index = this.airports.map(e => e._id).indexOf(res._id);
-      if (index>-1) {
-        this.airports[index].signature=res.signature;
-        this.airports[index].timestamp=res.timestamp;
-        this.airports[index].comment=res.comment;
-        this.airports[index].runwayScore=res.runwayScore;
-        if (res._id&&res.signature&&res.runwayScore){
-          this.http.patch('/api/airportRequirements/'+res._id,res);
-        }
-      }
-    });
     this.http.get('/api/airplanes').then(res=>{
       this.airplanes=res.data;
       this.airplanesB190=this.airplanes.filter((e)=>{
@@ -132,14 +115,6 @@ class StatusComponent {
     });
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
       this.base=newVal;
-      if (this.base&&this.base.base==='UNK') {
-        this.toggleAssigned=false;
-        window.toggleAssigned=this.toggleAssigned;
-      }
-      else {
-        this.toggleAssigned=true;
-        window.toggleAssigned=this.toggleAssigned;
-      }
       if (this.masterAirports) this.setBase(this.masterAirports);
       this.setPilotList();
       this.setAirplaneList();
@@ -191,7 +166,7 @@ class StatusComponent {
       this.airports=this.setBase(res.data);
       this.socket.unsyncUpdates('airportRequirement');
       this.socket.syncUpdates('airportRequirement', this.masterAirports,(event,item,array)=>{
-        //this.masterAirports=array;
+        this.masterAirports=array;
         this.updateArray.push(item);
         let localLength=angular.copy(this.updateArray.length);
         this.timeout(()=>{
@@ -199,11 +174,10 @@ class StatusComponent {
             console.log(this.updateArray);
             this.updateArray=[];
             localLength=0;
-            console.log('updating airportRequirements at: '+new Date().toLocaleString());
+            console.log('updating airportRequirements');
             this.airports=this.setBase(array);
-            this.masterAirports=array;
           }
-        },3000);
+        },2000);
       });
     });
     this.http.get('/api/flights').then(res=>{
@@ -256,9 +230,8 @@ class StatusComponent {
           index = this.allPilots.map(e => e.displayName).indexOf(displayName);
           if (index>-1) flight.coPilotObject=angular.copy(this.allPilots[index]);
         }
-        let match=true;
         //attach routing to airportRequirements
-        let airportObjs=[];
+        flight.airportObjs=[];
         flight.airports.forEach((a,listIndex)=>{
         //for (let a of flight.airports) {
           if (!this.masterAirports) return;
@@ -267,24 +240,13 @@ class StatusComponent {
             let night=false;
             if (flight.departTimes.length>listIndex&&this.masterAirports[i].metarObj) night=this.isItNight(this.masterAirports[i].metarObj.airport,flight.departTimes[listIndex]);
             if (!this.masterAirports[i].metarObj) this.masterAirports[i].metarObj={airport:{threeLetter:a}};
-            airportObjs.push(angular.copy(this.masterAirports[i].metarObj));
-            if (airportObjs[listIndex]) {
-              if (!airportObjs[listIndex].airport) airportObjs[listIndex].airport=angular.copy(this.masterAirports[i]);
-              airportObjs[listIndex].night=night;
-              airportObjs[listIndex].aircraft=flight.aircraft;
-            }
+            this.masterAirports[i].metarObj.aircraft=flight.aircraft;
+            flight.airportObjs.push(angular.copy(this.masterAirports[i].metarObj));
+            delete this.masterAirports[i].metarObj.aircraft;
+            if (flight.airportObjs[listIndex]) flight.airportObjs[listIndex].night=night;
           }
-          else airportObjs.push({airport:{threeLetter:a}});
+          else flight.airportObjs.push({airport:{threeLetter:a}});
         });
-        if (flight.color!==this.flightRiskClass(airportObjs)) match=false;
-        if (!flight.airportObjs||flight.airportObjs.length!==airportObjs.length) match=false;
-        airportObjs.forEach((obj,objIndex)=>{
-          if (!flight.airportObjs||!flight.airportObjs[objIndex]) match=false;
-          else if (obj.color!==flight.airportObjs[objIndex].color) match=false;
-        });
-        flight.airportObjs=airportObjs;
-        flight.color=this.flightRiskClass(airportObjs);
-        if (!match&&flight.active==='true'&&flight.date===new Date().toLocaleDateString()) this.http.patch('/api/todaysFlights/'+flight._id,{airportObjs:airportObjs,color:flight.color});
       });
       array=array.filter(flight=>{return flight});
       this.timeout(()=>{
@@ -318,33 +280,27 @@ class StatusComponent {
       this.alternateAirports=[];
       airports.forEach((airport,airportIndex)=>{
         if (!airport) return;
-        if (airport.name==="Fairbanks International") airport.name="Fairbanks";
         let taf='';
-        let TAF={};
-        if (airport.currentTaf) taf=airport.currentTaf;
-        if (airport.currentTafObject) TAF=airport.currentTafObject;
-        if (airport.metarObj&&(!taf||taf==='')) taf=airport.metarObj.taf;
-        //if (airport.currentMetar&&airport.currentMetar!=='missing') {
-        //  airport.metarObj=this.metar.parseADDS(airport.currentMetar);
-        //}
+        if (airport.metarObj) taf=airport.metarObj.taf;
+        if (airport.currentMetar&&airport.currentMetar!=='missing') {
+          airport.metarObj=this.metar.parseADDS(airport.currentMetar);
+        }
         if (!airport.metarObj) airport.metarObj={};
         airport.metarObj.airport=angular.copy(airport);
-        airport.metarObj.color=this.overallRiskClass(airport.metarObj);
         airport.metarObj.taf=taf;
-        airport.metarObj.TAF=TAF;
-        let masterIndex=this.masterAirports.map(e=>e.threeLetter).indexOf(airport.threeLetter);
-        if (masterIndex>-1) this.masterAirports[masterIndex].metarObj=angular.copy(airport.metarObj);
         if (airport.icao==='PAOM'||airport.icao==='PAOT'||airport.icao==='PAUN'||airport.icao==='PANC'||airport.icao==='PABE'||airport.icao==='PAGA'||airport.icao==='PAFA') {
-          //this.http.get('https://avwx.rest/api/taf/' + airport.icao.toUpperCase() + '?token=' + this.appConfig.token).then(res=>{
-            //if (res.data.Error) console.log(res.data.Error);
-            //airport.metarObj.taf=taf
-            //airport.metarObj.TAF=TAF;
+          this.http.get('https://avwx.rest/api/taf/' + airport.icao.toUpperCase() + '?token=' + this.appConfig.token).then(res=>{
+            if (res.data.Error) console.log(res.data.Error);
+            airport.metarObj.taf=res.data['raw'];
+            airport.metarObj.TAF=res.data;
+            let masterIndex=this.masterAirports.map(e=>e.threeLetter).indexOf(airport.threeLetter);
+            if (masterIndex>-1) this.masterAirports[masterIndex].metarObj=angular.copy(airport.metarObj);
             if (this.alternateArray.indexOf(airport.threeLetter)>-1) this.alternateAirports.push(angular.copy(airport));
-          //}).catch(err=>{
-            //if (this.alternateArray.indexOf(airport.threeLetter)>-1) this.alternateAirports.push(angular.copy(airport));
-            //console.log(err)});
+            if (airportIndex>=airports.length-1) this.todaysFlights=this.filterTodaysFlights(this.todaysFlights);
+          }).catch(err=>{
+            if (this.alternateArray.indexOf(airport.threeLetter)>-1) this.alternateAirports.push(angular.copy(airport));
+            console.log(err)});
         }
-        if (airportIndex>=airports.length-1) this.todaysFlights=this.filterTodaysFlights(this.todaysFlights);
       });
       if (this.scope.nav.base.four==="PAOM") {
         this.airports=airports.filter(e=>{
@@ -445,9 +401,6 @@ class StatusComponent {
       if (color!=='airport-red') color='airport-blue';
       return returnString+=' '+color;
     }
-    //icing?
-    if (metarObj.Freezing) color='airport-pink';
-    //Visibility
     if (!metarObj.Visibility||!metarObj.Ceiling||!metarObj.altimeter) return returnString+' airport-purple';
     if (metarObj.Visibility===99||metarObj.Ceiling=='9999') return returnString+' airport-purple';
     //visibility
@@ -461,14 +414,14 @@ class StatusComponent {
     
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //return
-    metarObj.color=returnString+' '+color;
+    metarObj.color=color;
     return returnString+' '+color;
   }
   
   returnColor(limitObj,observation,direction,airport){
     if (!observation||observation===""||!limitObj) {
       return '';
-      //console.log('returnColor');
+      console.log('returnColor');
       return 'airport-purple';
     }
     if (!direction) direction="above";
@@ -487,7 +440,7 @@ class StatusComponent {
   returnWindColor(aircraft,gust,windDirection,airportObj){
     
     if (!gust||!windDirection||!airportObj) {
-      //console.log('windColor');
+      console.log('windColor');
       return 'airport-purple';
     }
     let equipment=angular.copy(this.equipment[0]);
@@ -540,49 +493,49 @@ class StatusComponent {
     return "airport-green";
   }
   
-  getNextTAF(TAF){
-    console.log(TAF);
-    let index=this.findTAFIndex(TAF);
-    return TAF[index];
-  }
-  
-  findTAFIndex(TAF){
-    let index=0;
-    let now=new Date();
-    let twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-    for (let i=0;i<TAF.length;i++){
-      let start=new Date(TAF[i].start_time.dt);
-      if (start<twoHoursFromNow&&TAF[i].type==="FROM") index=i;
-    }
-    return index;
-  }
-  
   altClass(airport){
     let ceiling=10000;
-    if (!airport.metarObj||!airport.metarObj.TAF) return 'airport-blue';
-    let index=this.findTAFIndex(airport.metarObj.TAF);
-    let clouds=[...airport.metarObj.TAF[index].clouds].reverse();
+    let clouds=[...airport.metarObj.TAF.forecast[0].clouds].reverse();
     clouds.forEach(cloud=>{
       if ((cloud.type==='OVC'||cloud.type==="BKN"||cloud.type==='VV')&&cloud.altitude*100<ceiling) ceiling=cloud.altitude*100;
     });
     if (ceiling<400) return 'airport-pink';
     let visibility=10;
-    if (airport.metarObj.TAF[index].visibility.value) visibility=airport.metarObj.TAF[index].visibility.value;
+    if (airport.metarObj.TAF.forecast[0].visibility.value) visibility=airport.metarObj.TAF.forecast[0].visibility.value;
     if (visibility<1) return 'airport-pink';
-    if (airport.metarObj.TAF[index].icing.length>0) return 'airport-pink';
-    // iterate through TAF[index].wx_codes array, look at 'repr' and search for 'FZ'
-    if (airport.metarObj.TAF[index].wx_codes){
-      for (let y=0;y<airport.metarObj.TAF[index].wx_codes.length;y++){
-        let code=airport.metarObj.TAF[index].wx_codes[y];
-        if (code.repr&&code.repr.includes('FZ')) return 'airport-pink';
-      }
-    }
+    if (airport.metarObj.TAF.forecast[0].icing.length>0) return 'airport-pink';
     //console.log(airport.threeLetter+' '+ceiling);
     return 'airport-green';
   }
   
+  enterScore(airport){
+    let index = this.airports.map(e => e._id).indexOf(airport._id);
+    let response=prompt("Enter New Runway Score (1-5) for " + airport.threeLetter + " airport",airport.runwayScore);
+    //if (isNaN(parseInt(response,10))) alert("Enter a number 1-5 for the runway score.");
+    if (response||response==="") {
+      this.airports[index].runwayScore=response;
+      this.http.patch('/api/airportRequirements/'+this.airports[index]._id,{runwayScore:response});
+    }
+  }
+  
+  addEditComment(airport){
+    let index = this.airports.map(e => e._id).indexOf(airport._id);
+    if (!airport.comment) airport.comment="";
+    let response=prompt("Create or Update the Comment for " + airport.threeLetter,airport.comment);
+    if (response||response==="") {
+      this.airports[index].comment=response;
+      this.http.patch('/api/airportRequirements/'+this.airports[index]._id,{comment:response});
+    }
+  }
+  
   sign(airport){
-    this.runwayModal(airport,{_id:airport._id,runwayScore:airport.runwayScore,comment:airport.comment,signature:airport.signature,timestamp:airport.timestamp});
+    let index = this.airports.map(e => e._id).indexOf(airport._id);
+    if (!airport.signature) airport.signature="";
+    let response=prompt("Create or Update the Signature for " + airport.threeLetter,airport.signature);
+    if (response||response==="") {
+      this.airports[index].signature=response;
+      this.http.patch('/api/airportRequirements/'+this.airports[index]._id,{signature:response,timestamp:this.moment()});
+    }
   }
   
   getDate(timestamp){
@@ -634,19 +587,13 @@ class StatusComponent {
         let inBase=pilot.pilotBase===this.base.base;
         //UNK Base rules
         if (this.base.base==="UNK") {
-          this.recentFlights.forEach(flight=>{
-            if (flight.pilot!==p.displayName) return;
-            let x=flight.legArray.map(e=>e.arr).indexOf('UNK');
-            if (x>-1) inBase=true;
-          });
-          //inBase=false;
-          //if (rf) {
-            //let x=rf.map(e=>e.pilot).indexOf(p.displayName);
-            //if (x>-1) {
-              //let y=rf[x].legArray.map(f=>f.arr).indexOf('UNK');
-              //if (y>-1) inBase=true;
-            //}
-          //}
+          inBase=false;
+          if (rf) {
+            let x=rf.map(e=>e.pilot).indexOf(p.displayName);
+            if (x>-1) {
+              if (rf[x].legArray.at(-1).arr==="UNK") inBase=true;
+            }
+          }
         }
         //set up headers for sort order
         p.header='';
@@ -722,13 +669,6 @@ class StatusComponent {
     this.displayedAircraft=this.allAircraft.filter(a=>{
       baseTest=false;
       if (this.base.base==="HEL"||a.currentAirport===this.base.base) baseTest=true;
-      if (this.base.base==="UNK"){
-        this.recentFlights.forEach(flight=>{
-          if (flight.acftNumber!==a._id) return;
-          let x=flight.legArray.map(e=>e.arr).indexOf('UNK');
-          if (x>-1) baseTest=true;
-        });
-      }
       return baseTest&&aircraftTypes.indexOf(a.acftType)>-1;
     });
     if (this.base.base==="HEL") this.displayedAircraft=this.allAircraft.filter(a=>{
@@ -868,6 +808,83 @@ class StatusComponent {
     if (this.stopped) return "stopped";
   }
   
+  visibilityClass(index){
+      
+    var airport = this.getAirport(this.assessment.airports[index]);
+    if (!this.assessment.visibilities[index]) return this.blue(index);
+    if (airport.visibilityRequirement.red>this.assessment.visibilities[index]) return this.red(index);
+    if (this.assessment.visibilities[index]===99) return this.purple(index);
+    if (airport.visibilityRequirement.yellow>this.assessment.visibilities[index]) return this.yellow(index);
+    if (this.assessment.night[index]) {
+      if (airport.visibilityRequirement.night>this.assessment.visibilities[index]) return this.orange(index);
+    }
+    else {
+      if (airport.visibilityRequirement.ifr>this.assessment.visibilities[index]) return this.orange(index);
+    }
+    return this.green(index);
+  }
+  
+  ceilingClass(index){
+    
+    var airport = this.getAirport(this.assessment.airports[index]);
+    if (!this.assessment.ceilings[index]) return this.blue(index);
+    if (airport.ceilingRequirement.red>this.assessment.ceilings[index]) return this.red(index);
+    if (this.assessment.ceilings[index]==="9999") return this.purple(index);
+    if (airport.ceilingRequirement.yellow>this.assessment.ceilings[index]) return this.yellow(index);
+    if (this.assessment.night[index]) {
+      if (airport.ceilingRequirement.night>this.assessment.ceilings[index]) return this.orange(index);
+    }
+    else {
+      if (airport.ceilingRequirement.ifr>this.assessment.ceilings[index]) return this.orange(index);
+    }
+    return this.green(index);
+  }
+  
+  runwayClass(index){
+    
+    if (this.assessment.runwayConditions[index]<2) return this.red(index);
+    if (this.assessment.runwayConditions[index]<4) return this.yellow(index);
+    return this.green(index);
+  }
+  
+  windClass(index){
+    
+    if (this.assessment.windGusts[index]===undefined) return this.blue(index);
+    if (this.assessment.airports[index]==="PADG") {
+      if (this.assessment.windGusts[index]>30) return this.red(index);
+      if (this.assessment.crossWinds[index]>15) return this.red(index);
+      if (this.assessment.windGusts[index]>25) return this.yellow(index);
+      if (this.assessment.crossWinds[index]>12) return this.yellow(index);
+    }
+    if (this.assessment.windGusts[index]>this.assessment.equipmentObj.wind) return this.red(index);
+    if (this.assessment.crossWinds[index]>this.assessment.equipmentObj.xwind) return this.red(index);
+    if (this.assessment.windGusts[index]>(this.assessment.equipmentObj.wind-5)) return this.yellow(index);
+    if (this.assessment.crossWinds[index]>(this.assessment.equipmentObj.xwind-5)) return this.yellow(index);
+    return this.green(index);
+  }
+  
+  freezingClass(index){
+    
+    if (this.assessment.freezingPrecipitations[index]) return this.red(index);
+    return this.green(index);
+  }
+  
+  tafClass(index){
+    
+    if (this.assessment.tafs[index]!=="") {
+      if (this.assessment.forecastVisibilities&&this.assessment.forecastVisibilities[index]<1) return this.yellow(index);
+      if (this.assessment.forecastFreezingPrecipitations&&this.assessment.forecastFreezingPrecipitations[index]) return this.yellow(index);
+      return this.green(index);
+    }
+    return "md-blue";
+  }
+  
+  nightClass(index){
+    
+    if (this.assessment.night[index]) return "night";
+    else return "day";
+  }
+  
   recordAssessment(){
     let date=new Date();
     //if (!this.dateString||this.dateString!==date.toLocaleDateString()) return;
@@ -915,45 +932,27 @@ class StatusComponent {
       this.recentFlights.sort((a,b)=>{
         let aReverse=[...a.legArray].reverse();
         let bReverse=[...b.legArray].reverse();
-        let aOnTime= aReverse[0].onTime;
-        if (aOnTime) aOnTime=aOnTime._seconds;
-        let aOffTime= aReverse[0].offTime;
-        let bOnTime= bReverse[0].onTime;
-        if (aOffTime) aOffTime=aOffTime._seconds;
-        if (bOnTime) bOnTime=bOnTime._seconds;
-        let bOffTime= bReverse[0].offTime;
-        if (bOffTime) bOffTime=bOffTime._seconds;
+        let aOnTime= aReverse[0].onTime._seconds;
+        let aOffTime= aReverse[0].offTime._seconds;
+        let bOnTime= bReverse[0].onTime._seconds;
+        let bOffTime= bReverse[0].offTime._seconds;
         while (!aOnTime&&aReverse.length>0) {
           if (aOffTime) aOnTime=aOffTime;
           else {
             aReverse.shift();
-            if (aReverse.length===0) return;
-            aOnTime= aReverse[0];
-            if (aOnTime) aOnTime=aOnTime.onTime;
-            aOffTime= aReverse[0];
-            if (aOffTime) aOffTime=aOffTime.offTime;
-            if (aOnTime) aOnTime=aOnTime._seconds;
-            if (aOffTime) aOffTime=aOffTime._seconds;
+            aOnTime= aReverse[0].onTime._seconds;
+            aOffTime= aReverse[0].offTime._seconds;
           }
         }
         while (!bOnTime&&bReverse.length>0) {
           if (bOffTime) bOnTime=bOffTime;
           else {
             bReverse.shift();
-            if (bReverse.length===0) return;
-            bOnTime= bReverse[0];
-            if (bOnTime) bOnTime=bOnTime.onTime;
-            bOffTime= bReverse[0];
-            if (bOffTime) bOffTime=bOffTime.offTime;
-            if (bOnTime) bOnTime=bOnTime._seconds;
-            if (bOffTime) bOffTime=bOffTime._seconds;
+
           }
         }
-        if (aOnTime&&bOnTime) return bOnTime-aOnTime;
-        if (!aOnTime&&!bOnTime) return 0;
-        if (!aOnTime) return -1;
-        if (!bOnTime) return 1;
-        return 0;
+        if (
+        return a.legArray.at(-1).onTime._seconds-b.legArray.at(-1).onTime._seconds;
       });
       console.log(this.recentFlights);
       //console.log(this.recentFlights.filter(a=>{return a.acftNumber==='N408BA'}));
@@ -975,7 +974,7 @@ class StatusComponent {
     if (source==='taf') {
       switch(evt.which) {
         case 1://left click
-            this.runwayModal(airport,{_id:airport._id,runwayScore:airport.runwayScore,comment:airport.comment,signature:airport.signature,timestamp:airport.timestamp}); 
+            this.enterScore(airport); 
             break;
         case 2:
             // for middle click functionality

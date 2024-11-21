@@ -95,14 +95,14 @@
       
       var self=this;
       self.timeout.cancel(self.timer);
-      var airports,pilot,flight,equipment,color,night,times;
+      var airports,pilot,flight,equipment,colors,night,times;
       self.isSubmitted=false;
       if (self.assessment) {
         pilot=self.assessment.pilotObj||"";
         flight=self.assessment.flight||"";
         airports=self.assessment.airports||[];
         equipment=self.assessment.equipmentObj||{id:5,name:"1900",wind:40,xwind:35,temp:-50};
-        color=self.assessment.color||[];
+        colors=self.assessment.colors||[];
         night=self.assessment.night||[];
         times=self.assessment.times||[];
       }
@@ -111,7 +111,7 @@
       }
       self.assessment={metars:[],tafs:[],visibilities:[],ceilings:[],windGusts:[],night:night,times:times,crossWinds:[],runwayConditionComments:[],
         windDirections:[],runwayConditions:[],freezingPrecipitations:[], airports:airports, pilotObj:pilot,flight:flight,equipmentObj:equipment,
-        color:color,forecastFreezingPrecipitations:[],forecastVisibilities:[],dawn:[],dusk:[],altimeters:[]
+        colors:colors,forecastFreezingPrecipitations:[],forecastVisibilities:[],dawn:[],dusk:[],altimeters:[]
       };
       if (self.assessment.pilotObj===""||self.assessment.pilotObj===undefined||self.assessment.pilotObj.name==='z') self.initPilots();
   
@@ -155,7 +155,7 @@
     initAirport(airport,index,count) {
       count++;
       var self=this;
-      self.assessment.color[index]="md-green";
+      self.assessment.colors[index]="md-green";
       self.assessment.metars[index]="";
       self.assessment.tafs[index]="";
       //lookup if airport is at night
@@ -271,7 +271,7 @@
             });
           }
           if (!self.assessment.altimeters||!self.assessment.altimeters[index]) {
-            self.assessment.color[index]="md-purple";
+            self.assessment.colors[index]="md-purple";
           }
         }
       },function(response){console.log(response)});
@@ -520,7 +520,7 @@
           
       self.mdDialog.show(confirm).then(function(result) {
         if (result!==""){
-          self.assessment.color[index]="md-green";
+          self.assessment.colors[index]="md-green";
           self.assessment[param][index]=result;
           if (param==="runwayConditions"&&parseInt(result,10)<5){
             self.enterRunwayReport(ev,index);
@@ -594,10 +594,10 @@
             .cancel('None');
               
       self.mdDialog.show(confirm).then(function() {
-          self.assessment.color[index]="md-red";
+          self.assessment.colors[index]="md-red";
           self.assessment.freezingPrecipitations[index]=true;
       },function(){
-          self.assessment.color[index]="md-green";
+          self.assessment.colors[index]="md-green";
           self.assessment.freezingPrecipitations[index]=false;
       });
     }
@@ -628,7 +628,7 @@
            });
            if (index>-1) self.flights[index].airports.push(result);
            self.assessment.airports.push(result);
-           self.assessment.color.push('md-green');
+           self.assessment.colors.push('md-green');
            self.assessment.times.push(self.moment().format('HH:mm').toString());
            self.initAirport(result,self.assessment.airports.length-1,0);
          }
@@ -664,7 +664,7 @@
             });
             if (index>-1) self.flights[index].airports.push(airport);
             self.assessment.airports.push(airport);
-            self.assessment.color.push('md-green');
+            self.assessment.colors.push('md-green');
             self.assessment.times.push(self.moment().format('HH:mm').toString());
             self.initAirport(airport,self.assessment.airports.length-1,0);
           }
@@ -694,27 +694,27 @@
     
     red(i){
       var self=this;
-      self.assessment.color[i]='md-red';
+      self.assessment.colors[i]='md-red';
       return 'md-red';
     }
     
     yellow(i){
       var self=this;
-      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-purple') self.assessment.color[i]='md-yellow';
+      if (self.assessment.colors[i]!=='md-red'&&self.assessment.colors[i]!=='md-purple') self.assessment.colors[i]='md-yellow';
       return 'md-yellow';
     }
     
     orange(i){
       var self=this;
-      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow'&&self.assessment.color[i]!=='md-purple') 
-        self.assessment.color[i]='md-orange';
+      if (self.assessment.colors[i]!=='md-red'&&self.assessment.colors[i]!=='md-yellow'&&self.assessment.colors[i]!=='md-purple') 
+        self.assessment.colors[i]='md-orange';
       return 'md-orange';
     }
     
     green(i){
       var self=this;
-      if (self.assessment.color[i]!=='md-red'&&self.assessment.color[i]!=='md-yellow'&&self.assessment.color[i]!=='md-orange'&&self.assessment.color[i]!=='md-purple') 
-         self.assessment.color[i]='md-green';
+      if (self.assessment.colors[i]!=='md-red'&&self.assessment.colors[i]!=='md-yellow'&&self.assessment.colors[i]!=='md-orange'&&self.assessment.colors[i]!=='md-purple') 
+         self.assessment.colors[i]='md-green';
       return 'md-green';
     }
     
