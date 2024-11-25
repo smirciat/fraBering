@@ -23,6 +23,12 @@ class NavbarController {
     window.base=this.base;
     this.date=new Date();
     this.dateString=this.date.toLocaleDateString();
+    this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
     window.dateString=this.dateString;
     this.isToggleAssigned=true;
     window.toggleAssigned=true;
@@ -85,18 +91,36 @@ class NavbarController {
   minusDate(){
     this.date.setDate(this.date.getDate() - 1);
     this.dateString=this.date.toLocaleDateString();
+    this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
     window.dateString=this.dateString;
   }
   
   plusDate() {
     this.date.setDate(this.date.getDate() + 1);
     this.dateString=this.date.toLocaleDateString();
+    this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
     window.dateString=this.dateString;
   }
   
   upDate(){
-    this.date=new Date(this.dateString);
+    this.date=new Date(this.dateStringFormatted);
     this.dateString=this.date.toLocaleDateString();
+    this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
     window.dateString=this.dateString;
   }
   

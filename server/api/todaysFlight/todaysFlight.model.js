@@ -28,6 +28,7 @@ export default function(sequelize, DataTypes) {
     status: DataTypes.STRING,
     json: DataTypes.JSONB,
     color: DataTypes.STRING,
-    airportObjs: DataTypes.JSONB
+    airportObjs: DataTypes.JSONB,
+    colorPatch: DataTypes.STRING
   });
 }

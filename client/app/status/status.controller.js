@@ -160,6 +160,8 @@ class StatusComponent {
         this.scroll();
         this.socket.unsyncUpdates('todaysFlight');
         this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
+          //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
+          if (item.colorPatch&&item.colorPatch==='true') return;
           console.log('todaysFlights Updated ' + event);
           console.log(item);
           this.allTodaysFlights=array;
@@ -284,12 +286,12 @@ class StatusComponent {
         });
         flight.airportObjs=airportObjs;
         flight.color=this.flightRiskClass(airportObjs);
-        if (!match&&flight.active==='true'&&flight.date===new Date().toLocaleDateString()) this.http.patch('/api/todaysFlights/'+flight._id,{airportObjs:airportObjs,color:flight.color});
+        if (!match&&flight.active==='true'&&flight.date===new Date().toLocaleDateString()) this.http.patch('/api/todaysFlights/'+flight._id,{airportObjs:airportObjs,color:flight.color,colorPatch:'true'});
       });
       array=array.filter(flight=>{return flight});
       this.timeout(()=>{
-        this.setPilotList();
-        this.setAirplaneList();
+        //this.setPilotList();
+        //this.setAirplaneList();
       },200);
       return array;
   }
@@ -449,7 +451,7 @@ class StatusComponent {
     if (metarObj.Freezing) color='airport-pink';
     //Visibility
     if (!metarObj.Visibility||!metarObj.Ceiling||!metarObj.altimeter) return returnString+' airport-purple';
-    if (metarObj.Visibility===99||metarObj.Ceiling=='9999') return returnString+' airport-purple';
+    if (metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) return returnString+' airport-purple';
     //visibility
     tempColor=this.returnColor(metarObj.airport.visibilityRequirement, metarObj.Visibility,'above',metarObj.airport);
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
@@ -707,7 +709,8 @@ class StatusComponent {
       index = this.allAircraft.map(e => e._id).indexOf(this.recentFlights[x].acftNumber);
       if (index>-1) {
         if (this.allAircraft[index].currentAirport!==this.recentFlights[x].legArray.at(-1).arr) {
-          this.http.post('/api/airplanes/updateFirebase',{collection:'aircraft',doc:{currentAirport:this.recentFlights[x].legArray.at(-1).arr,_id:this.allAircraft[index]._id}});
+          console.log('This would have fired a firebase update if it weren`t commented out');
+          //this.http.post('/api/airplanes/updateFirebaseNew',{collection:'aircraft',doc:{currentAirport:this.recentFlights[x].legArray.at(-1).arr,_id:this.allAircraft[index]._id}});
         }
         this.allAircraft[index].currentAirport=this.recentFlights[x].legArray.at(-1).arr;
       }
@@ -760,7 +763,8 @@ class StatusComponent {
     else {
       if (!this.flightSchedule||!this.date) return;
       let calendarFlights=[];
-      let i=this.calendar.map(e=>e.date).indexOf(this.date.toLocaleDateString());
+      let i=-1;
+      if (this.calendar) i=this.calendar.map(e=>e.date).indexOf(this.date.toLocaleDateString());
       if (i>-1) {
         calendarFlights=this.calendar[i].availableFlightNumbers||[];
       }
@@ -906,6 +910,11 @@ class StatusComponent {
     return;
   }
   
+  getFlightNum(flightNum){
+    if (flightNum.length===3||flightNum.length===4) return 'BRG'+flightNum;
+    return 'ID# ' +flightNum;
+  }
+  
   renewFirebase(){
     this.http.post('/api/airplanes/firebaseLimited',{collection:'flights',limit:51}).then(res=>{
       this.recentFlights=res.data.filter(flight=>{
@@ -1018,11 +1027,19 @@ class StatusComponent {
   }
   
   airportNameToMetar(name){
-    this.http.get('https://avwx.rest/api/search/station?text=' + name + '&token=' + this.appConfig.token).then(res=>{
+    this.http.get('https://avwx.rest/api/search/station?text=' + name + '&reporting=false&token=' + this.appConfig.token).then(res=>{
       if (res.data.Error) { 
         return '';
       }
-      this.http.get('https://avwx.rest/api/metar/' + res.data[0].icao + '?token=' + this.appConfig.token).then(resp=>{
+      let foundIndex=-1;
+      for (let i=0;i<res.data.length;i++){
+        if (res.data[i].country==='US'&&res.data[i].state==='AK') foundIndex=i;
+      }
+      if (foundIndex<0) {
+        console.log(res.data);
+        return;
+      }
+      this.http.get('https://avwx.rest/api/metar/' + res.data[foundIndex].icao + '?token=' + this.appConfig.token).then(resp=>{
         if (resp.data.Error) { 
           return;
         }

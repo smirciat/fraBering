@@ -15,7 +15,7 @@
             <a ui-sref="{{item.state}}">{{item.title}}</a>
         </li>
         <li ng-show="nav.isAdmin()" ui-sref-active="active"><a ui-sref="admin">Admin</a></li>
-        <li style="padding-left:5em;padding-top:7px;">
+        <li style="padding-left:5em;padding-top:7px;width:350px;">
           <div >
             <a style="float:left" href='#' ng-click="nav.minusDate()"><i class="fa fa-angle-left fa-autosize space-if" aria-hidden="true"></i></a>
             <a style="float:right" href='#' ng-click="nav.plusDate()"><i class="fa fa-angle-right fa-autosize space-if" aria-hidden="true"></i></a>
@@ -23,7 +23,7 @@
                   <input class="form-control" ng-model="nav.date" ng-change="nav.upDate()" type="text"/>
               </datepicker>-->
               <div style="padding-left:10px;padding-top:0px;width:85%" class="input-group">
-                <input class="form-control" type="text" ng-model="nav.dateString" ng-blur="nav.upDate()">
+                <input class="form-control" type="text" ng-model="nav.dateStringFormatted" ng-blur="nav.upDate()">
                 <!--<span class="input-group-btn">
                   <button type="button" class="btn btn-default" ng-click="nav.isDatepickerOpen = !nav.isDatepickerOpen">
                     <i class="glyphicon glyphicon-calendar"></i>

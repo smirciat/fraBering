@@ -154,7 +154,9 @@
 }
 
 .airport-pink{
-  background-color:pink;
+  background-color:#ff0033;
+  font-weight:bold;
+  color:white;
 }
 
 .airport-yellow{

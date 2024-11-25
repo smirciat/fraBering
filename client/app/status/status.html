@@ -47,7 +47,7 @@
         <div class="grid-parent-airport">
           <div>
             <p ng-class="status.flightRiskClass(flight.airportObjs)" style="margin:10px; padding:10px; border:1px solid black; text-align:center; min-width:6em;">
-              {{'BRG' + flight.flightNum}}
+              {{status.getFlightNum(flight.flightNum)}}
             </p>
           </div>
           <div style="padding-left:0.5em;">

@@ -283,93 +283,98 @@ export async function tf(req,res) {
     date3=date3.toLocaleDateString();
     date=date.toLocaleDateString();
     arr.splice(0,8);
-    //big sort first
-    let marks=[];
-    let bogus=[];
-    //first run through to remove bogus blank lines
-    arr.forEach((a,index)=>{
-      //the marks have blanks at least the first two cells
-      if ((!a.split(',')[0]||a.split(',')[0]==='')&&(!a.split(',')[1]||a.split(',')[1]==='')) marks.push(index);
-      else {
-        //not a mark, but no first cell, right after a mark. it has bogus marks above it
-        if ((!a.split(',')[0]||a.split(',')[0]==='')&&marks.indexOf(index-1)>-1) {
-          bogus.push(index-2);
-          bogus.push(index-1);
-        }
+    let currentFlights=[];
+    let pilot="No Pilot Assigned";
+    let index=0;
+    arr.forEach((a)=>{
+      if (!a||typeof a!=='string') return;
+      let temp=a.split(',');
+      if (!temp[2]) return;
+      let obj={};
+      if (temp[0]) {
+        pilot=temp[0];
+      }
+      obj.pilot=pilot;
+      obj.date=new Date(temp[2]).toLocaleDateString();
+      if (obj.date==='Invalid Date') {
+        console.log(a);
+        return;
+      }
+      obj.departTime=new Date(temp[2]).toTimeString().slice(0,8);
+      obj.coPilot=temp[3];
+      obj.aircraft=temp[4];
+      obj.from=temp[6];
+      obj.to=temp[7];
+      obj.flightNum=temp[8];
+      obj.flightId=temp[temp.length-1];
+      if (index>0&&!temp[8]&&obj.flightId===currentFlights[index-1].flightId) obj.flightNum=currentFlights[index-1].flightNum;
+      if (!obj.flightNum) obj.flightNum=obj.flightId;
+      if (obj.flightNum.split('.').length>1) obj.flightNum=obj.flightNum.split('.')[0];
+      currentFlights.push(obj);
+      index++;
+    });
+    //I now have currentFlights with either a flightNum or FlightId in the flightNum attribute.  Before the sort, maybe run through it once to make sure its right?
+    //let tempFlights=JSON.parse(JSON.stringify(currentFlights));
+    currentFlights.forEach((flight,index)=>{
+      if (flight.flightNum.length>4) {
+        let sameId=currentFlights.filter(f=>{return f.flightId===flight.flightId});
+        sameId.forEach(f=>{
+          if (f.flightNum.length<=4) flight.flightNum=f.flightNum;
+        });
       }
     });
-    bogus.forEach(index=>{
-      arr[index]=undefined;
+    currentFlights.sort((a,b)=>{
+      let aDate=new Date(a.date);
+      let bDate=new Date(b.date);
+      let aArr=a.departTime.split(':');
+      let bArr=b.departTime.split(':');
+      if (aArr.length>1) aDate.setHours(aArr[0],aArr[1],0);
+      if (bArr.length>1) bDate.setHours(bArr[0],bArr[1],0);
+      return a.pilot.localeCompare(b.pilot)||new Date(a.date)-new Date(b.date)||a.flightNum.localeCompare(b.flightNum)||aDate-bDate;
     });
-    arr=arr.filter(a=>{return a});
-    //another pass to do the sorting
-    marks=[];
-    let arrCount=0;
-    let arrOfArrs=[];
-    arr.forEach((a,index)=>{
-      //the marks have blanks at least the first two cells
-      if ((!a.split(',')[0]||a.split(',')[0]==='')&&(!a.split(',')[1]||a.split(',')[1]==='')) marks.push(index);
-      else {
-        //check for no flight number on last leg of charter
-        if (index>0){
-          let temp=a.split(',');
-          let lastTemp=arr[index-1].split(',');
-          if ((!temp[8]||temp[8]==='')&&lastTemp[8]&&lastTemp[8]!==''&&temp[10]==lastTemp[10]) {
-            temp[8]=lastTemp[8];
-            a=temp.join(',');
-          }
+    let departTimes=[];
+    let airports=[];
+    let flights=[];
+    let flight;
+    currentFlights.forEach((f,index)=>{
+      //still same flight
+      if (index>0&&f.flightNum===currentFlights[index-1].flightNum){
+        airports.push(f.from);
+        departTimes.push(f.departTime);
+      }
+      //new flight
+      if (index===0||f.flightNum!==currentFlights[index-1].flightNum||index===currentFlights.length-1) { 
+        //close out previous flight
+        if (index>0) {
+          airports.push(currentFlights[index-1].to);
+          flight.airports=airports;
+          //calculate flight time for last leg here---------------------------------------------------------------------------
+          let speed=160;
+          if (airplanes.map(e=>e.registration).indexOf(flight.aircraft)>-1) speed=250;
+          let flightTime=60*getDistance(currentFlights[index-1].to,currentFlights[index-1].from)/speed + 10;//est flight time in minutes
+          let lastTime=new Date(currentFlights[index-1].date);
+          let timeArr=currentFlights[index-1].departTime.split(':');
+          if (timeArr.length>1) lastTime.setHours(timeArr[0],timeArr[1],0);
+          else lastTime=new Date(currentFlights[index-1].departTime);
+          //if (f.pilot==='sgordon') console.log(lastTime.toLocaleString());
+          lastTime.setMinutes(lastTime.getMinutes()+flightTime);
+          lastTime=lastTime.toTimeString().slice(0,8);
+          if (lastTime.substring(0,7)==="Invalid") lastTime=undefined;
+          if (lastTime) departTimes.push(lastTime);
+          flight.departTimes=departTimes;
+          delete flight.departTime;
+          delete flight.to;
+          delete flight.from;
+          flights.push(flight);
         }
-        //add to arrOfArrs
-        if (index>0&&marks.indexOf(index-1)>-1) arrCount++;
-        if (arrOfArrs.length<=arrCount) arrOfArrs.push([]);
-        arrOfArrs[arrCount].push(a);
+        //initialize new flight
+        flight=f;
+        airports=[];
+        airports.push(f.from);
+        departTimes=[];
+        departTimes.push(f.departTime);
       }
     });
-    arrOfArrs.forEach(el=>{
-      let pilot=el[0].split(',')[0];
-      let temp=el[0].split(',');
-      temp[0]='';
-      el[0]=temp.join(',');
-      el.sort((a,b)=>{
-        let aArr=a.split(',');
-        let bArr=b.split(',');
-        if (aArr.length<11||bArr.length<11) return 0;
-        //make sure earlier date is before later date
-        let aDate=new Date(aArr[1]).toLocaleDateString();
-        let bDate=new Date(bArr[1]).toLocaleDateString();
-        if (aDate!==bDate) return new Date(aArr[1])-new Date(bArr[1]);
-        //same flightId, must be a charter
-        if (aArr[10]===bArr[10]) {
-          let aStringTime=aArr[1].split(' ');
-          let bStringTime=bArr[1].split(' ');
-          if (aStringTime.length<4||bStringTime.length<4||aStringTime[3].split(':').length<2||bStringTime[3].split(':').length<2) return 0;
-          let atime=new Date();
-          let btime=new Date();
-          atime.setHours(aStringTime[3].split(':')[0],aStringTime[3].split(':')[1],0);
-          btime.setHours(bStringTime[3].split(':')[0],bStringTime[3].split(':')[1],0);
-          return atime-btime;
-        }
-        //put flights with flight numbers ahead of those without
-        if (aArr[8]&&bArr[8]) return aArr[8].localeCompare(bArr[8]);
-        if (aArr[8]&&!bArr[8]) return -1;
-        if (!aArr[8]&&bArr[8]) return 1;
-        //if neither has a flight number, compare flightIds
-        return aArr[10]-bArr[10];
-      });
-      el[0]=pilot+el[0];
-    });
-    arr=[];
-    arrOfArrs.forEach(a=>{
-      //if (a[0].split(',')[0]==='jsmall') console.log(a);
-      a.forEach(el=>{
-        arr.push(el);
-      });
-      arr.push(',,,,,,,,,');
-      arr.push(',,,,,,,,,');
-    });
-    
-    //now look at 'no pilot available'
-    
     let instance=await TodaysFlight.findAll({
       order: [['_id', 'DESC']],
       limit: 3000
@@ -380,90 +385,13 @@ export async function tf(req,res) {
       if (i.dataValues&&(i.dataValues.date===date||i.dataValues.date===date2||i.dataValues.date===date3)) todaysFlights.push(i.dataValues);
       if (i.dataValues) allFlights.push(i.dataValues);
     });
-    console.log('parsing flight summary');
-    let flightArr=[];
-    let pilot,lastAirport,lastTime;
-    let flight={airports:[],departTimes:[]};
-    
-    for (let x=0;x<arr.length;x++){
-      let flightList=arr[x].split(',');
-      if (flightList[0]&&flightList[0]!=="No Pilot Assigned") pilot=flightList[0];
-      if (!flightList[1]||flightList[1]==="") {
-        //blank line, new pilot coming up
-        if (flight&&flight.flightNum) {
-          
-        }
-        flight={airports:[],departTimes:[]};
-        continue;
-      }
-      flight.date=new Date(flightList[1]).toLocaleDateString();
-      if (!flight.pilot) flight.pilot=flightList[0]||pilot;
-      if (!flight.coPilot) flight.coPilot=flightList[3];
-      if (!flight.aircraft) flight.aircraft=flightList[4];
-      if (!flight.flightNum&&flightList[8]) {
-        //indicates new flight number
-        flight.flightNum=flightList[8].split('.')[0];
-        flight.flightId=flightList[10];
-      }
-      flight.airports.push(flightList[6]);
-      lastAirport=flightList[7];
-      flight.departTimes.push(new Date(flightList[2]).toTimeString().slice(0,8));
-      //calculate flight time for last leg here---------------------------------------------------------------------------
-      let speed=160;
-      if (airplanes.map(e=>e.registration).indexOf(flight.aircraft)>-1) speed=250;
-      let flightTime=60*getDistance(flightList[6],flightList[7])/speed + 10;//est flight time in minutes
-      lastTime=new Date(flightList[2]);
-      lastTime.setMinutes(lastTime.getMinutes()+flightTime);
-      lastTime=lastTime.toTimeString().slice(0,8);
-      if (lastTime.substring(0,7)==="Invalid") lastTime=undefined;
-      //check for blank flight number 
-      if (x<arr.length-1&&!arr[x+1].split(',')[8]) {
-        let tempArr=arr[x+1].split(',');
-        if (!['Nome','Kotzebue','Unalakleet'].includes(tempArr[6])&&tempArr[6]===arr[x].split(',')[7]) {
-          tempArr[8]=arr[x].split(',')[8];
-        }
-        else tempArr[8]=tempArr[10];
-        arr[x+1]=tempArr.join(',');//
-      }
-      //check if its the last one
-      let tempPilot;
-      if (x<arr.length-1&&arr[x+1]&&arr[x+1].split(',')[8]) tempPilot=arr[x+1].split(',')[8].split('.')[0];
-      if (x===arr.length-1||(flightList[8].split('.')[0]!==tempPilot)) {
-        flight.airports.push(lastAirport);
-        if (!flight.pilot||flight.pilot==="") flight.pilot="No Pilot Assigned";
-        if (lastTime) flight.departTimes.push(lastTime);
-        flightArr.push(flight);
-        flight={airports:[],departTimes:[],pilot:flight.pilot,flightId:flight.flightId};
-      }
-    }
-    //find any duplicate flightIds
-    let seenFlightIds=[];
-    let duplicatesToBeRemoved=[];
-    let seenIndex=-1;
-    flightArr.forEach((f,idx)=>{
-      seenIndex=seenFlightIds.map(e=>e.flight.flightId).indexOf(f.flightId);
-      if (seenIndex<0) {
-        seenFlightIds.push({index:idx,flight:f});
-      }
-      else {//remove one from flightArr
-        if (f.pilot==='No Pilot Assigned'&&seenFlightIds[seenIndex].flight.pilot!=='No Pilot Assigned') duplicatesToBeRemoved.push(idx);
-        else duplicatesToBeRemoved.push(seenFlightIds[seenIndex].index);
-      }
-      if (!f.flightId) duplicatesToBeRemoved.push(idx);
-    });
-    duplicatesToBeRemoved.forEach(d=>{
-      flightArr[d]=undefined;
-    });
-    flightArr=flightArr.filter(f=>{
-      return f;
-    });
     let updated=[];
     todaysFlights.forEach(f=>{
-      let fa=flightArr.filter(x=>{
+      let fa=flights.filter(x=>{
         return f.date===x.date;
       });
       if (fa.length===0) return;
-      let index=flightArr.map(e=>e.flightId).indexOf(f.flightId);
+      let index=flights.map(e=>e.flightId).indexOf(f.flightId);
       let active=f.active;
       if (index===-1) active="false";
       else active="true";
@@ -473,12 +401,13 @@ export async function tf(req,res) {
         updated.push(f._id);
       }
     });
-    flightArr.forEach(flight=>{
+    flights.forEach(flight=>{
       if (!flight) return;
       let index=todaysFlights.map(e=>e.flightId).indexOf(flight.flightId);
       if (index<0) {
         index=allFlights.map(e=>e.flightId).indexOf(flight.flightId);
         if (index<0) {
+          flight.colorPatch='false';
           console.log('creating flight:');
           console.log(flight);
           TodaysFlight.create(flight);
@@ -540,8 +469,9 @@ export async function tf(req,res) {
       updated = [...new Set(updated)];
       updated.forEach(u=>{
         let index=todaysFlights.map(e=>e._id).indexOf(u);
-        console.log('Updating todaysFlight id number ' + u);
-        console.log(todaysFlights[index]);
+        todaysFlights[index].colorPatch='false';
+        console.log('Updating Flight ID: ' + todaysFlights[index].flightId);
+        //console.log(todaysFlights[index]);
         delete todaysFlights[index]._id;
         TodaysFlight.find({
           where: {
@@ -551,10 +481,10 @@ export async function tf(req,res) {
           .catch(handleErrorMultiple(res));
       });
     }
-    res.status(200).json(flightArr);
+    res.status(200).json('success');
   }
   catch(err){
     console.log(err);
-    res.status(404).json('Failed to load CSV file from Takeflite');
+    res.status(404).json("Failure");
   }
 }
