@@ -12,7 +12,7 @@
 import _ from 'lodash';
 import {AirportRequirement} from '../../sqldb';
 import config from '../../config/environment';
-const baseUrl = 'https://localhost:' + config.port;
+const baseUrl = 'http://localhost:' + config.port;
 const url1="https://api.synopticdata.com/v2/stations/latest?stid=";
 const url2="&vars=metar&token=" + process.env.TOKEN;//"&within=120&vars=metar&token=" + process.env.TOKEN;
 const axios = require("axios");
@@ -21,6 +21,7 @@ const agent = new https.Agent({
     rejectUnauthorized: false
 });
 let count=0;
+let xwind=0;
 let alternateArray=['OME','OTZ','UNK','BET','GAL','ANC','FAI'];
 
 function respondWithResult(res, statusCode) {
@@ -133,6 +134,21 @@ export function destroy(req, res) {
     .catch(handleError(res));
 }
 
+// Creates a new AirportRequirement in the DB
+export async function notams(req, res) {
+  try {
+    let icao=req.body.airport;
+    let response = await axios.get('https://avwx.rest/api/notam/'+icao+'?token='+process.env.AVWX_TOKEN2);
+    if (response.data&&response.data.Error) console.log(res.data.Error);
+    else res.status(200).json(response.data);
+  }
+  catch(err){
+    console.log(err);
+//    res.status(200).json('failure to update tafs');
+    res.status(404).json('Failed load notams');
+  }
+}
+
 export async function tafs(req,res) {
   let allAirports=[];
   try {
@@ -143,7 +159,7 @@ export async function tafs(req,res) {
     for (const airport of allAirports) {
       if (alternateArray.indexOf(airport.threeLetter)>-1) {
         let response = await axios.get('https://avwx.rest/api/taf/'+airport.icao+'?token='+process.env.AVWX_TOKEN2);
-        if (response.data.Error) console.log(res.data.Error);
+        if (response.data&&response.data.Error) console.log(res.data.Error);
         //console.log(response.data)
         airport.currentTaf=response.data['raw'];
         airport.currentTafObject=response.data.forecast;
@@ -163,6 +179,7 @@ export async function tafs(req,res) {
   }
   catch(err){
     console.log(err);
+//    res.status(200).json('failure to update tafs');
     res.status(404).json('Failed update tafs for allAirports array');
   }
 }
@@ -194,7 +211,12 @@ export async function metars(req,res) {
         airport.metarObj={};
         airport.currentMetar='missing';
       }
-      else airport.metarObj=parseADDS(airport.currentMetarObj.metar);
+      else {
+        airport.metarObj=parseADDS(airport.currentMetarObj.metar);
+        //add all the colors here:
+        airport.metarObj.color=overallRiskClass(airport);
+        airport.metarObj.xwind=xwind;
+      }
       let id=airport._id;
       //delete airport._id;
       delete airport.currentMetarObj;
@@ -218,24 +240,155 @@ export async function metars(req,res) {
 } 
 
 async function getMetar(airport) {
+  let jsonResponse={airport:airport,metar:'missing'};
   let url = url1 + airport + url2;
-  let response = await axios.get(url);
-  let jsonResponse={};
-    if (!response.data.STATION) jsonResponse={};
-    else {
-      if (response.data.STATION[0]) {
-        jsonResponse.airport=airport;
-        jsonResponse.metar=response.data.STATION[0].OBSERVATIONS.metar_value_1.value;
-        jsonResponse.latitude=response.data.STATION[0].LATITUDE;
-        jsonResponse.longitude=response.data.STATION[0].LONGITUDE;
-        jsonResponse.date=response.data.STATION[0].OBSERVATIONS.metar_value_1.date_time;
+  //url='https://api.weather.gov/stations/'+airport+'/observations/latest';
+  try {
+    let response = await axios.get(url);
+    if (response.data&&response.data.STATION&&response.data.STATION[0]){//(response.data.properties&&response.data.properties.rawMessage) {//STATION[0]
+      jsonResponse.metar=response.data.STATION[0].OBSERVATIONS.metar_value_1.value;//response.data.properties.rawMessage;//response.data.STATION[0].OBSERVATIONS.metar_value_1.value;
+      jsonResponse.date=response.data.STATION[0].OBSERVATIONS.metar_value_1.date_time;//response.data.properties.timestamp;//response.data.STATION[0].OBSERVATIONS.metar_value_1.date_time;
+      //if (response.data.geometry&&response.data.geometry.coordinates) {
+        jsonResponse.latitude=response.data.STATION[0].LATITUDE;//response.data.geometry.coordinates[1];//response.data.STATION[0].LATITUDE;
+        jsonResponse.longitude=response.data.STATION[0].LONGITUDE;//response.data.geometry.coordinates[0];//response.data.STATION[0].LONGITUDE;
+      //}
+    }
+   }
+   catch (err) {
+     if (err.response&&err.response.config){
+       console.log(err.response.config.url);
+     }
+     else console.log('error fetching metar for '+airport);
+   }
+   finally{
+     return jsonResponse;
+   }
+      
+}
+
+function overallRiskClass(airport){
+    let metarObj=airport.metarObj;
+    let returnString="";
+    //if (!metarObj) metarObj={};
+    //if (metarObj.night) returnString+=' night';
+    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
+    let color="airport-green";
+    let tempColor="airport-green";
+    //runway
+    //if (!metarObj.airport) return returnString+=' '+color;
+    tempColor=returnColor({yellow:3,red:2},airport.runwayScore,'above');
+    metarObj.runwayColor=tempColor;
+    metarObj.visibilityColor='airport-blue';
+    metarObj.ceilingColor='airport-blue';
+    metarObj.windColor='airport-blue';
+    metarObj.freezingColor='airport-green';
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //if (airport.name==='Gambell') console.log(airport);
+    //possibly no metarObj
+    if (!metarObj||!metarObj['Raw-Report']) {
+      if (color!=='airport-red') {
+        color='airport-blue';
       }
-      else {
-        jsonResponse.metar="missing";
+      return returnString+=' '+color;
+    }
+    //icing?
+    if (metarObj.Freezing) {
+      metarObj.freezingColor='airport-pink';
+      color='airport-pink';
+    }
+    //wind
+    tempColor=returnWindColor(undefined,metarObj['Wind-Gust'],metarObj['Wind-Direction'],airport);//this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
+    metarObj.windColor=tempColor;
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //Visibility
+    if (!metarObj.Visibility||!metarObj.Ceiling||!metarObj.altimeter||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
+      //set colors to purple
+      metarObj.ceilingColor=metarObj.visibilityColor=tempColor='airport-purple';
+      if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+      return returnString+' '+color;
+    }
+    //visibility
+    tempColor=returnColor(airport.visibilityRequirement, metarObj.Visibility,'above',airport);
+    metarObj.visibilityColor=tempColor;
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //ceiling
+    tempColor=returnColor(airport.ceilingRequirement,metarObj.Ceiling,'above',airport);
+    metarObj.ceilingColor=tempColor;
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //return
+    metarObj.color=returnString+' '+color;
+    return returnString+' '+color;
+  }
+  
+  function returnColor(limitObj,observation,direction,airport){
+    if (!observation||observation===""||!limitObj) {
+      return '';
+      //console.log('returnColor');
+      //return 'airport-purple';
+    }
+    if (!direction) direction="above";
+    let color="airport-green";
+    if (direction==="above"){
+      if ((observation*1)<limitObj.yellow) color="airport-yellow";
+      if ((observation*1)<limitObj.orange) color="airport-orange";
+      if ((observation*1)<limitObj.red) color="airport-pink";
+    }
+    else {
+      if ((observation*1)>limitObj.yellow) color="airport-yellow";
+      if ((observation*1)>limitObj.orange) color="airport-orange";
+      if ((observation*1)>limitObj.red) color="airport-pink";
+    }
+    return color;
+  }
+  
+  function returnWindColor(aircraft,gust,windDirection,airportObj){
+    if (!gust||!windDirection||!airportObj) {
+      //console.log('windColor');
+      return 'airport-purple';
+    }
+    //let equipment=angular.copy(this.equipment[0]);
+    //if (this.allAircraft) {
+    //  let index=this.allAircraft.map(e=>e._id).indexOf(aircraft);
+    //  if (index>-1&&this.allAircraft[index]) index=this.equipment.map(e=>e.name).indexOf(this.allAircraft[index].acftType);
+    //  if (index>-1) equipment=angular.copy(this.equipment[index]);
+    //}
+    if (!airportObj.runways) {
+      if (gust>35) return 'airport-pink';
+      if (gust>30) return 'airport-yellow';
+      return 'airport-green';
+    }
+    let xwindAngle=0;
+    let direction=0;
+    let crosswind=0;
+    if (airportObj.runways) {
+      xwindAngle=90;
+      direction=parseInt(windDirection,10);
+      airportObj.runways.forEach(function(runway){
+        if (Math.abs(direction-runway*10)<xwindAngle) xwindAngle = Math.abs(direction-runway*10);
+        if (Math.abs(direction+360-runway*10)<xwindAngle) xwindAngle = Math.abs(direction+360-runway*10);
+        if (Math.abs(direction-360-runway*10)<xwindAngle) xwindAngle = Math.abs(direction-360-runway*10);
+      });
+    }
+    crosswind = Math.round(gust*Math.sin(xwindAngle*(Math.PI/180)));
+    xwind=crosswind;
+    let windLimit=35;
+    let xwindLimit=25;
+    if (airportObj.icao==='PAGM'){
+      if (direction>=40&&direction<=100){
+        //wind-=5;
+        //equipment.xwind-=10;
       }
     }
-    return jsonResponse;
-}
+    if (airportObj.icao==="PADG") {
+     windLimit=30;
+     xwindLimit=15;
+    }
+    if (gust>windLimit) return 'airport-pink';
+    if (crosswind>xwindLimit) return 'airport-pink';
+    if (gust>windLimit-5) return 'airport-yellow';
+    if (crosswind>xwindLimit-5) return 'airport-yellow';
+    return 'airport-green';
+  }
 
 export async function adds(req,res) {
   if (!req.body||!req.body.airport||req.body.airport==="") res.status(404).end();
@@ -281,12 +434,18 @@ function parseADDS(metar){
     metarArray.shift();//date/time
     obs.wind=metarArray.shift();//wind
     if (obs.wind==="AUTO"||obs.wind==="SPECI") obs.wind=metarArray.shift();//if there is AUTO of SPECI, remove it
-    obs['Wind-Direction']=obs.wind.substring(0,3);
-    var windArr=obs.wind.substring(3).split('G');
-    obs['Wind-Speed']=windArr[0].replace(/[^0-9]/g, '');
-    if (windArr.length>1) obs['Wind-Gust']=windArr[1].replace(/[^0-9]/g, '');
-    else obs['Wind-Gust']=obs['Wind-Speed'];
-    obs.vis=metarArray.shift();//visibility
+    if (obs.wind.slice(-2)==="KT") {
+      obs['Wind-Direction']=obs.wind.substring(0,3);
+      var windArr=obs.wind.substring(3).split('G');
+      obs['Wind-Speed']=windArr[0].replace(/[^0-9]/g, '');
+      if (windArr.length>1) obs['Wind-Gust']=windArr[1].replace(/[^0-9]/g, '');
+      else obs['Wind-Gust']=obs['Wind-Speed'];
+      obs.vis=metarArray.shift();
+    }
+    else {
+      obs.vis=obs.wind.toString();
+      obs.wind=undefined;
+    }
     //obs.vis="1/2SM";
     if (obs.vis&&obs.vis.split('V').length>1&&obs.vis.split('V')[0].length===3&&obs.vis.split('V')[1].length===3) obs.vis=metarArray.shift();//variable winds, ignore
     if (obs.vis&&obs.vis.slice(-2)!=="SM") {

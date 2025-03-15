@@ -750,7 +750,7 @@
       var self=this;
       var airport = self.getAirport(self.assessment.airports[index]);
       if (!self.assessment.ceilings[index]) return self.blue(index);
-      if (airport.ceilingRequirement.red>self.assessment.ceilings[index]) return self.red(index);
+      if (airport.ceilingRequirement.red*1>self.assessment.ceilings[index]*1) return self.red(index);
       if (self.assessment.ceilings[index]==="9999") return self.purple(index);
       if (airport.ceilingRequirement.yellow>self.assessment.ceilings[index]) return self.yellow(index);
       if (self.assessment.night[index]) {

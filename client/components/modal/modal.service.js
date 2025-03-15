@@ -16,7 +16,8 @@ angular.module('workspaceApp')
       return $uibModal.open({
         templateUrl: 'components/modal/modal.html',
         windowClass: modalClass,
-        scope: modalScope
+        scope: modalScope,
+        backdrop: 'static'
       });
     }
 
@@ -95,12 +96,82 @@ angular.module('workspaceApp')
             });
           };
         } ,
+        airport(del = angular.noop) {
+          /**
+           * Open a delete confirmation modal
+           * @param  {String} name   - name or info to show on modal
+           * @param  {All}           - any additional args are passed straight to del callback
+           */
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                airport = args.shift(),
+                quickModal;
+
+            quickModal = openModal({
+              modal: {
+                dismissable: true,
+                show:false,
+                airportModal:true,
+                metarObj:airport,
+                title: airport.airport.name,
+                buttons: [ {
+                  classes: 'btn-success',
+                  text: 'OK',
+                  click: function(event) {
+                    quickModal.close(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+
+            quickModal.result.then(function(event) {
+              del.apply(event, args);
+            });
+          };
+        } ,
+        flight: function(cb) {
+          cb = cb || angular.noop;
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                flight = args.shift(),
+                quickModal;
+            quickModal = openModal({
+              modal: {
+                flight:flight,
+                dismissable: true,
+                show:false,
+                flightModal:true,
+                title: 'Details for Flight#  ' + flight.flightNum,
+                buttons: [ {//this is where you define you buttons and their appearances
+                  classes: 'btn-primary',
+                  text: 'Confirm/Save',
+                  click: function(event) {
+                    quickModal.close(event);
+                  }
+                }, {
+                  classes: 'btn-danger',
+                  text: 'Cancel',
+                  click: function(event) {
+                    quickModal.dismiss(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+
+            quickModal.result.then(function(event) {
+              cb.apply(event, [{_id:flight._id,knownIce:flight.knownIce,mitigation:flight.mitigation,ocRelease:flight.ocRelease}]); //this is where all callback is actually called
+            }).catch(err=>{
+              console.log(err);
+            });
+          };
+        } ,
         runway: function(cb) {
           cb = cb || angular.noop;
           return function() {
             var args = Array.prototype.slice.call(arguments),
                 airport = args.shift(),
                 formData = args.shift()||{},
+                timestampObj={timestampString:""},
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -109,6 +180,7 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 runway:true,
+                timestampObj:timestampObj,
                 getMyDate:function(d){return new Date(d).toLocaleString()},
                 title: 'Enter the Runway Conditions for ' + airport.name,
                 buttons: [ {//this is where you define you buttons and their appearances
@@ -128,6 +200,7 @@ angular.module('workspaceApp')
             }, 'modal-success');
 
             quickModal.result.then(function(event) {
+              if (timestampObj) formData.timestampString=timestampObj.timestampString;
               cb.apply(event, [formData]); //this is where all callback is actually called
             }).catch(err=>{
               console.log(err);

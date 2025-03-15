@@ -30,8 +30,8 @@ class NavbarController {
         day: 'numeric' 
     });
     window.dateString=this.dateString;
-    this.isToggleAssigned=true;
-    window.toggleAssigned=true;
+    //this.isToggleAssigned=true;
+    //window.toggleAssigned=true;
     this.pairs=[{v:'ST MICHAEL',c:'PAMK'},
                {v:'NOME',c:'PAOM'},
                {v:'SHISHMAREF',C:'PASH'},
@@ -65,6 +65,22 @@ class NavbarController {
   }
   
   $onInit() {
+    if (window.localStorage.getItem('baseIndex')!==null&&window.localStorage.getItem('baseIndex')!=='undefined') this.base=this.bases[window.localStorage.getItem('baseIndex')];
+    if (window.stoppedInterval) this.interval.cancel(window.stoppedInterval);
+      window.stoppedInterval=this.interval(()=>{
+        this.http.get('/api/todaysFlights/stopped').then(res=>{
+          console.log('Stopped Value is '+res.data.stopped);
+          if (res.data.stopped) {
+            window.stopped=true;
+            this.scope.$apply;
+            //if (!this.clicked) this.quickModal('The Takeflite Flight Summary report, which should automatically update every 3 minutes, has stopped.  Flight information may not be current until this is resolved.');
+          } 
+          else {
+            this.clicked=undefined;
+            window.stopped=undefined;         
+          }
+        });
+      },1*60*1000);
     this.interval(()=>{
       const hour=new Date().getHours();
       if (hour===1||hour===2) {
@@ -125,6 +141,8 @@ class NavbarController {
   }
   
   updateBase(){
+    let index=this.bases.map(e => e.base).indexOf(this.base.base);
+    if (index>-1) window.localStorage.setItem('baseIndex',index);
     window.base=this.base;
   }
   
@@ -254,6 +272,46 @@ class NavbarController {
     this.fileExists=false;
   }
   
+  uploadCSVParams(){
+    let inputFile=document.getElementById('file');
+    let f = inputFile.files[0];
+    let r = new FileReader();
+    let flights=[];
+    let flight={};
+    r.onloadend = e=>{
+      //file is e.target.result
+      let csv = e.target.result;
+      //csv=csv.replace(/(?:\\[rn"]|[\r\n\"]+)+/g, ",");
+      let arr=csv.split('\r\n');
+      let headers=arr.shift().split(',');
+      let airports=[];
+      arr.forEach(a=>{
+        a=a.split(',');
+        let obj={};
+        headers.forEach((h,i)=>{
+          obj[h]=a[i];
+        });
+        airports.push(obj);
+      });
+      airports.forEach((ap,i)=>{
+        let obj={};
+        obj._id=ap._id;
+        obj.ceilingRequirement={red:ap['ceiling red'],yellow:ap['ceiling yellow'],orange:ap['ceiling orange']};
+        obj.visibilityRequirement={red:ap['visibility red'],yellow:ap['visibility yellow'],orange:ap['visibility orange']};
+        obj.specialWind={directionLow:ap['Special Wind Quadrant Start'],directionHigh:ap['Special Wind Quadrant End'],reduction:ap['Special Wind Speed Reduction']};
+        this.http.patch('/api/airportRequirements/'+obj._id,obj).then(res=>{
+          console.log('success for ' + obj._id);
+        });
+      });
+      console.log(airports);
+      
+      
+    };
+    r.readAsText(f);
+    inputFile.value='';
+    this.fileExists=false;
+  }
+  
   uploadCSV(){
     let months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
     let inputFile=document.getElementById('file');
@@ -336,6 +394,10 @@ class NavbarController {
   showHide(bool){
     if (bool) return "Hide";
     return "Show";
+  }
+  
+  stoppedClass(stopped){
+    if (window.stopped) return 'airport-purple';
   }
 }
 

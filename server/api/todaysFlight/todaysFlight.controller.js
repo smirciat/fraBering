@@ -11,11 +11,13 @@
 
 import _ from 'lodash';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
+import {quickGrab} from '../airplane/airplane.controller.js';
 import fs from 'fs';
 import config from '../../config/environment';
 let allAirports=[];
 let airplanes=[];
-const baseUrl = 'https://localhost:' + config.port;
+let fbAirplanes=[];
+const baseUrl = 'http://localhost:' + config.port;
 const axios = require("axios");
 const https = require("https");
 const agent = new https.Agent({
@@ -23,6 +25,12 @@ const agent = new https.Agent({
 });
 let stopped=false;
 let staleFile=false;
+let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50},
+       {id:2,name:"Navajo",wind:40,xwind:30,temp:-40},
+       {id:3,name:"Casa",wind:35,xwind:25,temp:-50},
+       {id:4,name:"King Air",wind:40,xwind:35,temp:-50},
+       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50},
+       {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50}];
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -192,8 +200,8 @@ export async function recordAssessments(req,res){
     for (const flight of flightArr) {
       try {
         let res=await Assessment.create(flight);
-        console.log('Assessment Recorded');
-        console.log(res.data);
+        console.log('Assessment Recorded for Flight# ' + flight.flightNum);
+        //console.log(res.data);
       }
       catch(err){console.log(err);}
     }
@@ -230,9 +238,42 @@ function deg2rad(deg) {
   return deg * (Math.PI/180);
 }
 
+async function log(){
+  let file="log.csv";
+  let data=fs.readFileSync(__dirname+'/../../fileserver/'+file, 'utf-8');
+  let arr=data.split('\r\n');
+  let headers=arr.shift().split(',');
+  let statusIndex=30;
+  let tempIndex=headers.indexOf('Flight Status');
+  if (tempIndex>-1) statusIndex=tempIndex;
+  let flightLog=[];
+  arr.forEach(a=>{
+    let line=a.split(',');
+    if (!line[0]||!line[line.length-1]) return;
+    let obj={
+      flightStatus:line[statusIndex],
+      flightNum:line[3],
+      flightId:line[1],
+      date:new Date(line[0]).toLocaleDateString(),
+      departTime:line[11]
+    };
+    //console.log(obj.flightStatus);
+    //headers.forEach((h,index)=>{
+    //  obj[h]=line[index];
+    //});
+    flightLog.push(obj);
+  });
+  //console.log(flightLog);
+  return flightLog.sort((a,b)=>{
+    return a.flightNum-b.flightNum||new Date("1970-01-01T" + a.departTime)-new Date("1970-01-01T" + b.departTime);
+  });
+}
+
 export async function tf(req,res) {
   try {
-    if (!allAirports||allAirports.length===0) {
+    let flightLog=await log();
+    console.log(flightLog[0]);
+    if (true) {//(!allAirports||allAirports.length===0) {
       allAirports=[];
       let instance=await AirportRequirement.findAll({});
       instance.forEach(i=>{
@@ -246,6 +287,7 @@ export async function tf(req,res) {
         if (i.dataValues) airplanes.push(i.dataValues);
       });
     }
+    fbAirplanes=await quickGrab().aircraft;
     let file=req.body.file||"current.csv";
     let data=fs.readFileSync(__dirname+'/../../fileserver/'+file, 'utf-8');
     let stats=fs.statSync(__dirname+'/../../fileserver/'+file, 'utf-8');
@@ -254,7 +296,7 @@ export async function tf(req,res) {
     const hour=new Date().getHours();
     if (stats.mtimeMs < tenMinutesAgo) {
       staleFile=true;
-      if (hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
+      if (false){//hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
         
         axios.post(baseUrl + '/api/monitors/twilio',{to:"+19073992019",body:"Takeflite updating has stopped"}, { httpsAgent: agent }).then((res)=>{
                 stopped=true;
@@ -273,6 +315,11 @@ export async function tf(req,res) {
     }
     console.log('Stopped value is: ' + staleFile.toString());
     let arr=data.split('\r\n');
+    if (!arr[1]) {
+      console.log('failed to load csv file');
+      res.status(404).json('failure');
+      return;
+    }
     let dateArr=arr[1].split(' ');
     let date=new Date(dateArr[2]+' '+dateArr[3]+' '+dateArr[4]);
     let date2=new Date(date);
@@ -281,6 +328,9 @@ export async function tf(req,res) {
     let date3=new Date(date);
     date3.setDate(date3.getDate()+2);
     date3=date3.toLocaleDateString();
+    let date4=new Date(date);
+    date4.setDate(date4.getDate()+3);
+    date4=date4.toLocaleDateString();
     date=date.toLocaleDateString();
     arr.splice(0,8);
     let currentFlights=[];
@@ -316,10 +366,10 @@ export async function tf(req,res) {
     //I now have currentFlights with either a flightNum or FlightId in the flightNum attribute.  Before the sort, maybe run through it once to make sure its right?
     //let tempFlights=JSON.parse(JSON.stringify(currentFlights));
     currentFlights.forEach((flight,index)=>{
-      if (flight.flightNum.length>4) {
+      if (flight.flightNum.length>4||flight.flightNum.length<3) {
         let sameId=currentFlights.filter(f=>{return f.flightId===flight.flightId});
         sameId.forEach(f=>{
-          if (f.flightNum.length<=4) flight.flightNum=f.flightNum;
+          if (f.flightNum.length<=4&&f.flightNum.length>=3) flight.flightNum=f.flightNum;
         });
       }
     });
@@ -338,15 +388,16 @@ export async function tf(req,res) {
     let flight;
     currentFlights.forEach((f,index)=>{
       //still same flight
-      if (index>0&&f.flightNum===currentFlights[index-1].flightNum){
+      if (index>0&&f.flightNum===currentFlights[index-1].flightNum&&f.date===currentFlights[index-1].date){
         airports.push(f.from);
         departTimes.push(f.departTime);
       }
       //new flight
-      if (index===0||f.flightNum!==currentFlights[index-1].flightNum||index===currentFlights.length-1) { 
+      if (index===0||f.flightNum!==currentFlights[index-1].flightNum||index===currentFlights.length-1||f.date!==currentFlights[index-1].date) { 
         //close out previous flight
         if (index>0) {
-          airports.push(currentFlights[index-1].to);
+          if (index>=currentFlights.length-1) airports.push(currentFlights[index].to);
+          else airports.push(currentFlights[index-1].to);
           flight.airports=airports;
           //calculate flight time for last leg here---------------------------------------------------------------------------
           let speed=160;
@@ -354,6 +405,11 @@ export async function tf(req,res) {
           let flightTime=60*getDistance(currentFlights[index-1].to,currentFlights[index-1].from)/speed + 10;//est flight time in minutes
           let lastTime=new Date(currentFlights[index-1].date);
           let timeArr=currentFlights[index-1].departTime.split(':');
+          if (index>=currentFlights.length-1) {
+            flightTime=60*getDistance(currentFlights[index].to,currentFlights[index].from)/speed + 10;
+            lastTime=new Date(currentFlights[index].date);
+            timeArr=currentFlights[index].departTime.split(':');
+          }
           if (timeArr.length>1) lastTime.setHours(timeArr[0],timeArr[1],0);
           else lastTime=new Date(currentFlights[index-1].departTime);
           //if (f.pilot==='sgordon') console.log(lastTime.toLocaleString());
@@ -369,10 +425,10 @@ export async function tf(req,res) {
         }
         //initialize new flight
         flight=f;
-        airports=[];
-        airports.push(f.from);
-        departTimes=[];
-        departTimes.push(f.departTime);
+        airports=[f.from];
+        //airports.push(f.from);
+        departTimes=[f.departTime];
+        //departTimes.push(f.departTime);
       }
     });
     let instance=await TodaysFlight.findAll({
@@ -382,7 +438,7 @@ export async function tf(req,res) {
     let todaysFlights=[];
     let allFlights=[];
     instance.forEach(i=>{
-      if (i.dataValues&&(i.dataValues.date===date||i.dataValues.date===date2||i.dataValues.date===date3)) todaysFlights.push(i.dataValues);
+      if (i.dataValues&&(i.dataValues.date===date||i.dataValues.date===date2||i.dataValues.date===date3||i.dataValues.date===date4)) todaysFlights.push(i.dataValues);
       if (i.dataValues) allFlights.push(i.dataValues);
     });
     let updated=[];
@@ -400,16 +456,59 @@ export async function tf(req,res) {
         console.log(f._id+' active');
         updated.push(f._id);
       }
+      //return;
+      //update weather per destination via airportObjs
+      f.airportObjs=[];
+      f.airports.forEach((a,airportIndex)=>{
+        let airport={name:a, threeLetter:a};
+        if (!a) {
+          f.airportObjs.push({airport:airport});
+          return;
+        }
+        if (a&&typeof a === "string"&&a.substring(0,9)==="Fairbanks") a="Fairbanks";
+        if (a&&typeof a === "string"&&a.substring(0,9)==="Anchorage") a="Anchorage";
+        let i=allAirports.map(e=>e.name).indexOf(a);
+        if (i>-1) {
+          airport=JSON.parse(JSON.stringify(allAirports[i]));
+          let taf='';
+          let TAF={};
+          if (airport.currentTaf) taf=airport.currentTaf;
+          if (airport.currentTafObject) TAF=airport.currentTafObject;
+          if (airport.metarObj&&(!taf||taf==='')) taf=airport.metarObj.taf;
+          if (!airport.metarObj) {
+            if (airport.currentMetar) airport.metarObj={metar:airport.currentMetar};
+            else airport.metarObj={};
+          }
+          airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
+          airport.metarObj.aircraft=f.aircraft;
+          airport.metarObj.color=overallRiskClass(airport.metarObj);
+          airport.metarObj.taf=taf;
+          airport.metarObj.TAF=TAF;
+        }
+        else airport.metarObj={airport:JSON.parse(JSON.stringify(airport))};
+        f.airportObjs.push(airport.metarObj);
+      });
+      //console.log(f.airportObjs);
+      if (f.airportObjs) f.color=flightRiskClass(f.airportObjs);
+      else console.log('No airportObjs?');
     });
     flights.forEach(flight=>{
       if (!flight) return;
+      //get current status from flightLog array
+      let matchedLog=flightLog.filter(f=>{
+        if (!f||!f.flightNum) return false;
+        if (f.date!==flight.date) return false;
+        return f.flightNum.split('.')[0]===flight.flightNum&&f.flightStatus;
+      });
+      if (matchedLog&&matchedLog.length>0) flight.flightStatus=matchedLog[matchedLog.length-1].flightStatus;
+      //map flights array(from current.csv) to todaysFlights array (from postgresql database)
       let index=todaysFlights.map(e=>e.flightId).indexOf(flight.flightId);
       if (index<0) {
         index=allFlights.map(e=>e.flightId).indexOf(flight.flightId);
         if (index<0) {
           flight.colorPatch='false';
           console.log('creating flight:');
-          console.log(flight);
+          //console.log(flight);
           TodaysFlight.create(flight);
         }
         else {
@@ -417,49 +516,59 @@ export async function tf(req,res) {
         }
       }
       if (index>-1) {
+        updated.push(todaysFlights[index]._id);
+        if (flight.flightId==='5531951') {
+          //console.log(flight);
+          //console.log(todaysFlights[index]);
+        }
+        if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
+          //console.log(todaysFlights[index]._id+' date'); 
+          //updated.push(todaysFlights[index]._id);
+          todaysFlights[index].flightStatus=flight.flightStatus;
+        }
         if (todaysFlights[index].date!==flight.date) {
           //console.log(todaysFlights[index]._id+' date'); 
-          updated.push(todaysFlights[index]._id);
+          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].date=flight.date;
         }
         if (todaysFlights[index].flightNum!==flight.flightNum) {
           //console.log(todaysFlights[index]._id+' flightNum'); 
-          updated.push(todaysFlights[index]._id);
+          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].flightNum=flight.flightNum;
         }
         if (todaysFlights[index].pilot!==flight.pilot){
           //console.log(todaysFlights[index]._id+' pilot'); 
-          updated.push(todaysFlights[index]._id);
+          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].pilot=flight.pilot;
         }
         if (todaysFlights[index].coPilot!==flight.coPilot){
           //console.log(todaysFlights[index]._id+' copilot'); 
-          updated.push(todaysFlights[index]._id);
+          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].coPilot=flight.coPilot;
         }
         if (todaysFlights[index].aircraft!==flight.aircraft){
           //console.log(todaysFlights[index]._id+' aircraft'); 
-          updated.push(todaysFlights[index]._id);
+          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].aircraft=flight.aircraft;
         }
         if (todaysFlights[index].departTimes[0]!==flight.departTimes[0]){
           //console.log(todaysFlights[index]._id+' departTimes'); 
-          updated.push(todaysFlights[index]._id);
+          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
         if (todaysFlights[index].departTimes.length!==flight.departTimes.length){
           //console.log(todaysFlights[index]._id+' departTimes'); 
-          updated.push(todaysFlights[index]._id);
+          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
         if (todaysFlights[index].departTimes[todaysFlights[index].departTimes.length-1]!==flight.departTimes[flight.departTimes.length-1]){
           //console.log(todaysFlights[index]._id+' departTimes'); 
-          updated.push(todaysFlights[index]._id);
+          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
         if (JSON.stringify(todaysFlights[index].airports)!==JSON.stringify(flight.airports)){
           //console.log(todaysFlights[index]._id+' airports'); 
-          updated.push(todaysFlights[index]._id);
+          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].airports=flight.airports;
           todaysFlights[index].departTimes=flight.departTimes;
         }
@@ -470,7 +579,7 @@ export async function tf(req,res) {
       updated.forEach(u=>{
         let index=todaysFlights.map(e=>e._id).indexOf(u);
         todaysFlights[index].colorPatch='false';
-        console.log('Updating Flight ID: ' + todaysFlights[index].flightId);
+        //console.log('Updating Flight ID: ' + todaysFlights[index].flightId);
         //console.log(todaysFlights[index]);
         delete todaysFlights[index]._id;
         TodaysFlight.find({
@@ -488,3 +597,219 @@ export async function tf(req,res) {
     res.status(404).json("Failure");
   }
 }
+
+function overallRiskClass(metarObj){
+  let airport=metarObj.airport;
+    let returnString="";
+    //if (!metarObj) metarObj={};
+    //if (metarObj.night) returnString+=' night';
+    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
+    let color="airport-green";
+    let tempColor="airport-green";
+    //runway
+    //if (!metarObj.airport) return returnString+=' '+color;
+    tempColor=returnColor({yellow:3,red:2},airport.runwayScore,'above');
+    metarObj.runwayColor=tempColor;
+    metarObj.visibilityColor='airport-blue';
+    metarObj.test="from here";
+    metarObj.ceilingColor='airport-blue';
+    metarObj.windColor='airport-blue';
+    metarObj.freezingColor='airport-green';
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //if (airport.name==='Gambell') console.log(airport);
+    //possibly no metarObj
+    if (!metarObj||!metarObj['Raw-Report']) {
+      if (color!=='airport-red') {
+        color='airport-blue';
+      }
+      return returnString+=' '+color;
+    }
+    //icing?
+    if (metarObj.Freezing) {
+      metarObj.freezingColor='airport-pink';
+      color='airport-pink';
+    }
+    //wind
+    tempColor=returnWindColor(metarObj.aircraft,metarObj['Wind-Gust'],metarObj['Wind-Direction'],airport);//this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
+    metarObj.windColor=tempColor;
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //Visibility
+    if (!metarObj.Visibility||!metarObj.Ceiling||!metarObj.altimeter||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
+      //set colors to purple
+      metarObj.ceilingColor=metarObj.visibilityColor=tempColor='airport-purple';
+      if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+      return returnString+' '+color;
+    }
+    //visibility
+    tempColor=returnColor(airport.visibilityRequirement, metarObj.Visibility,'above',airport);
+    metarObj.visibilityColor=tempColor;
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //ceiling
+    tempColor=returnColor(airport.ceilingRequirement,metarObj.Ceiling,'above',airport);
+    metarObj.ceilingColor=tempColor;
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //return
+    metarObj.color=returnString+' '+color;
+    return returnString+' '+color;
+  }
+
+function overallRiskClassOld(metarObj){
+    let returnString="";
+    if (!metarObj) metarObj={};
+    if (metarObj.night) returnString+=' night';
+    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
+    let color="airport-green";
+    let tempColor="airport-green";
+    //runway
+    //if (!metarObj.airport) return returnString+=' '+color;
+    if (!metarObj.airport) {
+      //console.log(metarObj);
+      console.log('no airport?');
+      metarObj.airport={runwayScore:5};
+    }
+    tempColor=returnColor({yellow:3,red:2},metarObj.airport.runwayScore,'above');
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //if (airport.name==='Gambell') console.log(airport);
+    //possibly no metarObj
+    if (!metarObj||!metarObj['Raw-Report']) {
+      if (color!=='airport-red') {
+        color='airport-blue';
+      }
+      return returnString+=' '+color;
+    }
+    //icing?
+    if (metarObj.Freezing) color='airport-pink';
+    //Visibility
+    if (!metarObj.Visibility||!metarObj.Ceiling||!metarObj.altimeter) return returnString+' airport-purple';
+    if (metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) return returnString+' airport-purple';
+    //visibility
+    tempColor=returnColor(metarObj.airport.visibilityRequirement, metarObj.Visibility,'above',metarObj.airport);
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //ceiling
+    tempColor=returnColor(metarObj.airport.ceilingRequirement,metarObj.Ceiling,'above',metarObj.airport);
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //wind
+    tempColor=returnWindColor(metarObj.aircraft,metarObj['Wind-Gust'],metarObj['Wind-Direction'],metarObj.airport);//this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
+    
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    //return
+    metarObj.color=returnString+' '+color;
+    return returnString+' '+color;
+  }
+  
+  function returnColor(limitObj,observation,direction,airport){
+    if (!observation||observation===""||!limitObj) {
+      return '';
+      //console.log('returnColor');
+      //return 'airport-purple';
+    }
+    if (!direction) direction="above";
+    let color="airport-green";
+    if (direction==="above"){
+      if ((observation*1)<limitObj.yellow) color="airport-yellow";
+      if ((observation*1)<limitObj.orange) color="airport-orange";
+      if ((observation*1)<limitObj.red) color="airport-pink";
+    }
+    else {
+      if ((observation*1)>limitObj.yellow) color="airport-yellow";
+      if ((observation*1)>limitObj.orange) color="airport-orange";
+      if ((observation*1)>limitObj.red) color="airport-pink";
+    }
+    return color;
+  }
+  
+  function returnWindColor(aircraft,gust,windDirection,airportObj){
+    let specialWind=JSON.parse(airportObj.specialWind);
+    if (!gust||!windDirection||!airportObj) {
+      //console.log('windColor');
+      return 'airport-green';
+    }
+    let equipment=JSON.parse(JSON.stringify(equipmentArr[0]));
+    if (fbAirplanes) {
+      let index=fbAirplanes.map(e=>e._id).indexOf(aircraft);
+      if (index>-1&&fbAirplanes[index]) {
+        index=equipmentArr.map(e=>e.name).indexOf(fbAirplanes[index].acftType);
+        if (index>-1) equipment=JSON.parse(JSON.stringify(equipmentArr[index]));
+      }
+    }
+    if (!airportObj.runways) {
+      if (gust>equipment.wind) return 'airport-orange';
+      if (gust>equipment.wind-5) return 'airport-yellow';
+      return 'airport-green';
+    }
+    let xwindAngle=0;
+    let direction=0;
+    let crosswind=0;
+    let runways=JSON.parse(JSON.stringify(airportObj.runways));
+    if (airportObj.icao==='PAUN'&&(equipment.name==="Beech 1900"||equipment.name==="Sky Courier")) runways=[15,33];
+    //if (airportObj.icao==='PAGM') console.log(specialWind);
+    //if (airportObj.icao==='PAOM') console.log(airportObj.specialWind);
+    if (runways) {
+      xwindAngle=90;
+      direction=parseInt(windDirection,10);
+      runways.forEach(function(runway){
+        if (Math.abs(direction-runway*10)<xwindAngle) xwindAngle = Math.abs(direction-runway*10);
+        if (Math.abs(direction+360-runway*10)<xwindAngle) xwindAngle = Math.abs(direction+360-runway*10);
+        if (Math.abs(direction-360-runway*10)<xwindAngle) xwindAngle = Math.abs(direction-360-runway*10);
+      });
+    }
+    crosswind = Math.round(gust*Math.sin(xwindAngle*(Math.PI/180)));
+    if (specialWind.directionLow<=direction&&specialWind.directionHigh>=direction) {
+      equipment.wind-=specialWind.reduction;
+      equipment.xwind-=specialWind.reduction;
+    }
+    if (false) {//(airportObj.icao==='PAGM'){
+      if (direction>=40&&direction<=100){
+        equipment.wind-=5;
+        equipment.xwind-=10;
+      }
+    }
+    if (airportObj.icao==="PADG") {
+     equipment.wind=30;
+     equipment.xwind=15;
+    }
+    //if (aircraft==="N701BA") console.log(equipment.wind+' '+equipment.xwind);
+    if (gust>equipment.wind) return 'airport-orange';
+    if (crosswind>equipment.xwind) return 'airport-orange';
+    if (gust>equipment.wind-5) return 'airport-yellow';
+    if (crosswind>equipment.xwind-5) return 'airport-yellow';
+    return 'airport-green';
+    
+  }
+  
+  function airportClass(airport){
+    let score=airport.runwayScore;
+    let now=new Date();
+    //if airport.timestamp is more than 10 hours old, return blue
+    //if (!airport.timestamp||!score) return 'airport-blue';
+    const tenHoursAgo = new Date(now.getTime() - (10 * 60 * 60 * 1000)); // 10 hours in milliseconds
+    //if (new Date(airport.timestamp) < tenHoursAgo) return 'airport-blue';
+
+    score=parseInt(score,10);
+    if (isNaN(score)) return "airport-green";
+    if (score<=1) return "airport-pink";
+    if (score===2) return "airport-yellow";
+    return "airport-green";
+  }
+
+function flightRiskClass(airportObjs){
+    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
+    let color=colors[0];
+    let night=false;
+    let colorIndex=0;
+    if (!airportObjs) return color;
+    for (let i=0;i<airportObjs.length;i++) {
+    //airportObjs.forEach(metarObj=>{
+      let myClass=overallRiskClass(airportObjs[i]);
+      let arr=myClass.split(' ');
+      arr.forEach(a=>{
+        if (a==='night') night=true;
+        if (colors.indexOf(a)>colorIndex) {
+          color=a;
+          colorIndex=colors.indexOf(a);
+        }
+      });
+    }
+    if (night) return 'night '+color;
+    return color;
+  }

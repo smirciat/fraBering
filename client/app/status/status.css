@@ -1,6 +1,5 @@
 .layout-OME {
   width: 100%;
-
   display: grid;
   grid:
     ". . . ."
@@ -42,7 +41,7 @@
 .body { grid-area: body; }
 
 .status-column{
-    height:calc(100vh - 50px);
+    height:calc(100vh - 60px);
     font-size:1.5em;
     overflow:auto;
 }
@@ -57,7 +56,8 @@
 }
 
 .alts{
-  height:30vh;
+  height:calc(30vh - 60px);
+  overflow:auto;
 }
 
 .status-column-header{
@@ -83,6 +83,14 @@
 .airport-card{
   display:inline-block;
   margin-left:0.5em;
+  border:1px solid black;
+}
+
+.airport-modal{
+  font-weight:bold;
+  text-align:center;
+  margin:1em;
+  padding:1em;
   border:1px solid black;
 }
 
@@ -149,11 +157,21 @@
   padding:10px;
 }
 
+.airport-gray{
+  background-color:lightgray;
+}
+
 .airport-green{
   background-color:lightgreen;
 }
 
 .airport-pink{
+  background-color:#ff0033;
+  font-weight:bold;
+  color:white;
+}
+
+div.airport-pink h1{
   background-color:#ff0033;
   font-weight:bold;
   color:white;

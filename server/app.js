@@ -8,6 +8,7 @@ import express from 'express';
 import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
+import http from 'http';
 import https from 'https';
 const baseUrl = 'https://localhost:' + config.port;
 const axios = require("axios");
@@ -65,15 +66,28 @@ let tafFunction=()=>{
         .catch(err=>{console.log(err)});
 };
 
+let firebaseFunction=async ()=>{
+  return axios.post(baseUrl + '/api/airplanes/firebaseInterval',{}, { httpsAgent: agent })
+        .then((response)=>{
+          console.log('firebase interval going at ' +new Date().toLocaleString());
+          console.log(response.data);
+        })
+        .catch(err=>{console.log(err)});
+};
+
 // Start server
 function startServer() {
   app.angularFullstack = server.listen(config.port, config.ip, function() {
     console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
-    callbackFunction();
+    //callbackFunction();
     metarFunction();
     tafFunction();
+    firebaseFunction().then(()=>{
+      callbackFunction();
+    });
+    setInterval(firebaseFunction,60*60*1000);
     setInterval(callbackFunction,1*60*1000); 
-    setInterval(metarFunction,5*60*1001);  
+    setInterval(metarFunction,3*60*1001);  
     setTimeout(()=>{setInterval(tafFunction,(5*60*1000))},2*60*1000);  
   });
 }

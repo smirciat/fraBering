@@ -17,6 +17,7 @@ function onConnect(socket) {
   });
 
   // Insert sockets below
+  require('../api/snapshot/snapshot.socket').register(socket);
   require('../api/todaysFlight/todaysFlight.socket').register(socket);
   require('../api/calendar/calendar.socket').register(socket);
   require('../api/airplane/airplane.socket').register(socket);

@@ -1,13 +1,15 @@
 'use strict';
 
 export default function(sequelize, DataTypes) {
-  return sequelize.define('TodaysFlight', {
+  return sequelize.define('Snapshot', {
     _id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true,
       autoIncrement: true
     },
+    flight_id: DataTypes.INTEGER,
+    timestamp: DataTypes.DATE,
     active: {
       type: DataTypes.STRING,
       defaultValue: 'true'
@@ -18,8 +20,7 @@ export default function(sequelize, DataTypes) {
     aircraft: DataTypes.STRING,
     flightNum: DataTypes.STRING,
     flightId: {
-      type:DataTypes.STRING,
-      unique:true
+      type:DataTypes.STRING
     },
     daysOfWeek: DataTypes.ARRAY(DataTypes.INTEGER),
     airports: DataTypes.ARRAY(DataTypes.STRING),
@@ -30,10 +31,6 @@ export default function(sequelize, DataTypes) {
     color: DataTypes.STRING,
     airportObjs: DataTypes.JSONB,
     colorPatch: DataTypes.STRING,
-    flightStatus: DataTypes.STRING,
-    knownIce:DataTypes.BOOLEAN,
-    ocRelease:DataTypes.STRING,
-    mitigation:DataTypes.STRING,
-    pilotAgree:DataTypes.STRING
+    flightStatus: DataTypes.STRING
   });
 }

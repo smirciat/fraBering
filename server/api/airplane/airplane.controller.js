@@ -18,6 +18,9 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 const firebase_db = admin.firestore();
+let firebaseFlights=[];
+let firebasePilots=[];
+let firebaseAircraft=[];
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -122,6 +125,67 @@ export function destroy(req, res) {
     .catch(handleError(res));
 }
 
+function fSort(flights){
+  return flights.sort((a,b)=>{
+    if (a.dateString!==b.dateString) return new Date(b.dateString)-new Date(a.dateString);
+    let aArr=JSON.parse(JSON.stringify(a.legArray));
+    let bArr=JSON.parse(JSON.stringify(b.legArray));
+    let aNow=aArr.pop();
+    let bNow=bArr.pop();
+    let aOnTime;
+    let aOffTime;
+    let bOnTime;
+    let bOffTime;
+    if (aNow) {
+      aOnTime=aNow.onTime;
+      if (aOnTime) aOnTime=aOnTime._seconds;
+      aOffTime=aNow.offTime;
+      if (aOffTime) aOffTime=aOffTime._seconds;
+    }
+    if (bNow) {
+      bOnTime=bNow.onTime;
+      if (bOnTime) bOnTime=bOnTime._seconds;
+      bOffTime=bNow.offTime;
+      if (bOffTime) bOffTime=bOffTime._seconds;
+    }
+    while (aNow&&!aOnTime){
+      if (aOffTime) aOnTime=aOffTime;
+      else {
+        if (!aArr||aArr.length===0) {
+          aNow=undefined;
+          break;
+        }
+        aNow=aArr.pop();
+        if (!aNow) break;
+        aOnTime=aNow.onTime;
+        aOffTime= aNow.offTime;
+        if (aOnTime) aOnTime=aOnTime._seconds;
+        if (aOffTime) aOffTime=aOffTime._seconds;
+      }
+    }
+    while (bNow&&!bOnTime){
+      if (bOffTime) bOnTime=bOffTime;
+      else {
+        if (!bArr||bArr.length===0) {
+          bNow=undefined;
+          break;
+        }
+        bNow=bArr.pop();
+        if (!bNow) break;
+        bOnTime=bNow.onTime;
+        bOffTime= bNow.offTime;
+        if (bOnTime) bOnTime=bOnTime._seconds;
+        if (bOffTime) bOffTime=bOffTime._seconds;
+      }
+    }
+    if (aOnTime&&bOnTime) return bOnTime-aOnTime;
+    if (!aOnTime&&!bOnTime) return 0;
+    if (!aOnTime) return -1;
+    if (!bOnTime) return 1;
+    return 0;
+  });
+}
+
 async function getCollectionQuery(collectionName,limit,parameter,operator,value,timestampBoolean) {
   try {
     for (let s of [collectionName,limit,parameter,operator,value,timestampBoolean]){
@@ -169,24 +233,30 @@ async function getCollection(collectionName) {
 
 async function updateDocument(collection,docId,data) {
    const docRef = firebase_db.collection(collection).doc(docId);
-
    try {
      await docRef.update(data);
      console.log('Document successfully updated!');
+     return true;
    } catch (error) {
      console.error('Error updating document:', error);
+     return false;
    }
 }
 
-export async function firebase(req,res){
-  let collection=req.body.collection;
-  const result=await getCollection(collection);
+function collectionToArray(result){
   let array=[];
   result.forEach(doc=>{
     let obj=doc.data();
     obj._id=doc.id;
     array.push(obj);
   });
+  return array;
+}
+
+export async function firebase(req,res){
+  let collection=req.body.collection;
+  const result=await getCollection(collection);
+  let array=collectionToArray(result);
   //console.log(array);
   res.status(200).json(array);
 }
@@ -199,12 +269,7 @@ export async function firebaseQuery(req,res){
   let value=req.body.value;
   let timestampBoolean=req.body.timestampBoolean||false;
   const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean);
-  let array=[];
-  result.forEach(doc=>{
-    let obj=doc.data();
-    obj._id=doc.id;
-    array.push(obj);
-  });
+  let array=collectionToArray(result);
   //console.log(array);
   res.status(200).json(array);
 }
@@ -213,12 +278,7 @@ export async function firebaseLimited(req,res){
   let collection=req.body.collection;
   let limit=req.body.limit||50;
   const result=await getCollectionLimited(collection,limit);
-  let array=[];
-  result.forEach(doc=>{
-    let obj=doc.data();
-    obj._id=doc.id;
-    array.push(obj);
-  });
+  let array=collectionToArray(result);
   //console.log(array);
   res.status(200).json(array);
 }
@@ -231,4 +291,48 @@ export async function updateFirebase(req,res){
   updateDocument(collection, id, localDoc).then(()=>{
     res.status(200).json('Updated');
   });
+}
+
+export async function firebaseInterval(req,res){
+  let status=200;
+  try{
+    let pilots=await getCollection('pilots');
+    firebasePilots=collectionToArray(pilots);
+    let aircraft=await getCollection('aircraft');
+    firebaseAircraft=collectionToArray(aircraft);
+    let flights=await getCollectionLimited('flights',51);
+    firebaseFlights=fSort(collectionToArray(flights));
+    //firebaseFlights.forEach(f=>{console.log(f.flightNumber+' '+f.dateString+' '+f._id)});
+    for (let x=0;x<firebaseFlights.length;x++){
+      let index = firebaseAircraft.map(e => e._id).indexOf(firebaseFlights[x].acftNumber);
+      if (index>-1) {
+        if (firebaseAircraft[index].currentAirport!==firebaseFlights[x].legArray[firebaseFlights[x].legArray.length-1].arr) {
+          //console.log('This would have fired a firebase update if it weren`t commented out');
+          //this.http.post('/api/airplanes/updateFirebaseNew',{collection:'firebaseAircraft',doc:{currentAirport:firebaseFlights[x].legArray.at(-1).arr,_id:firebaseAircraft[index]._id}});
+          if (!firebaseAircraft[index].recentlyUpdated) {
+            await updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseFlights[x].legArray[firebaseFlights[x].legArray.length-1].arr});
+          }
+          firebaseAircraft[index].recentlyUpdated=true;
+          }
+        firebaseAircraft[index].currentAirport=firebaseFlights[x].legArray[firebaseFlights[x].legArray.length-1].arr;
+      }
+    }
+  }
+  catch(err){
+    status=404;
+    console.log(err);
+  }
+  finally{
+    res.status(status).json('firebase interval complete');
+  }
+}
+
+export function firebaseGrab(req,res){
+  let json={flights:firebaseFlights,pilots:firebasePilots,aircraft:firebaseAircraft};
+  res.status(200).json(json);
+}
+
+export function quickGrab(){
+  let json={flights:firebaseFlights,pilots:firebasePilots,aircraft:firebaseAircraft};
+  return json;
 }

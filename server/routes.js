@@ -24,16 +24,17 @@ export default function(app) {
   
   //
   // Insert routes below
+  app.use('/api/snapshots', require('./api/snapshot'));
   app.use('/api/todaysFlights', require('./api/todaysFlight'));
   app.use('/api/airportRequirements', require('./api/airportRequirement'));
   app.use('/api/monitors', require('./api/monitor'));
+  app.use('/api/airplanes', require('./api/airplane'));
   app.use(lusca.csrf({angular:true}));
   app.get('/fileserver', function(req, res){
     if (req.query) res.sendFile("./fileserver/" + req.query.filename, {root: __dirname});
     else res.status(500);
   });
   app.use('/api/calendar', require('./api/calendar'));
-  app.use('/api/airplanes', require('./api/airplane'));
   app.use('/api/timesheets', require('./api/timesheet'));
   app.use('/api/manifests', require('./api/manifest'));
   app.use('/api/pfrs', require('./api/pfr'));

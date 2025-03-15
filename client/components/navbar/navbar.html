@@ -1,5 +1,5 @@
 <div class="navbar navbar-default navbar-static-top" ng-controller="NavbarController">
-  <div class="container" style="width:95%;padding:0px;">
+  <div class="container" style="width:95%;padding:0px;" ng-class="nav.stoppedClass(nav.stopped)">
     <div class="navbar-header">
       <button class="navbar-toggle" type="button" ng-click="nav.isCollapsed = !nav.isCollapsed">
         <span class="sr-only">Toggle navigation</span>
@@ -11,6 +11,7 @@
     </div>
     <div uib-collapse="nav.isCollapsed" class="navbar-collapse collapse" id="navbar-main">
       <ul class="nav navbar-nav">
+        <li><a href="mailto:smirciat@gmail.com?body=Please give me enough information to re-create the bug you noticed so I can work on it. I appreciate the help!?subject=Status App Bug Report" target="_blank">Report Bug</a></li>
         <li ng-repeat="item in nav.menu" ui-sref-active="active">
             <a ui-sref="{{item.state}}">{{item.title}}</a>
         </li>

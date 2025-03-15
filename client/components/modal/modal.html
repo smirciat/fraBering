@@ -13,6 +13,55 @@
     <label>Initials</label>
     <input class="form-control" name="signature" type="text" ng-model="modal.formData.signature">
     <p>Previous Timestamp: {{modal.getMyDate(modal.formData.timestamp)}}</p>
+    <label>Manual Timestamp (Click Below to Enter One)</label>
+    <input class="form-control" name="isManualTimestamp" type="checkbox" ng-model="modal.isManualTimestamp">
+    <input ng-if="modal.isManualTimestamp" class="form-control" name="timestamp" type="text" ng-model="modal.timestampObj.timestampString" placeholder="MM/DD/YYYY HH:MM">
+    <label>Click Below if the Report is From a Non-Pilot</label>
+    <input class="form-control" name="nonPilot" type="checkbox" ng-model="modal.formData.nonPilot">
+  </div>
+  <div ng-if="modal.flightModal">
+    <div class="airport-card" ng-repeat="metarObj in modal.flight.airportObjs track by $index">
+      <div ng-class="metarObj.color">
+        <p style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
+              >{{metarObj.airport.threeLetter}}</p>
+      </div>
+    </div>
+    <br>
+    <br>
+    <label>Check Below if Flight is Considered "Known Icing"<br>8807# T/O and 8500# Landing Weights Apply</label>
+    <input class="form-control" style="width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce">
+    <br>
+    <label>OC Release for the flight? Inital Below<br>Clear and Confirm/Save to remove OC Release</label>
+    <input class="form-control" name="ocRelease" type="text" ng-model="modal.flight.ocRelease">
+    <label>Please type below to describe any mitigation taken to reduce risk for this flight.</label>
+    <input class="form-control" name="mitigation" type="text" ng-model="modal.flight.mitigation">
+  </div>
+  <div ng-if="modal.airportModal">
+    <div class="airport-modal" ng-class="modal.metarObj.color">
+      <p style="margin:0px;padding:5px">Airport Overall</p>
+      <p style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{modal.metarObj['Raw-Report']}}"
+            >{{modal.metarObj.airport.threeLetter}}</p>
+    </div>
+    <div class="airport-modal" ng-class="modal.metarObj.visibilityColor">
+      <p style="margin:0px;padding:5px">Visibility</p>
+      <p style="margin:0px;padding:5px">{{modal.metarObj.Visibility}}</p>
+    </div>
+    <div class="airport-modal" ng-class="modal.metarObj.ceilingColor">
+      <p style="margin:0px;padding:5px">Ceiling</p>
+      <p style="margin:0px;padding:5px">{{modal.metarObj.Ceiling}}</p>
+    </div>
+    <div class="airport-modal" ng-class="modal.metarObj.windColor">
+      <p style="margin:0px;padding:5px">Wind Gust/XWind</p>
+      <p style="margin:0px;padding:5px">{{modal.metarObj['Wind-Gust']+'/'+modal.metarObj.xwind}}</p>
+    </div>
+    <div class="airport-modal" ng-class="modal.metarObj.runwayColor">
+      <p style="margin:0px;padding:5px">Runway Score</p>
+      <p style="margin:0px;padding:5px">{{modal.metarObj.airport.runwayScore}}</p>
+    </div>
+    <div class="airport-modal" ng-class="modal.metarObj.freezingColor">
+      <p style="margin:0px;padding:5px">Freezing Precip</p>
+      <p style="margin:0px;padding:5px">{{modal.metarObj.Freezing}}</p>
+    </div>
   </div>
 </div>
 <div class="modal-footer">

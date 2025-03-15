@@ -38,6 +38,10 @@ export default function(sequelize, DataTypes) {
       type:DataTypes.JSON,
       defaultValue:{"level1":35,"level15":30}
     },
+    specialWind: {
+      type:DataTypes.JSON,
+      defaultValue:{}
+    },
     runwayCondition: {
       type:DataTypes.INTEGER,
       defaultValue:1
@@ -46,6 +50,7 @@ export default function(sequelize, DataTypes) {
     currentMetar: DataTypes.STRING,
     metarObj: DataTypes.JSONB,
     currentTaf: DataTypes.STRING,
-    currentTafObject: DataTypes.JSONB
+    currentTafObject: DataTypes.JSONB,
+    nonPilot:DataTypes.BOOLEAN
   });
 }
