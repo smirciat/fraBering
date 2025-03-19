@@ -19,8 +19,8 @@ class NavbarController {
     this.http=$http;
     this.scope=$scope;
     this.bases=[{base:"OME",four:"PAOM"},{base:"OTZ",four:"PAOT"},{base:"UNK",four:"PAUN"},{base:"HEL",four:"HELI"}];
-    this.base=this.bases[0];
-    window.base=this.base;
+    //this.base=this.bases[0];
+    //window.base=this.base;
     this.date=new Date();
     this.dateString=this.date.toLocaleDateString();
     this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
@@ -66,6 +66,8 @@ class NavbarController {
   
   $onInit() {
     if (window.localStorage.getItem('baseIndex')!==null&&window.localStorage.getItem('baseIndex')!=='undefined') this.base=this.bases[window.localStorage.getItem('baseIndex')];
+    else this.base=this.bases[0];
+    window.base=this.base;
     if (window.stoppedInterval) this.interval.cancel(window.stoppedInterval);
       window.stoppedInterval=this.interval(()=>{
         this.http.get('/api/todaysFlights/stopped').then(res=>{

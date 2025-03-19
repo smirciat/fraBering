@@ -42,12 +42,11 @@
   </div>-->
   <div class="status-column-flights">
     <div class="todays-flights">
-     <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" id="{{flight._id}}">
+     <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" id="{{flight._id}}" ng-class="status.getFlightColor(flight)">
       <div ng-if="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
         <div class="grid-parent-airport">
           <div>
-            <!--  status.flightRiskClass(flight.airportObjs) -->
-            <p ng-class="flight.color" style="margin:10px; padding:10px; border:1px solid black; text-align:center; min-width:6em;"
+            <p style="margin:10px; padding:10px; border:1px solid black; text-align:center; min-width:6em;" ng-class="flight.color" 
                     ng-click="status.flightModal(flight)">
               {{status.getFlightNum(flight.flightNum)}}
             </p>

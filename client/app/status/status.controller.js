@@ -60,7 +60,7 @@ class StatusComponent {
     this.airportModal=this.Modal.confirm.airport(response=>{});
     this.flightModal=this.Modal.confirm.flight(flight=>{
       //update flight in database
-      this.http.patch('/api/todaysFlights/'+flight.id,flight);
+      this.http.patch('/api/todaysFlights/'+flight._id,flight);
       //update flight in this.todaysFlights
       let index=this.todaysFlights.map(e => e._id).indexOf(flight._id);
       if (index>-1) Object.assign(this.todaysFlights[index], flight);
@@ -109,20 +109,22 @@ class StatusComponent {
       this.toggleAssigned=newVal;
     });
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
-      this.base=newVal;
-      if (this.base&&this.base.base==='UNK') {
-        this.toggleAssigned=false;
-        window.toggleAssigned=this.toggleAssigned;
-      }
-      else {
-        this.toggleAssigned=false;
-        window.toggleAssigned=this.toggleAssigned;
-      }
-      if (this.masterAirports) this.setBase(this.masterAirports);
-      this.setPilotList();
-      this.setAirplaneList();
-      this.setAvailableFlights();
-      this.scroll();
+      this.timeout(()=>{
+        this.base=newVal;
+        if (this.base&&this.base.base==='UNK') {
+          this.toggleAssigned=false;
+          window.toggleAssigned=this.toggleAssigned;
+        }
+        else {
+          this.toggleAssigned=false;
+          window.toggleAssigned=this.toggleAssigned;
+        }
+        if (this.masterAirports) this.setBase(this.masterAirports);
+        this.setPilotList();
+        this.setAirplaneList();
+        this.setAvailableFlights();
+        this.scroll();
+      },0);
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
       //this.getTakeflite({dateString:'10/20/2024',file:'tomorrow.csv'});
@@ -915,6 +917,11 @@ class StatusComponent {
   getFlightNum(flightNum){
     if (flightNum.length===3||flightNum.length===4) return 'BRG'+flightNum;
     return 'ID# ' +flightNum;
+  }
+  
+  getFlightColor(flight){
+    if (flight.ocRelease&&flight.ocRelease!=="") return "oc";
+    return;
   }
   
   renewFirebase(){

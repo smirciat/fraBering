@@ -12,6 +12,7 @@
 import _ from 'lodash';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
 import {quickGrab} from '../airplane/airplane.controller.js';
+import {getMetar,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
 import fs from 'fs';
 import config from '../../config/environment';
 let allAirports=[];
@@ -442,7 +443,7 @@ export async function tf(req,res) {
       if (i.dataValues) allFlights.push(i.dataValues);
     });
     let updated=[];
-    todaysFlights.forEach(f=>{
+    for (const f of todaysFlights) {
       let fa=flights.filter(x=>{
         return f.date===x.date;
       });
@@ -459,8 +460,9 @@ export async function tf(req,res) {
       //return;
       //update weather per destination via airportObjs
       f.airportObjs=[];
-      f.airports.forEach((a,airportIndex)=>{
-        let airport={name:a, threeLetter:a};
+      for (const element of f.airports) {
+        let a=JSON.parse(JSON.stringify(element));
+        let airport={name:a, threeLetter:a, metarObj:{airport:{name:a,threeLetter:a}}};
         if (!a) {
           f.airportObjs.push({airport:airport});
           return;
@@ -470,6 +472,7 @@ export async function tf(req,res) {
         let i=allAirports.map(e=>e.name).indexOf(a);
         if (i>-1) {
           airport=JSON.parse(JSON.stringify(allAirports[i]));
+          
           let taf='';
           let TAF={};
           if (airport.currentTaf) taf=airport.currentTaf;
@@ -485,13 +488,24 @@ export async function tf(req,res) {
           airport.metarObj.taf=taf;
           airport.metarObj.TAF=TAF;
         }
-        else airport.metarObj={airport:JSON.parse(JSON.stringify(airport))};
+        else {
+          //airport name not found in database, look it up on avwx
+          airport=await airportNameToMetar(airport);
+          
+          //if we didn't find it, punt
+          if (airport.metarObj&&airport.metarObj['Raw-Report']) {
+            airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
+            airport.metarObj.aircraft=f.aircraft;
+            airport.metarObj.color=overallRiskClass(airport.metarObj);
+          }  
+          else airport.metarObj={airport:JSON.parse(JSON.stringify(airport))};
+        }
         f.airportObjs.push(airport.metarObj);
-      });
+      }
       //console.log(f.airportObjs);
       if (f.airportObjs) f.color=flightRiskClass(f.airportObjs);
       else console.log('No airportObjs?');
-    });
+    }
     flights.forEach(flight=>{
       if (!flight) return;
       //get current status from flightLog array
@@ -641,10 +655,12 @@ function overallRiskClass(metarObj){
       return returnString+' '+color;
     }
     //visibility
+    if (!airport.visibilityRequirement) airport.visibilityRequirement={yellow:3,orange:2,red:1};
     tempColor=returnColor(airport.visibilityRequirement, metarObj.Visibility,'above',airport);
     metarObj.visibilityColor=tempColor;
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //ceiling
+    if (!airport.ceilingRequirement) airport.ceilingRequirement={yellow:1000,orange:500,red:500};
     tempColor=returnColor(airport.ceilingRequirement,metarObj.Ceiling,'above',airport);
     metarObj.ceilingColor=tempColor;
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
@@ -652,53 +668,9 @@ function overallRiskClass(metarObj){
     metarObj.color=returnString+' '+color;
     return returnString+' '+color;
   }
-
-function overallRiskClassOld(metarObj){
-    let returnString="";
-    if (!metarObj) metarObj={};
-    if (metarObj.night) returnString+=' night';
-    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
-    let color="airport-green";
-    let tempColor="airport-green";
-    //runway
-    //if (!metarObj.airport) return returnString+=' '+color;
-    if (!metarObj.airport) {
-      //console.log(metarObj);
-      console.log('no airport?');
-      metarObj.airport={runwayScore:5};
-    }
-    tempColor=returnColor({yellow:3,red:2},metarObj.airport.runwayScore,'above');
-    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
-    //if (airport.name==='Gambell') console.log(airport);
-    //possibly no metarObj
-    if (!metarObj||!metarObj['Raw-Report']) {
-      if (color!=='airport-red') {
-        color='airport-blue';
-      }
-      return returnString+=' '+color;
-    }
-    //icing?
-    if (metarObj.Freezing) color='airport-pink';
-    //Visibility
-    if (!metarObj.Visibility||!metarObj.Ceiling||!metarObj.altimeter) return returnString+' airport-purple';
-    if (metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) return returnString+' airport-purple';
-    //visibility
-    tempColor=returnColor(metarObj.airport.visibilityRequirement, metarObj.Visibility,'above',metarObj.airport);
-    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
-    //ceiling
-    tempColor=returnColor(metarObj.airport.ceilingRequirement,metarObj.Ceiling,'above',metarObj.airport);
-    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
-    //wind
-    tempColor=returnWindColor(metarObj.aircraft,metarObj['Wind-Gust'],metarObj['Wind-Direction'],metarObj.airport);//this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
-    
-    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
-    //return
-    metarObj.color=returnString+' '+color;
-    return returnString+' '+color;
-  }
   
   function returnColor(limitObj,observation,direction,airport){
-    if (!observation||observation===""||!limitObj) {
+    if (!observation||observation==="") {
       return '';
       //console.log('returnColor');
       //return 'airport-purple';
@@ -719,7 +691,8 @@ function overallRiskClassOld(metarObj){
   }
   
   function returnWindColor(aircraft,gust,windDirection,airportObj){
-    let specialWind=JSON.parse(airportObj.specialWind);
+    let specialWind={};
+    if (airportObj.specialWind) specialWind=JSON.parse(airportObj.specialWind);
     if (!gust||!windDirection||!airportObj) {
       //console.log('windColor');
       return 'airport-green';
@@ -793,23 +766,56 @@ function overallRiskClassOld(metarObj){
   }
 
 function flightRiskClass(airportObjs){
-    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
-    let color=colors[0];
-    let night=false;
-    let colorIndex=0;
-    if (!airportObjs) return color;
-    for (let i=0;i<airportObjs.length;i++) {
-    //airportObjs.forEach(metarObj=>{
-      let myClass=overallRiskClass(airportObjs[i]);
-      let arr=myClass.split(' ');
-      arr.forEach(a=>{
-        if (a==='night') night=true;
-        if (colors.indexOf(a)>colorIndex) {
-          color=a;
-          colorIndex=colors.indexOf(a);
-        }
-      });
-    }
-    if (night) return 'night '+color;
-    return color;
+  let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
+  let color=colors[0];
+  let night=false;
+  let colorIndex=0;
+  if (!airportObjs) return color;
+  for (let i=0;i<airportObjs.length;i++) {
+  //airportObjs.forEach(metarObj=>{
+    let myClass=overallRiskClass(airportObjs[i]);
+    let arr=myClass.split(' ');
+    arr.forEach(a=>{
+      if (a==='night') night=true;
+      if (colors.indexOf(a)>colorIndex) {
+        color=a;
+        colorIndex=colors.indexOf(a);
+      }
+    });
   }
+  if (night) return 'night '+color;
+  return color;
+}
+
+async function airportNameToMetar(airport){
+  let icao='';
+  let res=await axios.get('https://avwx.rest/api/search/station?text=' + airport.name + '&reporting=true&token=' + process.env.AVWX_TOKEN2);
+  if (!res||!res.data||res.data.Error) return airport;
+  let foundIndex=-1;
+  for (let i=0;i<res.data.length;i++){
+    if (res.data[i].country==='US'&&res.data[i].state==='AK') foundIndex=i;
+  }
+  if (foundIndex<0) {
+    if (airport.name==="Kotlik") {
+      icao="PFKO";
+      airport.threeLetter='2A9';
+    }
+    else return airport; 
+  }
+  else {
+    icao=res.data[foundIndex].icao;
+    airport.threeLetter=res.data[foundIndex].local;
+  }
+  airport.currentMetarObj = await getMetar(icao);
+  if (!airport.currentMetarObj||!airport.currentMetarObj.metar) return airport; 
+  airport.currentMetar=airport.currentMetarObj.metar;
+  let metarDate=new Date(airport.currentMetarObj.date);
+  if (metarDate<new Date(new Date().getTime()-120*60*1000)) {
+    airport.metarObj={};
+    airport.currentMetar='missing';
+  }
+  else {
+   airport.metarObj=parseADDS(airport.currentMetarObj.metar);
+  }
+  return airport;
+}

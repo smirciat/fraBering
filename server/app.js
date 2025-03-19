@@ -55,7 +55,10 @@ let metarFunction=()=>{
         .then((response)=>{
           console.log('metar interval going at ' +new Date().toLocaleString());
         })
-        .catch(err=>{console.log(err.response.data)});
+        .catch(err=>{
+          if (err.response) console.log(err.response.data)
+          else console.log(err);
+        });
 };
 
 let tafFunction=()=>{

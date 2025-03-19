@@ -239,7 +239,7 @@ export async function metars(req,res) {
   }
 } 
 
-async function getMetar(airport) {
+export async function getMetar(airport) {
   let jsonResponse={airport:airport,metar:'missing'};
   let url = url1 + airport + url2;
   //url='https://api.weather.gov/stations/'+airport+'/observations/latest';
@@ -416,7 +416,7 @@ export async function adds(req,res) {
   },handleError(res));  
 }
 
-function parseADDS(metar){
+export function parseADDS(metar){
     var temp="";
     var obs={};
     if (!metar||metar==='missing') return obs;

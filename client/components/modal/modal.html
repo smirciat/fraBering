@@ -1,4 +1,5 @@
-<div class="modal-header">
+<div class="modal-header" ng-style="{'background-color' : modal.style(modal.flight.color)}">
+  <!--"modal.style(modal.flight.color)">-->
   <button ng-if="modal.dismissable" type="button" ng-click="$dismiss()" class="close">&times;</button>
   <h4 ng-if="modal.title" ng-bind="modal.title" class="modal-title"></h4>
 </div>
@@ -28,13 +29,20 @@
     </div>
     <br>
     <br>
-    <label>Check Below if Flight is Considered "Known Icing"<br>8807# T/O and 8500# Landing Weights Apply</label>
+    <label>Check Below if Flight is Considered "Known Icing"</label>
     <input class="form-control" style="width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce">
-    <br>
+    <br><br>
     <label>OC Release for the flight? Inital Below<br>Clear and Confirm/Save to remove OC Release</label>
-    <input class="form-control" name="ocRelease" type="text" ng-model="modal.flight.ocRelease">
+    <input class="form-control" name="ocRelease" type="text" ng-model="modal.flight.ocRelease" ng-disabled="!modal.ocRequired(modal.flight.color)">
+    <br>
+    <label>Dispatch Release for the flight? (If not Orange or Red)<br>Clear and Confirm/Save to remove Dispatch Release</label>
+    <input class="form-control" name="dispatchRelease" type="text" ng-model="modal.flight.dispatchRelease" ng-disabled="modal.ocRequired(modal.flight.color)">
+    <br>
     <label>Please type below to describe any mitigation taken to reduce risk for this flight.</label>
     <input class="form-control" name="mitigation" type="text" ng-model="modal.flight.mitigation">
+    <br>
+    <label>Pilot Acceptance Inital Below<br>Clear and Confirm/Save to remove Pilot Acceptance</label>
+    <input class="form-control" name="pilotAgree" type="text" ng-model="modal.flight.pilotAgree" ng-disabled="modal.pilotDisabled(modal.flight)">
   </div>
   <div ng-if="modal.airportModal">
     <div class="airport-modal" ng-class="modal.metarObj.color">

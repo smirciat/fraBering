@@ -10,7 +10,6 @@ angular.module('workspaceApp')
      */
     function openModal(scope = {}, modalClass = 'modal-default') {
       var modalScope = $rootScope.$new();
-
       angular.extend(modalScope, scope);
 
       return $uibModal.open({
@@ -134,6 +133,8 @@ angular.module('workspaceApp')
           return function() {
             var args = Array.prototype.slice.call(arguments),
                 flight = args.shift(),
+                colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
+                bgColors=['lightgreen','lightblue','#DAB1DA','yellow','orange','#ff0033'],
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -141,6 +142,16 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 flightModal:true,
+                ocRequired:function(color){return colors.indexOf(color)>3},
+                pilotDisabled:function(f){
+                  if (colors.indexOf(f.color)>3) return !f.ocRelease||f.ocRelease==="";
+                  else return !f.dispatchRelease||f.dispatchRelease==="";
+                },
+                style:function(color){
+                  let i=colors.indexOf(color);
+                  if (i>-1) return bgColors[i];
+                  else return '';
+                },
                 title: 'Details for Flight#  ' + flight.flightNum,
                 buttons: [ {//this is where you define you buttons and their appearances
                   classes: 'btn-primary',
@@ -159,7 +170,7 @@ angular.module('workspaceApp')
             }, 'modal-success');
 
             quickModal.result.then(function(event) {
-              cb.apply(event, [{_id:flight._id,knownIce:flight.knownIce,mitigation:flight.mitigation,ocRelease:flight.ocRelease}]); //this is where all callback is actually called
+              cb.apply(event, [{_id:flight._id,knownIce:flight.knownIce,mitigation:flight.mitigation,ocRelease:flight.ocRelease,dispatchRelease:flight.dispatchRelease,pilotAgree:flight.pilotAgree}]); //this is where all callback is actually called
             }).catch(err=>{
               console.log(err);
             });

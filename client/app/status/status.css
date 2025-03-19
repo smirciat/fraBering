@@ -98,6 +98,14 @@
   border:5px solid black;
 }
 
+.oc{
+  background-color: lightgreen;
+}
+
+.notOc{
+  border:1px solid black;
+}
+
 .grid-parent{
   display: grid; 
   grid-template-columns: 2fr 1fr 6fr; 
@@ -159,10 +167,12 @@
 
 .airport-gray{
   background-color:lightgray;
+  font-weight:bold;
 }
 
 .airport-green{
   background-color:lightgreen;
+  font-weight:bold;
 }
 
 .airport-pink{
@@ -179,18 +189,22 @@ div.airport-pink h1{
 
 .airport-yellow{
   background-color:yellow;
+  font-weight:bold;
 }
 
 .airport-orange{
   background-color:orange;
+  font-weight:bold;
 }
 
 .airport-blue{
   background-color:lightblue;
+  font-weight:bold;
 }
 
 .airport-purple{
   background-color:#DAB1DA;
+  font-weight:bold;
 }
 
 .chosen{

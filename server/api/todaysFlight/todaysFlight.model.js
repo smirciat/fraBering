@@ -34,6 +34,8 @@ export default function(sequelize, DataTypes) {
     knownIce:DataTypes.BOOLEAN,
     ocRelease:DataTypes.STRING,
     mitigation:DataTypes.STRING,
-    pilotAgree:DataTypes.STRING
+    pilotAgree:DataTypes.STRING,
+    dispatchRelease:DataTypes.STRING,
+    releaseTimestamp:DataTypes.DATE,
   });
 }
