@@ -58,6 +58,11 @@ class StatusComponent {
     this.quickModal=this.Modal.confirm.quickMessage(response=>{this.clicked=true;});
     this.tafDisplay=this.Modal.confirm.quickShow(response=>{});
     this.airportModal=this.Modal.confirm.airport(response=>{});
+    this.weatherModal=this.Modal.confirm.weather(airport=>{
+      this.http.patch('/api/airportRequirements/'+airport._id,{manualObs:airport.manualObs,manualTimestamp:airport.manualTimestamp});
+      let index=this.airports.map(e => e._id).indexOf(airport._id);
+      if (index>-1) this.airports[index]=airport;
+    });
     this.flightModal=this.Modal.confirm.flight(flight=>{
       //update flight in database
       this.http.patch('/api/todaysFlights/'+flight._id,flight);
@@ -66,19 +71,28 @@ class StatusComponent {
       if (index>-1) Object.assign(this.todaysFlights[index], flight);
     });
     this.runwayModal=this.Modal.confirm.runway(res=>{
+      console.log(res);
       if (res.timestampString) res.timestamp=new Date(res.timestampString);
       else res.timestamp=new Date();
       if (!res.comment) res.comment='';
       if (!res.signature) res.signature='';
       if (!res.runwayScore) res.runwayScore='';
+      if (!res.depth) res.depth='';
+      if (!res.contaminent) res.contaminent='';
+      if (!res.percent) res.percent='';
+      if (!res.openClosed) res.openClosed='';
       let index = this.airports.map(e => e._id).indexOf(res._id);
       if (index>-1) {
         this.airports[index].signature=res.signature;
         this.airports[index].timestamp=res.timestamp;
         this.airports[index].comment=res.comment;
         this.airports[index].runwayScore=res.runwayScore;
+        this.airports[index].openClosed=res.openClosed;
+        this.airports[index].depth=res.depth;
+        this.airports[index].contaminent=res.contaminent;
+        this.airports[index].percent=res.percent;
         if (res._id) {//&&res.signature&&res.runwayScore){
-          this.http.patch('/api/airportRequirements/'+res._id,res);
+          this.http.patch('/api/airportRequirements/'+res._id,res).then(resp=>{console.log(resp.data)});
         }
       }
     });
@@ -292,6 +306,12 @@ class StatusComponent {
         //this.setAirplaneList();
       },0);
       return array;
+  }
+  
+  getUnofficial(metarObj){
+    let c=metarObj.color;
+    if (!metarObj.isOfficial&&metarObj.usingManual) return c+" unofficial";
+    return c;
   }
   
   isItNight(airport,time){
@@ -590,10 +610,13 @@ class StatusComponent {
   }
   
   sign(airport){
-    this.runwayModal(airport,{_id:airport._id,runwayScore:airport.runwayScore,comment:airport.comment,signature:airport.signature,timestamp:airport.timestamp,nonPilot:airport.nonPilot});
+    if (!airport.openClosed) airport.openClosed="Open";
+    if (!airport.contaminent) airport.contaminent="None";
+    this.runwayModal(airport,{_id:airport._id,runwayScore:airport.runwayScore,comment:airport.comment,signature:airport.signature,timestamp:airport.timestamp,nonPilot:airport.nonPilot,openClosed:airport.openClosed,depth:airport.depth,contaminent:airport.contaminent,percent:airport.percent});
   }
   
   lookAtFlight(flight){
+    //console.log(flight);
     this.flightModal(flight);
   }
   
@@ -952,8 +975,10 @@ class StatusComponent {
     if (source==='taf') {
       switch(evt.which) {
         case 1://left click
-            this.runwayModal(airport,{_id:airport._id,runwayScore:airport.runwayScore,comment:airport.comment,signature:airport.signature,timestamp:airport.timestamp}); 
-            break;
+            if (!airport.openClosed) airport.openClosed="Open";
+            if (!airport.contaminent) airport.contaminent="None";
+            this.runwayModal(airport,{_id:airport._id,runwayScore:airport.runwayScore,comment:airport.comment,signature:airport.signature,timestamp:airport.timestamp,nonPilot:airport.nonPilot,openClosed:airport.openClosed,depth:airport.depth,contaminent:airport.comtaminent,percent:airport.percent});
+        break;
         case 2:
             // for middle click functionality
             break;
@@ -968,25 +993,17 @@ class StatusComponent {
     if (source==='metar') {
       switch(evt.which) {
         case 3://right click
-            if (!airport['Raw-Report']) {
-              this.airportNameToMetar(airport.airport.threeLetter);
-              let index=-1;
-              this.timeout(()=>{
-                if (index>-1) {
-                  this.todaysFlights[index].airportObjs[routeIndex]=this.metar.parseADDS(this.tempMetar);
-                  this.todaysFlights[index].airportObjs[routeIndex].airport=angular.copy(airport.airport);
-                }
-              },3000);
-              index=this.todaysFlights.map(e=>e._id).indexOf(flightId);
-              //console.log(airport);
-            }
+            console.log(airport);
+            //if (!airport['Raw-Report']||!airport.Visibility||!airport.Ceiling||!airport.altimeter) {
+              this.weatherModal(airport.airport);
+            //}
             break;
         case 2:
             // for middle click functionality
             break;
         case 1://left click
             //this.tafDisplay('The METAR for ' +airport.airport.name+' is:',airport['Raw-Report']);
-            console.log(airport);
+            //console.log(airport);
             //set wind color based on flight
             //airport.windColor=......, based on airport.aircraft
             //call airportModal

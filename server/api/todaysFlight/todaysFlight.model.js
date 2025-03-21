@@ -37,5 +37,14 @@ export default function(sequelize, DataTypes) {
     pilotAgree:DataTypes.STRING,
     dispatchRelease:DataTypes.STRING,
     releaseTimestamp:DataTypes.DATE,
+    pfr:DataTypes.JSONB,
+    fuelTotalTaxi:DataTypes.STRING,
+    fuelPreviouslyOnboard:DataTypes.STRING,
+    mel:DataTypes.STRING,
+    other:DataTypes.STRING,
+    pilotComment:DataTypes.STRING,
+    coPilotComment:DataTypes.STRING,
+    security:DataTypes.STRING,
+    otherEnvironment:DataTypes.STRING
   });
 }

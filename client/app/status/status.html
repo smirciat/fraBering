@@ -47,7 +47,7 @@
         <div class="grid-parent-airport">
           <div>
             <p style="margin:10px; padding:10px; border:1px solid black; text-align:center; min-width:6em;" ng-class="flight.color" 
-                    ng-click="status.flightModal(flight)">
+                    ng-click="status.lookAtFlight(flight)">
               {{status.getFlightNum(flight.flightNum)}}
             </p>
           </div>
@@ -60,7 +60,7 @@
             </div>
             <div class="airport-card" ng-repeat="metarObj in flight.airportObjs track by $index">
               <!-- status.overallRiskClass(metarObj)  -->
-              <div ng-class="metarObj.color">
+              <div ng-class="status.getUnofficial(metarObj)">
                 <p style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
                       ng-mousedown="status.handleClick($event,metarObj,'metar',flight._id,$index)">{{metarObj.airport.threeLetter}}</p>
               </div>

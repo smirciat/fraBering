@@ -11,13 +11,15 @@
 
 import _ from 'lodash';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
-import {quickGrab} from '../airplane/airplane.controller.js';
+import {quickGrab,firebaseQueryFunction} from '../airplane/airplane.controller.js';
 import {getMetar,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
 import fs from 'fs';
 import config from '../../config/environment';
 let allAirports=[];
 let airplanes=[];
 let fbAirplanes=[];
+let pfrs=[];
+let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
 const baseUrl = 'http://localhost:' + config.port;
 const axios = require("axios");
 const https = require("https");
@@ -281,7 +283,7 @@ export async function tf(req,res) {
         if (i.dataValues) allAirports.push(i.dataValues);
       });
     }
-    if (!airplanes||airplanes.length===0) {
+    if (true){//!airplanes||airplanes.length===0) {
       airplanes=[];
       let instance=await Airplane.findAll({});
       instance.forEach(i=>{
@@ -289,6 +291,13 @@ export async function tf(req,res) {
       });
     }
     fbAirplanes=await quickGrab().aircraft;
+    //firebaseQueryFunction(collection,limit,parameter,operator,value,timestampBoolean)
+    let d=new Date();
+    let month = String(d.getMonth() + 1).padStart(2, '0');
+    let day = String(d.getDate()).padStart(2, '0');
+    let year = String(d.getFullYear()).slice(-2);
+    let dateString=month+'/'+day+'/'+year;
+    pfrs=await firebaseQueryFunction('flights',200,'dateString','==',dateString,false);
     let file=req.body.file||"current.csv";
     let data=fs.readFileSync(__dirname+'/../../fileserver/'+file, 'utf-8');
     let stats=fs.statSync(__dirname+'/../../fileserver/'+file, 'utf-8');
@@ -402,7 +411,12 @@ export async function tf(req,res) {
           flight.airports=airports;
           //calculate flight time for last leg here---------------------------------------------------------------------------
           let speed=160;
-          if (airplanes.map(e=>e.registration).indexOf(flight.aircraft)>-1) speed=250;
+          let airplanesIndex=airplanes.map(e=>e.registration).indexOf(flight.aircraft);
+          if (airplanesIndex>-1) {
+            speed=250;
+            flight.status=airplanes[airplanesIndex].status;
+          }
+          else flight.status="NORM";
           let flightTime=60*getDistance(currentFlights[index-1].to,currentFlights[index-1].from)/speed + 10;//est flight time in minutes
           let lastTime=new Date(currentFlights[index-1].date);
           let timeArr=currentFlights[index-1].departTime.split(':');
@@ -485,6 +499,20 @@ export async function tf(req,res) {
           airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
           airport.metarObj.aircraft=f.aircraft;
           airport.metarObj.color=overallRiskClass(airport.metarObj);
+          if (airport.metarObj.color===' airport-blue'||airport.metarObj.color===' airport-purple') {
+            if (airport.manualObs&&airport.manualTimestamp&&isLessThanTwoHoursAgo(new Date(airport.manualTimestamp))){
+              if (typeof airport.metarObj!=='object') airport.metarObj={};
+              if (!airport.metarObj['Raw-Report']) airport.metarObj['Raw-Report']="Manual Observation";
+              airport.metarObj.Visibility=airport.manualObs.visibility;
+              airport.metarObj.Ceiling=airport.manualObs.ceiling;
+              airport.metarObj['Wind-Gust']=airport.manualObs.windSpeed;
+              airport.metarObj['Wind-Direction']=airport.manualObs.windDirection;
+              airport.metarObj.altimeter=airport.manualObs.altimeter;
+              airport.metarObj.isOfficial=airport.manualObs.isOfficial;
+              airport.metarObj.usingManual=true;
+              airport.metarObj.color=overallRiskClass(airport.metarObj);
+            }
+          }
           airport.metarObj.taf=taf;
           airport.metarObj.TAF=TAF;
         }
@@ -531,6 +559,7 @@ export async function tf(req,res) {
       }
       if (index>-1) {
         updated.push(todaysFlights[index]._id);
+        todaysFlights[index].status=flight.status;
         if (flight.flightId==='5531951') {
           //console.log(flight);
           //console.log(todaysFlights[index]);
@@ -592,15 +621,21 @@ export async function tf(req,res) {
       updated = [...new Set(updated)];
       updated.forEach(u=>{
         let index=todaysFlights.map(e=>e._id).indexOf(u);
-        todaysFlights[index].colorPatch='false';
+        let flight=todaysFlights[index];
+        flight.colorPatch='false';
+        let pfrIndex=-1;
+        if (flight.date===new Date().toLocaleDateString()) {
+          pfrIndex=pfrs.map(e=>e.flightNumber).indexOf(flight.flightNum);
+          if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
+        }
         //console.log('Updating Flight ID: ' + todaysFlights[index].flightId);
         //console.log(todaysFlights[index]);
-        delete todaysFlights[index]._id;
+        delete flight._id;
         TodaysFlight.find({
           where: {
             _id: u
           }
-        }).then(saveUpdates(todaysFlights[index]))
+        }).then(saveUpdates(flight))
           .catch(handleErrorMultiple(res));
       });
     }
@@ -617,15 +652,13 @@ function overallRiskClass(metarObj){
     let returnString="";
     //if (!metarObj) metarObj={};
     //if (metarObj.night) returnString+=' night';
-    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
     let color="airport-green";
     let tempColor="airport-green";
     //runway
     //if (!metarObj.airport) return returnString+=' '+color;
-    tempColor=returnColor({yellow:3,red:2},airport.runwayScore,'above');
+    tempColor=returnColor({yellow:3,orange:2,red:1},airport.runwayScore,'above');
     metarObj.runwayColor=tempColor;
     metarObj.visibilityColor='airport-blue';
-    metarObj.test="from here";
     metarObj.ceilingColor='airport-blue';
     metarObj.windColor='airport-blue';
     metarObj.freezingColor='airport-green';
@@ -785,6 +818,12 @@ function flightRiskClass(airportObjs){
   }
   if (night) return 'night '+color;
   return color;
+}
+
+function isLessThanTwoHoursAgo(date) {
+  const twoHoursAgo = new Date();
+  twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
+  return date > twoHoursAgo;
 }
 
 async function airportNameToMetar(airport){

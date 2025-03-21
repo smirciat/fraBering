@@ -21,3 +21,80 @@
 .modal-danger .modal-header {
   background: #d9534f;
 }
+.modal-contaminent-layout{
+  width: 100%;
+  display: grid;
+  grid:
+    ". . ."
+    / 1fr 3fr 1fr;
+  gap: 8px;
+}
+.modal-open-layout{
+  width: 100%;
+  display: grid;
+  grid:
+    ". ."
+    / 1fr 3fr;
+  gap: 8px;
+}
+.modal-timestamp-layout{
+  width: 100%;
+  display: grid;
+  grid:
+    ". ."
+    / 1fr 2fr;
+  gap: 8px;
+}
+.modal-checkbox-layout{
+  width: 100%;
+  display: grid;
+  grid:
+    ". ."
+    / 1fr 4fr;
+  gap: 8px;
+}
+.modal-environment-layout{
+  width: 100%;
+  display: grid;
+  grid:
+    ". . . ."
+    / 1fr 1fr 1fr 6fr;
+  gap: 8px;
+}
+.modal-aircraft-layout{
+  width: 100%;
+  display: grid;
+  grid:
+    ". ."
+    / 1fr 5fr;
+  gap: 8px;
+}
+.modal-signoff-layout{
+  width: 100%;
+  display: grid;
+  grid:
+    ". . ."
+    / 1fr 2fr 1fr;
+  gap: 8px;
+}
+.modal-column{
+  
+}
+.table-borderless > tbody > tr > td,
+.table-borderless > tbody > tr > th,
+.table-borderless > tfoot > tr > td,
+.table-borderless > tfoot > tr > th,
+.table-borderless > thead > tr > td,
+.table-borderless > thead > tr > th {
+    border: none;
+}
+.form-control-inline {
+    width: 100px;
+}
+.try-align{
+  min-height:38px;
+  padding-top:9px;
+}
+.my-hr{
+  margin:0px;
+}

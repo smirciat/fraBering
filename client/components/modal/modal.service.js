@@ -135,6 +135,7 @@ angular.module('workspaceApp')
                 flight = args.shift(),
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
                 bgColors=['lightgreen','lightblue','#DAB1DA','yellow','orange','#ff0033'],
+                timestamp=new Date().toLocaleString(),
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -142,7 +143,10 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 flightModal:true,
+                timestamp,timestamp,
                 ocRequired:function(color){return colors.indexOf(color)>3},
+                getLbs:function(lbHigh,lbLow){return Math.floor(lbHigh-lbLow)},
+                getGals:function(lbHigh,lbLow){return Math.floor((lbHigh-lbLow)/6.7)},
                 pilotDisabled:function(f){
                   if (colors.indexOf(f.color)>3) return !f.ocRelease||f.ocRelease==="";
                   else return !f.dispatchRelease||f.dispatchRelease==="";
@@ -152,7 +156,7 @@ angular.module('workspaceApp')
                   if (i>-1) return bgColors[i];
                   else return '';
                 },
-                title: 'Details for Flight#  ' + flight.flightNum,
+                title: 'Flight Release  BRG' + flight.flightNum +' '+ flight.aircraft,
                 buttons: [ {//this is where you define you buttons and their appearances
                   classes: 'btn-primary',
                   text: 'Confirm/Save',
@@ -170,7 +174,48 @@ angular.module('workspaceApp')
             }, 'modal-success');
 
             quickModal.result.then(function(event) {
-              cb.apply(event, [{_id:flight._id,knownIce:flight.knownIce,mitigation:flight.mitigation,ocRelease:flight.ocRelease,dispatchRelease:flight.dispatchRelease,pilotAgree:flight.pilotAgree}]); //this is where all callback is actually called
+              cb.apply(event, [{_id:flight._id,knownIce:flight.knownIce,mitigation:flight.mitigation,ocRelease:flight.ocRelease,dispatchRelease:flight.dispatchRelease,pilotAgree:flight.pilotAgree,fuelTotalTaxi:flight.fuelTotalTaxi,fuelPreviouslyOnboard:flight.fuelPreviouslyOnboard,mel:flight.mel,other:flight.other,pilotComment:flight.pilotComment,coPilotComment:flight.coPilotComment,security:flight.security,otherEnvironment:flight.otherEnvironment,releaseTimestamp:timestamp}]); //this is where all callback is actually called
+            }).catch(err=>{
+              console.log(err);
+            });
+          };
+        } ,
+        weather: function(cb) {
+          cb = cb || angular.noop;
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                airport = args.shift(),
+                manualObs=airport.manualObs,
+                timestamp=new Date().toLocaleString(),
+                quickModal;
+            quickModal = openModal({
+              modal: {
+                airport:airport,
+                dismissable: true,
+                show:false,
+                weatherModal:true,
+                timestamp:timestamp,
+                getTimestamp:function(){if (airport.manualTimestamp) return new Date(airport.manualTimestamp).toLocaleString()},
+                title: 'Enter the Weather Observation for: ' +airport.name,
+                buttons: [ {//this is where you define you buttons and their appearances
+                  classes: 'btn-primary',
+                  text: 'Confirm/Save',
+                  click: function(event) {
+                    quickModal.close(event);
+                  }
+                }, {
+                  classes: 'btn-danger',
+                  text: 'Cancel',
+                  click: function(event) {
+                    quickModal.dismiss(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+
+            quickModal.result.then(function(event) {
+              airport.manualTimestamp=timestamp;
+              cb.apply(event, [airport]); //this is where all callback is actually called
             }).catch(err=>{
               console.log(err);
             });
@@ -179,10 +224,13 @@ angular.module('workspaceApp')
         runway: function(cb) {
           cb = cb || angular.noop;
           return function() {
-            var args = Array.prototype.slice.call(arguments),
+            let args = Array.prototype.slice.call(arguments),
                 airport = args.shift(),
                 formData = args.shift()||{},
                 timestampObj={timestampString:""},
+                scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
+                contaminents=["None","Ice","Snow","Compact Snow","Compact Snow/Ice","Dry Snow","Wet Snow","Slush","Drift"],
+                timestamp=new Date().toLocaleString(),
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -191,9 +239,20 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 runway:true,
+                contaminents:contaminents,
+                scores:scores,
                 timestampObj:timestampObj,
+                timestamp:timestamp,
+                contaminentDisp:formData.contaminent||"Stuff",
+                runwayObj:scores[scores.map(e=>e.score).indexOf(formData.runwayScore*1)]||scores[5],
+                updateContaminent:function(obj){formData.contaminent=obj},
+                updateRunwayScore:function(obj){formData.runwayScore=obj.score},
+                updateOpenClosed:function(){console.log(formData.openClosed)},
                 getMyDate:function(d){return new Date(d).toLocaleString()},
-                title: 'Enter the Runway Conditions for ' + airport.name,
+                timestampChange:(ts)=>{
+                  timestampObj.timestampString=ts;
+                },
+                title: 'Update the Runway Conditions for ' + airport.name,
                 buttons: [ {//this is where you define you buttons and their appearances
                   classes: 'btn-primary',
                   text: 'Confirm/Save',

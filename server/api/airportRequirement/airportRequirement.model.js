@@ -51,6 +51,13 @@ export default function(sequelize, DataTypes) {
     metarObj: DataTypes.JSONB,
     currentTaf: DataTypes.STRING,
     currentTafObject: DataTypes.JSONB,
-    nonPilot:DataTypes.BOOLEAN
+    nonPilot:DataTypes.BOOLEAN,
+    closed:DataTypes.BOOLEAN,
+    depth:DataTypes.STRING,
+    contaminent:DataTypes.STRING,
+    percent:DataTypes.STRING,
+    openClosed:DataTypes.STRING,
+    manualObs:DataTypes.JSONB,
+    manualTimestamp:DataTypes.DATE
   });
 }

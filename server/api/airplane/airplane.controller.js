@@ -186,7 +186,7 @@ function fSort(flights){
   });
 }
 
-async function getCollectionQuery(collectionName,limit,parameter,operator,value,timestampBoolean) {
+export async function getCollectionQuery(collectionName,limit,parameter,operator,value,timestampBoolean) {
   try {
     for (let s of [collectionName,limit,parameter,operator,value,timestampBoolean]){
       console.log(s);
@@ -203,7 +203,7 @@ async function getCollectionQuery(collectionName,limit,parameter,operator,value,
   }
 }
 
-async function getCollectionLimited(collectionName,limit) {
+export async function getCollectionLimited(collectionName,limit) {
   try {
     const collectionRef = firebase_db.collection(collectionName);
     const querySnapshot = await collectionRef.orderBy('date', 'desc').limit(limit).get();
@@ -259,6 +259,11 @@ export async function firebase(req,res){
   let array=collectionToArray(result);
   //console.log(array);
   res.status(200).json(array);
+}
+
+export async function firebaseQueryFunction(collection,limit,parameter,operator,value,timestampBoolean){
+  const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean);
+  return collectionToArray(result);
 }
 
 export async function firebaseQuery(req,res){
