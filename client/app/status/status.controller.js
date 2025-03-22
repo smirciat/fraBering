@@ -64,6 +64,10 @@ class StatusComponent {
       if (index>-1) this.airports[index]=airport;
     });
     this.flightModal=this.Modal.confirm.flight(flight=>{
+      if (flight.pilotAgree&&!flight.colorLock) flight.colorLock=flight.color;
+      if (flight.pilotAgree&&flight.pilotAgree!==""&&!flight.releaseTimestamp) flight.releaseTimestamp=new Date();
+      if (flight.ocRelease&&flight.ocRelease!==""&&!flight.ocReleaseTimestamp) flight.ocReleaseTimestamp=new Date();
+      if (flight.dispatchRelease&&flight.dispatchRelease!==""&&!flight.dispatchReleaseTimestamp) flight.dispatchReleaseTimestamp=new Date();
       //update flight in database
       this.http.patch('/api/todaysFlights/'+flight._id,flight);
       //update flight in this.todaysFlights
@@ -616,7 +620,8 @@ class StatusComponent {
   }
   
   lookAtFlight(flight){
-    //console.log(flight);
+    if (!flight.fuelPreviouslyOnboard&&!isNaN(flight.autoOnboard)&&flight.autoOnboard>0) flight.fuelPreviouslyOnboard=Math.floor(flight.autoOnboard);
+    if (!flight.fuelTotalTaxi&&flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0]) flight.fuelTotalTaxi=flight.taxiFuel*1+flight.pfr.legArray[0].fuel*1;
     this.flightModal(flight);
   }
   
@@ -983,7 +988,8 @@ class StatusComponent {
             // for middle click functionality
             break;
         case 3://right click
-            this.tafDisplay('The TAF for ' +airport.name+' is:',airport.metarObj.taf);
+            this.weatherModal(airport);
+            //this.tafDisplay('The TAF for ' +airport.name+' is:',airport.metarObj.taf);
             break;
         default:
             console.log("you have a strange mouse");

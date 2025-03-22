@@ -28,12 +28,12 @@ const agent = new https.Agent({
 });
 let stopped=false;
 let staleFile=false;
-let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50},
-       {id:2,name:"Navajo",wind:40,xwind:30,temp:-40},
-       {id:3,name:"Casa",wind:35,xwind:25,temp:-50},
-       {id:4,name:"King Air",wind:40,xwind:35,temp:-50},
-       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50},
-       {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50}];
+let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50,taxiFuel:35},
+       {id:2,name:"Navajo",wind:40,xwind:30,temp:-40,taxiFuel:35},
+       {id:3,name:"Casa",wind:35,xwind:25,temp:-50,taxiFuel:110},
+       {id:4,name:"King Air",wind:40,xwind:35,temp:-50,taxiFuel:90},
+       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50,taxiFuel:110},
+       {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50,taxiFuel:70}];
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -533,6 +533,38 @@ export async function tf(req,res) {
       //console.log(f.airportObjs);
       if (f.airportObjs) f.color=flightRiskClass(f.airportObjs);
       else console.log('No airportObjs?');
+      let fbIndex=fbAirplanes.map(e=>e._id).indexOf(f.aircraft);
+      let eqIndex=-1;
+      if (fbIndex>-1&&fbAirplanes[fbIndex]) {
+        if (fbAirplanes[fbIndex].acftType.trim()==="Courier") fbAirplanes[fbIndex].acftType="Sky Courier";
+        eqIndex=equipmentArr.map(e=>e.name).indexOf(fbAirplanes[fbIndex].acftType.trim());
+        if (eqIndex>-1) f.taxiFuel=equipmentArr[eqIndex].taxiFuel;
+      }
+      //grab previous fuel if it exists
+      let acPfrs=pfrs.filter((pfr)=>{return pfr.acftNumber===f.aircraft});
+      if (acPfrs.length>0){
+        acPfrs.sort((a,b)=>{
+          let aTime=a.legArray[a.legArray.length-1].onTime||'1/1/1979';
+          let bTime=b.legArray[b.legArray.length-1].onTime||'1/1/1979';
+          return new Date(aTime)-new Date(bTime);
+        });
+        acPfrs=acPfrs.filter(pfr=>{return pfr.legArray&&pfr.legArray[pfr.legArray.length-1]&&pfr.legArray[pfr.legArray.length-1].onTime&&pfr.legArray[pfr.legArray.length-1].onTime._seconds});
+        
+        f.autoOnboard=acPfrs[0].legArray[acPfrs[0].legArray.length-1].fuel-acPfrs[0].legArray[acPfrs[0].legArray.length-1].burn;
+        for (let i=0;i<acPfrs.length;i++){
+          
+        }
+        if (false){//f.aircraft==="N248BA") {
+          console.log('****************************');
+          acPfrs.forEach(pfr=>{
+            if (pfr.legArray[pfr.legArray.length-1].onTime&&pfr.legArray[pfr.legArray.length-1].onTime._seconds) {
+              console.log(Object.keys(pfr.legArray[pfr.legArray.length-1].onTime));
+              console.log(new Date(pfr.legArray[pfr.legArray.length-1].onTime._seconds*1000).toLocaleString());
+            }
+          });
+        }
+      }
+      
     }
     flights.forEach(flight=>{
       if (!flight) return;

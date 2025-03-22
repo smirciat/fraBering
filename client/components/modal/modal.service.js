@@ -136,6 +136,7 @@ angular.module('workspaceApp')
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
                 bgColors=['lightgreen','lightblue','#DAB1DA','yellow','orange','#ff0033'],
                 timestamp=new Date().toLocaleString(),
+                pilotAgree=null,
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -144,6 +145,17 @@ angular.module('workspaceApp')
                 show:false,
                 flightModal:true,
                 timestamp,timestamp,
+                pilotAgree:pilotAgree,
+                acceptSig:function(pilotAgree){flight.pilotAgree=pilotAgree},
+                moreThanOneHour:function(){
+                  let targetTime=new Date(flight.date);
+                  const [hours, minutes, seconds] = flight.departTimes[0].split(':').map(Number);
+                  targetTime.setHours(hours, minutes, seconds);
+                  let now = new Date();
+                  now.setHours(now.getHours() + 1);
+                  return targetTime >= now;
+                },
+                formatTimestamp:function(t){if (t) return new Date(t).toLocaleString()},
                 ocRequired:function(color){return colors.indexOf(color)>3},
                 getLbs:function(lbHigh,lbLow){return Math.floor(lbHigh-lbLow)},
                 getGals:function(lbHigh,lbLow){return Math.floor((lbHigh-lbLow)/6.7)},
@@ -174,7 +186,7 @@ angular.module('workspaceApp')
             }, 'modal-success');
 
             quickModal.result.then(function(event) {
-              cb.apply(event, [{_id:flight._id,knownIce:flight.knownIce,mitigation:flight.mitigation,ocRelease:flight.ocRelease,dispatchRelease:flight.dispatchRelease,pilotAgree:flight.pilotAgree,fuelTotalTaxi:flight.fuelTotalTaxi,fuelPreviouslyOnboard:flight.fuelPreviouslyOnboard,mel:flight.mel,other:flight.other,pilotComment:flight.pilotComment,coPilotComment:flight.coPilotComment,security:flight.security,otherEnvironment:flight.otherEnvironment,releaseTimestamp:timestamp}]); //this is where all callback is actually called
+              cb.apply(event, [flight]); //this is where all callback is actually called
             }).catch(err=>{
               console.log(err);
             });

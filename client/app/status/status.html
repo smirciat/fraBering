@@ -46,14 +46,16 @@
       <div ng-if="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
         <div class="grid-parent-airport">
           <div>
-            <p style="margin:10px; padding:10px; border:1px solid black; text-align:center; min-width:6em;" ng-class="flight.color" 
+            <p style="margin:10px; padding:10px; border:1px solid black; text-align:center; min-width:6em;" ng-class="flight.colorLock||flight.color" 
                     ng-click="status.lookAtFlight(flight)">
               {{status.getFlightNum(flight.flightNum)}}
             </p>
           </div>
           <div style="padding-left:0.5em;">
             <p style="margin:0px; border:none; display:inline-block;">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + 
-                 (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong>{{flight.flightStatus}}</strong></p>
+                 (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong>{{flight.flightStatus}}</strong>
+                 <i ng-if="flight.ocRelease||flight.dispatchRelease" class="fa fa-solid fa-thumbs-up fa-autosize" aria-hidden="true"></i>
+                 <i ng-if="flight.pilotAgree" class="fa fa-solid fa-rocket fa-autosize" aria-hidden="true"></i></p>
             <br>
             <div style="display:inline-block;">
               <p style="border:none;">{{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}</p>
@@ -165,10 +167,34 @@
       </div>
       <div class="grid-parent-right">
         <div class="comment" style="align-self:center; padding-top:6px">
+          <p class="unofficial airport-green">Unofficial</p>
+        </div>
+        <div class="comment" style="align-self:center" >
+          <p>Unofficial Weather</p>
+        </div>
+      </div>
+      <div class="grid-parent-right">
+        <div class="comment" style="align-self:center; padding-top:6px">
           <p class="airport-gray">Non-Pilot</p>
         </div>
         <div class="comment" style="align-self:center" >
           <p>Report by Non-Pilot</p>
+        </div>
+      </div>
+      <div class="grid-parent-right">
+        <div class="comment" style="align-self:center; padding-top:6px">
+          <i class="fa fa-solid fa-thumbs-up fa-autosize" aria-hidden="true"></i>
+        </div>
+        <div class="comment" style="align-self:center" >
+          <p>Flight Released</p>
+        </div>
+      </div>
+      <div class="grid-parent-right">
+        <div class="comment" style="align-self:center; padding-top:6px">
+          <i class="fa fa-solid fa-rocket fa-autosize" aria-hidden="true"></i>
+        </div>
+        <div class="comment" style="align-self:center" >
+          <p>Pilot Acceptance</p>
         </div>
       </div>
       
