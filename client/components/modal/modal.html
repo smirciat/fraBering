@@ -233,7 +233,7 @@
     <hr class="my-hr">
     <div style="align-items: center; font-weight:bold;">
       <table class="table table-borderless"><td>ENVIRONMENT</td></table>
-      <div class="airport-card" ng-repeat="metarObj in modal.flight.airportObjs track by $index">
+      <div class="airport-card" ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index">
         <div ng-class="metarObj.color">
           <p style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
                 >{{metarObj.airport.threeLetter}}</p>

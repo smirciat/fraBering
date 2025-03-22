@@ -457,7 +457,7 @@ export async function tf(req,res) {
       if (i.dataValues) allFlights.push(i.dataValues);
     });
     let updated=[];
-    for (const f of todaysFlights) {
+    for (let f of todaysFlights) {
       let fa=flights.filter(x=>{
         return f.date===x.date;
       });
@@ -472,13 +472,24 @@ export async function tf(req,res) {
         updated.push(f._id);
       }
       //return;
+    }
+    for (let flight of flights){
+      if (!flight) return;
+      //get current status from flightLog array
+      let matchedLog=flightLog.filter(f=>{
+        if (!f||!f.flightNum) return false;
+        if (f.date!==flight.date) return false;
+        return f.flightNum.split('.')[0]===flight.flightNum&&f.flightStatus;
+      });
+      if (matchedLog&&matchedLog.length>0) flight.flightStatus=matchedLog[matchedLog.length-1].flightStatus;
+      
       //update weather per destination via airportObjs
-      f.airportObjs=[];
-      for (const element of f.airports) {
+      flight.airportObjs=[];
+      for (const element of flight.airports) {
         let a=JSON.parse(JSON.stringify(element));
         let airport={name:a, threeLetter:a, metarObj:{airport:{name:a,threeLetter:a}}};
         if (!a) {
-          f.airportObjs.push({airport:airport});
+          flight.airportObjs.push({airport:airport});
           return;
         }
         if (a&&typeof a === "string"&&a.substring(0,9)==="Fairbanks") a="Fairbanks";
@@ -497,7 +508,7 @@ export async function tf(req,res) {
             else airport.metarObj={};
           }
           airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
-          airport.metarObj.aircraft=f.aircraft;
+          airport.metarObj.aircraft=flight.aircraft;
           airport.metarObj.color=overallRiskClass(airport.metarObj);
           if (airport.metarObj.color===' airport-blue'||airport.metarObj.color===' airport-purple') {
             if (airport.manualObs&&airport.manualTimestamp&&isLessThanTwoHoursAgo(new Date(airport.manualTimestamp))){
@@ -523,25 +534,25 @@ export async function tf(req,res) {
           //if we didn't find it, punt
           if (airport.metarObj&&airport.metarObj['Raw-Report']) {
             airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
-            airport.metarObj.aircraft=f.aircraft;
+            airport.metarObj.aircraft=flight.aircraft;
             airport.metarObj.color=overallRiskClass(airport.metarObj);
           }  
           else airport.metarObj={airport:JSON.parse(JSON.stringify(airport))};
         }
-        f.airportObjs.push(airport.metarObj);
+        flight.airportObjs.push(airport.metarObj);
       }
-      //console.log(f.airportObjs);
-      if (f.airportObjs) f.color=flightRiskClass(f.airportObjs);
+      //console.log(flight.airportObjs);
+      if (flight.airportObjs) flight.color=flightRiskClass(flight.airportObjs);
       else console.log('No airportObjs?');
-      let fbIndex=fbAirplanes.map(e=>e._id).indexOf(f.aircraft);
+      let fbIndex=fbAirplanes.map(e=>e._id).indexOf(flight.aircraft);
       let eqIndex=-1;
       if (fbIndex>-1&&fbAirplanes[fbIndex]) {
         if (fbAirplanes[fbIndex].acftType.trim()==="Courier") fbAirplanes[fbIndex].acftType="Sky Courier";
         eqIndex=equipmentArr.map(e=>e.name).indexOf(fbAirplanes[fbIndex].acftType.trim());
-        if (eqIndex>-1) f.taxiFuel=equipmentArr[eqIndex].taxiFuel;
+        if (eqIndex>-1) flight.taxiFuel=equipmentArr[eqIndex].taxiFuel;
       }
       //grab previous fuel if it exists
-      let acPfrs=pfrs.filter((pfr)=>{return pfr.acftNumber===f.aircraft});
+      let acPfrs=pfrs.filter((pfr)=>{return pfr.acftNumber===flight.aircraft});
       if (acPfrs.length>0){
         acPfrs.sort((a,b)=>{
           let aTime=a.legArray[a.legArray.length-1].onTime||'1/1/1979';
@@ -550,11 +561,11 @@ export async function tf(req,res) {
         });
         acPfrs=acPfrs.filter(pfr=>{return pfr.legArray&&pfr.legArray[pfr.legArray.length-1]&&pfr.legArray[pfr.legArray.length-1].onTime&&pfr.legArray[pfr.legArray.length-1].onTime._seconds});
         
-        f.autoOnboard=acPfrs[0].legArray[acPfrs[0].legArray.length-1].fuel-acPfrs[0].legArray[acPfrs[0].legArray.length-1].burn;
+        flight.autoOnboard=acPfrs[0].legArray[acPfrs[0].legArray.length-1].fuel-acPfrs[0].legArray[acPfrs[0].legArray.length-1].burn;
         for (let i=0;i<acPfrs.length;i++){
           
         }
-        if (false){//f.aircraft==="N248BA") {
+        if (false){//flight.aircraft==="N248BA") {
           console.log('****************************');
           acPfrs.forEach(pfr=>{
             if (pfr.legArray[pfr.legArray.length-1].onTime&&pfr.legArray[pfr.legArray.length-1].onTime._seconds) {
@@ -565,17 +576,7 @@ export async function tf(req,res) {
         }
       }
       
-    }
-    flights.forEach(flight=>{
-      if (!flight) return;
-      //get current status from flightLog array
-      let matchedLog=flightLog.filter(f=>{
-        if (!f||!f.flightNum) return false;
-        if (f.date!==flight.date) return false;
-        return f.flightNum.split('.')[0]===flight.flightNum&&f.flightStatus;
-      });
-      if (matchedLog&&matchedLog.length>0) flight.flightStatus=matchedLog[matchedLog.length-1].flightStatus;
-      //map flights array(from current.csv) to todaysFlights array (from postgresql database)
+     //map flights array(from current.csv) to todaysFlights array (from postgresql database)
       let index=todaysFlights.map(e=>e.flightId).indexOf(flight.flightId);
       if (index<0) {
         index=allFlights.map(e=>e.flightId).indexOf(flight.flightId);
@@ -592,6 +593,7 @@ export async function tf(req,res) {
       if (index>-1) {
         updated.push(todaysFlights[index]._id);
         todaysFlights[index].status=flight.status;
+          
         if (flight.flightId==='5531951') {
           //console.log(flight);
           //console.log(todaysFlights[index]);
@@ -647,8 +649,12 @@ export async function tf(req,res) {
           todaysFlights[index].airports=flight.airports;
           todaysFlights[index].departTimes=flight.departTimes;
         }
+        todaysFlights[index].airportObjs=flight.airportObjs;
+        if (!todaysFlights[index].pilotAgree||todaysFlights[index].pilotAgree==="") {
+          todaysFlights[index].airportObjsLocked=JSON.parse(JSON.stringify(todaysFlights[index].airportObjs));
+        }
       }
-    });
+    }
     if (updated.length>0) {
       updated = [...new Set(updated)];
       updated.forEach(u=>{

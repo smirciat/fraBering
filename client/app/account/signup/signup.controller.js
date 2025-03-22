@@ -23,7 +23,7 @@ class SignupController {
         })
         .then(function() {
           // Account created, redirect to home
-          self.$state.go('main');
+          self.$state.go('status');
         })
         .catch(function(err) {
           err = err.data;

@@ -29,6 +29,7 @@ export default function(sequelize, DataTypes) {
     json: DataTypes.JSONB,
     color: DataTypes.STRING,
     airportObjs: DataTypes.JSONB,
+    airportObjsLocked: DataTypes.JSONB,
     colorPatch: DataTypes.STRING,
     colorLock: DataTypes.STRING,
     flightStatus: DataTypes.STRING,
