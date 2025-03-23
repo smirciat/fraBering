@@ -70,7 +70,8 @@ angular.module('workspaceApp')
   .component('airports', {
     templateUrl: 'app/airports/airports.html',
     controller: AirportsComponent,
-    controllerAs: 'airports'
+    controllerAs: 'airports',
+    authenticate: 'superadmin'
   });
 
 })();

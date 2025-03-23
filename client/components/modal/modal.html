@@ -24,8 +24,17 @@
         <div style="height:44px"><label>Official Weather Source?</label></div>
       </div>
     </div>
-    
+    <div class="modal-contaminent-layout" style="align-items: center;">
+      <div class="modal-column" style="text-align:right"><label>Entered By: </label></div>
+      <div style="display:inline-block">
+        <button class="btn btn-success" ng-click="modal.signClick()">
+          <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+          <span>{{modal.airport.manualObs.signature}}</span></div>
+      <!--<div class="modal-column"><input class="form-control" name="signature" type="text" ng-model="modal.formData.signature"></div>-->
+      <div class="modal-column"><label>{{modal.airport.manualTimestamp}}</label></div>
+    </div>
   </div>
+  
   <div ng-if="modal.airportModal">
     <div class="airport-modal" ng-class="modal.metarObj.color">
       <p style="margin:0px;padding:5px">Airport Overall</p>
@@ -50,6 +59,10 @@
     <div class="airport-modal" ng-class="modal.metarObj.freezingColor">
       <p style="margin:0px;padding:5px">Freezing Precip</p>
       <p style="margin:0px;padding:5px">{{modal.metarObj.Freezing}}</p>
+    </div>
+    <div>
+      <label>Check Below if You Want to Enter a Manual Observation</label>
+      <input class="form-control" type="checkbox" ng-model="modal.manualOpen" ng-change="modal.console(modal.manualOpen)">
     </div>
   </div>
   <p ng-if="modal.text" ng-bind="modal.text"></p>
@@ -101,9 +114,26 @@
     <textarea class="form-control" style="height:76px;" ng-model="modal.formData.comment"></textarea>
     <br>
     <div class="modal-contaminent-layout" style="align-items: end;">
-      <div class="modal-column"><label>Initials</label></div>
-      <div class="modal-column"><input class="form-control" name="signature" type="text" ng-model="modal.formData.signature"></div>
-      <div class="modal-column"><label>{{modal.timestamp}}</label></div>
+      <div class="modal-column"><input class="form-control" type="checkbox" ng-model="modal.official"></div>
+      <div class="modal-column"><label>Official Source</label></div>
+      <div class="modal-column">
+        <input class="form-control" type="text" ng-model="modal.formData.officialSource" ng-blur="modal.makeOfficial()" style="width:300px"></div>
+    </div>
+    <div class="modal-contaminent-layout" style="align-items: end;">
+      <div class="modal-column"><input class="form-control" type="checkbox" ng-model="modal.unOfficial"></div>
+      <div class="modal-column"><label>Unofficial Source</label></div>
+      <div class="modal-column">
+        <input class="form-control" type="text" ng-model="modal.formData.unOfficialSource" ng-blur="modal.makeUnOfficial()" style="width:300px"></div>
+    </div>
+    <br>
+    <div class="modal-contaminent-layout" style="align-items: center;">
+      <div class="modal-column" style="text-align:right"><label>Entered By: </label></div>
+      <div style="display:inline-block">
+        <button class="btn btn-success" ng-click="modal.signClick()">
+          <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+          <span>{{modal.formData.signature}}</span></div>
+      <!--<div class="modal-column"><input class="form-control" name="signature" type="text" ng-model="modal.formData.signature"></div>-->
+      <div class="modal-column"><label>{{modal.timestampObj.timestampString}}</label></div>
     </div>
     <br>
     <!--<p>Previous Timestamp: {{modal.getMyDate(modal.formData.timestamp)}}</p>-->
@@ -263,25 +293,43 @@
     <p>I certify that the requirements of GOM 05.29 Flight Release have been met:</p>
     <table class="table table-borderless">
       <tr>
-        <td>DISPATCHER</td>
-        <td><input name="dispatchRelease" type="text" ng-model="modal.flight.dispatchRelease" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree"></td>
-        <td>/</td>
-        <td><div>{{modal.formatTimestamp(modal.flight.dispatchReleaseTimestamp)}}</div></td>     
+        <td><p style="padding-top:5px; margin-top:7px; ">DISPATCHER</p></td>
+        <td>
+          <div style="display:inline-block" >
+            <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree || !modal.isAdmin">
+                <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+            <span>{{modal.flight.dispatchRelease}}</span>
+          </div>
+        <td><p style="padding-top:5px; margin-top:7px;">/</p></td>
+        <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.dispatchReleaseTimestamp)}}</p</td>     
       </tr>
       <tr>
-        <td>OC MANAGER</td>
-        <td><input name="ocRelease" type="text" ng-model="modal.flight.ocRelease" ng-disabled="!modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree"></td>
-        <td>/</td>
-        <td><div>{{modal.formatTimestamp(modal.flight.ocReleaseTimestamp)}}</div></td>     
+        <td><p style="padding-top:5px; margin-top:7px; ">OC MANAGER</p></td>
+        <td>
+          <div style="display:inline-block" >
+            <button class="btn btn-success" ng-click="modal.ocClick()" ng-disabled="!modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree || !modal.isSuperAdmin">
+                <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+            <span>{{modal.flight.ocRelease}}</span>
+          </div>
+        </td>  
+        <td><p style="padding-top:5px; margin-top:7px;">/</p></td>
+        <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.ocReleaseTimestamp)}}</p></td>     
       </tr>
     </table>
-    <p>I certify that my crew is fit to fly, and I am responsible for the safety of this flight:</p>
+    <p>My crew is fit to fly, I have reviewed all pertinent information, and can operate this flight safely:</p>
     <table class="table table-borderless">
       <tr>
-        <td>CAPTAIN</td>
-        <td><input name="pilotAgree" type="text" ng-model="modal.pilotAgree" ng-blur="modal.acceptSig(modal.pilotAgree)" ng-disabled="modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || modal.flight.pilotAgree"></td>
-        <td>/</td>
-        <td><div>{{modal.formatTimestamp(modal.flight.releaseTimestamp)}}</div></td>     
+        <td><p style="padding-top:5px; margin-top:7px; ">CAPTAIN</p></td>
+        <td>
+          <div style="display:inline-block" >
+            <button class="btn btn-success" ng-click="modal.pilotClick()" ng-disabled="modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || modal.flight.pilotAgree">
+                <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+            <span>{{modal.flight.pilotAgree}}</span>
+          </div>
+        </td>  
+        <!--<td><input name="pilotAgree" type="text" ng-model="modal.pilotAgree" ng-blur="modal.acceptSig(modal.pilotAgree)" ng-disabled="modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || modal.flight.pilotAgree"></td>-->
+        <td><p style="padding-top:5px; margin-top:7px;">/</p></td>
+        <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.releaseTimestamp)}}</p></td>     
       </tr>
     </table>
     <label>Changes While Enroute/After Release</label>

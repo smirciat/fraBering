@@ -343,7 +343,8 @@ angular.module('workspaceApp')
   .component('timeclock', {
     templateUrl: 'app/timeclock/timeclock.html',
     controller: TimeclockComponent,
-    controllerAs: 'timeclock'
+    controllerAs: 'timeclock',
+    authenticate:'superadmin'
   });
 
 })();

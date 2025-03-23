@@ -17,7 +17,8 @@ angular.module('workspaceApp')
   .component('viewHazards', {
     templateUrl: 'app/viewHazards/viewHazards.html',
     controller: ViewHazardsComponent,
-    controllerAs: 'viewHazards'
+    controllerAs: 'viewHazards',
+    authenticate:'superadmin'
   });
 
 })();

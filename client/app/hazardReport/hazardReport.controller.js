@@ -101,7 +101,8 @@ angular.module('workspaceApp')
   .component('hazardReport', {
     templateUrl: 'app/hazardReport/hazardReport.html',
     controller: HazardReportComponent,
-    controllerAs: 'hazard'
+    controllerAs: 'hazard',
+    authenticate: 'superadmin'
   });
 
 })();

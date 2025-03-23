@@ -63,7 +63,8 @@ angular.module('workspaceApp')
   .component('notifications', {
     templateUrl: 'app/notifications/notifications.html',
     controller: NotificationsComponent,
-    controllerAs: 'notifications'
+    controllerAs: 'notifications',
+    authenticate: 'superadmin'
   });
 
 })();

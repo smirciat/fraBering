@@ -27,6 +27,8 @@ class StatusComponent {
     this.toggleAssigned=true;
     this.clicked;
     this.stopped;
+    this.longPressTimer;
+    this.longPressDuration = 500;
     this.alternateArray=['OME','OTZ','UNK','BET','GAL','ANC','FAI'];
     this.airportOrder=['PAOM','PAUN','PAOT','PAGM','PASA','PASH','PAIW','PATC','PFKT','PATE','PAWM','PAGL','PFEL',
             'PAKK','PFSH','PAMK','WBB','PADG','PAPO','PALU','PAVL','PAWN','PFNO','PAIK','PASK','PAFM','PAGH','PAOB','PABL','PADE'];
@@ -45,6 +47,8 @@ class StatusComponent {
   }
   
   $onInit() {
+    this.width=document.documentElement.clientWidth;
+    if (this.width<=768) this.mobile=true;
     //this.http.post('/api/airportRequirements/notams',{airport:'PAOM'}).then(res=>{
     //  console.log(res.data);
     //});
@@ -57,7 +61,12 @@ class StatusComponent {
     this.renewFirebase();
     this.quickModal=this.Modal.confirm.quickMessage(response=>{this.clicked=true;});
     this.tafDisplay=this.Modal.confirm.quickShow(response=>{});
-    this.airportModal=this.Modal.confirm.airport(response=>{});
+    this.airportModal=this.Modal.confirm.airport(response=>{
+      console.log(response)
+      if (response&&response.manualOpen){
+        this.weatherModal(response.airport,this.user);
+      }
+    });
     this.weatherModal=this.Modal.confirm.weather(airport=>{
       this.http.patch('/api/airportRequirements/'+airport._id,{manualObs:airport.manualObs,manualTimestamp:airport.manualTimestamp});
       let index=this.airports.map(e => e._id).indexOf(airport._id);
@@ -101,6 +110,7 @@ class StatusComponent {
       }
     });
     this.http.get('/api/airplanes').then(res=>{
+      this.user=this.Auth.getCurrentUser();
       this.airplanes=res.data;
       this.airplanesB190=this.airplanes.filter((e)=>{
         return e.airplaneType==="Beech 1900";
@@ -394,6 +404,7 @@ class StatusComponent {
   }
   
   scroll(){
+    if (this.mobile) return;
     if (!this) {
       console.log('check scope');
       return;
@@ -616,13 +627,13 @@ class StatusComponent {
   sign(airport){
     if (!airport.openClosed) airport.openClosed="Open";
     if (!airport.contaminent) airport.contaminent="None";
-    this.runwayModal(airport,{_id:airport._id,runwayScore:airport.runwayScore,comment:airport.comment,signature:airport.signature,timestamp:airport.timestamp,nonPilot:airport.nonPilot,openClosed:airport.openClosed,depth:airport.depth,contaminent:airport.contaminent,percent:airport.percent});
+    this.runwayModal(airport,this.user);
   }
   
   lookAtFlight(flight){
     if (!flight.fuelPreviouslyOnboard&&!isNaN(flight.autoOnboard)&&flight.autoOnboard>0) flight.fuelPreviouslyOnboard=Math.floor(flight.autoOnboard);
     if (!flight.fuelTotalTaxi&&flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0]) flight.fuelTotalTaxi=flight.taxiFuel*1+flight.pfr.legArray[0].fuel*1;
-    this.flightModal(flight);
+    this.flightModal(flight,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user);
   }
   
   getDate(timestamp){
@@ -723,9 +734,20 @@ class StatusComponent {
     else return this.base.base==="OME"||this.base.base==="OTZ"||this.base.base==="UNK";
   }
   
+  getColumnFlights(){
+    if (this.mobile) return "status-column-flights-phone";
+    return "status-column-flights";
+  }
+  
+  getColumn(){
+    if (this.mobile) return "status-column-phone";
+    return "status-column";
+  }
+  
   getLayout(){
+    if (this.mobile) return "layout-phone";
     return "layout-OME";
-    if (this.base) return "layout-"+this.base.base;
+    //if (this.base) return "layout-"+this.base.base;
   }
   
   showHeader(collection,field,index){
@@ -982,13 +1004,13 @@ class StatusComponent {
         case 1://left click
             if (!airport.openClosed) airport.openClosed="Open";
             if (!airport.contaminent) airport.contaminent="None";
-            this.runwayModal(airport,{_id:airport._id,runwayScore:airport.runwayScore,comment:airport.comment,signature:airport.signature,timestamp:airport.timestamp,nonPilot:airport.nonPilot,openClosed:airport.openClosed,depth:airport.depth,contaminent:airport.comtaminent,percent:airport.percent});
+            this.runwayModal(airport,this.user);
         break;
         case 2:
             // for middle click functionality
             break;
         case 3://right click
-            this.weatherModal(airport);
+            this.weatherModal(airport,this.user);
             //this.tafDisplay('The TAF for ' +airport.name+' is:',airport.metarObj.taf);
             break;
         default:
@@ -1001,7 +1023,7 @@ class StatusComponent {
         case 3://right click
             console.log(airport);
             //if (!airport['Raw-Report']||!airport.Visibility||!airport.Ceiling||!airport.altimeter) {
-              this.weatherModal(airport.airport);
+              this.weatherModal(airport.airport,this.user);
             //}
             break;
         case 2:
@@ -1052,7 +1074,8 @@ angular.module('workspaceApp')
   .component('status', {
     templateUrl: 'app/status/status.html',
     controller: StatusComponent,
-    controllerAs: 'status'
+    controllerAs: 'status',
+    authenticate: 'user'
   });
 
 })();

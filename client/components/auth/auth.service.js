@@ -177,6 +177,9 @@
        * @param  {Function|*} callback - optional, function(is)
        * @return {Bool|Promise}
        */
+       isUser() {
+        return Auth.hasRole.apply(Auth, [].concat.apply(['user'], arguments));
+      },
       isAdmin() {
         return Auth.hasRole.apply(Auth, [].concat.apply(['admin'], arguments));
       },

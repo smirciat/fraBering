@@ -108,7 +108,8 @@ angular.module('workspaceApp')
   .component('viewAssessments', {
     templateUrl: 'app/viewAssessments/viewAssessments.html',
     controller: ViewAssessmentsComponent,
-    controllerAs: 'viewAssessments'
+    controllerAs: 'viewAssessments',
+    authenticate:'superadmin'
   });
 
 })();

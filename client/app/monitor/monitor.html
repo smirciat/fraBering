@@ -1,6 +1,6 @@
 <div flex layout="row">
   <sidebar layout="row"></sidebar>
-  <div flex layout="row" id="content">
+  <div flex layout="row" id="content" ng-if="monitor.Auth.isAdmin()">
     <div flex layout="column">
      <md-content flex class="space">
         <table flex class="table table-striped table-responsive table-hover">

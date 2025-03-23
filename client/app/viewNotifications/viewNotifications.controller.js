@@ -128,7 +128,8 @@ angular.module('workspaceApp')
   .component('viewNotifications', {
     templateUrl: 'app/viewNotifications/viewNotifications.html',
     controller: ViewNotificationsComponent,
-    controllerAs: 'viewNotifications'
+    controllerAs: 'viewNotifications',
+    authenticate:'superadmin'
   });
 
 })();

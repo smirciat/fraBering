@@ -1,20 +1,20 @@
+
 .layout-OME {
   width: 100%;
   display: grid;
   grid:
     ". . . . ."
-    / 2fr 1fr 1fr 3fr 1fr;
+    / 2fr 3fr 1fr 1fr 1fr;
   gap: 8px;
 }
 
 .layout-phone {
+  width:100%;
   display: grid;
-  grid-gap: 16px;
-  padding: 16px;
-  grid-template-columns: repeat(auto-fill,minmax(160px,1fr));
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(160px,1fr);
-  overflow-x: auto;
+  grid-gap: 10px;
+  grid-auto-columns: max-content;
+  grid-template-rows: 1fr;
+  overflow-x: scroll;
 }
 
 .layout-OTZ {
@@ -51,13 +51,29 @@
 .body { grid-area: body; }
 
 .status-column{
-    height:calc(100vh - 60px);
-    font-size:1.5em;
-    overflow:auto;
+  height:calc(100vh - 60px);
+  font-size:1.5em;
+  overflow:auto;
 }
 
 .status-column-flights{
-    font-size:1.5em;
+  font-size:1.5em;
+}
+
+.status-column-phone{
+  width: 100vw;
+  grid-row: 1;
+  grid-column: auto;
+  height:calc(100vh - 60px);
+  font-size:1.5em;
+  overflow:auto;
+}
+
+.status-column-flights-phone{
+  width: 100vw;
+  grid-row: 1;
+  grid-column: auto;
+  font-size:1.5em;
 }
 
 .todays-flights{
@@ -239,4 +255,42 @@ div.airport-pink h1{
 .tiny{
   font-size:.5em;
   margin:0px;
+}
+
+@media (max-width: 991px) {
+    .navbar-header {
+        float: none;
+    }
+    .navbar-toggle {
+        display: block;
+    }
+    .navbar-collapse {
+        border-top: 1px solid transparent;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .navbar-collapse.collapse {
+        display: none!important;
+    }
+    .navbar-nav {
+        float: none!important;
+        margin: 7.5px -15px;
+    }
+    .navbar-nav>li {
+        float: none;
+    }
+    .navbar-nav>li>a {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    .navbar-text {
+        float: none;
+        margin: 15px 0;
+    }
+    /* since 3.1.0 */
+    .navbar-collapse.collapse.in { 
+        display: block!important;
+    }
+    .collapsing {
+        overflow: hidden!important;
+    }
 }

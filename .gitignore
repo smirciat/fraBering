@@ -13,5 +13,6 @@ npm-debug.log
 coverage
 Dockerfile
 docker.env
+script.sh
 *.sqlite
 package.dist.json

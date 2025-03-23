@@ -16,7 +16,7 @@
 
       // Intercept 401s and redirect you to login
       responseError(response) {
-        if (response.status === 401) {
+        if (response.status === 401||(response.status === 403&&response.config.url==="/api/calendar")) {
           (state || (state = $injector.get('$state')))
           .go('login');
           // remove any stale tokens

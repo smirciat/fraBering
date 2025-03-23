@@ -298,12 +298,11 @@ export async function tf(req,res) {
     let year = String(d.getFullYear()).slice(-2);
     let dateString=month+'/'+day+'/'+year;
     pfrs=await firebaseQueryFunction('flights',200,'dateString','==',dateString,false);
-    let file=req.body.file||"current.csv";
+    let file="current.csv";
     let data=fs.readFileSync(__dirname+'/../../fileserver/'+file, 'utf-8');
     let stats=fs.statSync(__dirname+'/../../fileserver/'+file, 'utf-8');
     console.log('Timestamp of current.csv is: ' + new Date(stats.mtimeMs).toLocaleString());
     const tenMinutesAgo = new Date(new Date().getTime() - 10 * 60 * 1000); // 10 minutes in milliseconds
-    const hour=new Date().getHours();
     if (stats.mtimeMs < tenMinutesAgo) {
       staleFile=true;
       if (false){//hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
@@ -551,7 +550,6 @@ export async function tf(req,res) {
         eqIndex=equipmentArr.map(e=>e.name).indexOf(fbAirplanes[fbIndex].acftType.trim());
         if (eqIndex>-1) flight.taxiFuel=equipmentArr[eqIndex].taxiFuel;
       }
-      //grab previous fuel if it exists
       let acPfrs=pfrs.filter((pfr)=>{return pfr.acftNumber===flight.aircraft});
       if (acPfrs.length>0){
         acPfrs.sort((a,b)=>{
@@ -560,8 +558,9 @@ export async function tf(req,res) {
           return new Date(aTime)-new Date(bTime);
         });
         acPfrs=acPfrs.filter(pfr=>{return pfr.legArray&&pfr.legArray[pfr.legArray.length-1]&&pfr.legArray[pfr.legArray.length-1].onTime&&pfr.legArray[pfr.legArray.length-1].onTime._seconds});
-        
-        flight.autoOnboard=acPfrs[0].legArray[acPfrs[0].legArray.length-1].fuel-acPfrs[0].legArray[acPfrs[0].legArray.length-1].burn;
+        if (acPfrs&&acPfrs[0]){
+          flight.autoOnboard=acPfrs[0].legArray[acPfrs[0].legArray.length-1].fuel-acPfrs[0].legArray[acPfrs[0].legArray.length-1].burn;
+        }
         for (let i=0;i<acPfrs.length;i++){
           
         }
@@ -593,11 +592,8 @@ export async function tf(req,res) {
       if (index>-1) {
         updated.push(todaysFlights[index]._id);
         todaysFlights[index].status=flight.status;
-          
-        if (flight.flightId==='5531951') {
-          //console.log(flight);
-          //console.log(todaysFlights[index]);
-        }
+        todaysFlights[index].color=flight.color;
+        
         if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
           //console.log(todaysFlights[index]._id+' date'); 
           //updated.push(todaysFlights[index]._id);
@@ -650,7 +646,7 @@ export async function tf(req,res) {
           todaysFlights[index].departTimes=flight.departTimes;
         }
         todaysFlights[index].airportObjs=flight.airportObjs;
-        if (!todaysFlights[index].pilotAgree||todaysFlights[index].pilotAgree==="") {
+        if (!todaysFlights[index].pilotAgree) {
           todaysFlights[index].airportObjsLocked=JSON.parse(JSON.stringify(todaysFlights[index].airportObjs));
         }
       }

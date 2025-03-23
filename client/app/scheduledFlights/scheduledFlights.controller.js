@@ -91,7 +91,8 @@ angular.module('workspaceApp')
   .component('scheduledFlights', {
     templateUrl: 'app/scheduledFlights/scheduledFlights.html',
     controller: ScheduledFlightsComponent,
-    controllerAs: 'scheduled'
+    controllerAs: 'scheduled',
+    authenticate:'superadmin'
   });
 
 })();

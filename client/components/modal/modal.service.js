@@ -95,15 +95,12 @@ angular.module('workspaceApp')
             });
           };
         } ,
-        airport(del = angular.noop) {
-          /**
-           * Open a delete confirmation modal
-           * @param  {String} name   - name or info to show on modal
-           * @param  {All}           - any additional args are passed straight to del callback
-           */
+        airport: function(cb) {
+          cb = cb || angular.noop;
           return function() {
             var args = Array.prototype.slice.call(arguments),
                 airport = args.shift(),
+                manualOpen=false,
                 quickModal;
 
             quickModal = openModal({
@@ -112,6 +109,8 @@ angular.module('workspaceApp')
                 show:false,
                 airportModal:true,
                 metarObj:airport,
+                manualOpen:manualOpen,
+                console:function(m){manualOpen=m},
                 title: airport.airport.name,
                 buttons: [ {
                   classes: 'btn-success',
@@ -124,7 +123,9 @@ angular.module('workspaceApp')
             }, 'modal-success');
 
             quickModal.result.then(function(event) {
-              del.apply(event, args);
+              cb.apply(event, [{manualOpen:manualOpen,airport:airport.airport}]); //this is where all callback is actually called
+            }).catch(err=>{
+              console.log(err);
             });
           };
         } ,
@@ -133,10 +134,12 @@ angular.module('workspaceApp')
           return function() {
             var args = Array.prototype.slice.call(arguments),
                 flight = args.shift(),
+                isAdmin = args.shift(),
+                isSuperAdmin = args.shift(),
+                user = args.shift(),
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
                 bgColors=['lightgreen','lightblue','#DAB1DA','yellow','orange','#ff0033'],
                 timestamp=new Date().toLocaleString(),
-                pilotAgree=null,
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -145,7 +148,21 @@ angular.module('workspaceApp')
                 show:false,
                 flightModal:true,
                 timestamp,timestamp,
-                pilotAgree:pilotAgree,
+                pilotAgree:flight.pilotAgree,
+                isAdmin:isAdmin,
+                isSuperAdmin:isSuperAdmin,
+                dispatchClick:function(){
+                  flight.dispatchRelease=user.name;
+                  flight.dispatchReleaseTimestamp=new Date();
+                },
+                ocClick:function(){
+                  flight.ocRelease=user.name;
+                  flight.ocReleaseTimestamp=new Date();
+                },
+                pilotClick:function(){
+                  flight.pilotAgree=user.name;
+                  flight.releaseTimestamp=new Date();
+                },
                 acceptSig:function(pilotAgree){flight.pilotAgree=pilotAgree},
                 moreThanOneHour:function(){
                   let targetTime=new Date(flight.date);
@@ -197,6 +214,7 @@ angular.module('workspaceApp')
           return function() {
             var args = Array.prototype.slice.call(arguments),
                 airport = args.shift(),
+                user = args.shift(),
                 manualObs=airport.manualObs,
                 timestamp=new Date().toLocaleString(),
                 quickModal;
@@ -207,6 +225,10 @@ angular.module('workspaceApp')
                 show:false,
                 weatherModal:true,
                 timestamp:timestamp,
+                signClick:function(){
+                  airport.manualObs.signature=user.name;
+                  airport.manualTimestamp=new Date().toLocaleString();
+                },
                 getTimestamp:function(){if (airport.manualTimestamp) return new Date(airport.manualTimestamp).toLocaleString()},
                 title: 'Enter the Weather Observation for: ' +airport.name,
                 buttons: [ {//this is where you define you buttons and their appearances
@@ -226,7 +248,7 @@ angular.module('workspaceApp')
             }, 'modal-success');
 
             quickModal.result.then(function(event) {
-              airport.manualTimestamp=timestamp;
+              if (airport.manualTimestamp) airport.manualTimestamp=new Date(airport.manualTimestamp);
               cb.apply(event, [airport]); //this is where all callback is actually called
             }).catch(err=>{
               console.log(err);
@@ -238,11 +260,14 @@ angular.module('workspaceApp')
           return function() {
             let args = Array.prototype.slice.call(arguments),
                 airport = args.shift(),
-                formData = args.shift()||{},
+                user = args.shift(),
+                formData = airport||{},
                 timestampObj={timestampString:""},
                 scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
                 contaminents=["None","Ice","Snow","Compact Snow","Compact Snow/Ice","Dry Snow","Wet Snow","Slush","Drift"],
-                timestamp=new Date().toLocaleString(),
+                timestamp=null,
+                unOfficial=!!formData.unOfficialSource,
+                official=!!formData.officialSource,
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -251,12 +276,32 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 runway:true,
+                unOfficial:unOfficial,
+                official:official,
+                makeUnOfficial:function(){
+                  if (formData.unOfficialSource) {
+                    formData.officialSource=null;
+                    official=false;
+                    unOfficial=true;
+                  }
+                },
+                makeOfficial:function(){
+                  if (formData.officialSource) {
+                    formData.unOfficialSource=null;
+                    unOfficial=false;
+                    official=true;
+                  }
+                },
                 contaminents:contaminents,
                 scores:scores,
                 timestampObj:timestampObj,
                 timestamp:timestamp,
                 contaminentDisp:formData.contaminent||"Stuff",
                 runwayObj:scores[scores.map(e=>e.score).indexOf(formData.runwayScore*1)]||scores[5],
+                signClick:function(){
+                  formData.signature=user.name;
+                  timestampObj.timestampString=new Date().toLocaleString();
+                },
                 updateContaminent:function(obj){formData.contaminent=obj},
                 updateRunwayScore:function(obj){formData.runwayScore=obj.score},
                 updateOpenClosed:function(){console.log(formData.openClosed)},

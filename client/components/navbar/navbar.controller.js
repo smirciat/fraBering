@@ -16,6 +16,7 @@ class NavbarController {
   //end-non-standard
 
   constructor(Auth,$interval,$http,$scope) {
+    this.Auth=Auth;
     this.isLoggedIn = Auth.isLoggedIn;
     this.isAdmin = Auth.isAdmin;
     this.hasRole = Auth.hasRole;
@@ -272,6 +273,61 @@ class NavbarController {
         }
       }
       console.log(flights);
+      
+    };
+    r.readAsText(f);
+    inputFile.value='';
+    this.fileExists=false;
+  }
+  
+  //create users for a list of people with email addresses
+  uploadCSVUsers(){
+    let inputFile=document.getElementById('file');
+    let f = inputFile.files[0];
+    let r = new FileReader();
+    r.onloadend = e=>{
+      //file is e.target.result
+      let csv = e.target.result;
+      //csv=csv.replace(/(?:\\[rn"]|[\r\n\"]+)+/g, ",");
+      let arr=csv.split('\r\n');
+      let headers=arr.shift().split(',');
+      let pilots=[];
+      arr.forEach(a=>{
+        a=a.split(',');
+        let obj={};
+        headers.forEach((h,i)=>{
+          obj[h]=a[i];
+        });
+       pilots.push(obj);
+      });
+      for (let pilot of pilots) {
+        
+        this.Auth.createUser({
+          name: pilot['First Name'] + ' ' + pilot['Last Name'],
+          email: pilot.Username,
+          password: 'N45052$$'
+        })
+        .then(function() {
+          console.log('Succcessfully created for' +  pilot.Username);
+          // Account created, redirect to home
+          //self.$state.go('status');
+        })
+        .catch(function(err) {
+          err = err.data;
+          console.log(err);
+          self.errors = {};
+
+          // Update validity of form fields that match the sequelize errors
+          if (err.name) {
+            angular.forEach(err.fields, function(field) {
+              form[field].$setValidity('mongoose', false);
+              this.errors[field] = err.message;
+            });
+          }
+        });
+      }
+      
+      
       
     };
     r.readAsText(f);

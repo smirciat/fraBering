@@ -57,6 +57,8 @@ export default function(sequelize, DataTypes) {
     contaminent:DataTypes.STRING,
     percent:DataTypes.STRING,
     openClosed:DataTypes.STRING,
+    officialSource:DataTypes.STRING,
+    unOfficialSource:DataTypes.STRING,
     manualObs:DataTypes.JSONB,
     manualTimestamp:DataTypes.DATE
   });

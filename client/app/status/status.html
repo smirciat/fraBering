@@ -1,6 +1,6 @@
 <navbar></navbar>
-<section style="background-color:rgba(51, 170, 51, .02);" ng-class="status.getLayout()">
-  <div ng-if="status.fixedWing()" class="status-column">
+<section style="background-color:rgba(51, 170, 51, .02);" ng-class="status.getLayout()" ng-if="status.Auth.isUser()">
+  <div ng-if="status.fixedWing()" ng-class="status.getColumn()">
       <div class="grid-parent" ng-repeat="airport in status.airports">
         <div class="airport" ng-class="status.airportClass(airport)"
               tooltip-placement="right" uib-tooltip="{{airport.metarObj.taf}}">
@@ -16,31 +16,7 @@
         </div>
       </div>
   </div>
-  <div class="status-column">
-    <div ng-repeat="pilot in status.sortedPilots track by $index">
-      <h1 ng-if="status.showHeader('sortedPilots','header',$index)">{{pilot.header}}</h1>
-      <h1 ng-if="status.fixedWing('HEL')&&$index===0">Helicopter Pilots</h1>
-      <p ng-hide="status.toggleAssigned&&pilot.assigned" uib-tooltip="{{pilot.medicalClass}}" ng-click="status.choose('sortedPilots',pilot._id)" 
-            ng-class="status.chosenClass(pilot.chosen)">{{pilot.name + '-' + pilot.code}}</p>
-    </div>
-  </div>
-  <div class="status-column">
-    
-    <div ng-repeat="airplane in status.displayedAircraft track by $index">
-      <p ng-if="status.showHeader('displayedAircraft','acftType',$index)" class="smaller">{{airplane.acftType}}</p>
-      <p ng-hide="status.toggleAssigned&&airplane.assigned" uib-tooltip="{{airplane.acftType}}" ng-click="status.choose('displayedAircraft',airplane._id)"
-           ng-class="status.chosenClass(airplane.chosen)">{{airplane._id}}</p>
-    </div>
-  </div>
-  <!--<div class="status-column">
-    <h1 ng-if="status.fixedWing()">Unassigned Flights</h1>
-    <h1 ng-if="!status.fixedWing()">Unassigned Missions</h1>
-    <div ng-repeat="flight in status.unassignedFlights track by $index">
-      <p uib-tooltip="{{flight.airports.toString()}}" ng-click="status.choose('unassignedFlights',flight._id)"
-           ng-class="status.chosenClass(flight.chosen)">{{flight.flightNum}}</p>
-    </div>
-  </div>-->
-  <div class="status-column-flights">
+  <div ng-class="status.getColumnFlights()">
     <div class="todays-flights">
      <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" id="{{flight._id}}" ng-class="status.getFlightColor(flight)">
       <div ng-if="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
@@ -81,7 +57,31 @@
      </div>
    </div>
   </div>
-  <div ng-if="status.fixedWing()" class="status-column">
+  <div ng-class="status.getColumn()">
+    <div ng-repeat="pilot in status.sortedPilots track by $index">
+      <h1 ng-if="status.showHeader('sortedPilots','header',$index)">{{pilot.header}}</h1>
+      <h1 ng-if="status.fixedWing('HEL')&&$index===0">Helicopter Pilots</h1>
+      <p ng-hide="status.toggleAssigned&&pilot.assigned" uib-tooltip="{{pilot.medicalClass}}" ng-click="status.choose('sortedPilots',pilot._id)" 
+            ng-class="status.chosenClass(pilot.chosen)">{{pilot.name + '-' + pilot.code}}</p>
+    </div>
+  </div>
+  <div ng-class="status.getColumn()">
+    
+    <div ng-repeat="airplane in status.displayedAircraft track by $index">
+      <p ng-if="status.showHeader('displayedAircraft','acftType',$index)" class="smaller">{{airplane.acftType}}</p>
+      <p ng-hide="status.toggleAssigned&&airplane.assigned" uib-tooltip="{{airplane.acftType}}" ng-click="status.choose('displayedAircraft',airplane._id)"
+           ng-class="status.chosenClass(airplane.chosen)">{{airplane._id}}</p>
+    </div>
+  </div>
+  <!--<div ng-class="status.getColumn()">
+    <h1 ng-if="status.fixedWing()">Unassigned Flights</h1>
+    <h1 ng-if="!status.fixedWing()">Unassigned Missions</h1>
+    <div ng-repeat="flight in status.unassignedFlights track by $index">
+      <p uib-tooltip="{{flight.airports.toString()}}" ng-click="status.choose('unassignedFlights',flight._id)"
+           ng-class="status.chosenClass(flight.chosen)">{{flight.flightNum}}</p>
+    </div>
+  </div>-->
+  <div ng-if="status.fixedWing()" ng-class="status.getColumn()">
     <div ng-if="status.base.base==='OME'">
       <div style="width:100%;text-align:center;">
         <h1>Beech 1900s</h1>
