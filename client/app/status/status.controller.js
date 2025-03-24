@@ -59,11 +59,22 @@ class StatusComponent {
     },60*60*1000);
     
     this.renewFirebase();
+    this.metarModal=this.Modal.confirm.metars();
     this.quickModal=this.Modal.confirm.quickMessage(response=>{this.clicked=true;});
     this.tafDisplay=this.Modal.confirm.quickShow(response=>{});
     this.airportModal=this.Modal.confirm.airport(response=>{
-      console.log(response)
+      if (response.requestMetarList) {
+        if (response.airport&&response.airport.icao) {
+            this.http.post('/api/airportRequirements/grabMetars',{airport:response.airport.icao}).then(res=>{
+              this.metarModal(res.data);
+            });
+        }
+      }
       if (response&&response.manualOpen){
+        if (response.airport.manualObs) {
+          response.airport.manualObs.previousSignature=response.airport.manualObs.signature;
+          response.airport.manualObs.signature=null;
+        }
         this.weatherModal(response.airport,this.user);
       }
     });
@@ -84,7 +95,6 @@ class StatusComponent {
       if (index>-1) Object.assign(this.todaysFlights[index], flight);
     });
     this.runwayModal=this.Modal.confirm.runway(res=>{
-      console.log(res);
       if (res.timestampString) res.timestamp=new Date(res.timestampString);
       else res.timestamp=new Date();
       if (!res.comment) res.comment='';
@@ -105,7 +115,7 @@ class StatusComponent {
         this.airports[index].contaminent=res.contaminent;
         this.airports[index].percent=res.percent;
         if (res._id) {//&&res.signature&&res.runwayScore){
-          this.http.patch('/api/airportRequirements/'+res._id,res).then(resp=>{console.log(resp.data)});
+          this.http.patch('/api/airportRequirements/'+res._id,res).then(resp=>{});
         }
       }
     });
@@ -625,15 +635,19 @@ class StatusComponent {
   }
   
   sign(airport){
-    if (!airport.openClosed) airport.openClosed="Open";
-    if (!airport.contaminent) airport.contaminent="None";
-    this.runwayModal(airport,this.user);
+    let ap=JSON.parse(JSON.stringify(airport));
+    if (!ap.openClosed) ap.openClosed="Open";
+    if (!ap.contaminent) ap.contaminent="None";
+    ap.signature=null;
+    this.runwayModal(ap,this.user);
   }
   
   lookAtFlight(flight){
     if (!flight.fuelPreviouslyOnboard&&!isNaN(flight.autoOnboard)&&flight.autoOnboard>0) flight.fuelPreviouslyOnboard=Math.floor(flight.autoOnboard);
     if (!flight.fuelTotalTaxi&&flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0]) flight.fuelTotalTaxi=flight.taxiFuel*1+flight.pfr.legArray[0].fuel*1;
-    this.flightModal(flight,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user);
+    let lastname='';
+    if (this.user.name&&this.user.name.split(' ').length>1) lastname=this.user.name.split(' ')[1];
+    this.flightModal(JSON.parse(JSON.stringify(flight)),this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
   }
   
   getDate(timestamp){
@@ -1002,14 +1016,20 @@ class StatusComponent {
     if (source==='taf') {
       switch(evt.which) {
         case 1://left click
-            if (!airport.openClosed) airport.openClosed="Open";
-            if (!airport.contaminent) airport.contaminent="None";
-            this.runwayModal(airport,this.user);
+            let ap=JSON.parse(JSON.stringify(airport));
+            if (!ap.openClosed) ap.openClosed="Open";
+            if (!ap.contaminent) ap.contaminent="None";
+            ap.signature=null;
+            this.runwayModal(ap,this.user);
         break;
         case 2:
             // for middle click functionality
             break;
         case 3://right click
+            if (airport.manualObs) {
+              airport.manualObs.previousSignature=airport.manualObs.signature;
+              airport.manualObs.signature=null;
+            }
             this.weatherModal(airport,this.user);
             //this.tafDisplay('The TAF for ' +airport.name+' is:',airport.metarObj.taf);
             break;
@@ -1023,6 +1043,10 @@ class StatusComponent {
         case 3://right click
             console.log(airport);
             //if (!airport['Raw-Report']||!airport.Visibility||!airport.Ceiling||!airport.altimeter) {
+            if (airport.airport.manualObs) {
+              airport.airport.manualObs.previousSignature=airport.airport.manualObs.signature;
+              airport.airport.manualObs.signature=null;
+            }
               this.weatherModal(airport.airport,this.user);
             //}
             break;
@@ -1035,6 +1059,8 @@ class StatusComponent {
             //set wind color based on flight
             //airport.windColor=......, based on airport.aircraft
             //call airportModal
+            airport.requestMetarList=undefined;
+            airport.manualOpen=undefined;
             this.airportModal(airport);
             break;
         default:

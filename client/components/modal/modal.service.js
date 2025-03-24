@@ -95,6 +95,39 @@ angular.module('workspaceApp')
             });
           };
         } ,
+        metars(del = angular.noop) {
+          /**
+           * Open a delete confirmation modal
+           * @param  {String} name   - name or info to show on modal
+           * @param  {All}           - any additional args are passed straight to del callback
+           */
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                airport = args.shift(),
+                quickModal;
+
+            quickModal = openModal({
+              modal: {
+                dismissable: true,
+                show:false,
+                metarModal:true,
+                airport:airport,
+                title: 'Last 2 Hours of Metars for ' + airport.airport,
+                buttons: [ {
+                  classes: 'btn-success',
+                  text: 'OK',
+                  click: function(event) {
+                    quickModal.close(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+
+            quickModal.result.then(function(event) {
+              del.apply(event, args);
+            });
+          };
+        } ,
         airport: function(cb) {
           cb = cb || angular.noop;
           return function() {
@@ -110,7 +143,9 @@ angular.module('workspaceApp')
                 airportModal:true,
                 metarObj:airport,
                 manualOpen:manualOpen,
-                console:function(m){manualOpen=m},
+                console:function(key,val){
+                  airport[key]=val;
+                },
                 title: airport.airport.name,
                 buttons: [ {
                   classes: 'btn-success',
@@ -123,7 +158,7 @@ angular.module('workspaceApp')
             }, 'modal-success');
 
             quickModal.result.then(function(event) {
-              cb.apply(event, [{manualOpen:manualOpen,airport:airport.airport}]); //this is where all callback is actually called
+              cb.apply(event, [{manualOpen:airport.manualOpen,airport:airport.airport,requestMetarList:airport.requestMetarList}]); //this is where all callback is actually called
             }).catch(err=>{
               console.log(err);
             });
@@ -137,8 +172,10 @@ angular.module('workspaceApp')
                 isAdmin = args.shift(),
                 isSuperAdmin = args.shift(),
                 user = args.shift(),
+                userLastname = args.shift(),
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
                 bgColors=['lightgreen','lightblue','#DAB1DA','yellow','orange','#ff0033'],
+                scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
                 timestamp=new Date().toLocaleString(),
                 quickModal;
             quickModal = openModal({
@@ -151,17 +188,33 @@ angular.module('workspaceApp')
                 pilotAgree:flight.pilotAgree,
                 isAdmin:isAdmin,
                 isSuperAdmin:isSuperAdmin,
+                user:user,
+                formatScore:function(s){
+                  let i=scores.map(e=>e.score).indexOf(s*1);
+                  if (i>-1) return s + ' - Braking ' + scores[i].descr;
+                },
+                isWrongUser:function(){
+                  if (!flight.pilotObject||typeof flight.pilotObject.lastName!=='string') flight.pilotObject={lastName:''};
+                  if (!userLastname) userLastname='';
+                  return userLastname.toLowerCase()!==flight.pilotObject.lastName.toLowerCase();
+                },
                 dispatchClick:function(){
-                  flight.dispatchRelease=user.name;
-                  flight.dispatchReleaseTimestamp=new Date();
+                  if (!flight.dispatchRelease) {
+                    flight.dispatchRelease=user.name;
+                    flight.dispatchReleaseTimestamp=new Date();
+                  }
                 },
                 ocClick:function(){
-                  flight.ocRelease=user.name;
-                  flight.ocReleaseTimestamp=new Date();
+                  if (!flight.ocRelease) {
+                    flight.ocRelease=user.name;
+                    flight.ocReleaseTimestamp=new Date();
+                  }
                 },
                 pilotClick:function(){
-                  flight.pilotAgree=user.name;
-                  flight.releaseTimestamp=new Date();
+                  if (!flight.pilotAgree) {
+                    flight.pilotAgree=user.name;
+                    flight.releaseTimestamp=new Date();
+                  }
                 },
                 acceptSig:function(pilotAgree){flight.pilotAgree=pilotAgree},
                 moreThanOneHour:function(){
@@ -176,6 +229,23 @@ angular.module('workspaceApp')
                 ocRequired:function(color){return colors.indexOf(color)>3},
                 getLbs:function(lbHigh,lbLow){return Math.floor(lbHigh-lbLow)},
                 getGals:function(lbHigh,lbLow){return Math.floor((lbHigh-lbLow)/6.7)},
+                getRequest(totalTaxi,fob){
+                  let main=(totalTaxi*1-fob*1)/2;
+                  let aux=0;
+                  if (flight.equipment.maxMain){
+                    if (totalTaxi*1>flight.equipment.maxMain*2){
+                      aux=(totalTaxi*1-flight.equipment.maxMain*2)/2;
+                      main=main-aux;
+                      if (flight.equipment.maxAux&&aux>flight.equipment.maxAux) aux=flight.equipment.maxAux;
+                    }
+                  }
+                  return {main:Math.floor(main/6.7),aux:Math.floor(aux/6.7)};
+                },
+                getDestinationType:function(index){
+                  if (index===0) return "Departure";
+                  if (index===(flight.airportObjsLocked.length-1)) return "Destination";
+                  return "Intermediate";
+                },
                 pilotDisabled:function(f){
                   if (colors.indexOf(f.color)>3) return !f.ocRelease||f.ocRelease==="";
                   else return !f.dispatchRelease||f.dispatchRelease==="";
@@ -190,6 +260,20 @@ angular.module('workspaceApp')
                   classes: 'btn-primary',
                   text: 'Confirm/Save',
                   click: function(event) {
+                    quickModal.close(event);
+                  }
+                }, {
+                  classes: 'btn-warning',
+                  text: 'Remove Release',
+                  click: function(event) {
+                    if (user.role==='admin'||user.role==='superadmin') {
+                      flight.dispatchRelease=null;
+                      flight.ocRelease=null;
+                      flight.pilotAgree=null;
+                      flight.releaseTimestamp=null;
+                      flight.dispatchReleaseTimestamp=null;
+                      flight.ocReleaseTimestamp=null;
+                    }
                     quickModal.close(event);
                   }
                 }, {
@@ -215,19 +299,21 @@ angular.module('workspaceApp')
             var args = Array.prototype.slice.call(arguments),
                 airport = args.shift(),
                 user = args.shift(),
-                manualObs=airport.manualObs,
+                manualObs=airport.manualObs||{},
                 timestamp=new Date().toLocaleString(),
+                manualTimestamp=airport.manualTimestamp||null,
                 quickModal;
             quickModal = openModal({
               modal: {
                 airport:airport,
+                manualObs:manualObs,
                 dismissable: true,
                 show:false,
                 weatherModal:true,
                 timestamp:timestamp,
                 signClick:function(){
-                  airport.manualObs.signature=user.name;
-                  airport.manualTimestamp=new Date().toLocaleString();
+                  manualObs.signature=user.name;
+                  airport.manualTimestamp=new Date();
                 },
                 getTimestamp:function(){if (airport.manualTimestamp) return new Date(airport.manualTimestamp).toLocaleString()},
                 title: 'Enter the Weather Observation for: ' +airport.name,
@@ -235,6 +321,10 @@ angular.module('workspaceApp')
                   classes: 'btn-primary',
                   text: 'Confirm/Save',
                   click: function(event) {
+                    if (!manualObs.signature){
+                      manualObs.signature=user.name;
+                      airport.manualTimestamp=new Date();
+                    }
                     quickModal.close(event);
                   }
                 }, {
@@ -248,6 +338,7 @@ angular.module('workspaceApp')
             }, 'modal-success');
 
             quickModal.result.then(function(event) {
+              airport.manualObs=manualObs;
               if (airport.manualTimestamp) airport.manualTimestamp=new Date(airport.manualTimestamp);
               cb.apply(event, [airport]); //this is where all callback is actually called
             }).catch(err=>{
@@ -264,7 +355,9 @@ angular.module('workspaceApp')
                 formData = airport||{},
                 timestampObj={timestampString:""},
                 scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
-                contaminents=["None","Ice","Snow","Compact Snow","Compact Snow/Ice","Dry Snow","Wet Snow","Slush","Drift"],
+                contaminents=["None","Ice","Wet Ice","Snow","Compact Snow","Compact Snow/Ice","Dry Snow","Wet Snow","Slush","Drift","Water","Mud","Dirt","Debris"],
+                percents=['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'],
+                depths=['0','1/8 inch','1/4 inch','1/2 inch','3/4 inch','1 inch','2 inches','3 inches','4 inches','6 inches','8 inches','10 inches','1 foot or more'],
                 timestamp=null,
                 unOfficial=!!formData.unOfficialSource,
                 official=!!formData.officialSource,
@@ -292,17 +385,21 @@ angular.module('workspaceApp')
                     official=true;
                   }
                 },
+                depths:depths,
+                percents:percents,
                 contaminents:contaminents,
                 scores:scores,
                 timestampObj:timestampObj,
                 timestamp:timestamp,
-                contaminentDisp:formData.contaminent||"Stuff",
+                depthDisp:formData.depth||"",
+                percentDisp:formData.percent||"",
+                contaminentDisp:formData.contaminent||"",
                 runwayObj:scores[scores.map(e=>e.score).indexOf(formData.runwayScore*1)]||scores[5],
                 signClick:function(){
                   formData.signature=user.name;
                   timestampObj.timestampString=new Date().toLocaleString();
                 },
-                updateContaminent:function(obj){formData.contaminent=obj},
+                updateParam:function(key,obj){formData[key]=obj},
                 updateRunwayScore:function(obj){formData.runwayScore=obj.score},
                 updateOpenClosed:function(){console.log(formData.openClosed)},
                 getMyDate:function(d){return new Date(d).toLocaleString()},
@@ -314,6 +411,10 @@ angular.module('workspaceApp')
                   classes: 'btn-primary',
                   text: 'Confirm/Save',
                   click: function(event) {
+                    if (!formData.signature){
+                      formData.signature=user.name;
+                      timestampObj.timestampString=new Date().toLocaleString();
+                    }
                     quickModal.close(event);
                   }
                 }, {

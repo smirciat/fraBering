@@ -11,6 +11,7 @@ router.post('/', controller.create);
 router.post('/autoCheck', controller.autoCheck);
 router.post('/adds', controller.adds);
 router.post('/metars', controller.metars);
+router.post('/grabMetars', controller.metarListGrab);
 router.post('/tafs', controller.tafs);
 router.post('/notams', controller.notams);
 router.put('/:id', controller.update);

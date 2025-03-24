@@ -18,13 +18,13 @@
         <li ng-show="nav.isAdmin()" ui-sref-active="active"><a ui-sref="admin">Admin</a></li>
         <li style="padding-left:5em;padding-top:7px;width:350px;">
           <div >
-            <a style="float:left" href='#' ng-click="nav.minusDate()"><i class="fa fa-angle-left fa-autosize space-if" aria-hidden="true"></i></a>
-            <a style="float:right" href='#' ng-click="nav.plusDate()"><i class="fa fa-angle-right fa-autosize space-if" aria-hidden="true"></i></a>
+            <a style="float:left" href='#' ng-click="nav.minusDate()"><button class="btn btn-info" style="height:40px"><i class="fa fa-angle-left fa-autosize space-if" aria-hidden="true"></i></button></a>
+            <a style="float:right" href='#' ng-click="nav.plusDate()"><button class="btn btn-info" style="height:40px"><i class="fa fa-angle-right fa-autosize space-if" aria-hidden="true"></i></button></a>
               <!--<datepicker date-format="EEEE MMM d, yyyy" >
                   <input class="form-control" ng-model="nav.date" ng-change="nav.upDate()" type="text"/>
               </datepicker>-->
-              <div style="padding-left:10px;padding-top:0px;width:85%" class="input-group">
-                <input class="form-control" type="text" ng-model="nav.dateStringFormatted" ng-blur="nav.upDate()">
+              <!--<div style="padding-left:10px;padding-top:0px;width:85%" class="input-group">-->
+                <input style="height:40px;width:190px;margin-left:10px" type="text" ng-model="nav.dateStringFormatted" ng-blur="nav.upDate()">
                 <!--<span class="input-group-btn">
                   <button type="button" class="btn btn-default" ng-click="nav.isDatepickerOpen = !nav.isDatepickerOpen">
                     <i class="glyphicon glyphicon-calendar"></i>
@@ -33,7 +33,7 @@
                 <!--<input style="display:none" type="text" class="form-control" uib-datepicker-popup="EEEE MMM d, yyyy" ng-model="nav.date" ng-change="nav.upDate()" 
                    is-open="nav.isDatepickerOpen" datepicker-options="nav.datepickerOptions" ng-required="true" close-text="Close" 
                    alt-input-formats="altInputFormats"/>-->
-              </div>
+              <!--</div>-->
               <!--<h5 ng-class="nav.socket">S</h5>-->
           </div>
         </li>

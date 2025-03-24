@@ -4,16 +4,21 @@
   <h4 ng-if="modal.title" ng-bind="modal.title" class="modal-title"></h4>
 </div>
 <div class="modal-body">
+  <div ng-if="modal.metarModal">
+    <div ng-repeat="metar in modal.airport.metars"><p style="font-weight:bold">{{metar}}</p></div>
+  </div>
+  
   <div ng-if="modal.weatherModal">
     <p>Previous Timestamp: {{modal.getTimestamp()}}</p>
+    <p>Previous Signature: {{modal.manualObs.previousSignature}}</p>
     <div class="modal-timestamp-layout" style="align-items: center;">
       <div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.airport.manualObs.visibility"></div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.airport.manualObs.ceiling"></div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.airport.manualObs.altimeter"></div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.airport.manualObs.windDirection"></div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.airport.manualObs.windSpeed"></div>
-        <div style="height:44px"><input class="form-control" type="checkbox" ng-model="modal.airport.manualObs.isOfficial"></div>
+        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.visibility"></div>
+        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.ceiling"></div>
+        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.altimeter"></div>
+        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windDirection"></div>
+        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windSpeed"></div>
+        <div style="height:44px"><input class="form-control" type="checkbox" ng-model="modal.manualObs.isOfficial"></div>
       </div>
       <div style="margin-top:12px">
         <div style="height:44px"><label>Visibility (10 for unlimited)</label></div>
@@ -29,9 +34,9 @@
       <div style="display:inline-block">
         <button class="btn btn-success" ng-click="modal.signClick()">
           <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
-          <span>{{modal.airport.manualObs.signature}}</span></div>
+          <span>{{modal.manualObs.signature}}</span></div>
       <!--<div class="modal-column"><input class="form-control" name="signature" type="text" ng-model="modal.formData.signature"></div>-->
-      <div class="modal-column"><label>{{modal.airport.manualTimestamp}}</label></div>
+      <div class="modal-column"><label>{{modal.getTimestamp()}}</label></div>
     </div>
   </div>
   
@@ -62,7 +67,11 @@
     </div>
     <div>
       <label>Check Below if You Want to Enter a Manual Observation</label>
-      <input class="form-control" type="checkbox" ng-model="modal.manualOpen" ng-change="modal.console(modal.manualOpen)">
+      <input class="form-control" type="checkbox" ng-model="modal.manualOpen" ng-change="modal.console('manualOpen',modal.manualOpen)">
+    </div>
+    <div>
+      <label>Check Below if You Want to See the Metar Trend</label>
+      <input class="form-control" type="checkbox" ng-model="modal.requestMetarList" ng-change="modal.console('requestMetarList',modal.requestMetarList)">
     </div>
   </div>
   <p ng-if="modal.text" ng-bind="modal.text"></p>
@@ -92,11 +101,16 @@
     <div class="modal-contaminent-layout">
       <div class="modal-column">
         <label>Depth</label>
-        <input class="form-control" name="depth" type="text" ng-model="modal.formData.depth">
+        <ui-select style="width:10em;" ng-model="modal.depthDisp" theme="selectize" ng-change="modal.updateParam('depth',modal.depthDisp)">
+            <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+            <ui-select-choices repeat="choice in modal.depths" >
+              <div ng-bind-html="choice | highlight: $select.search"></div>
+            </ui-select-choices>
+        </ui-select>
       </div>
       <div class="modal-column">
         <label>Contaminent Type</label>
-        <ui-select style="width:20em;" ng-model="modal.contaminentDisp" theme="selectize" ng-change="modal.updateContaminent(modal.contaminentDisp)">
+        <ui-select style="width:20em;" ng-model="modal.contaminentDisp" theme="selectize" ng-change="modal.updateParam('contaminent',modal.contaminentDisp)">
             <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in modal.contaminents" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -105,7 +119,12 @@
       </div>
       <div class="modal-column">
         <label>Percent</label>
-        <input class="form-control" name="percent" type="text" ng-model="modal.formData.percent">
+        <ui-select style="width:7em;" ng-model="modal.percentDisp" theme="selectize" ng-change="modal.updateParam('percent',modal.percentDisp)">
+            <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+            <ui-select-choices repeat="choice in modal.percents" >
+              <div ng-bind-html="choice | highlight: $select.search"></div>
+            </ui-select-choices>
+        </ui-select>
       </div>
     </div>
     
@@ -163,7 +182,7 @@
         </table>
       </div>
       <div class="modal-column">
-        <table class="table table-bordered">
+        <table class="table table-bordered" style="margin-bottom:0px">
           <thead>
             <tr>
               <td style="text-align:center">CONFIG</td><td style="text-align:center">OWE</td>
@@ -187,30 +206,28 @@
         <table class="table table-borderless">
           <tbody>
             <tr><td style="text-align:center">FUEL</td></tr>
-            <tr><td style="text-align:center">ORDER</td></tr>
             <tr><td></td></tr>
           </tbody>
         </table>
       </div>
-      <div class="modal-column" style="border: 1px solid black;">
-        <table class="table table-borderless">
+      <div class="modal-column">
+        <table class="table table-bordered" style="margin-bottom:0px">
           <tbody>
             <tr>
+              <td style="text-align:center">FOB</td>
               <td style="text-align:center">Total/Taxi</td>
-              <td style="text-align:center">Onboard</td>
-              <td style="text-align:center">Request lbs</td>
-              <td style="text-align:center">Request Gals</td>
+              <td style="text-align:center">Add Gals</td>
+              <td style="text-align:center">Request</td>
             </tr>
             <tr>
-              <td></td><td></td>
-              <td style="text-align:center">{{modal.getLbs(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}} lbs</td>
-              <td style="text-align:center">{{modal.getGals(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}} Gals</td>
+              <td style="text-align:center;" rowspan="2"><input class="form-control-inline" style="margin-top:15px;" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.flight.pilotAgree"></td>
+              <td style="text-align:center;" rowspan="2"><input class="form-control-inline" style="margin-top:15px;"  type="text" ng-model="modal.flight.fuelTotalTaxi" ng-disabled="modal.flight.pilotAgree"></td>
+              <td style="text-align:center;" rowspan="2"><div style="margin-top:15px;">{{modal.getGals(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}}</div></td>
+              <!--<td style="text-align:center">{{modal.getLbs(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}} lbs</td>-->
+              <td style="text-align:center"><span>{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main||0}}</span><small> gal/side MAIN</small></td>
             </tr>
             <tr>
-              <td style="text-align:center"><input class="form-control-inline" type="text" ng-model="modal.flight.fuelTotalTaxi" ng-disabled="modal.flight.pilotAgree"></td>
-              <td style="text-align:center"><input class="form-control-inline" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.flight.pilotAgree"></td>
-              <td style="text-align:center"><div>{{modal.getLbs(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)/2||0}} /side</div></td>
-              <td style="text-align:center"><div>{{modal.getGals(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)/2||0}} /side</div></td>
+              <td style="text-align:center"><span>{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).aux||0}}</span><small> gal/side AUX</small></td>
             </tr>
           </tbody>
         </table>  
@@ -261,26 +278,30 @@
       </div>
     </div>
     <hr class="my-hr">
-    <div style="align-items: center; font-weight:bold;">
-      <table class="table table-borderless"><td>ENVIRONMENT</td></table>
-      <div class="airport-card" ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index">
-        <div ng-class="metarObj.color">
-          <p style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
+    <div>
+      <div ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index">
+        <div class='airport-card'ng-class="metarObj.color">
+          <p style="margin:0px;padding:5px;width:60px;text-align:center;" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
                 >{{metarObj.airport.threeLetter}}</p>
         </div>
+        <span style="font-weight:bold">&nbsp;&nbsp;&nbsp;{{modal.getDestinationType($index)}}</span>
+        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj['Raw-Report']}}</p>
+        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">RUNWAY {{metarObj.airport.icao+' '+metarObj.airport.openClosed+', '+modal.formatScore(metarObj.airport.runwayScore)+' '+metarObj.airport.comment}}</p>
+        <br>
       </div>
-      <br><br>
-      <div class="modal-environment-layout" style="align-items: center; font-weight:bold;">
-        <div class="modal-column">
-          <table class="table table-borderless">
-            <tr>
-              <td>FIKI?</td>
-              <td><input style="width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.flight.pilotAgree"></td>
-              <td>OTHER:</td>
-              <td><input style="width:350px" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.flight.pilotAgree"></td>
-            </tr>
-          </table>
-        </div>
+    </div>
+    <br>
+    <div class="modal-environment-layout" style="font-weight:bold;">
+      <div class="modal-column">
+        <table class="table table-borderless">
+          <tr>
+            <td><span style="padding-top:5px;margin-top:5px">FIKI?</span></td>
+            <td><input class="form-control" style="width:30px;margin:0;padding:0" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.flight.pilotAgree"></td>
+            <td><span style="padding-top:5px;margin-top:5px">OTHER:</span></td>
+            <td><input style="width:350px; padding-top:5px;margin-top:5px" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.flight.pilotAgree"></td>
+          </tr>
+        </table>
+      </div>
     </div>
     <hr class="my-hr">
     <div style="font-weight:bold;">
@@ -322,7 +343,7 @@
         <td><p style="padding-top:5px; margin-top:7px; ">CAPTAIN</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.pilotClick()" ng-disabled="modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || modal.flight.pilotAgree">
+            <button class="btn btn-success" ng-click="modal.pilotClick()" ng-disabled="modal.isWrongUser() || modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || modal.flight.pilotAgree || modal.user.name==='Bering Air'">
                 <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
             <span>{{modal.flight.pilotAgree}}</span>
           </div>
@@ -332,8 +353,11 @@
         <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.releaseTimestamp)}}</p></td>     
       </tr>
     </table>
-    <label>Changes While Enroute/After Release</label>
-    <textarea class="form-control" style="height:76px;" ng-model="modal.flight.enrouteChanges"></textarea>
+    <div ng-if="!modal.flight.pilotAgree" style="background-color:red"><h2 style="color:white;font-weight:bold; text-align:center">NOT SIGNED</h2></div>
+    <div ng-if="modal.flight.pilotAgree">
+      <label>Changes While Enroute/After Release</label>
+      <textarea class="form-control" style="height:76px;" ng-model="modal.flight.enrouteChanges"></textarea>
+    </div>
   </div>
 </div>
 <div class="modal-footer">

@@ -52,6 +52,7 @@ export default function(sequelize, DataTypes) {
     security:DataTypes.STRING,
     otherEnvironment:DataTypes.STRING,
     taxiFuel:DataTypes.STRING,
-    enrouteChanges:DataTypes.STRING
+    enrouteChanges:DataTypes.STRING,
+    equipment:DataTypes.JSONB
   });
 }

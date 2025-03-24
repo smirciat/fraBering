@@ -239,6 +239,43 @@ export async function metars(req,res) {
   }
 } 
 
+
+
+export async function metarListGrab(req,res){
+  try {
+    let airport=req.body.airport;
+    let obj={};
+    if (airport) obj=await getMetarList(airport);
+    res.status(200).json(obj);
+  }
+  catch(err){
+    console.log(err);
+    res.status(404).json('Failed to grab metar List');
+  }
+}
+
+export async function getMetarList(airport) {
+  let jsonResponse={airport:airport,metars:[]};
+  let url1="https://api.synopticdata.com/v2/stations/timeseries?recent=120&stid=";
+  let url = url1 + airport + url2;
+  //url='https://api.weather.gov/stations/'+airport+'/observations/latest';
+  try {
+    let response = await axios.get(url);
+    console.log(response.data.STATION[0].OBSERVATIONS.metar_set_1[0]);
+    jsonResponse.metars=response.data.STATION[0].OBSERVATIONS.metar_set_1;
+   }
+   catch (err) {
+     jsonResponse.err=err;
+     if (err.response&&err.response.config){
+       console.log(err.response.config.url);
+     }
+     else console.log('error fetching metar list for '+airport);
+   }
+   finally{
+     return jsonResponse;
+   }
+}
+
 export async function getMetar(airport) {
   let jsonResponse={airport:airport,metar:'missing'};
   let url = url1 + airport + url2;

@@ -12,7 +12,7 @@
 import _ from 'lodash';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
 import {quickGrab,firebaseQueryFunction} from '../airplane/airplane.controller.js';
-import {getMetar,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
+import {getMetar,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
 import fs from 'fs';
 import config from '../../config/environment';
 let allAirports=[];
@@ -32,7 +32,7 @@ let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50,taxiFuel:35},
        {id:2,name:"Navajo",wind:40,xwind:30,temp:-40,taxiFuel:35},
        {id:3,name:"Casa",wind:35,xwind:25,temp:-50,taxiFuel:110},
        {id:4,name:"King Air",wind:40,xwind:35,temp:-50,taxiFuel:90},
-       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50,taxiFuel:110},
+       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50,taxiFuel:110,maxMain:1621,maxAux:621},
        {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50,taxiFuel:70}];
 
 function respondWithResult(res, statusCode) {
@@ -314,9 +314,9 @@ export async function tf(req,res) {
                 console.log(err);
               });
       }
-      console.log('Stopped value is: ' + staleFile.toString());
-      res.status(404).json('Current.csv has stopped updating');
-      return;
+      //console.log('Stopped value is: ' + staleFile.toString());
+      //res.status(404).json('Current.csv has stopped updating');
+      //return;
     }
     else {
       stopped=false;
@@ -510,7 +510,7 @@ export async function tf(req,res) {
           airport.metarObj.aircraft=flight.aircraft;
           airport.metarObj.color=overallRiskClass(airport.metarObj);
           if (airport.metarObj.color===' airport-blue'||airport.metarObj.color===' airport-purple') {
-            if (airport.manualObs&&airport.manualTimestamp&&isLessThanTwoHoursAgo(new Date(airport.manualTimestamp))){
+            if (airport.manualObs&&airport.manualTimestamp&&isLessThanOneHourAgo(new Date(airport.manualTimestamp))){
               if (typeof airport.metarObj!=='object') airport.metarObj={};
               if (!airport.metarObj['Raw-Report']) airport.metarObj['Raw-Report']="Manual Observation";
               airport.metarObj.Visibility=airport.manualObs.visibility;
@@ -548,7 +548,10 @@ export async function tf(req,res) {
       if (fbIndex>-1&&fbAirplanes[fbIndex]) {
         if (fbAirplanes[fbIndex].acftType.trim()==="Courier") fbAirplanes[fbIndex].acftType="Sky Courier";
         eqIndex=equipmentArr.map(e=>e.name).indexOf(fbAirplanes[fbIndex].acftType.trim());
-        if (eqIndex>-1) flight.taxiFuel=equipmentArr[eqIndex].taxiFuel;
+        if (eqIndex>-1) {
+          flight.equipment=equipmentArr[eqIndex];
+          flight.taxiFuel=equipmentArr[eqIndex].taxiFuel;
+        }
       }
       let acPfrs=pfrs.filter((pfr)=>{return pfr.acftNumber===flight.aircraft});
       if (acPfrs.length>0){
@@ -593,7 +596,8 @@ export async function tf(req,res) {
         updated.push(todaysFlights[index]._id);
         todaysFlights[index].status=flight.status;
         todaysFlights[index].color=flight.color;
-        
+        todaysFlights[index].equipment=flight.equipment;
+        todaysFlights[index].autoOnboard=flight.autoOnboard;
         if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
           //console.log(todaysFlights[index]._id+' date'); 
           //updated.push(todaysFlights[index]._id);
@@ -854,10 +858,11 @@ function flightRiskClass(airportObjs){
   return color;
 }
 
-function isLessThanTwoHoursAgo(date) {
-  const twoHoursAgo = new Date();
-  twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
-  return date > twoHoursAgo;
+function isLessThanOneHourAgo(date) {
+  let oneHourAgo = new Date();
+  oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+  oneHourAgo.setMinutes(oneHourAgo.getMinutes() - 10);
+  return date > oneHourAgo;
 }
 
 async function airportNameToMetar(airport){
