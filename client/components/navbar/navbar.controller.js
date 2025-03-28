@@ -15,7 +15,7 @@ class NavbarController {
   isCollapsed = true;
   //end-non-standard
 
-  constructor(Auth,$interval,$http,$scope) {
+  constructor(Auth,$interval,$http,$scope,$timeout) {
     this.Auth=Auth;
     this.isLoggedIn = Auth.isLoggedIn;
     this.isAdmin = Auth.isAdmin;
@@ -24,18 +24,18 @@ class NavbarController {
     this.interval=$interval;
     this.http=$http;
     this.scope=$scope;
+    this.timeout=$timeout;
     this.bases=[{base:"OME",four:"PAOM"},{base:"OTZ",four:"PAOT"},{base:"UNK",four:"PAUN"},{base:"HEL",four:"HELI"}];
     //this.base=this.bases[0];
     //window.base=this.base;
     this.date=new Date();
     this.dateString=this.date.toLocaleDateString();
     this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
+        weekday: 'short', 
         year: 'numeric', 
-        month: 'long', 
+        month: 'numeric',//''long', 
         day: 'numeric' 
     });
-    window.dateString=this.dateString;
     //this.isToggleAssigned=true;
     //window.toggleAssigned=true;
     this.pairs=[{v:'ST MICHAEL',c:'PAMK'},
@@ -74,6 +74,7 @@ class NavbarController {
     if (window.localStorage.getItem('baseIndex')!==null&&window.localStorage.getItem('baseIndex')!=='undefined') this.base=this.bases[window.localStorage.getItem('baseIndex')];
     else this.base=this.bases[0];
     window.base=this.base;
+    window.dateString=this.dateString;
     if (window.stoppedInterval) this.interval.cancel(window.stoppedInterval);
       window.stoppedInterval=this.interval(()=>{
         this.http.get('/api/todaysFlights/stopped').then(res=>{
@@ -107,48 +108,53 @@ class NavbarController {
         this.interval.cancel(this.myInterval);
       }
     },1000);
-    this.scope.$watch('status.toggleAssigned',(newVal,oldVal)=>{
-      this.isToggleAssigned=newVal;
-    });
+    //this.scope.$watch('status.toggleAssigned',(newVal,oldVal)=>{
+      //this.isToggleAssigned=newVal;
+    //});
+    console.log(this.scope)
   }
 
   minusDate(){
+    //this.isCollapsed=true;
     this.date.setDate(this.date.getDate() - 1);
     this.dateString=this.date.toLocaleDateString();
     this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
+        weekday: 'short', 
         year: 'numeric', 
-        month: 'long', 
+        month: 'numeric',//''long', 
         day: 'numeric' 
     });
     window.dateString=this.dateString;
   }
   
   plusDate() {
+    //this.isCollapsed=true;
     this.date.setDate(this.date.getDate() + 1);
     this.dateString=this.date.toLocaleDateString();
     this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
+        weekday: 'short', 
         year: 'numeric', 
-        month: 'long', 
+        month: 'numeric',//''long', 
         day: 'numeric' 
     });
     window.dateString=this.dateString;
   }
   
-  upDate(){
-    this.date=new Date(this.dateStringFormatted);
+  upDate(key){
+    //this.isCollapsed=true;
+    if (key==='string') this.date=new Date(this.dateStringFormatted);
     this.dateString=this.date.toLocaleDateString();
     this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
+        weekday: 'short', 
         year: 'numeric', 
-        month: 'long', 
+        month: 'numeric',//''long', 
         day: 'numeric' 
     });
     window.dateString=this.dateString;
   }
   
   updateBase(){
+    //this.isCollapsed=true;
     let index=this.bases.map(e => e.base).indexOf(this.base.base);
     if (index>-1) window.localStorage.setItem('baseIndex',index);
     window.base=this.base;

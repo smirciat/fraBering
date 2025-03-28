@@ -33,7 +33,7 @@
       <div class="modal-column" style="text-align:right"><label>Entered By: </label></div>
       <div style="display:inline-block">
         <button class="btn btn-success" ng-click="modal.signClick()">
-          <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+          <i class="fa fa-solid fa-pencil fa-autosize" ></i></button>
           <span>{{modal.manualObs.signature}}</span></div>
       <!--<div class="modal-column"><input class="form-control" name="signature" type="text" ng-model="modal.formData.signature"></div>-->
       <div class="modal-column"><label>{{modal.getTimestamp()}}</label></div>
@@ -80,7 +80,7 @@
     <div class="modal-open-layout">
       <div class="modal-column"><label>Open/Closed</label></div>
       <div class="modal-column">
-        <ui-select style="width:20em;" ng-model="modal.formData.openClosed" theme="selectize" ng-change="modal.updateOpenClosed(modal.isOpen)">
+        <ui-select ng-style="modal.getWidth(20,'em')" ng-model="modal.formData.openClosed" theme="selectize" ng-change="modal.updateOpenClosed(modal.isOpen)">
             <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in ['Open','Closed']" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -90,7 +90,7 @@
     </div>
     <br>
     <label>Runway Score (0-5 Based on Reported Braking Action)</label>
-    <ui-select style="width:20em;" ng-model="modal.runwayObj" theme="selectize" ng-change="modal.updateRunwayScore(modal.runwayObj)">
+    <ui-select ng-style="modal.getWidth(20,'em')" ng-model="modal.runwayObj" theme="selectize" ng-change="modal.updateRunwayScore(modal.runwayObj)">
         <ui-select-match placeholder="Choose...">{{$select.selected.score + ' - Braking ' + $select.selected.descr}}</ui-select-match>
         <ui-select-choices repeat="choice in modal.scores" >
           <div ng-bind-html="choice.score + ' - Braking ' + choice.descr | highlight: $select.search"></div>
@@ -101,7 +101,7 @@
     <div class="modal-contaminent-layout">
       <div class="modal-column">
         <label>Depth</label>
-        <ui-select style="width:10em;" ng-model="modal.depthDisp" theme="selectize" ng-change="modal.updateParam('depth',modal.depthDisp)">
+        <ui-select ng-style="modal.getWidth(10,'em')" ng-model="modal.depthDisp" theme="selectize" ng-change="modal.updateParam('depth',modal.depthDisp)">
             <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in modal.depths" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -110,7 +110,7 @@
       </div>
       <div class="modal-column">
         <label>Contaminent Type</label>
-        <ui-select style="width:20em;" ng-model="modal.contaminentDisp" theme="selectize" ng-change="modal.updateParam('contaminent',modal.contaminentDisp)">
+        <ui-select ng-style="modal.getWidth(20,'em')" ng-model="modal.contaminentDisp" theme="selectize" ng-change="modal.updateParam('contaminent',modal.contaminentDisp)">
             <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in modal.contaminents" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -119,7 +119,7 @@
       </div>
       <div class="modal-column">
         <label>Percent</label>
-        <ui-select style="width:7em;" ng-model="modal.percentDisp" theme="selectize" ng-change="modal.updateParam('percent',modal.percentDisp)">
+        <ui-select ng-style="modal.getWidth(7,'em')" ng-model="modal.percentDisp" theme="selectize" ng-change="modal.updateParam('percent',modal.percentDisp)">
             <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in modal.percents" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -136,20 +136,20 @@
       <div class="modal-column"><input class="form-control" type="checkbox" ng-model="modal.official"></div>
       <div class="modal-column"><label>Official Source</label></div>
       <div class="modal-column">
-        <input class="form-control" type="text" ng-model="modal.formData.officialSource" ng-blur="modal.makeOfficial()" style="width:300px"></div>
+        <input class="form-control" type="text" ng-model="modal.formData.officialSource" ng-blur="modal.makeOfficial()" ng-style="modal.getWidth(300,'px')"></div>
     </div>
     <div class="modal-contaminent-layout" style="align-items: end;">
       <div class="modal-column"><input class="form-control" type="checkbox" ng-model="modal.unOfficial"></div>
       <div class="modal-column"><label>Unofficial Source</label></div>
       <div class="modal-column">
-        <input class="form-control" type="text" ng-model="modal.formData.unOfficialSource" ng-blur="modal.makeUnOfficial()" style="width:300px"></div>
+        <input class="form-control" type="text" ng-model="modal.formData.unOfficialSource" ng-blur="modal.makeUnOfficial()" ng-style="modal.getWidth(300,'px')"></div>
     </div>
     <br>
     <div class="modal-contaminent-layout" style="align-items: center;">
       <div class="modal-column" style="text-align:right"><label>Entered By: </label></div>
       <div style="display:inline-block">
         <button class="btn btn-success" ng-click="modal.signClick()">
-          <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+          <i class="fa fa-solid fa-pencil fa-autosize" ></i></button>
           <span>{{modal.formData.signature}}</span></div>
       <!--<div class="modal-column"><input class="form-control" name="signature" type="text" ng-model="modal.formData.signature"></div>-->
       <div class="modal-column"><label>{{modal.timestampObj.timestampString}}</label></div>
@@ -170,7 +170,37 @@
   <div ng-if="modal.flightModal">
     <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
       <div class="modal-column">
-        <table class="table table-borderless">
+        <table class="table table-borderless" style="margin-bottom:5px">
+          <tbody>
+            <tr>
+              <td style="text-align:center">ORIGIN</td>
+            </tr>
+            <tr>
+              <td style="text-align:center">{{modal.flight.airportObjs[0].airport.threeLetter+'BA'}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-column">
+        <table class="table table-bordered" style="margin-bottom:5px">
+          <thead>
+            <tr>
+              <td style="text-align:center">DEPARTURE DATE/TIME</td>
+              <td style="text-align:center">OC &nbsp&nbsp&nbsp&nbsp CONTACT</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align:center">{{modal.flight.date + ' &nbsp&nbsp&nbsp&nbsp ' + modal.flight.departTimes[0].substring(0,5) + ' local'}}</td>
+              <td style="text-align:center">DO &nbsp&nbsp&nbsp&nbsp (907) 443-8985</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
+      <div class="modal-column">
+        <table class="table table-borderless" style="margin-bottom:5px">
           <tbody>
             <tr>
               <td style="text-align:center">AIRCRAFT</td>
@@ -182,7 +212,7 @@
         </table>
       </div>
       <div class="modal-column">
-        <table class="table table-bordered" style="margin-bottom:0px">
+        <table class="table table-bordered" style="margin-bottom:5px">
           <thead>
             <tr>
               <td style="text-align:center">CONFIG</td><td style="text-align:center">OWE</td>
@@ -197,13 +227,24 @@
               <td style="text-align:center">{{modal.flight.pfr.legArray[0].mgtow}}</td>
               <td style="text-align:center">{{modal.flight.pfr.legArray[0].mgtow-modal.flight.pfr.legArray[0].operatingWeightEmpty-modal.flight.pfr.legArray[0].fuel}}</td>
             </tr>
+            <tr>
+              <td style="text-align:center">#PAX</td><td style="text-align:center">OW</td>
+              <td style="text-align:center">TaxiFuel</td><td style="text-align:center">TOW</td><td style="text-align:center">TTL LOAD</td>
+            </tr>
+            <tr>
+              <td style="text-align:center">{{modal.flight.pfr.legArray[0].paxNoLoad}}</td>
+              <td style="text-align:center">{{modal.flight.pfr.legArray[0].operatingWeightEmpty+modal.flight.pfr.legArray[0].fuel}}</td>
+              <td style="text-align:center">{{modal.flight.equipment.taxiFuel}}</td>
+              <td style="text-align:center">{{modal.flight.pfr.legArray[0].operatingWeightEmpty+modal.flight.pfr.legArray[0].fuel+modal.flight.pfr.legArray[0].paxWeightLoad+modal.flight.pfr.legArray[0].bagsLoad+modal.flight.pfr.legArray[0].cargoLoad+modal.flight.pfr.legArray[0].mailLoad}}</td>
+              <td style="text-align:center">{{modal.flight.pfr.legArray[0].paxWeightLoad+modal.flight.pfr.legArray[0].bagsLoad+modal.flight.pfr.legArray[0].cargoLoad+modal.flight.pfr.legArray[0].mailLoad}}</td>
+            </tr>
           </tbody>
         </table>
       </div>
     </div>
     <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
       <div class="modal-column">
-        <table class="table table-borderless">
+        <table class="table table-borderless" style="margin-bottom:5px">
           <tbody>
             <tr><td style="text-align:center">FUEL</td></tr>
             <tr><td></td></tr>
@@ -211,7 +252,7 @@
         </table>
       </div>
       <div class="modal-column">
-        <table class="table table-bordered" style="margin-bottom:0px">
+        <table class="table table-bordered" style="margin-bottom:5px">
           <tbody>
             <tr>
               <td style="text-align:center">FOB</td>
@@ -220,8 +261,10 @@
               <td style="text-align:center">Request</td>
             </tr>
             <tr>
-              <td style="text-align:center;" rowspan="2"><input class="form-control-inline" style="margin-top:15px;" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.flight.pilotAgree"></td>
-              <td style="text-align:center;" rowspan="2"><input class="form-control-inline" style="margin-top:15px;"  type="text" ng-model="modal.flight.fuelTotalTaxi" ng-disabled="modal.flight.pilotAgree"></td>
+              <td style="text-align:center;" rowspan="2">
+                <input class="form-control-inline" style="margin-top:15px;" ng-style="modal.getWidth(100,'px')" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.flight.pilotAgree"></td>
+              <td style="text-align:center;" rowspan="2">
+                <input class="form-control-inline" style="margin-top:15px;" ng-style="modal.getWidth(100,'px')" type="text" ng-model="modal.flight.fuelTotalTaxi" ng-disabled="modal.flight.pilotAgree"></td>
               <td style="text-align:center;" rowspan="2"><div style="margin-top:15px;">{{modal.getGals(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}}</div></td>
               <!--<td style="text-align:center">{{modal.getLbs(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}} lbs</td>-->
               <td style="text-align:center"><span>{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main||0}}</span><small> gal/side MAIN</small></td>
@@ -236,7 +279,7 @@
     
     <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
       <div class="modal-column">
-        <table class="table table-borderless">
+        <table class="table table-borderless" style="margin-bottom:0px">
           <tbody>
             <tr><td style="text-align:center">MEL(s)</td></tr>
             <tr><td style="text-align:center">OTHER</td></tr>
@@ -244,7 +287,7 @@
         </table>
       </div>
       <div class="modal-column">
-        <table class="table table-borderless">
+        <table class="table table-borderless" style="margin-bottom:0px">
           <tbody>
             <tr><td><input style="width:100%" type="text" ng-model="modal.flight.mel" ng-disabled="modal.flight.pilotAgree"></td></tr>
             <tr><td><input style="width:100%" type="text" ng-model="modal.flight.other" ng-disabled="modal.flight.pilotAgree"></td></tr>
@@ -279,15 +322,41 @@
     </div>
     <hr class="my-hr">
     <div>
+      <p style="font-weight:bold">ENVIRONMENT</p>
       <div ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index">
-        <div class='airport-card'ng-class="metarObj.color">
-          <p style="margin:0px;padding:5px;width:60px;text-align:center;" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
+        <div class='airport-card' ng-class="metarObj.color">
+          <p style="margin:0px;padding:5px;text-align:center;width:60px;" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
                 >{{metarObj.airport.threeLetter}}</p>
         </div>
         <span style="font-weight:bold">&nbsp;&nbsp;&nbsp;{{modal.getDestinationType($index)}}</span>
+        <span style="font-weight:bold">{{modal.flight.departTimesZulu[$index]}}</span>
         <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj['Raw-Report']}}</p>
+        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">TAF: {{metarObj.taf}}</p>
+        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="false&&metarObj.airport.manualObs">Ceiling: {{metarObj.airport.manualObs.ceiling}}</p>
         <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">RUNWAY {{metarObj.airport.icao+' '+metarObj.airport.openClosed+', '+modal.formatScore(metarObj.airport.runwayScore)+' '+metarObj.airport.comment}}</p>
         <br>
+      </div>
+      <div ng-if="!modal.flight.alternate">
+        <span style="font-weight:bold">Add Alternate</span>
+        <ui-select ng-style="modal.getWidth(15,'em')" ng-model="modal.alternateDisp" theme="selectize" ng-change="modal.updateParam('alternate',modal.alternateDisp)">
+            <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+            <ui-select-choices repeat="choice in modal.alternates" >
+              <div ng-bind-html="choice | highlight: $select.search"></div>
+            </ui-select-choices>
+        </ui-select>
+      </div>
+      <div ng-if="modal.flight.alternate">
+        <div class='airport-card' ng-class="modal.flight.altObj.metarObj.color">
+          <p style="margin:0px;padding:5px;text-align:center;width:60px;" tooltip-placement="bottom" uib-tooltip="{{modal.flight.altObj.currentMetar}}"
+                >{{modal.flight.altObj.threeLetter}}</p>
+        </div>
+        <span style="font-weight:bold">&nbsp;&nbsp;&nbsp;Alternate</span>
+        <span style="font-weight:bold; color:lightblue" ng-click="modal.clearAlternate()">&nbsp;&nbsp;&nbsp;Click To Clear</span>
+        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{modal.flight.altObj.currentMetar}}</p>
+        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">TAF: {{modal.flight.altObj.currentTaf}}</p>
+        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">RUNWAY {{modal.flight.altObj.icao+' '+modal.flight.altObj.openClosed+', '+modal.formatScore(modal.flight.altObj.runwayScore)+' '+modal.flight.altObj.comment}}</p>
+        <br>
+      </div>
       </div>
     </div>
     <br>
@@ -296,9 +365,9 @@
         <table class="table table-borderless">
           <tr>
             <td><span style="padding-top:5px;margin-top:5px">FIKI?</span></td>
-            <td><input class="form-control" style="width:30px;margin:0;padding:0" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.flight.pilotAgree"></td>
+            <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.flight.pilotAgree"></td>
             <td><span style="padding-top:5px;margin-top:5px">OTHER:</span></td>
-            <td><input style="width:350px; padding-top:5px;margin-top:5px" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.flight.pilotAgree"></td>
+            <td><input style="padding-top:5px;margin-top:5px" ng-style="modal.getWidth(300,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.flight.pilotAgree"></td>
           </tr>
         </table>
       </div>
@@ -307,7 +376,7 @@
     <div style="font-weight:bold;">
       <table class="table table-borderless">
         <tr><td>SECURITY/SPECIAL OPS</td></tr>
-        <tr><td><input style="width:500px" name="security" type="text" ng-model="modal.flight.security" ng-disabled="modal.flight.pilotAgree"></td></tr>
+        <tr><td><input ng-style="modal.getWidth(500,'px')" name="security" type="text" ng-model="modal.flight.security" ng-disabled="modal.flight.pilotAgree"></td></tr>
       </table>
     </div>
     <hr class="my-hr">
@@ -317,9 +386,10 @@
         <td><p style="padding-top:5px; margin-top:7px; ">DISPATCHER</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree || !modal.isAdmin">
-                <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+            <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree || !modal.isAdmin || !modal.flight.pfr.legArray[0].fuel">
+                <i class="fa fa-solid fa-pencil fa-autosize" ></i></button>
             <span>{{modal.flight.dispatchRelease}}</span>
+            <span><i class="fa fa-solid fa-info-circle fa-autosize" ng-click="modal.dispatchInfo()"></i></span>
           </div>
         <td><p style="padding-top:5px; margin-top:7px;">/</p></td>
         <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.dispatchReleaseTimestamp)}}</p</td>     
@@ -328,9 +398,10 @@
         <td><p style="padding-top:5px; margin-top:7px; ">OC MANAGER</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.ocClick()" ng-disabled="!modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree || !modal.isSuperAdmin">
-                <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+            <button class="btn btn-success" ng-click="modal.ocClick()" ng-disabled="!modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree || !modal.isSuperAdmin || !modal.flight.pfr.legArray[0].fuel">
+                <i class="fa fa-solid fa-pencil fa-autosize" ></i></button>
             <span>{{modal.flight.ocRelease}}</span>
+            <span><i class="fa fa-solid fa-info-circle fa-autosize" ng-click="modal.ocInfo()"></i></span>
           </div>
         </td>  
         <td><p style="padding-top:5px; margin-top:7px;">/</p></td>
@@ -344,8 +415,9 @@
         <td>
           <div style="display:inline-block" >
             <button class="btn btn-success" ng-click="modal.pilotClick()" ng-disabled="modal.isWrongUser() || modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || modal.flight.pilotAgree || modal.user.name==='Bering Air'">
-                <i class="fa fa-solid fa-pencil fa-autosize" aria-hidden="true"></i></button>
+                <i class="fa fa-solid fa-pencil fa-autosize"></i></button>
             <span>{{modal.flight.pilotAgree}}</span>
+            <span><i class="fa fa-solid fa-info-circle fa-autosize"  ng-click="modal.pilotInfo()"></i></span>
           </div>
         </td>  
         <!--<td><input name="pilotAgree" type="text" ng-model="modal.pilotAgree" ng-blur="modal.acceptSig(modal.pilotAgree)" ng-disabled="modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || modal.flight.pilotAgree"></td>-->

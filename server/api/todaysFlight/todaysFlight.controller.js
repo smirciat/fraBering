@@ -20,7 +20,7 @@ let airplanes=[];
 let fbAirplanes=[];
 let pfrs=[];
 let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
-const baseUrl = 'http://localhost:' + config.port;
+const baseUrl = 'https://localhost:' + config.port;
 const axios = require("axios");
 const https = require("https");
 const agent = new https.Agent({
@@ -31,7 +31,7 @@ let staleFile=false;
 let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50,taxiFuel:35},
        {id:2,name:"Navajo",wind:40,xwind:30,temp:-40,taxiFuel:35},
        {id:3,name:"Casa",wind:35,xwind:25,temp:-50,taxiFuel:110},
-       {id:4,name:"King Air",wind:40,xwind:35,temp:-50,taxiFuel:90},
+       {id:4,name:"King Air",wind:40,xwind:35,temp:-50,taxiFuel:90,maxMain:1293,maxAux:529},
        {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50,taxiFuel:110,maxMain:1621,maxAux:621},
        {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50,taxiFuel:70}];
 
@@ -275,7 +275,6 @@ async function log(){
 export async function tf(req,res) {
   try {
     let flightLog=await log();
-    console.log(flightLog[0]);
     if (true) {//(!allAirports||allAirports.length===0) {
       allAirports=[];
       let instance=await AirportRequirement.findAll({});
@@ -303,9 +302,10 @@ export async function tf(req,res) {
     let stats=fs.statSync(__dirname+'/../../fileserver/'+file, 'utf-8');
     console.log('Timestamp of current.csv is: ' + new Date(stats.mtimeMs).toLocaleString());
     const tenMinutesAgo = new Date(new Date().getTime() - 10 * 60 * 1000); // 10 minutes in milliseconds
+    const hour=new Date().getHours();
     if (stats.mtimeMs < tenMinutesAgo) {
       staleFile=true;
-      if (false){//hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
+      if (hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
         
         axios.post(baseUrl + '/api/monitors/twilio',{to:"+19073992019",body:"Takeflite updating has stopped"}, { httpsAgent: agent }).then((res)=>{
                 stopped=true;
@@ -395,6 +395,7 @@ export async function tf(req,res) {
     let airports=[];
     let flights=[];
     let flight;
+    currentFlights.push({departTime:'00:00:00',from:'here',to:'there',flightNum:'000',flightId:'000'});
     currentFlights.forEach((f,index)=>{
       //still same flight
       if (index>0&&f.flightNum===currentFlights[index-1].flightNum&&f.date===currentFlights[index-1].date){
@@ -405,8 +406,8 @@ export async function tf(req,res) {
       if (index===0||f.flightNum!==currentFlights[index-1].flightNum||index===currentFlights.length-1||f.date!==currentFlights[index-1].date) { 
         //close out previous flight
         if (index>0) {
-          if (index>=currentFlights.length-1) airports.push(currentFlights[index].to);
-          else airports.push(currentFlights[index-1].to);
+          //if (index>=currentFlights.length-1) airports.push(currentFlights[index].to);
+          airports.push(currentFlights[index-1].to);
           flight.airports=airports;
           //calculate flight time for last leg here---------------------------------------------------------------------------
           let speed=160;
@@ -419,7 +420,7 @@ export async function tf(req,res) {
           let flightTime=60*getDistance(currentFlights[index-1].to,currentFlights[index-1].from)/speed + 10;//est flight time in minutes
           let lastTime=new Date(currentFlights[index-1].date);
           let timeArr=currentFlights[index-1].departTime.split(':');
-          if (index>=currentFlights.length-1) {
+          if (false){//(index>=currentFlights.length-1) {
             flightTime=60*getDistance(currentFlights[index].to,currentFlights[index].from)/speed + 10;
             lastTime=new Date(currentFlights[index].date);
             timeArr=currentFlights[index].departTime.split(':');
@@ -496,12 +497,12 @@ export async function tf(req,res) {
         let i=allAirports.map(e=>e.name).indexOf(a);
         if (i>-1) {
           airport=JSON.parse(JSON.stringify(allAirports[i]));
-          
           let taf='';
           let TAF={};
           if (airport.currentTaf) taf=airport.currentTaf;
+          taf=airport.currentTaf;
           if (airport.currentTafObject) TAF=airport.currentTafObject;
-          if (airport.metarObj&&(!taf||taf==='')) taf=airport.metarObj.taf;
+          //if (airport.metarObj&&(!taf||taf==='')) taf=airport.metarObj.taf;
           if (!airport.metarObj) {
             if (airport.currentMetar) airport.metarObj={metar:airport.currentMetar};
             else airport.metarObj={};
@@ -512,7 +513,15 @@ export async function tf(req,res) {
           if (airport.metarObj.color===' airport-blue'||airport.metarObj.color===' airport-purple') {
             if (airport.manualObs&&airport.manualTimestamp&&isLessThanOneHourAgo(new Date(airport.manualTimestamp))){
               if (typeof airport.metarObj!=='object') airport.metarObj={};
-              if (!airport.metarObj['Raw-Report']) airport.metarObj['Raw-Report']="Manual Observation";
+              if (!airport.metarObj['Raw-Report']) {
+                let obs="UNOFFICIAL: ";
+                if (airport.manualObs.isOfficial) obs="OFFICIAL OBSERVATION: ";
+                if (airport.manualObs.windSpeed&&airport.manualObs.windDirection) obs=obs + "Wind " + airport.manualObs.windDirection + "@" + airport.manualObs.windSpeed + "kts";
+                if (airport.manualObs.visibility) obs=obs + ", Visibility " + airport.manualObs.visibility;
+                if (airport.manualObs.ceiling) obs=obs + ", Ceiling " + airport.manualObs.ceiling;
+                if (airport.manualObs.altimeter) obs=obs + ", Altimeter " + airport.manualObs.altimeter;
+                airport.metarObj['Raw-Report']=obs;
+              }
               airport.metarObj.Visibility=airport.manualObs.visibility;
               airport.metarObj.Ceiling=airport.manualObs.ceiling;
               airport.metarObj['Wind-Gust']=airport.manualObs.windSpeed;
@@ -521,6 +530,7 @@ export async function tf(req,res) {
               airport.metarObj.isOfficial=airport.manualObs.isOfficial;
               airport.metarObj.usingManual=true;
               airport.metarObj.color=overallRiskClass(airport.metarObj);
+              if (!airport.metarObj.isOfficial&&airport.metarObj.usingManual) airport.metarObj.color=airport.metarObj.color+" unofficial";
             }
           }
           airport.metarObj.taf=taf;
@@ -538,11 +548,16 @@ export async function tf(req,res) {
           }  
           else airport.metarObj={airport:JSON.parse(JSON.stringify(airport))};
         }
+        
         flight.airportObjs.push(airport.metarObj);
+        
       }
-      //console.log(flight.airportObjs);
-      if (flight.airportObjs) flight.color=flightRiskClass(flight.airportObjs);
+      if (flight.airportObjs) {
+        flight.color=flightRiskClass(JSON.parse(JSON.stringify(flight.airportObjs)));
+        //if (flight.ocRelease) flight.color+=' oc';
+      }
       else console.log('No airportObjs?');
+      
       let fbIndex=fbAirplanes.map(e=>e._id).indexOf(flight.aircraft);
       let eqIndex=-1;
       if (fbIndex>-1&&fbAirplanes[fbIndex]) {
@@ -643,12 +658,27 @@ export async function tf(req,res) {
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
-        if (JSON.stringify(todaysFlights[index].airports)!==JSON.stringify(flight.airports)){
+        todaysFlights[index].departTimesZulu=JSON.parse(JSON.stringify(todaysFlights[index].departTimes));
+        todaysFlights[index].departTimes.forEach((t,i)=>{
+                  let timeString=t.toString();
+                  let d=new Date();
+                  const [hours, minutes, seconds] = timeString.split(":").map(Number);
+                  d.setHours(hours, minutes, seconds);
+                  let resp=d.toISOString();
+                  if (resp.split('T').length>0) {
+                    resp=resp.split('T')[1];
+                    todaysFlights[index].departTimesZulu[i]=resp;
+                    if (resp.split(':').length>1){
+                      todaysFlights[index].departTimesZulu[i]='('+resp.split(':')[0]+':'+resp.split(':')[1]+'Z)';
+                    } 
+                  }
+        });
+        //if (JSON.stringify(todaysFlights[index].airports)!==JSON.stringify(flight.airports)){
           //console.log(todaysFlights[index]._id+' airports'); 
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].airports=flight.airports;
           todaysFlights[index].departTimes=flight.departTimes;
-        }
+        //}
         todaysFlights[index].airportObjs=flight.airportObjs;
         if (!todaysFlights[index].pilotAgree) {
           todaysFlights[index].airportObjsLocked=JSON.parse(JSON.stringify(todaysFlights[index].airportObjs));

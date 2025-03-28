@@ -138,6 +138,7 @@ angular.module('workspaceApp')
 
             quickModal = openModal({
               modal: {
+                getWidth:window.getWidth,
                 dismissable: true,
                 show:false,
                 airportModal:true,
@@ -169,26 +170,49 @@ angular.module('workspaceApp')
           return function() {
             var args = Array.prototype.slice.call(arguments),
                 flight = args.shift(),
+                alternateAirports = args.shift(),
                 isAdmin = args.shift(),
                 isSuperAdmin = args.shift(),
                 user = args.shift(),
                 userLastname = args.shift(),
+                alternates=['PAOM','PAOT','PAUN','PABE','PAGA','PAFA','PANC'],
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
                 bgColors=['lightgreen','lightblue','#DAB1DA','yellow','orange','#ff0033'],
                 scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
                 timestamp=new Date().toLocaleString(),
+                alternateDisp=flight.alternate,
                 quickModal;
             quickModal = openModal({
               modal: {
+                getWidth:window.getWidth,
                 flight:flight,
                 dismissable: true,
                 show:false,
                 flightModal:true,
                 timestamp,timestamp,
+                alternates:alternates,
+                alternateDisp:alternateDisp,
                 pilotAgree:flight.pilotAgree,
                 isAdmin:isAdmin,
                 isSuperAdmin:isSuperAdmin,
                 user:user,
+                clearAlternate:function(){
+                  flight.alternate=null;
+                  alternateDisp=undefined;
+                },
+                updateParam:function(key,obj){
+                  flight[key]=obj;
+                  let i=alternateAirports.map(e=>e.icao).indexOf(flight.alternate);
+                  if (i>-1) flight.altObj=alternateAirports[i];
+                  console.log(flight.altObj)
+                },
+                zulu:function(index){
+                  let timeString=flight.departTimes[index];
+                  let d=new Date();
+                  const [hours, minutes, seconds] = timeString.split(":").map(Number);
+                  d.setHours(hours, minutes, seconds);
+                  return d.toISOString();
+                },
                 formatScore:function(s){
                   let i=scores.map(e=>e.score).indexOf(s*1);
                   if (i>-1) return s + ' - Braking ' + scores[i].descr;
@@ -255,6 +279,9 @@ angular.module('workspaceApp')
                   if (i>-1) return bgColors[i];
                   else return '';
                 },
+                dispatchInfo:function(){window.alert('Dispatch Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is NOT orange or red, the captain has successfully created a PFR and entered fuel quantity, and you are logged in as a dispatch or OC manager.')},
+                ocInfo:function(){window.alert('OC Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is orange or red, the captain has successfully created a PFR and entered fuel quantity, and you are logged in as an OC manager.')},
+                pilotInfo:function(){window.alert('Pilot Acceptance can ONLY be signed when: the flight is within one hour of scheduled departure, the disptach or OC manager release has been signed, the captain has successfully created a PFR and entered fuel quantity, and the you are logged in as the Captain of the flight.')},
                 title: 'Flight Release  BRG' + flight.flightNum +' '+ flight.aircraft,
                 buttons: [ {//this is where you define you buttons and their appearances
                   classes: 'btn-primary',
@@ -305,6 +332,7 @@ angular.module('workspaceApp')
                 quickModal;
             quickModal = openModal({
               modal: {
+                getWidth:window.getWidth,
                 airport:airport,
                 manualObs:manualObs,
                 dismissable: true,
@@ -371,6 +399,7 @@ angular.module('workspaceApp')
                 runway:true,
                 unOfficial:unOfficial,
                 official:official,
+                getWidth:window.getWidth,
                 makeUnOfficial:function(){
                   if (formData.unOfficialSource) {
                     formData.officialSource=null;

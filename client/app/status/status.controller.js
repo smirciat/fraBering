@@ -49,6 +49,12 @@ class StatusComponent {
   $onInit() {
     this.width=document.documentElement.clientWidth;
     if (this.width<=768) this.mobile=true;
+    window.width=this.width;
+    window.getWidth=function(num,kind){
+      if (window.width<768) num=Math.floor(num/2);
+      let val=num.toString()+kind;
+      return {"width":val};
+    };
     //this.http.post('/api/airportRequirements/notams',{airport:'PAOM'}).then(res=>{
     //  console.log(res.data);
     //});
@@ -147,7 +153,10 @@ class StatusComponent {
       this.toggleAssigned=newVal;
     });
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
+      this.spinner=true;
+      if (!newVal||newVal==='') return;
       this.timeout(()=>{
+        this.scope.nav.isCollapsed=true;
         this.base=newVal;
         if (this.base&&this.base.base==='UNK') {
           this.toggleAssigned=false;
@@ -158,6 +167,7 @@ class StatusComponent {
           window.toggleAssigned=this.toggleAssigned;
         }
         if (this.masterAirports) this.setBase(this.masterAirports);
+        if (!oldVal) return;
         this.setPilotList();
         this.setAirplaneList();
         this.setAvailableFlights();
@@ -165,48 +175,35 @@ class StatusComponent {
       },0);
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
-      //this.getTakeflite({dateString:'10/20/2024',file:'tomorrow.csv'});
+      this.spinner=true;
       if (!newVal||newVal==='') return;
-      this.dateString=newVal;
-      this.date=new Date(this.dateString);
-      this.setPilotList();
-      this.setAirplaneList();
-      this.setAvailableFlights();
-      this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
-        this.allTodaysFlights=res.data;
-        this.todaysFlights=this.filterTodaysFlights(res.data);
-        console.log(this.todaysFlights);
-        this.scroll();
-        this.socket.unsyncUpdates('todaysFlight');
-        this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
-          //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
-          if (item.colorPatch&&item.colorPatch==='true') return;
-          //console.log('todaysFlights Updated ' + event);
-          //console.log(item);
-          this.allTodaysFlights=array;
-          this.todaysFlights=this.filterTodaysFlights(array);
+      //this.getTakeflite({dateString:'10/20/2024',file:'tomorrow.csv'});
+      this.timeout(()=>{
+        this.scope.nav.isCollapsed=true;
+      //if (!oldVal||oldVal==='') return;
+        this.dateString=newVal;
+        this.date=new Date(this.dateString);
+        this.setPilotList();
+        this.setAirplaneList();
+        this.setAvailableFlights();
+        this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
+          this.allTodaysFlights=res.data;
+          this.todaysFlights=this.filterTodaysFlights(res.data);
+          console.log(this.todaysFlights);
+          this.scroll();
+          this.socket.unsyncUpdates('todaysFlight');
+          this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
+            //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
+            if (item.colorPatch&&item.colorPatch==='true') return;
+            //console.log('todaysFlights Updated ' + event);
+            //console.log(item);
+            this.allTodaysFlights=array;
+            this.todaysFlights=this.filterTodaysFlights(array);
+          });
         });
-      });
+      },0);
     });
-    this.scope.$watch('status.chosenFlight',(newVal,oldVal)=>{
-      let index;
-      if (this.chosenFlight._id&&this.chosenPilot._id&&this.chosenAircraft._id){
-        this.chosenFlight.chosenPilot=this.chosenPilot;
-        this.chosenFlight.chosenAircraft=this.chosenAircraft;
-        this.assignedFlights.push(this.chosenFlight);
-        this.patchCalendarFlights(this.chosenFlight);
-        //remove 3 elements from their arrays
-        index=this.sortedPilots.map(e=>e._id).indexOf(this.chosenPilot._id);
-        if (index>-1) this.sortedPilots.splice(index,1);
-        index=this.displayedAircraft.map(e=>e._id).indexOf(this.chosenAircraft._id);
-        if (index>-1) this.displayedAircraft.splice(index,1);
-        index=this.unassignedFlights.map(e=>e._id).indexOf(this.chosenFlight._id);
-        if (index>-1) this.unassignedFlights.splice(index,1);
-        this.chosenFlight={};
-        this.chosenPilot={};
-        this.chosenAircraft={};
-      }
-    });
+    
     this.http.get('/api/airportRequirements').then(res=>{
       this.masterAirports=res.data;
       this.airports=this.setBase(res.data);
@@ -242,6 +239,7 @@ class StatusComponent {
         });
       });
     });
+    console.log(this.scope)
   }
   
   nonPilot(nonPilot){
@@ -414,12 +412,15 @@ class StatusComponent {
   }
   
   scroll(){
-    if (this.mobile) return;
     if (!this) {
       console.log('check scope');
       return;
     }
     this.timeout(()=>{
+      if (this.mobile) {
+        this.spinner=false;
+        return;
+      }
       if (!this.todaysFlights) return;
       let scrollDate=new Date();
       let filteredFlights=this.todaysFlights.filter(this.todaysFlightDisplayFilter);
@@ -444,6 +445,7 @@ class StatusComponent {
       console.log('auto scrolling');
       let element = document.getElementById(scrollId);
       element.scrollIntoView({ behavior: 'smooth' });
+      this.spinner=false;
       //document.body.scrollTop = document.documentElement.scrollTop = 0;
     },1000);
   }
@@ -647,7 +649,11 @@ class StatusComponent {
     if (!flight.fuelTotalTaxi&&flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0]) flight.fuelTotalTaxi=flight.taxiFuel*1+flight.pfr.legArray[0].fuel*1;
     let lastname='';
     if (this.user.name&&this.user.name.split(' ').length>1) lastname=this.user.name.split(' ')[1];
-    this.flightModal(JSON.parse(JSON.stringify(flight)),this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
+    if (flight.alternate){
+      let i=this.alternateAirports.map(e=>e.icao).indexOf(flight.alternate);
+      if (i>-1) flight.altObj=this.alternateAirports[i];
+    }
+    this.flightModal(JSON.parse(JSON.stringify(flight)),this.alternateAirports,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
   }
   
   getDate(timestamp){

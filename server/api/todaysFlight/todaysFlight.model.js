@@ -24,6 +24,7 @@ export default function(sequelize, DataTypes) {
     daysOfWeek: DataTypes.ARRAY(DataTypes.INTEGER),
     airports: DataTypes.ARRAY(DataTypes.STRING),
     departTimes: DataTypes.ARRAY(DataTypes.TIME),
+    departTimesZulu: DataTypes.JSONB,
     base: DataTypes.STRING,
     status: DataTypes.STRING,
     json: DataTypes.JSONB,
@@ -53,6 +54,7 @@ export default function(sequelize, DataTypes) {
     otherEnvironment:DataTypes.STRING,
     taxiFuel:DataTypes.STRING,
     enrouteChanges:DataTypes.STRING,
-    equipment:DataTypes.JSONB
+    equipment:DataTypes.JSONB,
+    alternate:DataTypes.STRING
   });
 }

@@ -1,5 +1,6 @@
 <navbar></navbar>
 <section style="background-color:rgba(51, 170, 51, .02);" ng-class="status.getLayout()" ng-if="status.Auth.isUser()">
+  <div ng-if="status.spinner" class="myspinner"></div>
   <div ng-if="status.fixedWing()" ng-class="status.getColumn()">
       <div class="grid-parent" ng-repeat="airport in status.airports">
         <div class="airport" ng-class="status.airportClass(airport)"
@@ -38,7 +39,7 @@
             </div>
             <div class="airport-card" ng-repeat="metarObj in flight.airportObjs track by $index">
               <!-- status.overallRiskClass(metarObj)  -->
-              <div ng-class="status.getUnofficial(metarObj)">
+              <div ng-class="metarObj.color">
                 <p style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
                       ng-mousedown="status.handleClick($event,metarObj,'metar',flight._id,$index)">{{metarObj.airport.threeLetter}}</p>
               </div>
