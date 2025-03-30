@@ -168,42 +168,41 @@
     </div>
   </div>
   <div ng-if="modal.flightModal">
-    <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
+    <div class="modal-checkbox-layout" style="align-items: center">
       <div class="modal-column">
         <table class="table table-borderless" style="margin-bottom:5px">
-          <tbody>
-            <tr>
-              <td style="text-align:center">ORIGIN</td>
+          
+            <!--<tr style="margin:0px">
+              <td style="text-align:center; margin:0px; padding:0px">ORIGIN</td>
+            </tr>-->
+            <tr style="margin:0px">
+              <td style="text-align:center; margin:0px; padding:0px">{{modal.flight.airportObjs[0].airport.threeLetter+'BA'}}</td>
             </tr>
-            <tr>
-              <td style="text-align:center">{{modal.flight.airportObjs[0].airport.threeLetter+'BA'}}</td>
-            </tr>
-          </tbody>
+          
         </table>
       </div>
       <div class="modal-column">
-        <table class="table table-bordered" style="margin-bottom:5px">
-          <thead>
-            <tr>
-              <td style="text-align:center">DEPARTURE DATE/TIME</td>
-              <td style="text-align:center">OC &nbsp&nbsp&nbsp&nbsp CONTACT</td>
+        <table class="table table-borderless" style="margin-bottom:5px">
+          
+            <!--<tr style="margin:0px">
+              <td style="text-align:center; margin:0px; padding:0px">DEPARTURE DATE/TIME</td>
+              <td style="text-align:center; margin:0px; padding:0px">OC &nbsp&nbsp&nbsp&nbsp CONTACT</td>
+            </tr>-->
+          
+            <tr style="margin:0px">
+              <td style="text-align:center; margin:0px; padding:0px">{{modal.flight.date + ' &nbsp&nbsp&nbsp&nbsp ' + modal.flight.departTimes[0].substring(0,5) + ' local'}}</td>
+              <td style="text-align:center; margin:0px; padding:0px">OC/ {{modal.flight.ocName + ' ' + modal.flight.ocNumber}}</td>
             </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="text-align:center">{{modal.flight.date + ' &nbsp&nbsp&nbsp&nbsp ' + modal.flight.departTimes[0].substring(0,5) + ' local'}}</td>
-              <td style="text-align:center">DO &nbsp&nbsp&nbsp&nbsp (907) 443-8985</td>
-            </tr>
-          </tbody>
+          
         </table>
       </div>
     </div>
-    <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
+    <div class="modal-checkbox-layout" style="align-items: center">
       <div class="modal-column">
         <table class="table table-borderless" style="margin-bottom:5px">
           <tbody>
             <tr>
-              <td style="text-align:center">AIRCRAFT</td>
+              <td style="text-align:center; font-weight:bold">AIRCRAFT</td>
             </tr>
             <tr>
               <td style="text-align:center">{{modal.flight.aircraft}}</td>
@@ -216,33 +215,35 @@
           <thead>
             <tr>
               <td style="text-align:center">CONFIG</td><td style="text-align:center">OWE</td>
-              <td style="text-align:center">FUEL</td><td style="text-align:center">MGTOW</td><td style="text-align:center">LOAD AV</td>
+              <td style="text-align:center; font-weight:bold">T/O FUEL</td><td style="text-align:center">MGTOW</td>
+              <td style="text-align:center; font-weight:bold">LOAD AV</td>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td style="text-align:center">{{modal.flight.status}}</td>
               <td style="text-align:center">{{modal.flight.pfr.legArray[0].operatingWeightEmpty}}</td>
-              <td style="text-align:center">{{modal.flight.pfr.legArray[0].fuel}}</td>
+              <td style="text-align:center; font-weight:bold" ng-class="modal.fuelSanity(modal.flight.pfr.legArray[0].fuel)">{{modal.flight.pfr.legArray[0].fuel}}</td>
               <td style="text-align:center">{{modal.flight.pfr.legArray[0].mgtow}}</td>
-              <td style="text-align:center">{{modal.flight.pfr.legArray[0].mgtow-modal.flight.pfr.legArray[0].operatingWeightEmpty-modal.flight.pfr.legArray[0].fuel}}</td>
+              <td style="text-align:center; font-weight:bold">{{modal.flight.pfr.legArray[0].mgtow-modal.flight.pfr.legArray[0].operatingWeightEmpty-modal.flight.pfr.legArray[0].fuel}}</td>
             </tr>
             <tr>
               <td style="text-align:center">#PAX</td><td style="text-align:center">OW</td>
-              <td style="text-align:center">TaxiFuel</td><td style="text-align:center">TOW</td><td style="text-align:center">TTL LOAD</td>
+              <td style="text-align:center">TaxiFuel</td><td style="text-align:center">TOW</td>
+              <td style="text-align:center; font-weight:bold">TTL LOAD</td>
             </tr>
             <tr>
               <td style="text-align:center">{{modal.flight.pfr.legArray[0].paxNoLoad}}</td>
               <td style="text-align:center">{{modal.flight.pfr.legArray[0].operatingWeightEmpty+modal.flight.pfr.legArray[0].fuel}}</td>
               <td style="text-align:center">{{modal.flight.equipment.taxiFuel}}</td>
               <td style="text-align:center">{{modal.flight.pfr.legArray[0].operatingWeightEmpty+modal.flight.pfr.legArray[0].fuel+modal.flight.pfr.legArray[0].paxWeightLoad+modal.flight.pfr.legArray[0].bagsLoad+modal.flight.pfr.legArray[0].cargoLoad+modal.flight.pfr.legArray[0].mailLoad}}</td>
-              <td style="text-align:center">{{modal.flight.pfr.legArray[0].paxWeightLoad+modal.flight.pfr.legArray[0].bagsLoad+modal.flight.pfr.legArray[0].cargoLoad+modal.flight.pfr.legArray[0].mailLoad}}</td>
+              <td style="text-align:center; font-weight:bold">{{modal.flight.pfr.legArray[0].paxWeightLoad+modal.flight.pfr.legArray[0].bagsLoad+modal.flight.pfr.legArray[0].cargoLoad+modal.flight.pfr.legArray[0].mailLoad}}</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
-    <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
+    <div class="modal-checkbox-layout" style="align-items: center">
       <div class="modal-column">
         <table class="table table-borderless" style="margin-bottom:5px">
           <tbody>
@@ -256,18 +257,18 @@
           <tbody>
             <tr>
               <td style="text-align:center">FOB</td>
-              <td style="text-align:center">Total/Taxi</td>
-              <td style="text-align:center">Add Gals</td>
-              <td style="text-align:center">Request</td>
+              <td style="text-align:center; font-weight:bold">Total/Taxi</td>
+              <td style="text-align:center; font-weight:bold">Add Gals</td>
+              <td style="text-align:center; font-weight:bold">Request</td>
             </tr>
             <tr>
               <td style="text-align:center;" rowspan="2">
                 <input class="form-control-inline" style="margin-top:15px;" ng-style="modal.getWidth(100,'px')" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.flight.pilotAgree"></td>
               <td style="text-align:center;" rowspan="2">
-                <input class="form-control-inline" style="margin-top:15px;" ng-style="modal.getWidth(100,'px')" type="text" ng-model="modal.flight.fuelTotalTaxi" ng-disabled="modal.flight.pilotAgree"></td>
-              <td style="text-align:center;" rowspan="2"><div style="margin-top:15px;">{{modal.getGals(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}}</div></td>
+                <input class="form-control-inline" style="margin-top:15px; font-weight:bold" ng-style="modal.getWidth(100,'px')" type="text" ng-model="modal.flight.fuelTotalTaxi" ng-disabled="modal.flight.pilotAgree"></td>
+              <td style="text-align:center; font-weight:bold" rowspan="2"><div style="margin-top:15px;">{{modal.getGals(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}}</div></td>
               <!--<td style="text-align:center">{{modal.getLbs(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}} lbs</td>-->
-              <td style="text-align:center"><span>{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main||0}}</span><small> gal/side MAIN</small></td>
+              <td style="text-align:center; font-weight:bold"><span>{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main||0}}</span><small> gal/side MAIN</small></td>
             </tr>
             <tr>
               <td style="text-align:center"><span>{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).aux||0}}</span><small> gal/side AUX</small></td>
@@ -277,7 +278,7 @@
       </div>
     </div>
     
-    <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
+    <div class="modal-checkbox-layout" style="align-items: center">
       <div class="modal-column">
         <table class="table table-borderless" style="margin-bottom:0px">
           <tbody>
@@ -338,7 +339,7 @@
       </div>
       <div ng-if="!modal.flight.alternate">
         <span style="font-weight:bold">Add Alternate</span>
-        <ui-select ng-style="modal.getWidth(15,'em')" ng-model="modal.alternateDisp" theme="selectize" ng-change="modal.updateParam('alternate',modal.alternateDisp)">
+        <ui-select ng-style="modal.getWidth(15,'em')" ng-model="modal.alternateDisp" ng-disabled="modal.flight.pilotAgree" theme="selectize" ng-change="modal.updateParam('alternate',modal.alternateDisp)">
             <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in modal.alternates" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -356,7 +357,6 @@
         <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">TAF: {{modal.flight.altObj.currentTaf}}</p>
         <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">RUNWAY {{modal.flight.altObj.icao+' '+modal.flight.altObj.openClosed+', '+modal.formatScore(modal.flight.altObj.runwayScore)+' '+modal.flight.altObj.comment}}</p>
         <br>
-      </div>
       </div>
     </div>
     <br>

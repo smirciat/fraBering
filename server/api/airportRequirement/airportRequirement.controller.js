@@ -202,7 +202,9 @@ export async function metars(req,res) {
     }
     count++;
     //go through list of airports and grab current weather observations
-    for (const airport of allAirports) {
+    for (const [airportIndex,airport] of allAirports.entries()) {
+      airport.runScroll=false;
+      if (airportIndex>=allAirports.length-1) airport.runScroll=true;
       if (airport.icao&&airport.icao.length==4&&airport.icao!=="PAOB") airport.currentMetarObj = await getMetar(airport.icao);
       if (!airport.currentMetarObj) continue;
       airport.currentMetar=airport.currentMetarObj.metar;

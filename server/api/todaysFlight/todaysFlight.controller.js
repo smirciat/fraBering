@@ -28,12 +28,12 @@ const agent = new https.Agent({
 });
 let stopped=false;
 let staleFile=false;
-let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50,taxiFuel:35},
-       {id:2,name:"Navajo",wind:40,xwind:30,temp:-40,taxiFuel:35},
-       {id:3,name:"Casa",wind:35,xwind:25,temp:-50,taxiFuel:110},
-       {id:4,name:"King Air",wind:40,xwind:35,temp:-50,taxiFuel:90,maxMain:1293,maxAux:529},
-       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50,taxiFuel:110,maxMain:1621,maxAux:621},
-       {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50,taxiFuel:70}];
+let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50,taxiFuel:35,fuelBurn:350,minFuel:800},
+       //{id:2,name:"Navajo",wind:40,xwind:30,temp:-40,taxiFuel:35},
+       {id:3,name:"Casa",wind:35,xwind:25,temp:-50,taxiFuel:110,fuelBurn:600,minFuel:1323},
+       {id:4,name:"King Air",wind:40,xwind:35,temp:-50,taxiFuel:90,maxMain:1293,maxAux:529,fuelBurn:600,minFuel:1500},
+       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50,taxiFuel:110,maxMain:1621,maxAux:621,fuelBurn:700,minFuel:1420},
+       {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50,taxiFuel:70,fuelBurn:700,minFuel:1100}];
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -609,16 +609,19 @@ export async function tf(req,res) {
       }
       if (index>-1) {
         updated.push(todaysFlights[index]._id);
+        todaysFlights[index].runScroll=false;
         todaysFlights[index].status=flight.status;
         todaysFlights[index].color=flight.color;
         todaysFlights[index].equipment=flight.equipment;
         todaysFlights[index].autoOnboard=flight.autoOnboard;
         if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
+          //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' date'); 
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].flightStatus=flight.flightStatus;
         }
         if (todaysFlights[index].date!==flight.date) {
+          //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' date'); 
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].date=flight.date;
@@ -644,16 +647,19 @@ export async function tf(req,res) {
           todaysFlights[index].aircraft=flight.aircraft;
         }
         if (todaysFlights[index].departTimes[0]!==flight.departTimes[0]){
+          //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' departTimes'); 
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
         if (todaysFlights[index].departTimes.length!==flight.departTimes.length){
+          //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' departTimes'); 
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
         if (todaysFlights[index].departTimes[todaysFlights[index].departTimes.length-1]!==flight.departTimes[flight.departTimes.length-1]){
+          //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' departTimes'); 
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
@@ -683,6 +689,7 @@ export async function tf(req,res) {
         if (!todaysFlights[index].pilotAgree) {
           todaysFlights[index].airportObjsLocked=JSON.parse(JSON.stringify(todaysFlights[index].airportObjs));
         }
+        if (index>=todaysFlights.length-1) todaysFlights[index].runScroll=true;
       }
     }
     if (updated.length>0) {

@@ -111,7 +111,6 @@ class NavbarController {
     //this.scope.$watch('status.toggleAssigned',(newVal,oldVal)=>{
       //this.isToggleAssigned=newVal;
     //});
-    console.log(this.scope)
   }
 
   minusDate(){

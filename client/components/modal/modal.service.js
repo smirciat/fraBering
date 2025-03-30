@@ -241,6 +241,7 @@ angular.module('workspaceApp')
                   }
                 },
                 acceptSig:function(pilotAgree){flight.pilotAgree=pilotAgree},
+                fuelSanity:function(fuel){if (fuel<flight.equipment.minFuel) return "airport-pink";},
                 moreThanOneHour:function(){
                   let targetTime=new Date(flight.date);
                   const [hours, minutes, seconds] = flight.departTimes[0].split(':').map(Number);
@@ -250,7 +251,11 @@ angular.module('workspaceApp')
                   return targetTime >= now;
                 },
                 formatTimestamp:function(t){if (t) return new Date(t).toLocaleString()},
-                ocRequired:function(color){return colors.indexOf(color)>3},
+                ocRequired:function(color){
+                  if (colors.indexOf(color)>3) return true;
+                  if (flight.pfr.legArray[0].fuel<flight.equipment.minFuel) return true;
+                  return false;
+                },
                 getLbs:function(lbHigh,lbLow){return Math.floor(lbHigh-lbLow)},
                 getGals:function(lbHigh,lbLow){return Math.floor((lbHigh-lbLow)/6.7)},
                 getRequest(totalTaxi,fob){

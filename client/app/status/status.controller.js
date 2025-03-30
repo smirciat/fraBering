@@ -20,6 +20,7 @@ class StatusComponent {
     this.Modal=Modal;
     this.date=new Date();
     this.assignedFlights=[];
+    this.todaysFlights=[];
     this.updateArray=[];
     this.chosenPilot={};
     this.chosenAircraft={},
@@ -156,6 +157,7 @@ class StatusComponent {
       this.spinner=true;
       if (!newVal||newVal==='') return;
       this.timeout(()=>{
+        console.log(this.scope)
         this.scope.nav.isCollapsed=true;
         this.base=newVal;
         if (this.base&&this.base.base==='UNK') {
@@ -166,12 +168,18 @@ class StatusComponent {
           this.toggleAssigned=false;
           window.toggleAssigned=this.toggleAssigned;
         }
-        if (this.masterAirports) this.setBase(this.masterAirports);
-        if (!oldVal) return;
-        this.setPilotList();
-        this.setAirplaneList();
-        this.setAvailableFlights();
-        this.scroll();
+        if (this.masterAirports) //this.setBase(this.masterAirports);
+        if (!oldVal) {
+          this.spinner=false;
+          return;
+        }
+        //this.filteredFlights=[];
+        //this.scroll();
+          this.timeout(()=>{
+            this.spinner=false;
+            this.setPilotList();
+            this.setAirplaneList();
+          },0);
       },0);
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
@@ -183,22 +191,42 @@ class StatusComponent {
       //if (!oldVal||oldVal==='') return;
         this.dateString=newVal;
         this.date=new Date(this.dateString);
-        this.setPilotList();
-        this.setAirplaneList();
-        this.setAvailableFlights();
+        //this.setPilotList();
+        //this.setAirplaneList();
+        //this.setAvailableFlights();
+        console.log('post')
         this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
+          console.log('response')
+          console.log(res.data)
           this.allTodaysFlights=res.data;
           this.todaysFlights=this.filterTodaysFlights(res.data);
+          //const updated=this.filterTodaysFlights(res.data);
+          //this.customClone(this.todaysFlights,updated);
+          console.log('filtered')
           console.log(this.todaysFlights);
-          this.scroll();
-          this.socket.unsyncUpdates('todaysFlight');
+          //this.filteredFlights=[];
+          //this.scroll();
+          this.timeout(()=>{
+            this.spinner=false;
+            this.setPilotList();
+            this.setAirplaneList();
+          },0);
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
             //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
             if (item.colorPatch&&item.colorPatch==='true') return;
-            //console.log('todaysFlights Updated ' + event);
-            //console.log(item);
-            this.allTodaysFlights=array;
-            this.todaysFlights=this.filterTodaysFlights(array);
+            if (item.date===this.dateString&&(item.runScroll||event==="created")) {
+              this.spinner=true;
+              //this.allTodaysFlights=array;
+              //angular.copy(this.filterTodaysFlights(this.allTodaysFlights), this.todaysFlights);
+              //const updated=this.filterTodaysFlights(res.data);
+              this.todaysFlights=this.filterTodaysFlights(res.data);
+              //this.customClone(this.todaysFlights,updated);
+              console.log('Todays Flight Socket fired');
+              console.log(item);
+              this.timeout(()=>{this.spinner=false;},0);
+              //this.spinner=true;
+              //this.timeout(()=>{this.scroll()},0);
+            }
           });
         });
       },0);
@@ -210,19 +238,20 @@ class StatusComponent {
       this.socket.unsyncUpdates('airportRequirement');
       this.socket.syncUpdates('airportRequirement', this.masterAirports,(event,item,array)=>{
         //this.masterAirports=array;
-        this.updateArray.push(item);
-        let localLength=angular.copy(this.updateArray.length);
+        //this.updateArray.push(item);
+        //let localLength=angular.copy(this.updateArray.length);
         this.timeout(()=>{
-          if (localLength===this.updateArray.length){
+          //if (localLength===this.updateArray.length){
+          if (item.runScroll) {
             console.log('AirportRequiments Updated');
-            console.log(this.updateArray);
-            this.updateArray=[];
-            localLength=0;
+            console.log(array);
+            //this.updateArray=[];
+            //localLength=0;
             console.log('updating airportRequirements at: '+new Date().toLocaleString());
             this.airports=this.setBase(array);
             this.masterAirports=array;
           }
-        },3000);
+        },0);
       });
     });
     this.http.get('/api/flights').then(res=>{
@@ -239,7 +268,34 @@ class StatusComponent {
         });
       });
     });
-    console.log(this.scope)
+  }
+  
+  customClone(original,update){//trying to take a single object, iterate through its parameters and only update thos parameters that have changed, maintaining as many references as possible
+    for (const key in original){
+      if (update[key]){
+        if (Array.isArray(original[key])){
+          if (Array.isArray(update[key])){
+            if (update[key].length>=original[key].length){
+              for (let i=0;i<original[key].length;i++){
+                if (JSON.stringify(original[key][i])!==JSON.stringify(update[key][i])) original[key][i]=update[key][i];
+              }
+              for (let i=original[key].length;i<update[key].length;i++){
+                original[key].push(update[key][i]);
+              }
+            }
+            else {
+              let numSplices=original[key].length-update[key].length;
+              original[key].splice(update[key].length,numSplices);
+            }
+          }
+        }
+        else {
+          if (JSON.stringify(update[key])!==JSON.stringify(original[key])) original[key]=update[key];
+        }
+      } 
+      //else delete original[key];
+    }
+    return original;
   }
   
   nonPilot(nonPilot){
@@ -327,6 +383,7 @@ class StatusComponent {
         //this.setPilotList();
         //this.setAirplaneList();
       },0);
+      
       return array;
   }
   
@@ -416,11 +473,7 @@ class StatusComponent {
       console.log('check scope');
       return;
     }
-    this.timeout(()=>{
-      if (this.mobile) {
-        this.spinner=false;
-        return;
-      }
+    //this.timeout(()=>{
       if (!this.todaysFlights) return;
       let scrollDate=new Date();
       let filteredFlights=this.todaysFlights.filter(this.todaysFlightDisplayFilter);
@@ -431,6 +484,9 @@ class StatusComponent {
         let bTime=scrollDate.setHours(bSplit[0],bSplit[1],bSplit[2]);
         return aTime-bTime;
       });
+      this.spinner=false;
+      angular.copy(filteredFlights,this.filteredFlights);
+      return;
       if (filteredFlights.length===0) return;
       let scrollId;
       if (new Date().toLocaleDateString()!==this.dateString) scrollId=filteredFlights[0]._id;
@@ -439,15 +495,16 @@ class StatusComponent {
         if (!scrollId&&fSplit.length===3&&new Date()<scrollDate.setHours(fSplit[0],fSplit[1],fSplit[2])) scrollId=flight._id;
       });
       if (!scrollId) scrollId=filteredFlights.at(-1)._id;
+      //if (this.mobile) return;
       //this.$location.hash(scrollId);
       //this.anchorScroll.yOffset=500;
       //this.anchorScroll();
       console.log('auto scrolling');
       let element = document.getElementById(scrollId);
-      element.scrollIntoView({ behavior: 'smooth' });
-      this.spinner=false;
+      console.log(element)
+      if (element) element.scrollIntoView({ behavior: 'smooth' });
       //document.body.scrollTop = document.documentElement.scrollTop = 0;
-    },1000);
+    //},0);
   }
   
   flightRiskClass(airportObjs){
@@ -653,6 +710,36 @@ class StatusComponent {
       let i=this.alternateAirports.map(e=>e.icao).indexOf(flight.alternate);
       if (i>-1) flight.altObj=this.alternateAirports[i];
     }
+    let duration=0;
+    let times=[];
+    let time1,time2;
+    flight.departTimes.forEach((t,i)=>{
+      let d=new Date();
+      const [hours, minutes, seconds] = t.toString().split(':').map(Number);
+      d.setHours(hours, minutes, seconds, 0);
+      times.push(d);
+      if (i>0) {
+        time1=times[i-1].getTime();
+        time2=times[i].getTime();
+        duration+=((time2-time1)/(60*1000)-10);
+      }
+    });
+    flight.duration=duration/60;
+    flight.minFlightFuel=flight.equipment.fuelBurn*(flight.duration+0.5);
+    if (!flight.alternate) flight.maxFlightFuel=flight.equipment.fuelBurn*(flight.duration+1.5);
+    let calendarIndex=this.todaysCalendar.availablePilots.map(e=>e.code).indexOf('OC');
+    if (calendarIndex>-1) flight.ocName=this.todaysCalendar.availablePilots[calendarIndex].name;
+    switch(flight.ocName){
+      case 'David Olson':
+        flight.ocNumber= '(907) 443-8985';
+        break;
+      case 'Fen Kinneen':
+        flight.ocNumber= '(907) 304-1132';
+        break;
+      case 'Brian Weckwerth':
+        flight.ocNumber= '(907) 750-5890';
+        break;
+    }
     this.flightModal(JSON.parse(JSON.stringify(flight)),this.alternateAirports,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
   }
   
@@ -684,6 +771,7 @@ class StatusComponent {
     let index = this.calendar.map(e => e.date).indexOf(this.dateString);
     let pilotIndex;
     if (index>-1) {
+      this.todaysCalendar=this.calendar[index];
       this.sortedPilots=[];
       this.calendar[index].availablePilots.forEach(pilot=>{
         pilotIndex = this.allPilots.map(e => e.name).indexOf(pilot.name);
@@ -744,7 +832,6 @@ class StatusComponent {
       });
       console.log(this.sortedPilots);
       //do the assigned thing for this.allAircraft
-      
     }
   }
   
@@ -813,6 +900,7 @@ class StatusComponent {
   }
   
   patchCalendarFlights(flight){
+    return;
     let calendarFlights=[];
     let i=this.calendar.map(e=>e.date).indexOf(this.date.toLocaleDateString());
     if (i>-1) {
@@ -826,6 +914,7 @@ class StatusComponent {
   }
   
   setAvailableFlights(){
+    return;
     if (!this.base) return;
     if (this.base.base==="HEL"){
       this.unassignedFlights=[{flightNum:'format TBD',_id:1},{flightNum:'helicopter mission',_id:2},{flightNum:'unspecified',_id:3}];
@@ -939,6 +1028,7 @@ class StatusComponent {
       }
     }
     else inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
+    
     return (flight.date===date)&&inBase&&flight.active==='true'&&!old;
   }
   
@@ -947,6 +1037,7 @@ class StatusComponent {
   }
   
   recordAssessment(){
+    return;
     let date=new Date();
     //if (!this.dateString||this.dateString!==date.toLocaleDateString()) return;
     let date2=new Date();
@@ -1074,6 +1165,12 @@ class StatusComponent {
             break;
       }
     }
+  }
+  
+  clickAirport(airport){
+    airport.requestMetarList=undefined;
+    airport.manualOpen=undefined;
+    this.airportModal(airport);
   }
   
   airportNameToMetar(name){
