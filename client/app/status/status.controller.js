@@ -218,9 +218,15 @@ class StatusComponent {
               this.spinner=true;
               //this.allTodaysFlights=array;
               //angular.copy(this.filterTodaysFlights(this.allTodaysFlights), this.todaysFlights);
-              //const updated=this.filterTodaysFlights(res.data);
               this.todaysFlights=this.filterTodaysFlights(res.data);
-              //this.customClone(this.todaysFlights,updated);
+              //const updatedArr=this.filterTodaysFlights(res.data);
+              //for (const updated of updatedArr){
+              //  let i=this.todaysFlights.map(e=>e._id).indexOf(updated._id);
+              //  if (i===-1) this.todaysFlights.push(updated);
+              //  else {
+              //    this.customClone(this.todaysFlights[i],updated);
+              //  }
+              //}
               console.log('Todays Flight Socket fired');
               console.log(item);
               this.timeout(()=>{this.spinner=false;},0);
@@ -277,7 +283,9 @@ class StatusComponent {
           if (Array.isArray(update[key])){
             if (update[key].length>=original[key].length){
               for (let i=0;i<original[key].length;i++){
-                if (JSON.stringify(original[key][i])!==JSON.stringify(update[key][i])) original[key][i]=update[key][i];
+                //update
+                if (typeof original[key][i]==='object'||Array.isArray(original[key][i])) original[key][i]=this.customClone(original[key][i],update[key][i]);
+                else if (update[key][i]!==original[key][i]) original[key][i]=update[key][i];
               }
               for (let i=original[key].length;i<update[key].length;i++){
                 original[key].push(update[key][i]);
@@ -290,7 +298,9 @@ class StatusComponent {
           }
         }
         else {
-          if (JSON.stringify(update[key])!==JSON.stringify(original[key])) original[key]=update[key];
+          //update
+          if (typeof original[key]==='object') original[key]=this.customClone(original[key],update[key]);
+          else if (update[key]!==original[key]) original[key]=update[key];
         }
       } 
       //else delete original[key];

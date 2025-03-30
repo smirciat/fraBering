@@ -4,6 +4,7 @@ public
 .idea
 client/bower_components
 dist
+server/app.js
 server/firebase.json
 server/config/local.env.js
 server/config/environment/development.js
