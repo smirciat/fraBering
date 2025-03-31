@@ -147,33 +147,31 @@ class StatusComponent {
       });
     });
     this.base=window.base;
-    this.scope.$watch('nav.isToggle',(newVal,oldVal)=>{
-      if (!newVal) this.scroll();
-    });
-    this.scope.$watch('nav.isToggleAssigned',(newVal,oldVal)=>{
-      this.toggleAssigned=newVal;
-    });
+    //this.scope.$watch('nav.isToggle',(newVal,oldVal)=>{
+      //if (!newVal) this.scroll();
+    //});
+    //this.scope.$watch('nav.isToggleAssigned',(newVal,oldVal)=>{
+    //  this.toggleAssigned=newVal;
+    //});
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
       this.spinner=true;
       if (!newVal||newVal==='') return;
       this.timeout(()=>{
-        console.log(this.scope)
         this.scope.nav.isCollapsed=true;
         this.base=newVal;
-        if (this.base&&this.base.base==='UNK') {
-          this.toggleAssigned=false;
-          window.toggleAssigned=this.toggleAssigned;
-        }
-        else {
-          this.toggleAssigned=false;
-          window.toggleAssigned=this.toggleAssigned;
-        }
+        //if (this.base&&this.base.base==='UNK') {
+        //  this.toggleAssigned=false;
+        //  window.toggleAssigned=this.toggleAssigned;
+        //}
+        //else {
+        //   this.toggleAssigned=false;
+        //  window.toggleAssigned=this.toggleAssigned;
+        //}
         if (this.masterAirports) //this.setBase(this.masterAirports);
         if (!oldVal) {
           this.spinner=false;
           return;
         }
-        //this.filteredFlights=[];
         //this.scroll();
           this.timeout(()=>{
             this.spinner=false;
@@ -194,17 +192,9 @@ class StatusComponent {
         //this.setPilotList();
         //this.setAirplaneList();
         //this.setAvailableFlights();
-        console.log('post')
         this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
-          console.log('response')
-          console.log(res.data)
           this.allTodaysFlights=res.data;
           this.todaysFlights=this.filterTodaysFlights(res.data);
-          //const updated=this.filterTodaysFlights(res.data);
-          //this.customClone(this.todaysFlights,updated);
-          console.log('filtered')
-          console.log(this.todaysFlights);
-          //this.filteredFlights=[];
           //this.scroll();
           this.timeout(()=>{
             this.spinner=false;
@@ -212,13 +202,14 @@ class StatusComponent {
             this.setAirplaneList();
           },0);
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
+            //console.log(item)
             //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
             if (item.colorPatch&&item.colorPatch==='true') return;
-            if (item.date===this.dateString&&(item.runScroll||event==="created")) {
+            if (item.runScroll||(item.date===this.dateString&&event==="created")) {
               this.spinner=true;
               //this.allTodaysFlights=array;
               //angular.copy(this.filterTodaysFlights(this.allTodaysFlights), this.todaysFlights);
-              this.todaysFlights=this.filterTodaysFlights(res.data);
+              this.todaysFlights=this.filterTodaysFlights(array);
               //const updatedArr=this.filterTodaysFlights(res.data);
               //for (const updated of updatedArr){
               //  let i=this.todaysFlights.map(e=>e._id).indexOf(updated._id);
@@ -389,12 +380,12 @@ class StatusComponent {
         //if (!match&&flight.active==='true'&&flight.date===new Date().toLocaleDateString()) this.http.patch('/api/todaysFlights/'+flight._id,{airportObjs:airportObjs,color:flight.color,colorPatch:'true'});
       });
       array=array.filter(flight=>{return flight});
-      this.timeout(()=>{
+      //this.timeout(()=>{
         //this.setPilotList();
         //this.setAirplaneList();
-      },0);
+      //},0);
       
-      return array;
+      return array.sort((a,b)=>{return a.departTimes[0].localeCompare(b.departTimes[0])});
   }
   
   getUnofficial(metarObj){
@@ -803,19 +794,11 @@ class StatusComponent {
         let inBase=pilot.pilotBase===this.base.base;
         //UNK Base rules
         if (this.base.base==="UNK") {
-          this.recentFlights.forEach(flight=>{
-            if (flight.pilot!==p.displayName) return;
-            let x=flight.legArray.map(e=>e.arr).indexOf('UNK');
+          this.todaysFlights.forEach(flight=>{
+            if (!flight.pilotObject||flight.pilotObject.displayName!==p.displayName||flight.active==='false') return;
+            let x=flight.airports.indexOf('Unalakleet');
             if (x>-1) inBase=true;
           });
-          //inBase=false;
-          //if (rf) {
-            //let x=rf.map(e=>e.pilot).indexOf(p.displayName);
-            //if (x>-1) {
-              //let y=rf[x].legArray.map(f=>f.arr).indexOf('UNK');
-              //if (y>-1) inBase=true;
-            //}
-          //}
         }
         //set up headers for sort order
         p.header='';
@@ -882,20 +865,22 @@ class StatusComponent {
     }
     if (!this.allAircraft||!this.recentFlights) return;
     let baseTest;
-    this.allAircraft.forEach(aircraft=>{
-      aircraft.assigned=false;
-      if (!this.allTodaysFlights) return;
-      let tf=angular.copy(this.allTodaysFlights.filter(f=>{return f.active==='true'}));
-      let aircraftIndex=tf.map(e=>e.aircraft).indexOf(aircraft._id);
-      if (aircraftIndex>-1) aircraft.assigned=true;
-    });
+    //this.allAircraft.forEach(aircraft=>{
+    //  aircraft.assigned=false;
+    //  if (!this.allTodaysFlights) return;
+    //  let tf=angular.copy(this.allTodaysFlights.filter(f=>{return f.active==='true'}));
+    //  let aircraftIndex=tf.map(e=>e.aircraft).indexOf(aircraft._id);
+    //  if (aircraftIndex>-1) aircraft.assigned=true;
+    //});
     this.displayedAircraft=this.allAircraft.filter(a=>{
+      if (a.acftType==="Sky Courier") a.acftType="Courier";
+      a.acftType=a.acftType.trim();
       baseTest=false;
       if (this.base.base==="HEL"||a.currentAirport===this.base.base) baseTest=true;
       if (this.base.base==="UNK"){
-        this.recentFlights.forEach(flight=>{
-          if (flight.acftNumber!==a._id) return;
-          let x=flight.legArray.map(e=>e.arr).indexOf('UNK');
+        this.todaysFlights.forEach(flight=>{
+          if (flight.aircraft!==a._id||flight.active==='false') return;
+          let x=flight.airports.indexOf('Unalakleet');
           if (x>-1) baseTest=true;
         });
       }

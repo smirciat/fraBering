@@ -18,8 +18,9 @@
       </div>
   </div>
   <div ng-class="status.getColumnFlights()">
-    <div class="todays-flights">
-     <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" id="{{flight._id}}" ng-class="status.getFlightColor(flight)">
+    <div class="todays-flights"><!---->
+     <div ng-repeat="flight in status.todaysFlights track by flight._id" ng-if="status.todaysFlightDisplayFilter(flight)" ng-class="status.getFlightColor(flight)">
+     <!--<div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" id="{{flight._id}}">->
      <!--<div ng-repeat="flight in status.filteredFlights track by flight._id" id="{{flight._id}}" ng-class="status.getFlightColor(flight)">-->
       <div ng-if="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
         <div class="grid-parent-airport">
@@ -64,16 +65,13 @@
     <div ng-repeat="pilot in status.sortedPilots track by $index">
       <h1 ng-if="status.showHeader('sortedPilots','header',$index)">{{pilot.header}}</h1>
       <h1 ng-if="status.fixedWing('HEL')&&$index===0">Helicopter Pilots</h1>
-      <p ng-hide="status.toggleAssigned&&pilot.assigned" uib-tooltip="{{pilot.medicalClass}}" ng-click="status.choose('sortedPilots',pilot._id)" 
-            ng-class="status.chosenClass(pilot.chosen)">{{pilot.name + '-' + pilot.code}}</p>
+      <p>{{pilot.name + '-' + pilot.code}}</p>
     </div>
   </div>
   <div ng-class="status.getColumn()">
-    
-    <div ng-repeat="airplane in status.displayedAircraft track by $index">
+    <div ng-repeat="airplane in status.displayedAircraft track by airplane._id">
       <p ng-if="status.showHeader('displayedAircraft','acftType',$index)" class="smaller">{{airplane.acftType}}</p>
-      <p ng-hide="status.toggleAssigned&&airplane.assigned" uib-tooltip="{{airplane.acftType}}" ng-click="status.choose('displayedAircraft',airplane._id)"
-           ng-class="status.chosenClass(airplane.chosen)">{{airplane._id}}</p>
+      <p>{{airplane._id}}</p>
     </div>
   </div>
   <!--<div ng-class="status.getColumn()">

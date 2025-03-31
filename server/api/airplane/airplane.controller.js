@@ -305,21 +305,21 @@ export async function firebaseInterval(req,res){
     firebasePilots=collectionToArray(pilots);
     let aircraft=await getCollection('aircraft');
     firebaseAircraft=collectionToArray(aircraft);
-    let flights=await getCollectionLimited('flights',51);
+    let flights=await getCollectionLimited('flights',500);
     firebaseFlights=fSort(collectionToArray(flights));
     //firebaseFlights.forEach(f=>{console.log(f.flightNumber+' '+f.dateString+' '+f._id)});
-    for (let x=0;x<firebaseFlights.length;x++){
-      let index = firebaseAircraft.map(e => e._id).indexOf(firebaseFlights[x].acftNumber);
+    for (let flight of firebaseFlights){
+      let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
       if (index>-1) {
-        if (firebaseAircraft[index].currentAirport!==firebaseFlights[x].legArray[firebaseFlights[x].legArray.length-1].arr) {
+        if (firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
           //console.log('This would have fired a firebase update if it weren`t commented out');
           //this.http.post('/api/airplanes/updateFirebaseNew',{collection:'firebaseAircraft',doc:{currentAirport:firebaseFlights[x].legArray.at(-1).arr,_id:firebaseAircraft[index]._id}});
           if (!firebaseAircraft[index].recentlyUpdated) {
-            await updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseFlights[x].legArray[firebaseFlights[x].legArray.length-1].arr});
+            firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
+            await updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
           }
-          firebaseAircraft[index].recentlyUpdated=true;
-          }
-        firebaseAircraft[index].currentAirport=firebaseFlights[x].legArray[firebaseFlights[x].legArray.length-1].arr;
+        }
+        firebaseAircraft[index].recentlyUpdated=true;
       }
     }
   }
