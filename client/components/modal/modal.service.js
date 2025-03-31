@@ -254,6 +254,7 @@ angular.module('workspaceApp')
                 ocRequired:function(color){
                   if (colors.indexOf(color)>3) return true;
                   if (flight.pfr.legArray[0].fuel<flight.equipment.minFuel) return true;
+                  if (flight.knownIce) return true;
                   return false;
                 },
                 getLbs:function(lbHigh,lbLow){return Math.floor(lbHigh-lbLow)},
@@ -284,8 +285,8 @@ angular.module('workspaceApp')
                   if (i>-1) return bgColors[i];
                   else return '';
                 },
-                dispatchInfo:function(){window.alert('Dispatch Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is NOT orange or red, the captain has successfully created a PFR and entered fuel quantity, and you are logged in as a dispatch or OC manager.')},
-                ocInfo:function(){window.alert('OC Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is orange or red, the captain has successfully created a PFR and entered fuel quantity, and you are logged in as an OC manager.')},
+                dispatchInfo:function(){window.alert('Dispatch Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is NOT orange or red, the captain has successfully created a PFR and entered fuel quantity, the flight is not considered "Known Icing" and you are logged in as a dispatch or OC manager.')},
+                ocInfo:function(){window.alert('OC Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is orange or red (of the flight is considered "Known Icing"), the captain has successfully created a PFR and entered fuel quantity, and you are logged in as an OC manager.')},
                 pilotInfo:function(){window.alert('Pilot Acceptance can ONLY be signed when: the flight is within one hour of scheduled departure, the disptach or OC manager release has been signed, the captain has successfully created a PFR and entered fuel quantity, and the you are logged in as the Captain of the flight.')},
                 title: 'Flight Release  BRG' + flight.flightNum +' '+ flight.aircraft,
                 buttons: [ {//this is where you define you buttons and their appearances

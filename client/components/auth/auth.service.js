@@ -7,7 +7,7 @@
     var currentUser = {};
     var userRoles = appConfig.userRoles || [];
 
-    if ($cookies.get('token') && $location.path() !== '/logout') {
+    if (($cookies.get('token')||window.localStorage.getItem('token')) && $location.path() !== '/logout') {
       currentUser = User.get();
     }
 
@@ -22,14 +22,17 @@
        */
       login({
         email,
-        password
+        password,
+        persistent
       }, callback) {
         return $http.post('/auth/local', {
             email: email,
-            password: password
+            password: password,
+            persistent: persistent
           })
           .then(res => {
             $cookies.put('token', res.data.token);
+            if (persistent) window.localStorage.setItem('token',res.data.token);
             currentUser = User.get();
             return currentUser.$promise;
           })
@@ -49,6 +52,7 @@
        */
       logout() {
         $cookies.remove('token');
+        window.localStorage.setItem('token','');
         currentUser = {};
       },
 
@@ -193,7 +197,8 @@
        * @return {String} - a token string used for authenticating
        */
       getToken() {
-        return $cookies.get('token');
+        let token=$cookies.get('token')||window.localStorage.getItem('token');
+        return token;
       }
     };
 

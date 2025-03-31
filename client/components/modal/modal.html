@@ -386,13 +386,13 @@
         <td><p style="padding-top:5px; margin-top:7px; ">DISPATCHER</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree || !modal.isAdmin || !modal.flight.pfr.legArray[0].fuel">
+            <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || modal.flight.pilotAgree || !modal.isAdmin || !modal.flight.pfr.legArray[0].fuel || modal.flight.knownIce">
                 <i class="fa fa-solid fa-pencil fa-autosize" ></i></button>
             <span>{{modal.flight.dispatchRelease}}</span>
             <span><i class="fa fa-solid fa-info-circle fa-autosize" ng-click="modal.dispatchInfo()"></i></span>
           </div>
         <td><p style="padding-top:5px; margin-top:7px;">/</p></td>
-        <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.dispatchReleaseTimestamp)}}</p</td>     
+        <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.dispatchReleaseTimestamp)}}</p></td>     
       </tr>
       <tr>
         <td><p style="padding-top:5px; margin-top:7px; ">OC MANAGER</p></td>

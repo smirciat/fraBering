@@ -201,6 +201,7 @@ class StatusComponent {
             this.setPilotList();
             this.setAirplaneList();
           },0);
+          this.socket.unsyncUpdates('todaysFlight');
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
             //console.log(item)
             //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
@@ -209,6 +210,7 @@ class StatusComponent {
               this.spinner=true;
               //this.allTodaysFlights=array;
               //angular.copy(this.filterTodaysFlights(this.allTodaysFlights), this.todaysFlights);
+              console.log(array)
               this.todaysFlights=this.filterTodaysFlights(array);
               //const updatedArr=this.filterTodaysFlights(res.data);
               //for (const updated of updatedArr){
@@ -263,7 +265,8 @@ class StatusComponent {
           this.calendar=array;
           this.setPilotList();
         });
-      });
+      })
+      .catch(err=>{console.log(err)});
     });
   }
   
@@ -385,7 +388,7 @@ class StatusComponent {
         //this.setAirplaneList();
       //},0);
       
-      return array.sort((a,b)=>{return a.departTimes[0].localeCompare(b.departTimes[0])});
+      return array;// array.sort((a,b)=>{return a.departTimes[0].localeCompare(b.departTimes[0])});
   }
   
   getUnofficial(metarObj){
@@ -782,15 +785,15 @@ class StatusComponent {
         }
         let p=this.allPilots[pilotIndex];
         //see if pilot has been assigned yet
-        p.assigned=false;
-        if (this.todaysFlights){
-          let tf=this.todaysFlights.filter(f=>{return f.pilotObject&&f.date===this.dateString});
-          let flightIndex=tf.map(e=>e.pilotObject._id).indexOf(p._id);
-          if (flightIndex>-1) p.assigned=true;
-          tf=this.todaysFlights.filter(f=>{return f.coPilotObject&&f.date===this.dateString});
-          flightIndex=tf.map(e=>e.coPilotObject._id).indexOf(p._id);
-          if (flightIndex>-1) p.assigned=true;
-        }
+        //p.assigned=false;
+        //if (this.todaysFlights){
+        //  let tf=this.todaysFlights.filter(f=>{return f.pilotObject&&f.date===this.dateString});
+        //  let flightIndex=tf.map(e=>e.pilotObject._id).indexOf(p._id);
+        //  if (flightIndex>-1) p.assigned=true;
+        //  tf=this.todaysFlights.filter(f=>{return f.coPilotObject&&f.date===this.dateString});
+        //  flightIndex=tf.map(e=>e.coPilotObject._id).indexOf(p._id);
+        //  if (flightIndex>-1) p.assigned=true;
+        //}
         let inBase=pilot.pilotBase===this.base.base;
         //UNK Base rules
         if (this.base.base==="UNK") {

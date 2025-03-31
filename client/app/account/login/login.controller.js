@@ -16,7 +16,8 @@ class LoginController {
     if (form.$valid) {
       this.Auth.login({
           email: this.user.email,
-          password: this.user.password
+          password: this.user.password,
+          persistent: this.user.persistent
         })
         .then(() => {
           // Logged in, redirect to home
