@@ -218,7 +218,9 @@ angular.module('workspaceApp')
                   if (i>-1) return s + ' - Braking ' + scores[i].descr;
                 },
                 isWrongUser:function(){
-                  if (!flight.pilotObject||typeof flight.pilotObject.lastName!=='string') flight.pilotObject={lastName:''};
+                  if (!flight.pilotObject) return false;
+                  //console.log(userLastname.toLowerCase()!==flight.pilotObject.lastName.toLowerCase())
+                  if (typeof flight.pilotObject.lastName!=='string') flight.pilotObject={lastName:''};
                   if (!userLastname) userLastname='';
                   return userLastname.toLowerCase()!==flight.pilotObject.lastName.toLowerCase();
                 },
@@ -253,7 +255,7 @@ angular.module('workspaceApp')
                 formatTimestamp:function(t){if (t) return new Date(t).toLocaleString()},
                 ocRequired:function(color){
                   if (colors.indexOf(color)>3) return true;
-                  if (flight.pfr.legArray[0].fuel<flight.equipment.minFuel) return true;
+                  if (flight.pfr&&flight.pfr.legArray[0].fuel<flight.equipment.minFuel) return true;
                   if (flight.knownIce) return true;
                   return false;
                 },
@@ -278,7 +280,7 @@ angular.module('workspaceApp')
                 },
                 pilotDisabled:function(f){
                   if (colors.indexOf(f.color)>3) return !f.ocRelease||f.ocRelease==="";
-                  else return !f.dispatchRelease||f.dispatchRelease==="";
+                  else return !f.dispatchRelease&&!f.ocRelease;
                 },
                 style:function(color){
                   let i=colors.indexOf(color);

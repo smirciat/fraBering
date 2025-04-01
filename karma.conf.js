@@ -41,6 +41,7 @@ module.exports = function(config) {
       'client/bower_components/angular-moment/angular-moment.js',
       'client/bower_components/angularPrint/angularPrint.js',
       'client/bower_components/moment-timezone/builds/moment-timezone-with-data-10-year-range.min.js',
+      'client/bower_components/angular-ui-grid/ui-grid.js',
       'client/bower_components/angular-mocks/angular-mocks.js',
       // endbower
       'node_modules/socket.io-client/socket.io.js',

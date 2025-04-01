@@ -193,11 +193,38 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
     }
     if (timestampBoolean) value=admin.firestore.Timestamp.fromDate(new Date(value));
     const collectionRef = firebase_db.collection(collectionName);
+    let date1,date2,date3;
+    let querySnapshot1,querySnapshot2;
     const querySnapshot = await collectionRef.where(parameter, operator , value).orderBy('date', 'desc').limit(limit).get();
+    if (parameter==="false"){//"dateString")  {
+      date3=new Date(value);
+      date2=new Date(value);
+      date1=new Date(value);
+      date2.setDate(date2.getDate() - 1);
+      date1.setDate(date1.getDate() - 2);
+      date2=date2.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+      date1=date1.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+      querySnapshot1 = await collectionRef.where(parameter, operator , date1).orderBy('date', 'desc').limit(limit).get();
+      querySnapshot2 = await collectionRef.where(parameter, operator , date2).orderBy('date', 'desc').limit(limit).get();
+    }
+    let mergedData=[];
+    if (querySnapshot1){
+      querySnapshot1.forEach((doc1) => {
+        mergedData.push(doc1);
+        //console.log(doc.id, '=>', doc.data());
+      });
+    }
+    if (querySnapshot2){
+      querySnapshot2.forEach((doc2) => {
+        mergedData.push(doc2);
+        //console.log(doc.id, '=>', doc.data());
+      });
+    }
     querySnapshot.forEach((doc) => {
+      mergedData.push(doc);
       //console.log(doc.id, '=>', doc.data());
     });
-    return querySnapshot;
+    return mergedData;
   } catch (error) {
     console.error('Error getting collection:', error);
   }

@@ -297,6 +297,8 @@ export async function tf(req,res) {
     let year = String(d.getFullYear()).slice(-2);
     let dateString=month+'/'+day+'/'+year;
     pfrs=await firebaseQueryFunction('flights',200,'dateString','==',dateString,false);
+    let formattedDate=new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+    let todaysPfrs=pfrs.filter(pfr=>{return pfr.dateString===formattedDate});
     let file="current.csv";
     let data=fs.readFileSync(__dirname+'/../../fileserver/'+file, 'utf-8');
     let stats=fs.statSync(__dirname+'/../../fileserver/'+file, 'utf-8');
@@ -698,9 +700,10 @@ export async function tf(req,res) {
         let index=todaysFlights.map(e=>e._id).indexOf(u);
         let flight=todaysFlights[index];
         flight.colorPatch='false';
+        flight.pfr=null;
         let pfrIndex=-1;
         if (flight.date===new Date().toLocaleDateString()) {
-          pfrIndex=pfrs.map(e=>e.flightNumber).indexOf(flight.flightNum);
+          pfrIndex=todaysPfrs.map(e=>e.flightNumber).indexOf(flight.flightNum);
           if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
         }
         //console.log('Updating Flight ID: ' + todaysFlights[index].flightId);

@@ -183,6 +183,8 @@ class StatusComponent {
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
       this.spinner=true;
       if (!newVal||newVal==='') return;
+      let timeoutVal=0;
+      if (!oldVal||oldVal==='') timeoutVal=300;
       //this.getTakeflite({dateString:'10/20/2024',file:'tomorrow.csv'});
       this.timeout(()=>{
         this.scope.nav.isCollapsed=true;
@@ -199,6 +201,7 @@ class StatusComponent {
           this.timeout(()=>{
             this.spinner=false;
             this.setPilotList();
+            console.log(this.todaysFlights)
             this.setAirplaneList();
           },0);
           this.socket.unsyncUpdates('todaysFlight');
@@ -228,7 +231,7 @@ class StatusComponent {
             }
           });
         });
-      },0);
+      },timeoutVal);
     });
     
     this.http.get('/api/airportRequirements').then(res=>{
@@ -307,7 +310,10 @@ class StatusComponent {
   }
   
   filterTodaysFlights(array){
-      if (!this.dateString||!this.allPilots||this.allPilots.length===0||!array) return array;
+      if (!this.dateString||!this.allPilots||this.allPilots.length===0||!array) {
+        
+        return array;
+      }
       let index,displayName;
       array.forEach(flight=>{
         if (this.dateString!==flight.date) {
@@ -876,8 +882,8 @@ class StatusComponent {
     //  if (aircraftIndex>-1) aircraft.assigned=true;
     //});
     this.displayedAircraft=this.allAircraft.filter(a=>{
-      if (a.acftType==="Sky Courier") a.acftType="Courier";
       a.acftType=a.acftType.trim();
+      if (a.acftType==="Sky Courier") a.acftType="Courier";
       baseTest=false;
       if (this.base.base==="HEL"||a.currentAirport===this.base.base) baseTest=true;
       if (this.base.base==="UNK"){
@@ -1090,8 +1096,6 @@ class StatusComponent {
         return new Date(flight.dateString).toLocaleDateString()===new Date().toLocaleDateString();
         //return flight.legArray.at(-1).onTime;
       });
-      
-      console.log(this.recentFlights);
       //console.log(this.recentFlights.filter(a=>{return a.acftNumber==='N408BA'}));
     //});
     //this.http.post('/api/airplanes/firebase',{collection:'pilots'}).then(res=>{
