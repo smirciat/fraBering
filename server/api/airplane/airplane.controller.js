@@ -186,16 +186,20 @@ function fSort(flights){
   });
 }
 
-export async function getCollectionQuery(collectionName,limit,parameter,operator,value,timestampBoolean) {
+export async function getCollectionQuery(collectionName,limit,parameter,operator,value,timestampBoolean,parameter2,operator2,value2) {
   try {
     for (let s of [collectionName,limit,parameter,operator,value,timestampBoolean]){
       console.log(s);
     }
-    if (timestampBoolean) value=admin.firestore.Timestamp.fromDate(new Date(value));
+    if (timestampBoolean) {
+      value=admin.firestore.Timestamp.fromDate(new Date(value));
+      if (value2) value2=admin.firestore.Timestamp.fromDate(new Date(value2));
+    }
     const collectionRef = firebase_db.collection(collectionName);
     let date1,date2,date3;
-    let querySnapshot1,querySnapshot2;
-    const querySnapshot = await collectionRef.where(parameter, operator , value).orderBy('date', 'desc').limit(limit).get();
+    let querySnapshot, querySnapshot1, querySnapshot2;
+    if (!value2) querySnapshot = await collectionRef.where(parameter, operator , value).orderBy('date', 'desc').limit(limit).get();
+    else querySnapshot = await collectionRef.where(parameter, operator , value).where(parameter2, operator2 , value2).orderBy('date', 'desc').limit(limit).get();
     if (parameter==="false"){//"dateString")  {
       date3=new Date(value);
       date2=new Date(value);
@@ -300,7 +304,7 @@ export async function firebaseQuery(req,res){
   let operator=req.body.operator||'==';
   let value=req.body.value;
   let timestampBoolean=req.body.timestampBoolean||false;
-  const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean);
+  const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean,req.body.parameter2,req.body.operator2,req.body.value2);
   let array=collectionToArray(result);
   //console.log(array);
   res.status(200).json(array);

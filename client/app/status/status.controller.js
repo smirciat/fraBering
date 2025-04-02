@@ -750,6 +750,7 @@ class StatusComponent {
         flight.ocNumber= '(907) 750-5890';
         break;
     }
+    console.log(flight)
     this.flightModal(JSON.parse(JSON.stringify(flight)),this.alternateAirports,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
   }
   

@@ -12,7 +12,9 @@ class RosterComponent {
     this.date=new Date();
     this.dateString=this.date.toLocaleDateString();
     this.gridOptions={rowHeight:22,
-                      enableCellEditOnFocus:true,
+                      enableSorting: false,
+                      enableGridMenu: false,
+                      //enableCellEditOnFocus:true,
                       //columnDefs: [
                       //{field:'name',minWidth:150},
                       //{field:'1'},
@@ -25,6 +27,12 @@ class RosterComponent {
   }
   
   $onInit(){
+    this.scope.$watch('nav.base',(newVal,oldVal)=>{
+      if (!newVal||newVal==='') return;
+      if (!oldVal||oldVal==='') return;
+      this.scope.nav.isCollapsed=true;
+      this.init();
+    });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
       if (!newVal||newVal==='') return;
       this.timeout(()=>{
@@ -33,14 +41,25 @@ class RosterComponent {
       //if (!oldVal||oldVal==='') return;
         this.dateString=newVal;
         this.date=new Date(this.dateString);
+        this.init();
       },0);
     });
+  }
+  
+  init(){
+    this.spinner=true;
     this.http.post('/api/airplanes/firebaseGrab').then(res=>{
-      this.pilots=res.data.pilots;
+      this.pilots=res.data.pilots.filter(pilot=>{return pilot.pilotBase===this.scope.nav.base.base});
+      this.pilots.sort((a,b)=>{
+        if (!a.far299Exp&&b.far299Exp) return 1;
+        if (!b.far299Exp&&a.far299Exp) return -1;
+        return new Date(a.dateOfHire)-new Date(b.dateOfHire)||a._id-b._id;
+        
+      });//a.dateOfHire.localeCompare(b.dateOfHire)});
       this.http.get('/api/calendar').then(resp=>{
-        console.log(resp.data);
         this.calendar=resp.data;
-        console.log(this.calendarToData());
+        this.calendarToData();
+        this.spinner=false;
         this.socket.unsyncUpdates('calendar');
         this.socket.syncUpdates('calendar', this.calendar,(event,item,array)=>{
           this.calendar=array;
@@ -70,7 +89,7 @@ class RosterComponent {
   setDaysOfMonth(){
     //set this.gridOptions.columnDefs
     const lastDay=new Date(this.date.getFullYear(), this.date.getMonth()+1, 0).getDate();
-    let columnDefs=[{field:'name'}];
+    let columnDefs=[{name:'Name',field:'displayName',minWidth:150}];
     for (let x=1;x<=lastDay;x++){
       columnDefs.push({field:x.toString()});
     }

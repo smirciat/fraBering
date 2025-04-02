@@ -28,6 +28,7 @@
       <link rel="stylesheet" href="app/admin/admin.css">
       <link rel="stylesheet" href="app/airports/airports.css">
       <link rel="stylesheet" href="app/app.css">
+      <link rel="stylesheet" href="app/audit/audit.css">
       <link rel="stylesheet" href="app/hazardReport/hazardReport.css">
       <link rel="stylesheet" href="app/main/main.css">
       <link rel="stylesheet" href="app/monitor/monitor.css">
@@ -69,6 +70,8 @@
     <script src="bower_components/es5-shim/es5-shim.js"></script>
     <script src="bower_components/json3/lib/json3.min.js"></script>
     <![endif]-->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.3/pako.min.js" integrity="sha256-X7u/eQo6oIgWqc5jOmTjQn3loM8Lse0ock76Gkkn/Ro=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.0.0/FileSaver.min.js"></script>
     <script src="bower_components/suncalc/suncalc.js"></script>
     <!-- build:js({client,node_modules}) app/vendor.js -->
       <!-- bower:js -->
@@ -107,13 +110,15 @@
       <script src="app/admin/admin.module.js"></script>
       <script src="components/auth/auth.module.js"></script>
       <script src="components/util/util.module.js"></script>
-      <script src="app/timeclock/timeclock.controller.js"></script>
+      <script src="app/status/status.js"></script>
       <script src="app/admin/admin.controller.js"></script>
       <script src="app/account/account.js"></script>
       <script src="app/admin/admin.router.js"></script>
       <script src="app/airports/airports.controller.js"></script>
       <script src="app/airports/airports.js"></script>
       <script src="app/app.constant.js"></script>
+      <script src="app/audit/audit.controller.js"></script>
+      <script src="app/audit/audit.js"></script>
       <script src="app/hazardReport/hazardReport.controller.js"></script>
       <script src="app/hazardReport/hazardReport.js"></script>
       <script src="app/main/main.controller.js"></script>
@@ -127,8 +132,8 @@
       <script src="app/scheduledFlights/scheduledFlights.controller.js"></script>
       <script src="app/scheduledFlights/scheduledFlights.js"></script>
       <script src="app/status/status.controller.js"></script>
-      <script src="app/status/status.js"></script>
       <script src="app/account/login/login.controller.js"></script>
+      <script src="app/timeclock/timeclock.controller.js"></script>
       <script src="app/timeclock/timeclock.js"></script>
       <script src="app/viewAssessments/viewAssessments.controller.js"></script>
       <script src="app/viewAssessments/viewAssessments.js"></script>

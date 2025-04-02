@@ -252,7 +252,7 @@ async function log(){
   let flightLog=[];
   arr.forEach(a=>{
     let line=a.split(',');
-    if (!line[0]||!line[line.length-1]) return;
+    if (!line[0]||!line[statusIndex]) return;
     let obj={
       flightStatus:line[statusIndex],
       flightNum:line[3],

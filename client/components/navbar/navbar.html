@@ -16,6 +16,7 @@
             <a ui-sref="{{item.state}}">{{item.title}}</a>
         </li>
         <li ng-show="nav.isAdmin()" ui-sref-active="active"><a ui-sref="admin">Admin</a></li>
+        <li ng-show="nav.Auth.isSuperAdmin()" ui-sref-active="active"><a ui-sref="audit">Audit</a></li>
         <li style="padding-left:1em;padding-top:7px;">
           <div >
             <a style="float:left" href='#' ng-click="nav.minusDate()"><button class="btn btn-info" style="height:40px"><i class="fa fa-angle-left fa-autosize space-if"></i></button></a>
