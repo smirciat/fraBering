@@ -376,7 +376,18 @@
     <div>
       <p style="font-weight:bold">ENVIRONMENT</p>
       <p style="color:red; font-style:italic">If flight is conducted into known icing conditions, C208 aircraft will reduce MGTOW to arrive in the icing environment at or below 8807 lbs.  All aircraft must adhere to AFM flight into known icing limitations.</p>
-      
+      <div class="modal-environment-layout" style="font-weight:bold;">
+       <div class="modal-column">
+         <table class="table table-borderless">
+           <tr>
+             <td><span style="padding-top:5px;margin-top:5px">FIKI?</span></td>
+             <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.flight.pilotAgree"></td>
+             <td><span style="padding-top:5px;margin-top:5px">OTHER:</span></td>
+             <td><input style="padding-top:5px;margin-top:5px" ng-style="modal.getWidth(300,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.flight.pilotAgree"></td>
+           </tr>
+         </table>
+       </div>
+     </div>
       <div ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index">
         <div class='airport-card' ng-class="metarObj.color">
           <p style="margin:0px;padding:5px;text-align:center;width:60px;" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
