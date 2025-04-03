@@ -103,14 +103,29 @@ export function update(req, res) {
     .catch(handleError(res));
 }
 
+function getFirstAndLast(date) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+
+  return { firstDay, lastDay };
+}
+
 export function month(req,res) {
-  let calendar=req.body.calendar;
-  let existingCalendar=req.body.calendar;
-  calendar.forEach(day=>{
-    
-  });
-  console.log(existingCalendar);
-  res.status(200);
+  let date=new Date(req.body.date);
+  let firstAndLast=getFirstAndLast(date);
+  return Calendar.findAll({
+    where: {
+        dateObj: {
+          $between: [firstAndLast.firstDay, firstAndLast.lastDay]
+        }
+      }
+    }  
+  )
+  .then(respondWithResult(res))
+  .catch(handleError(res));
 }
 
 // Deletes a Calendar from the DB

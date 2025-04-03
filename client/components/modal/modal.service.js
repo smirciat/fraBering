@@ -184,6 +184,15 @@ angular.module('workspaceApp')
                 quickModal;
             quickModal = openModal({
               modal: {
+                flightInfo:[{title:'Origin',val:flight.airportObjs[0].airport.threeLetter+'BA'},
+                            {title:'Date',val:flight.date},
+                            {title:'Time',val:flight.departTimes[0].substring(0,5)+' - '+flight.departTimes[flight.departTimes.length-1].substring(0,5)},
+                            {title:'Block',val:flight.block},
+                            {title:'Flight ID',val:'BRG'+flight.flightNum},
+                            {title:'Operation',val:flight.operation},
+                            {title:'Rule',val:'VFR/IFR'},
+                            {title:'Route',val:flight.airports.toString()}
+                            ],
                 getWidth:window.getWidth,
                 flight:flight,
                 dismissable: true,
@@ -278,7 +287,9 @@ angular.module('workspaceApp')
                   if (index===(flight.airportObjsLocked.length-1)) return "Destination";
                   return "Intermediate";
                 },
+                allDisabled:function(){return (flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree},
                 pilotDisabled:function(f){
+                  return false;
                   if (colors.indexOf(f.color)>3) return !f.ocRelease||f.ocRelease==="";
                   else return !f.dispatchRelease&&!f.ocRelease;
                 },
@@ -347,6 +358,11 @@ angular.module('workspaceApp')
                 show:false,
                 weatherModal:true,
                 timestamp:timestamp,
+                floor:function(num){
+                  console.log(num)
+                  return Math.floor(num)
+                  
+                },
                 signClick:function(){
                   manualObs.signature=user.name;
                   airport.manualTimestamp=new Date();

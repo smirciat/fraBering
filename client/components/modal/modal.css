@@ -106,3 +106,31 @@
 .my-hr{
   margin:0px;
 }
+
+.span-modal .selectize-input{
+  padding:0px;
+  border:none;
+}
+
+.orange-line .inner-modal{
+  padding:1px;
+  border-bottom:2px solid #cc9900;
+}
+
+.white .inner-modal{
+  background-color:#F2F2F2;
+}
+
+.wheat{
+  background-color:#ffffcc;
+}
+
+.inner-modal{
+  text-align:center;
+  height:32px;!important
+}
+
+.span-modal{
+  vertical-align: middle;
+  line-height:30px;!important
+}

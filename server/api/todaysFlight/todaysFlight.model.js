@@ -27,6 +27,7 @@ export default function(sequelize, DataTypes) {
     departTimesZulu: DataTypes.JSONB,
     base: DataTypes.STRING,
     status: DataTypes.STRING,
+    operation: DataTypes.STRING,
     json: DataTypes.JSONB,
     color: DataTypes.STRING,
     airportObjs: DataTypes.JSONB,

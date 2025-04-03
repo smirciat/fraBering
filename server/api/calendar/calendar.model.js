@@ -9,6 +9,7 @@ export default function(sequelize, DataTypes) {
       autoIncrement: true
     },
     date: DataTypes.STRING,
+    dateObj: DataTypes.DATE,
     day: DataTypes.INTEGER,
     availablePilots: DataTypes.JSONB,
     availableAricraft: DataTypes.JSONB,

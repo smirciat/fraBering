@@ -750,8 +750,32 @@ class StatusComponent {
         flight.ocNumber= '(907) 750-5890';
         break;
     }
+    if (flight.pfr) flight.pfr.legArray[0].operatingWeightEmpty=Math.round(flight.pfr.legArray[0].operatingWeightEmpty);
+    if (flight.departTimes) flight.block=this.subtractTimes(flight.departTimes[flight.departTimes.length-1],flight.departTimes[0]);
     console.log(flight)
     this.flightModal(JSON.parse(JSON.stringify(flight)),this.alternateAirports,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
+  }
+  
+  subtractTimes(time1, time2) {
+    const [h1, m1, s1] = time1.split(':').map(Number);
+    const [h2, m2, s2] = time2.split(':').map(Number);
+  
+    const totalSeconds1 = h1 * 3600 + m1 * 60 + s1;
+    const totalSeconds2 = h2 * 3600 + m2 * 60 + s2;
+  
+    const differenceInSeconds = Math.abs(totalSeconds1 - totalSeconds2);
+  
+    const resultHours = Math.floor(differenceInSeconds / 3600);
+    const resultMinutes = Math.floor((differenceInSeconds % 3600) / 60);
+    const resultSeconds = differenceInSeconds % 60;
+  
+    const formattedHours = String(resultHours).padStart(2, '0');
+    const formattedMinutes = String(resultMinutes).padStart(2, '0');
+    const formattedSeconds = String(resultSeconds).padStart(2, '0');
+  
+    //return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    return `${formattedHours}+${formattedMinutes}`;
+    
   }
   
   getDate(timestamp){

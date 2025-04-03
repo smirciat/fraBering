@@ -364,6 +364,7 @@ export async function tf(req,res) {
       obj.departTime=new Date(temp[2]).toTimeString().slice(0,8);
       obj.coPilot=temp[3];
       obj.aircraft=temp[4];
+      obj.operation=temp[5];
       obj.from=temp[6];
       obj.to=temp[7];
       obj.flightNum=temp[8];
@@ -616,6 +617,7 @@ export async function tf(req,res) {
         todaysFlights[index].color=flight.color;
         todaysFlights[index].equipment=flight.equipment;
         todaysFlights[index].autoOnboard=flight.autoOnboard;
+        todaysFlights[index].operation=flight.operation;
         if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
           //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' date'); 

@@ -1,0 +1,20 @@
+.myGrid{
+  height:calc(100vh - 60px);
+}
+
+.ui-grid-icon-angle-down{
+  display:none;
+}
+
+.ui-grid-cell-contents{
+    text-align:center;
+    font-weight:bold;
+}
+
+.RA{
+    border:3px solid purple;
+}
+.C8 .ui-grid-cell-contents {
+    border:3px solid purple;
+    padding-top:0px;
+}
