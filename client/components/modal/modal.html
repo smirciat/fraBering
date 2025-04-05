@@ -171,182 +171,179 @@
     <div name="FLIGHT INFO" >
       <div class="orange-line">
         <div class="inner-modal">
-          <span class="span-modal" style="float:left;font-weight:bold;">FLIGHT INFO</span>
-        </div>
-      </div>
-      <div class="orange-line white" ng-repeat="item in modal.flightInfo track by $index">
-        <div class="inner-modal">
-          <span class="span-modal" style="float:left;">{{item.title}}</span>
-          <span class="span-modal" style="float:right;">{{item.val}}</span>
-        </div>
-      </div>
-      
-      <div class="orange-line white">
-        <div class="inner-modal">
-          <span class="span-modal" style="float:left;">Alternate</span>
-          <span class="span-modal" style="float:right;">
-            <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="modal.alternateDisp" ng-disabled="modal.allDisabled()" theme="selectize" ng-change="modal.updateParam('alternate',modal.alternateDisp)">
-                <ui-select-match style="line-height:28px;height:28px" placeholder="...">{{$select.selected}}</ui-select-match>
-                <ui-select-choices repeat="choice in modal.alternates" >
-                  <div ng-bind-html="choice | highlight: $select.search"></div>
-                </ui-select-choices>
-            </ui-select>
+          <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
+            FLIGHT INFO&nbsp;
+            <i ng-class="modal.upOrDown(modal.showFlightInfo)" ng-click="modal.showFlightInfo=!modal.showFlightInfo"></i>  
           </span>
+        </div>
+      </div>
+      <!--<div style="height:2px;line-height:2px"><span style="line-height:2px">.</span></div>-->
+      <div ng-show="modal.showFlightInfo">
+        <div class="orange-line white" ng-repeat="item in modal.flightInfo track by $index">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">{{item.title}}</span>
+            <span class="span-modal" style="float:right; padding-right:5px">{{item.val}}</span>
+          </div>
+        </div>
+        
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">Alternate</span>
+            <span class="span-modal" style="float:right; padding-right:5px">
+              <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="modal.alternateDisp" ng-disabled="modal.allDisabled()" theme="selectize" ng-change="modal.updateParam('alternate',modal.alternateDisp)">
+                  <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
+                  <ui-select-choices repeat="choice in modal.alternates" >
+                    <div ng-bind-html="choice | highlight: $select.search"></div>
+                  </ui-select-choices>
+              </ui-select>
+            </span>
+          </div>
         </div>
       </div>
       <br>
       <div class="orange-line">
         <div class="inner-modal">
-          <span class="span-modal" style="float:left;font-weight:bold;">AIRCRAFT</span>
-        </div>
-      </div>
-      <div class="orange-line white">
-        <div class="inner-modal">
-          <span class="span-modal" style="float:left;">N-Number</span>
-          <span class="span-modal" style="float:right;">{{modal.flight.aircraft}}</span>
-        </div>
-      </div>
-      <div class="orange-line white">
-        <div class="inner-modal">
-          <span class="span-modal" style="float:left;">Type</span>
-          <span class="span-modal" style="float:right;">{{modal.flight.equipment.name}}</span>
-        </div>
-      </div>
-      <div class="orange-line white">
-        <div class="inner-modal">
-          <span class="span-modal" style="float:left;">Configuration</span>
-          <span class="span-modal" style="float:right;">{{modal.flight.status}}</span>
-        </div>
-      </div>
-      <div class="orange-line white">
-        <div class="inner-modal">
-          <span class="span-modal" style="float:left;">MEL</span>
-          <span class="span-modal" style="float:right;">
-            <input style="width:300px; height:27px; padding:0px" type="text" ng-model="modal.flight.mel" ng-disabled="modal.allDisabled()">
+          <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
+            AIRCRAFT&nbsp;
+            <i ng-class="modal.upOrDown(modal.showAircraftInfo)" ng-click="modal.showAircraftInfo=!modal.showAircraftInfo"></i>  
           </span>
         </div>
       </div>
-      <div class="orange-line white">
-        <div class="inner-modal">
-          <span class="span-modal" style="float:left;">Aircraft Other</span>
-          <span class="span-modal" style="float:right;">
-            <input style="width:300px; height:27px; padding:0px" type="text" ng-model="modal.flight.other" ng-disabled="modal.allDisabled()">
-          </span>
+      <div ng-show="modal.showAircraftInfo">
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">N-Number</span>
+            <span class="span-modal" style="float:right; padding-right:5px">{{modal.flight.aircraft}}</span>
+          </div>
+        </div>
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">Type</span>
+            <span class="span-modal" style="float:right; padding-right:5px">{{modal.flight.equipment.name}}</span>
+          </div>
+        </div>
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">Configuration</span>
+            <span class="span-modal" style="float:right; padding-right:5px">{{modal.flight.status}}</span>
+          </div>
+        </div>
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">MEL</span>
+            <span class="span-modal" style="float:right; padding-right:5px">
+              <input style="width:300px; height:27px; padding:0px;text-align: right; " type="text" ng-model="modal.flight.mel" ng-disabled="modal.allDisabled()">
+            </span>
+          </div>
+        </div>
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">Aircraft Other</span>
+            <span class="span-modal" style="float:right; padding-right:5px">
+              <input style="width:300px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.other" ng-disabled="modal.allDisabled()">
+            </span>
+          </div>
         </div>
       </div>
       <br>
+      <div class="orange-line">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
+            OWE Calculator&nbsp;
+            <i ng-class="modal.upOrDown(modal.showOWEInfo)" ng-click="modal.showOWEInfo=!modal.showOWEInfo"></i>  
+          </span>
+        </div>
+      </div>
+      <div ng-show="modal.showOWEInfo">
+        <div class="orange-line white" ng-repeat="item in modal.bewInfo track by $index">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">{{item.title}}</span>
+            <span class="span-modal" style="float:right; padding-right:5px">
+              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.bew[item.val]" ng-disabled="modal.allDisabled()">
+            </span>
+          </div>
+        </div>
+        <div class="orange-line white" ng-show="modal.flight.equipment.name==='Caravan'">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">TKS</span>
+            <span class="span-modal">
+              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.bew.tks" ng-disabled="modal.allDisabled()">
+              &nbsp;Gallons
+            </span>
+            <span class="span-modal" style="float:right; padding-right:5px">{{modal.tksCalc()}}</span>
+          </div>
+        </div>
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">Calculated OWE (to be entered on iPad)</span>
+            <span class="span-modal" style="float:right; padding-right:5px">{{modal.oweCalc()}}</span>
+          </div>
+        </div>
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left;padding-left:5px">Takeoff Fuel</span>
+            <span class="span-modal">{{modal.fuelCalc()}}&nbsp;Hours</span>
+            <span class="span-modal" style="float:right; padding-right:5px" ng-class="modal.fuelSanity(modal.flight.pfr.legArray[0].fuel)">{{modal.flight.pfr.legArray[0].fuel}}</span>
+          </div>
+        </div>
+      </div>
+      <br>
+      <div class="modal-environment-layout" style="font-weight:bold;">
+       <div class="modal-column">
+         <table class="table table-borderless">
+           <tr>
+             <td><span style="padding-top:5px;margin-top:5px">FIKI?</span></td>
+             <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.flight.pilotAgree"></td>
+             <td><span style="padding-top:5px;margin-top:5px">OTHER:</span></td>
+             <td><input style="padding-top:5px;margin-top:5px" ng-style="modal.getWidth(300,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.flight.pilotAgree"></td>
+           </tr>
+         </table>
+       </div>
+     </div>
+      <div style="border:1px solid black;">
+        <div class="white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">FUEL REQUEST</span>
+            <span class="span-modal" style="float:right; padding-right:5px">
+              EnterTotalizer FOB lbs&nbsp;
+              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.allDisabled()">
+            </span>
+          </div>
+        </div>
+        <div class="white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">Fill To: POUNDS</span>
+            <span class="span-modal" style="font-weight:bold">{{(modal.flight.pfr.legArray[0].fuel+modal.equipment.taxiFuel)/2}}&nbsp;lbs/side</span>
+            <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.flight.pfr.legArray[0].fuel+modal.equipment.taxiFuel}}&nbsp;lbs total</span>
+          </div>
+        </div>
+        <div class="white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">ADD: GALLONS</span>
+            <span class="span-modal" style="font-weight:bold">{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main||0}}&nbsp;gal/side</span>
+            <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main*2||0}}&nbsp;gal total</span>
+          </div>
+        </div>
+      </div>
+      
+      <br>
+      <div class="orange-line white">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">MGTOW</span>
+          <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">{{modal.flight.pfr.legArray[0].mgtow}}</span>
+        </div>
+      </div>
+      <div class="orange-line white" ng-repeat="item in modal.summaryInfo track by $index" ng-hide="modal.flight.equipment.name==='Caravan'&&item.title==='MaxZFW'">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left;padding-left:5px;">{{item.title}}</span>
+          <span class="span-modal" style="float:right; padding-right:5px;">{{item.val}}</span>
+        </div>
+      </div>
+      
+      
     </div>
+  
     <br>
-    <div class="modal-checkbox-layout" style="align-items: center">
-      <div class="modal-column">
-        <table class="table table-borderless" style="margin-bottom:5px">
-          
-            <!--<tr style="margin:0px">
-              <td style="text-align:center; margin:0px; padding:0px">ORIGIN</td>
-            </tr>-->
-            <tr style="margin:0px">
-              <td style="text-align:center; margin:0px; padding:0px">{{modal.flight.airportObjs[0].airport.threeLetter+'BA'}}</td>
-            </tr>
-          
-        </table>
-      </div>
-      <div class="modal-column">
-        <table class="table table-borderless" style="margin-bottom:5px">
-          
-            <!--<tr style="margin:0px">
-              <td style="text-align:center; margin:0px; padding:0px">DEPARTURE DATE/TIME</td>
-              <td style="text-align:center; margin:0px; padding:0px">OC &nbsp&nbsp&nbsp&nbsp CONTACT</td>
-            </tr>-->
-          
-            <tr style="margin:0px">
-              <td style="text-align:center; margin:0px; padding:0px">{{modal.flight.date + ' &nbsp&nbsp&nbsp&nbsp ' + modal.flight.departTimes[0].substring(0,5) + ' local'}}</td>
-              <td style="text-align:center; margin:0px; padding:0px">OC/ {{modal.flight.ocName + ' ' + modal.flight.ocNumber}}</td>
-            </tr>
-          
-        </table>
-      </div>
-    </div>
-    <div class="modal-checkbox-layout" style="align-items: center">
-      <div class="modal-column">
-        <table class="table table-borderless" style="margin-bottom:5px">
-          <tbody>
-            <tr>
-              <td style="text-align:center; font-weight:bold">AIRCRAFT</td>
-            </tr>
-            <tr>
-              <td style="text-align:center">{{modal.flight.aircraft}}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="modal-column">
-        <table class="table table-bordered" style="margin-bottom:5px">
-          <thead>
-            <tr>
-              <td style="text-align:center">CONFIG</td><td style="text-align:center">OWE</td>
-              <td style="text-align:center; font-weight:bold">T/O FUEL</td><td style="text-align:center">MGTOW</td>
-              <td style="text-align:center; font-weight:bold">LOAD AV</td>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="text-align:center">{{modal.flight.status}}</td>
-              <td style="text-align:center">{{modal.flight.pfr.legArray[0].operatingWeightEmpty}}</td>
-              <td style="text-align:center; font-weight:bold" ng-class="modal.fuelSanity(modal.flight.pfr.legArray[0].fuel)">{{modal.flight.pfr.legArray[0].fuel}}</td>
-              <td style="text-align:center">{{modal.flight.pfr.legArray[0].mgtow}}</td>
-              <td style="text-align:center; font-weight:bold">{{modal.flight.pfr.legArray[0].mgtow-modal.flight.pfr.legArray[0].operatingWeightEmpty-modal.flight.pfr.legArray[0].fuel}}</td>
-            </tr>
-            <tr>
-              <td style="text-align:center">#PAX</td><td style="text-align:center">OW</td>
-              <td style="text-align:center">TaxiFuel</td><td style="text-align:center">TOW</td>
-              <td style="text-align:center; font-weight:bold">TTL LOAD</td>
-            </tr>
-            <tr>
-              <td style="text-align:center">{{modal.flight.pfr.legArray[0].paxNoLoad}}</td>
-              <td style="text-align:center">{{modal.flight.pfr.legArray[0].operatingWeightEmpty+modal.flight.pfr.legArray[0].fuel}}</td>
-              <td style="text-align:center">{{modal.flight.equipment.taxiFuel}}</td>
-              <td style="text-align:center">{{modal.flight.pfr.legArray[0].operatingWeightEmpty+modal.flight.pfr.legArray[0].fuel+modal.flight.pfr.legArray[0].paxWeightLoad+modal.flight.pfr.legArray[0].bagsLoad+modal.flight.pfr.legArray[0].cargoLoad+modal.flight.pfr.legArray[0].mailLoad}}</td>
-              <td style="text-align:center; font-weight:bold">{{modal.flight.pfr.legArray[0].paxWeightLoad+modal.flight.pfr.legArray[0].bagsLoad+modal.flight.pfr.legArray[0].cargoLoad+modal.flight.pfr.legArray[0].mailLoad}}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="modal-checkbox-layout" style="align-items: center">
-      <div class="modal-column">
-        <table class="table table-borderless" style="margin-bottom:5px">
-          <tbody>
-            <tr><td style="text-align:center">FUEL</td></tr>
-            <tr><td></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="modal-column">
-        <table class="table table-bordered" style="margin-bottom:5px">
-          <tbody>
-            <tr>
-              <td style="text-align:center">FOB</td>
-              <td style="text-align:center; font-weight:bold">Total/Taxi</td>
-              <td style="text-align:center; font-weight:bold">Add Gals</td>
-              <td style="text-align:center; font-weight:bold">Request</td>
-            </tr>
-            <tr>
-              <td style="text-align:center;" rowspan="2">
-                <input class="form-control-inline" style="margin-top:15px;" ng-style="modal.getWidth(100,'px')" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.allDisabled()"></td>
-              <td style="text-align:center;" rowspan="2">
-                <input class="form-control-inline" style="margin-top:15px; font-weight:bold" ng-style="modal.getWidth(100,'px')" type="text" ng-model="modal.flight.fuelTotalTaxi" ng-disabled="modal.allDisabled()"></td>
-              <td style="text-align:center; font-weight:bold" rowspan="2"><div style="margin-top:15px;">{{modal.getGals(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}}</div></td>
-              <!--<td style="text-align:center">{{modal.getLbs(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard)||0}} lbs</td>-->
-              <td style="text-align:center; font-weight:bold"><span>{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main||0}}</span><small> gal/side MAIN</small></td>
-            </tr>
-            <tr>
-              <td style="text-align:center"><span>{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).aux||0}}</span><small> gal/side AUX</small></td>
-            </tr>
-          </tbody>
-        </table>  
-      </div>
-    </div>
-    
     
     <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
       <div class="modal-column">
@@ -375,31 +372,39 @@
     <hr class="my-hr">
     <div>
       <p style="font-weight:bold">ENVIRONMENT</p>
-      <p style="color:red; font-style:italic">If flight is conducted into known icing conditions, C208 aircraft will reduce MGTOW to arrive in the icing environment at or below 8807 lbs.  All aircraft must adhere to AFM flight into known icing limitations.</p>
-      <div class="modal-environment-layout" style="font-weight:bold;">
-       <div class="modal-column">
-         <table class="table table-borderless">
-           <tr>
-             <td><span style="padding-top:5px;margin-top:5px">FIKI?</span></td>
-             <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.flight.pilotAgree"></td>
-             <td><span style="padding-top:5px;margin-top:5px">OTHER:</span></td>
-             <td><input style="padding-top:5px;margin-top:5px" ng-style="modal.getWidth(300,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.flight.pilotAgree"></td>
-           </tr>
-         </table>
-       </div>
-     </div>
+      <p style="color:red; font-style:italic;margin-bottom:0px">If flight is conducted into known icing conditions, C208 aircraft will reduce MGTOW to arrive in the icing environment at or below 8807 lbs.  All aircraft must adhere to AFM flight into known icing limitations.</p>
+      
       <div ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index">
+        <br>
         <div class='airport-card' ng-class="metarObj.color">
           <p style="margin:0px;padding:5px;text-align:center;width:60px;" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
                 >{{metarObj.airport.threeLetter}}</p>
         </div>
         <span style="font-weight:bold">&nbsp;&nbsp;&nbsp;{{modal.getDestinationType($index)}}</span>
-        <span style="font-weight:bold">{{modal.flight.departTimesZulu[$index]}}</span>
-        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj['Raw-Report']}}</p>
-        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">TAF: {{metarObj.taf}}</p>
-        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="false&&metarObj.airport.manualObs">Ceiling: {{metarObj.airport.manualObs.ceiling}}</p>
-        <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">RUNWAY {{metarObj.airport.icao+' '+metarObj.airport.openClosed+', '+modal.formatScore(metarObj.airport.runwayScore)+' '+metarObj.airport.comment}}</p>
-        <br>
+        <span style="font-weight:bold">
+          {{modal.flight.departTimesZulu[$index]}}&nbsp;
+            <i ng-class="modal.upOrDown(modal['showInfo'+$index])" ng-click="modal['showInfo'+$index]=!modal['showInfo'+$index]"></i>  
+        </span>
+        <div ng-show="modal['showInfo'+$index]">
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj['Raw-Report']}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">TAF: {{metarObj.taf}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="false&&metarObj.airport.manualObs">Ceiling: {{metarObj.airport.manualObs.ceiling}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">RUNWAY {{metarObj.airport.icao+' '+metarObj.airport.openClosed+', '+modal.formatScore(metarObj.airport.runwayScore)+' '+metarObj.airport.comment}}</p>
+        </div>
+      </div>
+      <br>
+      <div ng-if="!modal.flight.alternate" class="orange-line white">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left; padding-left:5px;">Alternate</span>
+          <span class="span-modal" style="float:right; padding-right:5px">
+            <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="modal.alternateDisp" ng-disabled="modal.allDisabled()" theme="selectize" ng-change="modal.updateParam('alternate',modal.alternateDisp)">
+                <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
+                <ui-select-choices repeat="choice in modal.alternates" >
+                  <div ng-bind-html="choice | highlight: $select.search"></div>
+                </ui-select-choices>
+            </ui-select>
+          </span>
+        </div>
       </div>
       <div ng-if="modal.flight.alternate">
         <div class='airport-card' ng-class="modal.flight.altObj.metarObj.color">

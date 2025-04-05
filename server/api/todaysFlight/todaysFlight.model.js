@@ -57,6 +57,9 @@ export default function(sequelize, DataTypes) {
     taxiFuel:DataTypes.STRING,
     enrouteChanges:DataTypes.STRING,
     equipment:DataTypes.JSONB,
-    alternate:DataTypes.STRING
+    bew:DataTypes.JSONB,
+    alternate:DataTypes.STRING,
+    pilotObject:DataTypes.JSONB,
+    coPilotObject:DataTypes.JSONB
   });
 }

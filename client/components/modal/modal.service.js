@@ -187,12 +187,39 @@ angular.module('workspaceApp')
                 flightInfo:[{title:'Origin',val:flight.airportObjs[0].airport.threeLetter+'BA'},
                             {title:'Date',val:flight.date},
                             {title:'Time',val:flight.departTimes[0].substring(0,5)+' - '+flight.departTimes[flight.departTimes.length-1].substring(0,5)},
-                            {title:'Block',val:flight.block},
+                            {title:'Est Flight Time',val:flight.block},
                             {title:'Flight ID',val:'BRG'+flight.flightNum},
                             {title:'Operation',val:flight.operation},
                             {title:'Rule',val:'VFR/IFR'},
                             {title:'Route',val:flight.airports.toString()}
                             ],
+                bewInfo:[{title:'Basic Empty Weight',val:'bew'},
+                            {title:'Equipment Lbs',val:'equipment'},
+                            {title:'Captain lbs',val:'captain'},
+                            {title:'FO lbs',val:'fo'},
+                            {title:'Jumpseater lbs',val:'jumpseater'}
+                            ],
+                summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
+                            {title:'OWE',val:flight.pfr.owe},
+                            {title:'Operating Weight',val:isNaN(flight.pfr.owe+flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.owe+flight.pfr.legArray[0].fuel},
+                            {title:'Load Available',val:isNaN(flight.pfr.legArray[0].mgtow-flight.pfr.owe-flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.legArray[0].mgtow-flight.pfr.owe-flight.pfr.legArray[0].fuel},
+                            {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
+                            {title:'TOW',val:flight.pfr.legArray[0].tow}
+                            ],
+                oweCalc:function(){
+                  return Math.round(flight.bew.tks*9.08333+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.bew.jumpseater*1);
+                },
+                tksCalc:function(){
+                  return Math.round(flight.bew.tks*9.08333);
+                },
+                fuelCalc:function(){
+                  if (!flight.pfr.legArray[0].fuel) return 0;
+                  return (flight.pfr.legArray[0].fuel/flight.equipment.fuelBurn).toFixed(1);
+                },
+                upOrDown:function(bool){
+                  if (!bool) return "fa fa-solid fa-angle-down fa-lg";
+                  return "fa fa-solid fa-angle-up fa-lg";
+                },
                 getWidth:window.getWidth,
                 flight:flight,
                 dismissable: true,
@@ -207,7 +234,7 @@ angular.module('workspaceApp')
                 user:user,
                 clearAlternate:function(){
                   flight.alternate=null;
-                  alternateDisp=undefined;
+                  alternateDisp='None';
                 },
                 updateParam:function(key,obj){
                   flight[key]=obj;
@@ -273,7 +300,7 @@ angular.module('workspaceApp')
                 getRequest(totalTaxi,fob){
                   let main=(totalTaxi*1-fob*1)/2;
                   let aux=0;
-                  if (flight.equipment.maxMain){
+                  if (false){//flight.equipment.maxMain){
                     if (totalTaxi*1>flight.equipment.maxMain*2){
                       aux=(totalTaxi*1-flight.equipment.maxMain*2)/2;
                       main=main-aux;

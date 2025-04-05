@@ -19,6 +19,7 @@ let allAirports=[];
 let airplanes=[];
 let fbAirplanes=[];
 let pfrs=[];
+let pilots=[];
 let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
 const baseUrl = 'https://localhost:' + config.port;
 const axios = require("axios");
@@ -28,12 +29,12 @@ const agent = new https.Agent({
 });
 let stopped=false;
 let staleFile=false;
-let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50,taxiFuel:35,fuelBurn:350,minFuel:800},
+let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50,taxiFuel:35,fuelBurn:400,minFuel:600,ZFW:9062},
        //{id:2,name:"Navajo",wind:40,xwind:30,temp:-40,taxiFuel:35},
-       {id:3,name:"Casa",wind:35,xwind:25,temp:-50,taxiFuel:110,fuelBurn:600,minFuel:1323},
-       {id:4,name:"King Air",wind:40,xwind:35,temp:-50,taxiFuel:90,maxMain:1293,maxAux:529,fuelBurn:600,minFuel:1500},
-       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50,taxiFuel:110,maxMain:1621,maxAux:621,fuelBurn:700,minFuel:1420},
-       {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50,taxiFuel:70,fuelBurn:700,minFuel:1100}];
+       {id:3,name:"Casa",wind:35,xwind:25,temp:-50,taxiFuel:110,fuelBurn:700,minFuel:1323,ZFW:15653},
+       {id:4,name:"King Air",wind:40,xwind:35,temp:-50,taxiFuel:90,maxMain:1293,maxAux:529,fuelBurn:700,minFuel:1500,ZFW:11000},
+       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50,taxiFuel:110,maxMain:1621,maxAux:621,fuelBurn:800,minFuel:1420,ZFW:15700},
+       {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50,taxiFuel:70,fuelBurn:800,minFuel:1100,ZFW:17900}];
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -289,7 +290,8 @@ export async function tf(req,res) {
         if (i.dataValues) airplanes.push(i.dataValues);
       });
     }
-    fbAirplanes=await quickGrab().aircraft;
+    fbAirplanes=quickGrab().aircraft;
+    pilots=quickGrab().pilots;
     //firebaseQueryFunction(collection,limit,parameter,operator,value,timestampBoolean)
     let d=new Date();
     let month = String(d.getMonth() + 1).padStart(2, '0');
@@ -595,6 +597,8 @@ export async function tf(req,res) {
           });
         }
       }
+      //map pilot and coPilot Objects
+      
       
      //map flights array(from current.csv) to todaysFlights array (from postgresql database)
       let index=todaysFlights.map(e=>e.flightId).indexOf(flight.flightId);
@@ -612,6 +616,9 @@ export async function tf(req,res) {
       }
       if (index>-1) {
         updated.push(todaysFlights[index]._id);
+        let lookupObj=lookupPilotObjects(flight);
+        todaysFlights[index].pilotObject=lookupObj.pilotObject;
+        todaysFlights[index].coPilotObject=lookupObj.coPilotObject;
         todaysFlights[index].runScroll=false;
         todaysFlights[index].status=flight.status;
         todaysFlights[index].color=flight.color;
@@ -703,10 +710,15 @@ export async function tf(req,res) {
         let flight=todaysFlights[index];
         flight.colorPatch='false';
         flight.pfr=null;
-        let pfrIndex=-1;
+        //let pfrMap=[];//pfrIndex=-1;
         if (flight.date===new Date().toLocaleDateString()) {
-          pfrIndex=todaysPfrs.map(e=>e.flightNumber).indexOf(flight.flightNum);
-          if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
+          let pfrMap=todaysPfrs.filter(pfr=>{
+            if (!flight.pilotObject) flight.pilotObject={};//pfr.pilot===flight.pilotObject.displayName&&
+            return pfr.flightNumber===flight.flightNum&&pfr.pilot===flight.pilotObject.displayName&&pfr.acftNumber===flight.aircraft;
+          });
+          if (pfrMap.length>0) flight.pfr=pfrMap[0];
+          //pfrIndex=todaysPfrs.map(e=>e.flightNumber).indexOf(flight.flightNum);
+          //if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
         }
         //console.log('Updating Flight ID: ' + todaysFlights[index].flightId);
         //console.log(todaysFlights[index]);
@@ -938,4 +950,33 @@ async function airportNameToMetar(airport){
    airport.metarObj=parseADDS(airport.currentMetarObj.metar);
   }
   return airport;
+}
+
+function lookupPilotObjects(flight){
+  let displayName,lookupIndex,pilotObject,coPilotObject;
+  if (flight.pilot&&flight.pilot!=='No Pilot Assigned') {
+    //bmcintosh adjustment
+    if (flight.pilot==='bmcintosh') flight.pilot='bmcIntosh';
+    if (flight.coPilot==='bmcintosh') flight.coPilot='bmcIntosh';
+    //m evans adjustment
+    if (flight.pilot.substring(0,1)==="m"&&flight.pilot.slice(-5)==="evans") {
+      displayName='M. '+flight.pilot.substring(1,2).toUpperCase()+'. Evans';
+    }
+    else displayName=flight.pilot.substring(0,1).toUpperCase()+'. '+flight.pilot.substring(1,2).toUpperCase()+flight.pilot.slice(2);
+    lookupIndex = pilots.map(e => e.displayName).indexOf(displayName);
+    if (lookupIndex>-1) pilotObject=pilots[lookupIndex];
+  }
+  //import coPilot
+  if (flight.coPilot) {
+    if (flight.coPilot.substring(0,1)==="m"&&flight.coPilot.slice(-5)==="evans") {
+      displayName='M. '+flight.coPilot.substring(1,2).toUpperCase()+'. Evans';
+    }
+    else if (flight.coPilot.substring(0,1)==="k"&&flight.coPilot.slice(-9)==="showalter") {
+      displayName='D. Showalter';
+    }
+    else displayName=flight.coPilot.substring(0,1).toUpperCase()+'. '+flight.coPilot.substring(1,2).toUpperCase()+flight.coPilot.slice(2);
+    lookupIndex = pilots.map(e => e.displayName).indexOf(displayName);
+    if (lookupIndex>-1) coPilotObject=pilots[lookupIndex];
+  }
+  return {pilotObject:pilotObject,coPilotObject:coPilotObject};
 }

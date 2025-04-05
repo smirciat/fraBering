@@ -310,42 +310,14 @@ class StatusComponent {
   }
   
   filterTodaysFlights(array){
-      if (!this.dateString||!this.allPilots||this.allPilots.length===0||!array) {
-        
-        return array;
-      }
-      let index,displayName;
+      if (!this.dateString||!array) return array;
       array.forEach(flight=>{
         if (this.dateString!==flight.date) {
           flight=undefined;
           return;
         }
         if (!flight.flightId) flight.active==='false';
-        //import pilot
-        if (flight.pilot&&flight.pilot!=='No Pilot Assigned') {
-          //bmcintosh adjustment
-          if (flight.pilot==='bmcintosh') flight.pilot='bmcIntosh';
-          if (flight.coPilot==='bmcintosh') flight.coPilot='bmcIntosh';
-          //m evans adjustment
-          if (flight.pilot.substring(0,1)==="m"&&flight.pilot.slice(-5)==="evans") {
-            displayName='M. '+flight.pilot.substring(1,2).toUpperCase()+'. Evans';
-          }
-          else displayName=flight.pilot.substring(0,1).toUpperCase()+'. '+flight.pilot.substring(1,2).toUpperCase()+flight.pilot.slice(2);
-          index = this.allPilots.map(e => e.displayName).indexOf(displayName);
-          if (index>-1) flight.pilotObject=angular.copy(this.allPilots[index]);
-        }
-        //import coPilot
-        if (flight.coPilot) {
-          if (flight.coPilot.substring(0,1)==="m"&&flight.coPilot.slice(-5)==="evans") {
-            displayName='M. '+flight.coPilot.substring(1,2).toUpperCase()+'. Evans';
-          }
-          else if (flight.coPilot.substring(0,1)==="k"&&flight.coPilot.slice(-9)==="showalter") {
-            displayName='D. Showalter';
-          }
-          else displayName=flight.coPilot.substring(0,1).toUpperCase()+'. '+flight.coPilot.substring(1,2).toUpperCase()+flight.coPilot.slice(2);
-          index = this.allPilots.map(e => e.displayName).indexOf(displayName);
-          if (index>-1) flight.coPilotObject=angular.copy(this.allPilots[index]);
-        }
+        
         let match=true;
         //attach routing to airportRequirements
         let airportObjs=[];
@@ -751,19 +723,24 @@ class StatusComponent {
         break;
     }
     if (flight.pfr) flight.pfr.legArray[0].operatingWeightEmpty=Math.round(flight.pfr.legArray[0].operatingWeightEmpty);
-    if (flight.departTimes) flight.block=this.subtractTimes(flight.departTimes[flight.departTimes.length-1],flight.departTimes[0]);
+    if (flight.departTimes) flight.block=this.subtractTimes(flight.departTimes[flight.departTimes.length-1],flight.departTimes[0],flight.departTimes.length);
+    let tks=0;
+    if (flight.equipment.name==="Caravan") tks=20.8;
+    if (!flight.bew) flight.bew={fo:0,bew:0,equipment:80,tks:tks,captain:200,jumpseater:0};
+    if (!flight.pfr) flight.pfr={legArray:[{}]};
     console.log(flight)
     this.flightModal(JSON.parse(JSON.stringify(flight)),this.alternateAirports,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
   }
   
-  subtractTimes(time1, time2) {
+  subtractTimes(time1, time2, arrLength) {
     const [h1, m1, s1] = time1.split(':').map(Number);
     const [h2, m2, s2] = time2.split(':').map(Number);
   
     const totalSeconds1 = h1 * 3600 + m1 * 60 + s1;
     const totalSeconds2 = h2 * 3600 + m2 * 60 + s2;
   
-    const differenceInSeconds = Math.abs(totalSeconds1 - totalSeconds2);
+    let differenceInSeconds = Math.abs(totalSeconds1 - totalSeconds2);
+    if (arrLength>1) differenceInSeconds-=((arrLength-2)*10*60);
   
     const resultHours = Math.floor(differenceInSeconds / 3600);
     const resultMinutes = Math.floor((differenceInSeconds % 3600) / 60);
