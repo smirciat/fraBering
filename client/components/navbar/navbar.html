@@ -46,7 +46,7 @@
         <li ng-if="nav.isAdmin()" style="padding-top:7px;padding-left:2em;">
           <div class="grid-parent-navbar">
             <input class="form-control" tooltip-placement="bottom" uib-tooltip="Upload Pilot Schedule CSV File Here" type="file" id="file" name="file" ng-model="nav.file"/>
-            <button ng-if="nav.fileExists" class="btn btn-default" ng-click="nav.uploadCSV()">Upload CSV</button>
+            <button ng-if="nav.fileExists" class="btn btn-default" ng-click="nav.uploadBewCSV()">Upload CSV</button>
           </div>
         </li>
       </ul>

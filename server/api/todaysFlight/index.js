@@ -6,7 +6,11 @@ var controller = require('./todaysFlight.controller');
 var router = express.Router();
 
 router.get('/', controller.index);
-router.get('/stopped', controller.returnStopped);
+router.get('/stopped', controller.returnFail);
+router.post('/stopped1', controller.returnFail);
+router.post('/stopped3', controller.returnFail);
+router.post('/stopped4', controller.returnFail);
+router.post('/stopped7', controller.returnStopped);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);

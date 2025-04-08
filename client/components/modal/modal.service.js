@@ -175,7 +175,7 @@ angular.module('workspaceApp')
                 isSuperAdmin = args.shift(),
                 user = args.shift(),
                 userLastname = args.shift(),
-                alternates=['PAOM','PAOT','PAUN','PABE','PAGA','PAFA','PANC'],
+                alternates=['None','PAOM','PAOT','PAUN','PABE','PAGA','PAFA','PANC'],
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
                 bgColors=['lightgreen','lightblue','#DAB1DA','yellow','orange','#ff0033'],
                 scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
@@ -193,8 +193,7 @@ angular.module('workspaceApp')
                             {title:'Rule',val:'VFR/IFR'},
                             {title:'Route',val:flight.airports.toString()}
                             ],
-                bewInfo:[{title:'Basic Empty Weight',val:'bew'},
-                            {title:'Equipment Lbs',val:'equipment'},
+                bewInfo:[{title:'Equipment Lbs',val:'equipment'},
                             {title:'Captain lbs',val:'captain'},
                             {title:'FO lbs',val:'fo'},
                             {title:'Jumpseater lbs',val:'jumpseater'}
@@ -206,11 +205,19 @@ angular.module('workspaceApp')
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
                             {title:'TOW',val:flight.pfr.legArray[0].tow}
                             ],
+                calcSeatWeight:function(num){
+                  if (num>9) {
+                    num=9;
+                    flight.bew.seatsRemoved=9;
+                  }
+                  flight.bew.seatWeight=num*24.5*-1;
+                  return flight.bew.seatWeight;
+                },
                 oweCalc:function(){
-                  return Math.round(flight.bew.tks*9.08333+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.bew.jumpseater*1);
+                  return Math.round(flight.bew.tks*9.2308+flight.bew.seatWeight*1+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.bew.jumpseater*1);
                 },
                 tksCalc:function(){
-                  return Math.round(flight.bew.tks*9.08333);
+                  return Math.round(flight.bew.tks*9.2308);
                 },
                 fuelCalc:function(){
                   if (!flight.pfr.legArray[0].fuel) return 0;
@@ -233,14 +240,18 @@ angular.module('workspaceApp')
                 isSuperAdmin:isSuperAdmin,
                 user:user,
                 clearAlternate:function(){
-                  flight.alternate=null;
                   alternateDisp='None';
+                  flight.alternate=null;
                 },
                 updateParam:function(key,obj){
-                  flight[key]=obj;
-                  let i=alternateAirports.map(e=>e.icao).indexOf(flight.alternate);
-                  if (i>-1) flight.altObj=alternateAirports[i];
-                  console.log(flight.altObj)
+                  if (key==='alternate'&&obj==='None') flight.alternate=null;
+                  else {
+                    flight[key]=obj;
+                    let i=alternateAirports.map(e=>e.icao).indexOf(flight.alternate);
+                    if (i>-1) flight.altObj=alternateAirports[i];
+                    console.log(flight.altObj)
+                  }
+                  
                 },
                 zulu:function(index){
                   let timeString=flight.departTimes[index];
@@ -254,6 +265,7 @@ angular.module('workspaceApp')
                   if (i>-1) return s + ' - Braking ' + scores[i].descr;
                 },
                 isWrongUser:function(){
+                  if (userLastname==='K.') userLastname="Evans";
                   if (!flight.pilotObject) return false;
                   //console.log(userLastname.toLowerCase()!==flight.pilotObject.lastName.toLowerCase())
                   if (typeof flight.pilotObject.lastName!=='string') flight.pilotObject={lastName:''};
@@ -326,8 +338,8 @@ angular.module('workspaceApp')
                   else return '';
                 },
                 dispatchInfo:function(){window.alert('Dispatch Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is NOT orange or red, the captain has successfully created a PFR and entered fuel quantity, the flight is not considered "Known Icing" and you are logged in as a dispatch or OC manager.')},
-                ocInfo:function(){window.alert('OC Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is orange or red (of the flight is considered "Known Icing"), the captain has successfully created a PFR and entered fuel quantity, and you are logged in as an OC manager.')},
-                pilotInfo:function(){window.alert('Pilot Acceptance can ONLY be signed when: the flight is within one hour of scheduled departure, the disptach or OC manager release has been signed, the captain has successfully created a PFR and entered fuel quantity, and you are logged in as the Captain of the flight.')},
+                ocInfo:function(){window.alert('OC Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is orange or red (or if the flight is considered "Known Icing"), the captain has successfully created a PFR and entered fuel quantity, and you are logged in as an OC manager.')},
+                pilotInfo:function(){window.alert('Pilot Acceptance can ONLY be signed when: the flight is within one hour of scheduled departure, the captain has successfully created a PFR and entered fuel quantity, and you are logged in as the Captain of the flight.')},
                 title: 'Flight Release  BRG' + flight.flightNum +' '+ flight.aircraft,
                 buttons: [ {//this is where you define you buttons and their appearances
                   classes: 'btn-primary',

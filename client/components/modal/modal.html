@@ -170,10 +170,10 @@
   <div ng-if="modal.flightModal">
     <div name="FLIGHT INFO" >
       <div class="orange-line">
-        <div class="inner-modal">
+        <div class="inner-modal" ng-click="modal.showFlightInfo=!modal.showFlightInfo">
           <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
             FLIGHT INFO&nbsp;
-            <i ng-class="modal.upOrDown(modal.showFlightInfo)" ng-click="modal.showFlightInfo=!modal.showFlightInfo"></i>  
+            <i ng-class="modal.upOrDown(modal.showFlightInfo)"></i>  
           </span>
         </div>
       </div>
@@ -202,10 +202,10 @@
       </div>
       <br>
       <div class="orange-line">
-        <div class="inner-modal">
+        <div class="inner-modal" ng-click="modal.showAircraftInfo=!modal.showAircraftInfo">
           <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
             AIRCRAFT&nbsp;
-            <i ng-class="modal.upOrDown(modal.showAircraftInfo)" ng-click="modal.showAircraftInfo=!modal.showAircraftInfo"></i>  
+            <i ng-class="modal.upOrDown(modal.showAircraftInfo)" ></i>  
           </span>
         </div>
       </div>
@@ -247,14 +247,29 @@
       </div>
       <br>
       <div class="orange-line">
-        <div class="inner-modal">
+        <div class="inner-modal"  ng-click="modal.showOWEInfo=!modal.showOWEInfo">
           <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
             OWE Calculator&nbsp;
-            <i ng-class="modal.upOrDown(modal.showOWEInfo)" ng-click="modal.showOWEInfo=!modal.showOWEInfo"></i>  
+            <i ng-class="modal.upOrDown(modal.showOWEInfo)"></i>  
           </span>
         </div>
       </div>
       <div ng-show="modal.showOWEInfo">
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">BEW (As Weighed)</span>
+            <span class="span-modal" style="float:right; padding-right:5px">{{modal.flight.bew.bew}}</span>
+          </div>
+        </div>
+        <div class="orange-line white" ng-show="modal.flight.equipment.name==='Caravan'">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">#Seats Removed from A/C (9 max)</span>
+            <span class="span-modal">
+              <input style="width:75px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.bew.seatsRemoved" ng-disabled="modal.allDisabled()">
+            </span>
+            <span class="span-modal" style="float:right; padding-right:5px">{{modal.calcSeatWeight(modal.flight.bew.seatsRemoved)}}</span>
+          </div>
+        </div>
         <div class="orange-line white" ng-repeat="item in modal.bewInfo track by $index">
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">{{item.title}}</span>
@@ -267,7 +282,7 @@
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">TKS</span>
             <span class="span-modal">
-              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.bew.tks" ng-disabled="modal.allDisabled()">
+              <input style="width:75px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.bew.tks" ng-disabled="modal.allDisabled()">
               &nbsp;Gallons
             </span>
             <span class="span-modal" style="float:right; padding-right:5px">{{modal.tksCalc()}}</span>
@@ -293,9 +308,9 @@
          <table class="table table-borderless">
            <tr>
              <td><span style="padding-top:5px;margin-top:5px">FIKI?</span></td>
-             <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.flight.pilotAgree"></td>
+             <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.allDisabled()"></td>
              <td><span style="padding-top:5px;margin-top:5px">OTHER:</span></td>
-             <td><input style="padding-top:5px;margin-top:5px" ng-style="modal.getWidth(300,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.flight.pilotAgree"></td>
+             <td><input style="padding-top:5px;margin-top:5px" ng-style="modal.getWidth(300,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.allDisabled()"></td>
            </tr>
          </table>
        </div>
@@ -374,7 +389,7 @@
       <p style="font-weight:bold">ENVIRONMENT</p>
       <p style="color:red; font-style:italic;margin-bottom:0px">If flight is conducted into known icing conditions, C208 aircraft will reduce MGTOW to arrive in the icing environment at or below 8807 lbs.  All aircraft must adhere to AFM flight into known icing limitations.</p>
       
-      <div ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index">
+      <div ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index" ng-click="modal['showInfo'+$index]=!modal['showInfo'+$index]">
         <br>
         <div class='airport-card' ng-class="metarObj.color">
           <p style="margin:0px;padding:5px;text-align:center;width:60px;" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
@@ -383,7 +398,7 @@
         <span style="font-weight:bold">&nbsp;&nbsp;&nbsp;{{modal.getDestinationType($index)}}</span>
         <span style="font-weight:bold">
           {{modal.flight.departTimesZulu[$index]}}&nbsp;
-            <i ng-class="modal.upOrDown(modal['showInfo'+$index])" ng-click="modal['showInfo'+$index]=!modal['showInfo'+$index]"></i>  
+            <i ng-class="modal.upOrDown(modal['showInfo'+$index])"></i>  
         </span>
         <div ng-show="modal['showInfo'+$index]">
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj['Raw-Report']}}</p>
@@ -393,7 +408,7 @@
         </div>
       </div>
       <br>
-      <div ng-if="!modal.flight.alternate" class="orange-line white">
+      <div ng-hide="modal.flight.alternate" class="orange-line white">
         <div class="inner-modal">
           <span class="span-modal" style="float:left; padding-left:5px;">Alternate</span>
           <span class="span-modal" style="float:right; padding-right:5px">
@@ -406,7 +421,7 @@
           </span>
         </div>
       </div>
-      <div ng-if="modal.flight.alternate">
+      <div ng-show="modal.flight.alternate">
         <div class='airport-card' ng-class="modal.flight.altObj.metarObj.color">
           <p style="margin:0px;padding:5px;text-align:center;width:60px;" tooltip-placement="bottom" uib-tooltip="{{modal.flight.altObj.currentMetar}}"
                 >{{modal.flight.altObj.threeLetter}}</p>
@@ -433,7 +448,7 @@
         <td><p style="padding-top:5px; margin-top:7px; ">DISPATCHER</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || !modal.isAdmin || !modal.flight.pfr.legArray[0].fuel || modal.flight.knownIce || modal.allDisabled()">
+            <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || !modal.isAdmin || !modal.flight.pfr.legArray[0].fuel || modal.flight.pfr.legArray[0].fuel<1 || modal.flight.knownIce || modal.allDisabled()">
                 <i class="fa fa-solid fa-pen fa-autosize" ></i></button>
             <span>{{modal.flight.dispatchRelease}}</span>
             <span><i class="fa fa-solid fa-info-circle fa-autosize" ng-click="modal.dispatchInfo()"></i></span>
@@ -445,7 +460,7 @@
         <td><p style="padding-top:5px; margin-top:7px; ">OC MANAGER</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.ocClick()" ng-disabled="!modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || !modal.isSuperAdmin || !modal.flight.pfr.legArray[0].fuel || modal.allDisabled()">
+            <button class="btn btn-success" ng-click="modal.ocClick()" ng-disabled="!modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || !modal.isSuperAdmin || !modal.flight.pfr.legArray[0].fuel || modal.flight.pfr.legArray[0].fuel<1 || modal.allDisabled()">
                 <i class="fa fa-solid fa-pen fa-autosize" ></i></button>
             <span>{{modal.flight.ocRelease}}</span>
             <span><i class="fa fa-solid fa-info-circle fa-autosize" ng-click="modal.ocInfo()"></i></span>
@@ -461,7 +476,7 @@
         <td><p style="padding-top:5px; margin-top:7px; ">CAPTAIN</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.pilotClick()" ng-disabled="modal.isWrongUser() || modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || modal.flight.pilotAgree || modal.user.name==='Bering Air'">
+            <button class="btn btn-success" ng-click="modal.pilotClick()" ng-disabled="modal.isWrongUser() || modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || !modal.flight.pfr.legArray[0].fuel || modal.flight.pfr.legArray[0].fuel<1 ||modal.flight.pilotAgree || modal.user.name==='Bering Air'">
                 <i class="fa fa-solid fa-pen fa-autosize"></i></button>
             <span>{{modal.flight.pilotAgree}}</span>
             <span><i class="fa fa-solid fa-info-circle fa-autosize"  ng-click="modal.pilotInfo()"></i></span>
@@ -472,8 +487,8 @@
         <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.releaseTimestamp)}}</p></td>     
       </tr>
     </table>
-    <div ng-if="!modal.flight.pilotAgree" style="background-color:red"><h2 style="color:white;font-weight:bold; text-align:center">NOT SIGNED</h2></div>
-    <div ng-if="modal.flight.pilotAgree">
+    <div ng-if="!modal.allDisabled()" style="background-color:red"><h2 style="color:white;font-weight:bold; text-align:center">NOT SIGNED</h2></div>
+    <div ng-if="true">
       <label>Changes While Enroute/After Release</label>
       <textarea class="form-control" style="height:76px;" ng-model="modal.flight.enrouteChanges"></textarea>
     </div>

@@ -104,6 +104,11 @@ export function returnStopped(req,res){
   res.status(200).json({stopped:staleFile});
 }
 
+//gets the current value of the stopped boolean
+export function returnFail(req,res){
+  res.status(401).json({stopped:staleFile});
+}
+
 // Gets a list of TodaysFlights
 export function dayFlights(req, res) {
   let date=req.body.dateString;
@@ -564,6 +569,7 @@ export async function tf(req,res) {
       else console.log('No airportObjs?');
       
       let fbIndex=fbAirplanes.map(e=>e._id).indexOf(flight.aircraft);
+      if (fbIndex>-1) flight.airplaneObj=fbAirplanes[fbIndex];
       let eqIndex=-1;
       if (fbIndex>-1&&fbAirplanes[fbIndex]) {
         if (fbAirplanes[fbIndex].acftType.trim()==="Courier") fbAirplanes[fbIndex].acftType="Sky Courier";
@@ -622,6 +628,7 @@ export async function tf(req,res) {
         todaysFlights[index].runScroll=false;
         todaysFlights[index].status=flight.status;
         todaysFlights[index].color=flight.color;
+        todaysFlights[index].airplaneObj=flight.airplaneObj;
         todaysFlights[index].equipment=flight.equipment;
         todaysFlights[index].autoOnboard=flight.autoOnboard;
         todaysFlights[index].operation=flight.operation;
@@ -697,7 +704,7 @@ export async function tf(req,res) {
           todaysFlights[index].departTimes=flight.departTimes;
         //}
         todaysFlights[index].airportObjs=flight.airportObjs;
-        if (!todaysFlights[index].pilotAgree) {
+        if (!todaysFlights[index].pilotAgree||(!todaysFlights[index].ocRelease&&!todaysFlights[index].dispatchRelease)) {
           todaysFlights[index].airportObjsLocked=JSON.parse(JSON.stringify(todaysFlights[index].airportObjs));
         }
         if (index>=todaysFlights.length-1) todaysFlights[index].runScroll=true;

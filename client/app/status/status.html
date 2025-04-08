@@ -91,8 +91,15 @@
         <div class="airport" style="align-self:center">
           <p>{{airplane.registration}}</p>
         </div>
-        <div class="comment"  style="align-self:center"ng-click="status.editConfiguration(airplane)">
-          <p>{{airplane.status}}</p>
+        <div class="comment"  style="align-self:top">
+          <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
+            <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
+            <ui-select-choices repeat="choice in status.B190Configs" >
+              <div ng-bind-html="choice | highlight: $select.search"></div>
+            </ui-select-choices>
+          </ui-select>
+        <!--<div class="comment"  style="align-self:center" ng-click="status.editConfiguration(airplane)">
+          <p>{{airplane.status}}</p>-->
         </div>
       </div>
       <div style="width:100%;text-align:center;">
@@ -102,11 +109,18 @@
         <div class="airport" style="align-self:center">
           <p>{{airplane.registration}}</p>
         </div>
-        <div class="comment" style="align-self:center" ng-click="status.editConfiguration(airplane)">
-          <p>{{airplane.status}}</p>
-        </div>
+        <div class="comment"  style="align-self:top">
+          <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
+            <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
+            <ui-select-choices repeat="choice in status.BE20Configs" >
+              <div ng-bind-html="choice | highlight: $select.search"></div>
+            </ui-select-choices>
+          </ui-select>
+        <!--<div class="comment"  style="align-self:center" ng-click="status.editConfiguration(airplane)">
+          <p>{{airplane.status}}</p>-->
         </div>
       </div>
+    </div>
     <div style="width:100%;text-align:center;">
       <h1>Airport Legend</h1>
     </div>

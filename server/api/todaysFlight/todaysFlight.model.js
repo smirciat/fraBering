@@ -60,6 +60,7 @@ export default function(sequelize, DataTypes) {
     bew:DataTypes.JSONB,
     alternate:DataTypes.STRING,
     pilotObject:DataTypes.JSONB,
-    coPilotObject:DataTypes.JSONB
+    coPilotObject:DataTypes.JSONB,
+    airplaneObj:DataTypes.JSONB
   });
 }

@@ -15,7 +15,7 @@ class NavbarController {
   isCollapsed = true;
   //end-non-standard
 
-  constructor(Auth,$interval,$http,$scope,$timeout) {
+  constructor(Auth,$interval,$http,$scope,$timeout,$window) {
     this.Auth=Auth;
     this.isLoggedIn = Auth.isLoggedIn;
     this.isAdmin = Auth.isAdmin;
@@ -24,6 +24,7 @@ class NavbarController {
     this.interval=$interval;
     this.http=$http;
     this.scope=$scope;
+    this.window=$window;
     this.timeout=$timeout;
     this.bases=[{base:"OME",four:"PAOM"},{base:"OTZ",four:"PAOT"},{base:"UNK",four:"PAUN"},{base:"HEL",four:"HELI"}];
     //this.base=this.bases[0];
@@ -77,7 +78,8 @@ class NavbarController {
     window.dateString=this.dateString;
     if (window.stoppedInterval) this.interval.cancel(window.stoppedInterval);
       window.stoppedInterval=this.interval(()=>{
-        this.http.get('/api/todaysFlights/stopped').then(res=>{
+        this.http.post('/api/todaysFlights/stopped7').then(res=>{
+          window.localStorage.setItem('stopped','true');
           console.log('Stopped Value is '+res.data.stopped);
           if (res.data.stopped) {
             window.stopped=true;
@@ -88,6 +90,14 @@ class NavbarController {
             this.clicked=undefined;
             window.stopped=undefined;         
           }
+        })
+        .catch(err=>{
+          console.log(err);
+          if (window.localStorage.getItem('stopped')==='true'&&err.status===404) {
+            window.localStorage.setItem('stopped','false');
+            this.window.location.reload();
+          }
+          window.localStorage.setItem('stopped','false');
         });
       },1*60*1000);
     this.interval(()=>{
@@ -334,6 +344,41 @@ class NavbarController {
       
       
       
+    };
+    r.readAsText(f);
+    inputFile.value='';
+    this.fileExists=false;
+  }
+  
+  //create users for a list of people with email addresses
+  uploadBewCSV(){
+    let inputFile=document.getElementById('file');
+    let f = inputFile.files[0];
+    let r = new FileReader();
+    r.onloadend = e=>{
+      //file is e.target.result
+      let csv = e.target.result;
+      //csv=csv.replace(/(?:\\[rn"]|[\r\n\"]+)+/g, ",");
+      let arr=csv.split('\r\n');
+      let headers=arr.shift().split(',');
+      let airplanes=[];
+      arr.forEach(a=>{
+        a=a.split(',');
+        let obj={};
+        headers.forEach((h,i)=>{
+          obj[h]=a[i];
+        });
+       airplanes.push(obj);
+      });
+      for (let airplane of airplanes) {
+        let doc={_id:airplane._id,tempBew:airplane};
+        this.http.post('/api/airplanes/updateFirebaseNew',{collection:'aircraft',doc:doc}).then(res=>{
+          
+        console.log(res.data);
+          
+        });
+        
+      }
     };
     r.readAsText(f);
     inputFile.value='';

@@ -8,8 +8,10 @@ import express from 'express';
 import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
+import {observe} from './api/airplane/airplane.controller.js';
 import http from 'http';
 import https from 'https';
+const schedule = require('node-schedule');
 const baseUrl = 'https://localhost:' + config.port;
 const axios = require("axios");
 const agent = new https.Agent({
@@ -69,6 +71,15 @@ let tafFunction=()=>{
         .catch(err=>{console.log(err)});
 };
 
+let observerFunction=()=>{
+  let date=new Date();
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+  const year = date.getFullYear()%100;
+  let dateString= `${month}/${day}/${year}`;
+  observe('flights',dateString);
+};
+
 let firebaseFunction=async ()=>{
   return axios.post(baseUrl + '/api/airplanes/firebaseInterval',{}, { httpsAgent: agent })
         .then((response)=>{
@@ -83,6 +94,8 @@ function startServer() {
   app.angularFullstack = server.listen(config.port, config.ip, function() {
     console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
     //callbackFunction();
+    //observerFunction();
+    //const job=schedule.scheduleJob('30 0 * * *',observerFunction);
     metarFunction();
     tafFunction();
     firebaseFunction().then(()=>{

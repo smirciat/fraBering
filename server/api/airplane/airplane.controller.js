@@ -18,6 +18,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 const firebase_db = admin.firestore();
+let observer, unsub, fbQuery, tempFlights;
 let firebaseFlights=[];
 let firebasePilots=[];
 let firebaseAircraft=[];
@@ -274,6 +275,36 @@ async function updateDocument(collection,docId,data) {
    }
 }
 
+export function observe(collectionName,fbDate) {
+  try {
+    if (unsub) unsub();//clear any previous observer
+    fbQuery = firebase_db.collection('flights').where('dateString','==',fbDate);
+    unsub=fbQuery.onSnapshot(()=>{});//set up to clear this observer when this function is called again
+    observer=fbQuery.onSnapshot(querySnapshot=>{
+      tempFlights=fSort(collectionToArray(querySnapshot));
+      if (firebaseAircraft.length===0) return;
+      for (let flight of tempFlights){
+        let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
+        if (index>-1) {
+          if (firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
+            if (!firebaseAircraft[index].recentlyUpdated) {
+              //firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
+              //updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
+            }
+          }
+          //firebaseAircraft[index].recentlyUpdated=true;
+        }
+      }
+      console.log('***********************');
+      console.log('Length of Array is:' + tempFlights.length);
+    }, (error) => {console.log(error)});
+    
+    return;
+  } catch (error) {
+    console.error('Error getting collection:', error);
+  }
+}
+
 function collectionToArray(result){
   let array=[];
   result.forEach(doc=>{
@@ -320,10 +351,12 @@ export async function firebaseLimited(req,res){
 }
 
 export async function updateFirebase(req,res){
+  console.log(req.body)
   let collection=req.body.collection;
   let localDoc=req.body.doc;
   let id = localDoc._id.toString();
   delete localDoc._id;
+  console.log(localDoc)
   updateDocument(collection, id, localDoc).then(()=>{
     res.status(200).json('Updated');
   });
@@ -338,7 +371,6 @@ export async function firebaseInterval(req,res){
     firebaseAircraft=collectionToArray(aircraft);
     let flights=await getCollectionLimited('flights',500);
     firebaseFlights=fSort(collectionToArray(flights));
-    //firebaseFlights.forEach(f=>{console.log(f.flightNumber+' '+f.dateString+' '+f._id)});
     for (let flight of firebaseFlights){
       let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
       if (index>-1) {
