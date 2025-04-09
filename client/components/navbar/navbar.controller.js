@@ -77,29 +77,10 @@ class NavbarController {
     window.base=this.base;
     window.dateString=this.dateString;
     if (window.stoppedInterval) this.interval.cancel(window.stoppedInterval);
-      window.stoppedInterval=this.interval(()=>{
-        this.http.post('/api/todaysFlights/stopped7').then(res=>{
-          window.localStorage.setItem('stopped','true');
-          console.log('Stopped Value is '+res.data.stopped);
-          if (res.data.stopped) {
-            window.stopped=true;
-            this.scope.$apply;
-            //if (!this.clicked) this.quickModal('The Takeflite Flight Summary report, which should automatically update every 3 minutes, has stopped.  Flight information may not be current until this is resolved.');
-          } 
-          else {
-            this.clicked=undefined;
-            window.stopped=undefined;         
-          }
-        })
-        .catch(err=>{
-          console.log(err);
-          if (window.localStorage.getItem('stopped')==='true'&&err.status===404) {
-            window.localStorage.setItem('stopped','false');
-            this.window.location.reload();
-          }
-          window.localStorage.setItem('stopped','false');
-        });
-      },1*60*1000);
+    window.stoppedInterval=this.interval(()=>{
+      this.stoppedFunction();
+    },1*60*1000);
+    this.timeout(()=>{this.stoppedFunction()},200);
     this.interval(()=>{
       const hour=new Date().getHours();
       if (hour===1||hour===2) {
@@ -121,6 +102,30 @@ class NavbarController {
     //this.scope.$watch('status.toggleAssigned',(newVal,oldVal)=>{
       //this.isToggleAssigned=newVal;
     //});
+  }
+  
+  stoppedFunction(){
+    this.http.post('/api/todaysFlights/stopped9').then(res=>{
+      window.localStorage.setItem('stopped','true');
+      console.log('Stopped Value is '+res.data.stopped);
+      if (res.data.stopped) {
+        window.stopped=true;
+        this.scope.$apply;
+        //if (!this.clicked) this.quickModal('The Takeflite Flight Summary report, which should automatically update every 3 minutes, has stopped.  Flight information may not be current until this is resolved.');
+      } 
+      else {
+        this.clicked=undefined;
+        window.stopped=undefined;         
+      }
+    })
+    .catch(err=>{
+      console.log(err);
+      if (window.localStorage.getItem('stopped')==='true'&&err.status===404) {
+        window.localStorage.setItem('stopped','false');
+        this.window.location.reload();
+      }
+      window.localStorage.setItem('stopped','false');
+    });
   }
 
   minusDate(){
