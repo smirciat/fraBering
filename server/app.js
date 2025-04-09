@@ -17,8 +17,8 @@ const axios = require("axios");
 const agent = new https.Agent({
     rejectUnauthorized: false
 });
-var privateKey  = fs.readFileSync('/etc/letsencrypt/live/bering.ddns.net-0001/privkey.pem', 'utf8');
-var certificate = fs.readFileSync('/etc/letsencrypt/live/bering.ddns.net-0001/fullchain.pem', 'utf8');
+var privateKey  = fs.readFileSync('/etc/letsencrypt/live/smircich.ddns.net/privkey.pem', 'utf8');
+var certificate = fs.readFileSync('/etc/letsencrypt/live/smircich.ddns.net/fullchain.pem', 'utf8');
 var credentials = {key: privateKey, cert: certificate};
 // Populate databases with sample data
 if (config.seedDB) { require('./config/seed'); }

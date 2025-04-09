@@ -95,12 +95,18 @@ class StatusComponent {
       if (index>-1) this.airports[index]=airport;
     });
     this.flightModal=this.Modal.confirm.flight(flight=>{
-      if (flight.pilotAgree&&!flight.colorLock) flight.colorLock=flight.color;
+      if ((flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree&&!flight.colorLock) flight.colorLock=flight.color;
       if (flight.pilotAgree&&flight.pilotAgree!==""&&!flight.releaseTimestamp) flight.releaseTimestamp=new Date();
       if (flight.ocRelease&&flight.ocRelease!==""&&!flight.ocReleaseTimestamp) flight.ocReleaseTimestamp=new Date();
       if (flight.dispatchRelease&&flight.dispatchRelease!==""&&!flight.dispatchReleaseTimestamp) flight.dispatchReleaseTimestamp=new Date();
       //update flight in database
-      this.http.patch('/api/todaysFlights/'+flight._id,flight);
+      this.http.patch('/api/todaysFlights/'+flight._id,flight).then(res=>{
+        //if (flight.pilotAgree||flight.ocRelease||flight.dispatchRelease) this.quickModal("Flight Release Signature has Been Recorded","Success!",false);
+      })
+      .catch(err=>{
+        console.log(err);
+        this.quickModal("Flight Release Signing Failed!  Check Internet Connection!","Failed!",true);
+      });
       //update flight in this.todaysFlights
       let index=this.todaysFlights.map(e => e._id).indexOf(flight._id);
       if (index>-1) Object.assign(this.todaysFlights[index], flight);

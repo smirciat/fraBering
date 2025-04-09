@@ -1,6 +1,6 @@
-<div class="modal-header" ng-style="{'background-color' : modal.style(modal.flight.color)}">
+<div class="modal-header" ng-style="{'background-color' : modal.style(modal.flight.colorLock||flight.color)}">
   <!--"modal.style(modal.flight.color)">-->
-  <button ng-if="modal.dismissable" type="button" ng-click="$dismiss()" class="close"><i class="fa fa-solid fa-window-close fa-autosize"></i></button>
+  <!--<button ng-if="modal.dismissable" type="button" ng-click="$dismiss()" class="close"><i class="fa fa-solid fa-window-close fa-autosize"></i></button>-->
   <h4 ng-if="modal.title" ng-bind="modal.title" class="modal-title"></h4>
 </div>
 <div class="modal-body wheat">
@@ -249,7 +249,7 @@
       <div class="orange-line">
         <div class="inner-modal"  ng-click="modal.showOWEInfo=!modal.showOWEInfo">
           <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
-            OWE Calculator&nbsp;
+            OWE Calculator (Optional)&nbsp;
             <i ng-class="modal.upOrDown(modal.showOWEInfo)"></i>  
           </span>
         </div>
@@ -297,12 +297,18 @@
         <div class="orange-line white">
           <div class="inner-modal">
             <span class="span-modal" style="float:left;padding-left:5px">Takeoff Fuel</span>
-            <span class="span-modal">{{modal.fuelCalc()}}&nbsp;Hours</span>
-            <span class="span-modal" style="float:right; padding-right:5px" ng-class="modal.fuelSanity(modal.flight.pfr.legArray[0].fuel)">{{modal.flight.pfr.legArray[0].fuel}}</span>
+            <span class="span-modal" ng-class="modal.fuelSanity(modal.flight.pfr.legArray[0].fuel)">{{modal.fuelCalc()}}&nbsp;Hours</span>
+            <span class="span-modal" style="float:right; padding-right:5px" >{{modal.flight.pfr.legArray[0].fuel}}</span>
           </div>
         </div>
       </div>
       <br>
+      <!--<p style="color:red; font-style:italic;margin-bottom:0px">If flight is conducted into known icing conditions, C208 aircraft will reduce MGTOW to arrive in the icing environment at or below 8807 lbs.  All aircraft must adhere to AFM flight into known icing limitations.</p>-->
+      <p style="color:red; font-style:italic;margin-bottom:0px">Flight Into Known Icing (FIKI) conditions is determined by:</p>
+      <p style="color:red; font-style:italic;margin-bottom:0px">1. Reference to <strong>AAWU 3HR Icing Forecast</strong> at Foreflight>Imagery.</p>
+      <p style="color:red; font-style:italic;margin-bottom:0px">2. Reference to <strong>PIREP's</strong> less that 1HR old along route/altitude of flight.</p>
+      <p style="color:red; font-style:italic;margin-bottom:0px" ng-if="flight.equipment.name==='Caravan'">C208: reduce MGTOW to arrive in icing area at or below 8807 lbs.</p>
+      <p style="color:red; font-style:italic;margin-bottom:0px" ng-if="flight.equipment.name!=='Caravan'">ALL AIRCRAFT: Adhere to AFM icing limitations.</p>
       <div class="modal-environment-layout" style="font-weight:bold;">
        <div class="modal-column">
          <table class="table table-borderless">
@@ -348,9 +354,19 @@
           <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">{{modal.flight.pfr.legArray[0].mgtow}}</span>
         </div>
       </div>
-      <div class="orange-line white" ng-repeat="item in modal.summaryInfo track by $index" ng-hide="modal.flight.equipment.name==='Caravan'&&item.title==='MaxZFW'">
+      <div class="orange-line white" ng-repeat="item in modal.summaryInfo track by $index" ng-hide="(modal.flight.equipment.name==='Caravan'&&item.title==='MaxZFW')||(modal.flight.equipment.name!=='Caravan'&&item.title==='TKS')">
         <div class="inner-modal">
           <span class="span-modal" style="float:left;padding-left:5px;">{{item.title}}</span>
+          <span class="span-modal" ng-if="item.title==='TKS'">
+            <input style="width:75px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.bew.tks" ng-disabled="modal.allDisabled()">
+            &nbsp;Gallons
+          </span>
+          <span class="span-modal" ng-class="modal.fuelSanity(modal.flight.pfr.legArray[0].fuel)"  ng-if="item.title==='T/O Fuel'">
+            {{modal.fuelCalc()}}&nbsp;Hours
+          </span>
+          <span class="span-modal" ng-if="item.title==='OWE'&&modal.flight.equipment.name==='Caravan'">
+            (Includes TKS Weight for Now)
+          </span>
           <span class="span-modal" style="float:right; padding-right:5px;">{{item.val}}</span>
         </div>
       </div>
@@ -387,8 +403,6 @@
     <hr class="my-hr">
     <div>
       <p style="font-weight:bold">ENVIRONMENT</p>
-      <p style="color:red; font-style:italic;margin-bottom:0px">If flight is conducted into known icing conditions, C208 aircraft will reduce MGTOW to arrive in the icing environment at or below 8807 lbs.  All aircraft must adhere to AFM flight into known icing limitations.</p>
-      
       <div ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index" ng-click="modal['showInfo'+$index]=!modal['showInfo'+$index]">
         <br>
         <div class='airport-card' ng-class="metarObj.color">
@@ -476,7 +490,7 @@
         <td><p style="padding-top:5px; margin-top:7px; ">CAPTAIN</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.pilotClick()" ng-disabled="modal.isWrongUser() || modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || !modal.flight.pfr.legArray[0].fuel || modal.flight.pfr.legArray[0].fuel<1 ||modal.flight.pilotAgree || modal.user.name==='Bering Air'">
+            <button class="btn btn-success" ng-click="modal.pilotClick()" ng-disabled="modal.isPilotDisabled()">
                 <i class="fa fa-solid fa-pen fa-autosize"></i></button>
             <span>{{modal.flight.pilotAgree}}</span>
             <span><i class="fa fa-solid fa-info-circle fa-autosize"  ng-click="modal.pilotInfo()"></i></span>
@@ -490,7 +504,7 @@
     <div ng-if="!modal.allDisabled()" style="background-color:red"><h2 style="color:white;font-weight:bold; text-align:center">NOT SIGNED</h2></div>
     <div ng-if="true">
       <label>Changes While Enroute/After Release</label>
-      <textarea class="form-control" style="height:76px;" ng-model="modal.flight.enrouteChanges"></textarea>
+      <textarea class="form-control" style="height:76px;" ng-model="modal.flight.enrouteChanges" ng-disabled="modal.flight.flightStatus==='Completed'"></textarea>
     </div>
   </div>
 </div>

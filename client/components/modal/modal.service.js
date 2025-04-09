@@ -11,7 +11,6 @@ angular.module('workspaceApp')
     function openModal(scope = {}, modalClass = 'modal-default') {
       var modalScope = $rootScope.$new();
       angular.extend(modalScope, scope);
-
       return $uibModal.open({
         templateUrl: 'components/modal/modal.html',
         windowClass: modalClass,
@@ -40,12 +39,19 @@ angular.module('workspaceApp')
           return function() {
             var args = Array.prototype.slice.call(arguments),
                 name = args.shift(),
+                title = args.shift(),
+                errBoolean = args.shift(),
+                respType=function(){
+                  if (errBoolean) return 'modal-danger';
+                  return 'modal-success';
+                },
                 quickModal;
 
             quickModal = openModal({
               modal: {
                 dismissable: true,
-                title: 'Important Message',
+                errBoolean:errBoolean,
+                title: title,
                 html: '<p> <strong>' + name + '</strong> </p>',
                 buttons: [ {
                   classes: 'btn-success',
@@ -55,7 +61,7 @@ angular.module('workspaceApp')
                   }
                 }]
               }
-            }, 'modal-success');
+            }, respType);
 
             quickModal.result.then(function(event) {
               del.apply(event, args);
@@ -168,7 +174,7 @@ angular.module('workspaceApp')
         flight: function(cb) {
           cb = cb || angular.noop;
           return function() {
-            var args = Array.prototype.slice.call(arguments),
+            let args = Array.prototype.slice.call(arguments),
                 flight = args.shift(),
                 alternateAirports = args.shift(),
                 isAdmin = args.shift(),
@@ -181,6 +187,31 @@ angular.module('workspaceApp')
                 scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
                 timestamp=new Date().toLocaleString(),
                 alternateDisp=flight.alternate,
+                isWrongUser = function(){
+                  if (userLastname==='K.') userLastname="Evans";
+                  if (!flight.pilotObject) return false;
+                  //console.log(userLastname.toLowerCase()!==flight.pilotObject.lastName.toLowerCase())
+                  if (typeof flight.pilotObject.lastName!=='string') flight.pilotObject={lastName:''};
+                  if (!userLastname) userLastname='';
+                  return userLastname.toLowerCase()!==flight.pilotObject.lastName.toLowerCase();
+                },
+                moreThanOneHour=function(){
+                  let targetTime=new Date(flight.date);
+                  const [hours, minutes, seconds] = flight.departTimes[0].split(':').map(Number);
+                  targetTime.setHours(hours, minutes, seconds);
+                  let now = new Date();
+                  now.setHours(now.getHours() + 1);
+                  return targetTime >= now;
+                },
+                ocRequired=function(color){
+                  if (colors.indexOf(color)>3) return true;
+                  if (flight.pfr&&flight.pfr.legArray[0].fuel<flight.equipment.minFuel) return true;
+                  if (flight.knownIce) return true;
+                  return false;
+                },
+                tksCalc=function(){
+                  return Math.round(flight.bew.tks*9.2308);
+                },
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -200,6 +231,8 @@ angular.module('workspaceApp')
                             ],
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
                             {title:'OWE',val:flight.pfr.owe},
+                            {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
+                            {title:'TKS',val:tksCalc()},
                             {title:'Operating Weight',val:isNaN(flight.pfr.owe+flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.owe+flight.pfr.legArray[0].fuel},
                             {title:'Load Available',val:isNaN(flight.pfr.legArray[0].mgtow-flight.pfr.owe-flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.legArray[0].mgtow-flight.pfr.owe-flight.pfr.legArray[0].fuel},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
@@ -216,9 +249,7 @@ angular.module('workspaceApp')
                 oweCalc:function(){
                   return Math.round(flight.bew.tks*9.2308+flight.bew.seatWeight*1+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.bew.jumpseater*1);
                 },
-                tksCalc:function(){
-                  return Math.round(flight.bew.tks*9.2308);
-                },
+                tksCalc:tksCalc,
                 fuelCalc:function(){
                   if (!flight.pfr.legArray[0].fuel) return 0;
                   return (flight.pfr.legArray[0].fuel/flight.equipment.fuelBurn).toFixed(1);
@@ -264,14 +295,7 @@ angular.module('workspaceApp')
                   let i=scores.map(e=>e.score).indexOf(s*1);
                   if (i>-1) return s + ' - Braking ' + scores[i].descr;
                 },
-                isWrongUser:function(){
-                  if (userLastname==='K.') userLastname="Evans";
-                  if (!flight.pilotObject) return false;
-                  //console.log(userLastname.toLowerCase()!==flight.pilotObject.lastName.toLowerCase())
-                  if (typeof flight.pilotObject.lastName!=='string') flight.pilotObject={lastName:''};
-                  if (!userLastname) userLastname='';
-                  return userLastname.toLowerCase()!==flight.pilotObject.lastName.toLowerCase();
-                },
+                isWrongUser:isWrongUser,
                 dispatchClick:function(){
                   if (!flight.dispatchRelease) {
                     flight.dispatchRelease=user.name;
@@ -292,21 +316,9 @@ angular.module('workspaceApp')
                 },
                 acceptSig:function(pilotAgree){flight.pilotAgree=pilotAgree},
                 fuelSanity:function(fuel){if (fuel<flight.equipment.minFuel) return "airport-pink";},
-                moreThanOneHour:function(){
-                  let targetTime=new Date(flight.date);
-                  const [hours, minutes, seconds] = flight.departTimes[0].split(':').map(Number);
-                  targetTime.setHours(hours, minutes, seconds);
-                  let now = new Date();
-                  now.setHours(now.getHours() + 1);
-                  return targetTime >= now;
-                },
+                moreThanOneHour:moreThanOneHour,
                 formatTimestamp:function(t){if (t) return new Date(t).toLocaleString()},
-                ocRequired:function(color){
-                  if (colors.indexOf(color)>3) return true;
-                  if (flight.pfr&&flight.pfr.legArray[0].fuel<flight.equipment.minFuel) return true;
-                  if (flight.knownIce) return true;
-                  return false;
-                },
+                ocRequired:ocRequired,
                 getLbs:function(lbHigh,lbLow){return Math.floor(lbHigh-lbLow)},
                 getGals:function(lbHigh,lbLow){return Math.floor((lbHigh-lbLow)/6.7)},
                 getRequest(totalTaxi,fob){
@@ -327,19 +339,40 @@ angular.module('workspaceApp')
                   return "Intermediate";
                 },
                 allDisabled:function(){return (flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree},
-                pilotDisabled:function(f){
-                  return false;
-                  if (colors.indexOf(f.color)>3) return !f.ocRelease||f.ocRelease==="";
-                  else return !f.dispatchRelease&&!f.ocRelease;
-                },
                 style:function(color){
                   let i=colors.indexOf(color);
                   if (i>-1) return bgColors[i];
                   else return '';
                 },
-                dispatchInfo:function(){window.alert('Dispatch Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is NOT orange or red, the captain has successfully created a PFR and entered fuel quantity, the flight is not considered "Known Icing" and you are logged in as a dispatch or OC manager.')},
-                ocInfo:function(){window.alert('OC Release can ONLY be signed when: the flight is within one hour of scheduled departure, the overall condition color is orange or red (or if the flight is considered "Known Icing"), the captain has successfully created a PFR and entered fuel quantity, and you are logged in as an OC manager.')},
-                pilotInfo:function(){window.alert('Pilot Acceptance can ONLY be signed when: the flight is within one hour of scheduled departure, the captain has successfully created a PFR and entered fuel quantity, and you are logged in as the Captain of the flight.')},
+                isPilotDisabled:function(){
+                  return isWrongUser() || moreThanOneHour() || !flight.pfr.legArray[0].fuel || flight.pilotAgree || user.name==='Bering Air';
+                },
+                dispatchInfo:function(){
+                  let string='Dispatch Release can ONLY be signed when: \r\n';
+                  if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
+                  if (!flight.pfr||!flight.pfr.legArray[0]||!flight.pfr.legArray[0].fuel) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
+                  if (!isAdmin) string+='- You are logged in as an OC Manager or Dispatcher';
+                  if (ocRequired(flight.color)) string+='- Flight color is NOT orange or red, and the FIKI box is NOT checked\r\n';
+                  if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
+                  window.alert(string);
+                },
+                ocInfo:function(){
+                  let string='OC Release can ONLY be signed when: \r\n';
+                  if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
+                  if (!flight.pfr||!flight.pfr.legArray[0]||!flight.pfr.legArray[0].fuel) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
+                  if (!isSuperAdmin) string+='- You are logged in as an OC Manager';
+                  if (!ocRequired(flight.color)) string+='- Flight color is orange or red, or the FIKI box is checked\r\n';
+                  if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
+                  window.alert(string);
+                },
+                pilotInfo:function(){
+                  let string='Pilot Acceptance can ONLY be signed when: \r\n';
+                  if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
+                  if (!flight.pfr||!flight.pfr.legArray[0]||!flight.pfr.legArray[0].fuel) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
+                  if (isWrongUser()) string+='- You are logged in as the Captain of the flight.';
+                  if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
+                  window.alert(string);
+                },
                 title: 'Flight Release  BRG' + flight.flightNum +' '+ flight.aircraft,
                 buttons: [ {//this is where you define you buttons and their appearances
                   classes: 'btn-primary',
@@ -374,6 +407,7 @@ angular.module('workspaceApp')
             quickModal.result.then(function(event) {
               cb.apply(event, [flight]); //this is where all callback is actually called
             }).catch(err=>{
+              console.log('Flight Modal Canceled')
               console.log(err);
             });
           };
