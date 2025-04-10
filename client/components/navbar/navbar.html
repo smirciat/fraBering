@@ -46,14 +46,14 @@
         <li ng-if="nav.isAdmin()" style="padding-top:7px;padding-left:2em;">
           <div class="grid-parent-navbar">
             <input class="form-control" tooltip-placement="bottom" uib-tooltip="Upload Pilot Schedule CSV File Here" type="file" id="file" name="file" ng-model="nav.file"/>
-            <button ng-if="nav.fileExists" class="btn btn-default" ng-click="nav.uploadBewCSV()">Upload CSV</button>
+            <button ng-if="nav.fileExists" class="btn btn-default" ng-click="nav.uploadCSV()">Upload CSV</button>
           </div>
         </li>
       </ul>
 
       <ul class="nav navbar-nav navbar-right">
-        <li><button ng-click="nav.toggleAssigned()" class="navbar-text" ng-class="nav.buttonClass(nav.isToggleAssigned)">{{nav.showHide(!nav.isToggleAssigned)}} Assigned</button></li>
-        <li><button ng-click="nav.toggle()" class="navbar-text" ng-class="nav.buttonClass(!nav.isToggle)">{{nav.showHide(!nav.isToggle)}} Old</button></li>
+        <!--<li><button ng-click="nav.toggleAssigned()" class="navbar-text" ng-class="nav.buttonClass(nav.isToggleAssigned)">{{nav.showHide(!nav.isToggleAssigned)}} Assigned</button></li>
+        <li><button ng-click="nav.toggle()" class="navbar-text" ng-class="nav.buttonClass(!nav.isToggle)">{{nav.showHide(!nav.isToggle)}} Old</button></li>-->
         <li ng-hide="nav.isLoggedIn()" ui-sref-active="active"><a ui-sref="signup">Sign up</a></li>
         <li ng-hide="nav.isLoggedIn()" ui-sref-active="active"><a ui-sref="login">Login</a></li>
         <li ng-show="nav.isLoggedIn()"><p class="navbar-text">Hello {{ nav.getCurrentUser().name }}</p> </li>
