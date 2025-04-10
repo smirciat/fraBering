@@ -105,7 +105,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    this.http.post('/api/todaysFlights/stopped9').then(res=>{
+    this.http.post('/api/todaysFlights/stopped12').then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value is '+res.data.stopped);
       if (res.data.stopped) {
@@ -120,7 +120,7 @@ class NavbarController {
     })
     .catch(err=>{
       console.log(err);
-      if (window.localStorage.getItem('stopped')==='true'&&err.status===404) {
+      if (window.localStorage.getItem('stopped')==='true'&&(err.status===403||err.status===404)) {
         window.localStorage.setItem('stopped','false');
         this.window.location.reload();
       }

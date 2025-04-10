@@ -7,10 +7,9 @@ var router = express.Router();
 
 router.get('/', controller.index);
 router.get('/stopped', controller.returnFail);
-router.post('/stopped1', controller.returnFail);
-router.post('/stopped3', controller.returnFail);
 router.post('/stopped4', controller.returnFail);
-router.post('/stopped9', controller.returnStopped);
+router.post('/stopped8', controller.returnFail);
+router.post('/stopped12', controller.returnStopped);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);

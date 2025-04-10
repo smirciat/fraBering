@@ -230,11 +230,11 @@ angular.module('workspaceApp')
                             {title:'Jumpseater lbs',val:'jumpseater'}
                             ],
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
-                            {title:'OWE',val:flight.pfr.owe},
+                            {title:'OWE',val:flight.pfr.legArray[0].operatingWeightEmpty},
                             {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
                             {title:'TKS',val:tksCalc()},
-                            {title:'Operating Weight',val:isNaN(flight.pfr.owe+flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.owe+flight.pfr.legArray[0].fuel},
-                            {title:'Load Available',val:isNaN(flight.pfr.legArray[0].mgtow-flight.pfr.owe-flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.legArray[0].mgtow-flight.pfr.owe-flight.pfr.legArray[0].fuel},
+                            {title:'Operating Weight',val:isNaN(flight.pfr.legArray[0].operatingWeightEmpty+flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.legArray[0].operatingWeightEmpty+flight.pfr.legArray[0].fuel},
+                            {title:'Load Available',val:isNaN(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
                             {title:'TOW',val:flight.pfr.legArray[0].tow}
                             ],
@@ -391,6 +391,7 @@ angular.module('workspaceApp')
                       flight.releaseTimestamp=null;
                       flight.dispatchReleaseTimestamp=null;
                       flight.ocReleaseTimestamp=null;
+                      flight.colorLock=null;
                     }
                     quickModal.close(event);
                   }

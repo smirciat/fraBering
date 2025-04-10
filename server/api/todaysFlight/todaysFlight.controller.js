@@ -716,7 +716,7 @@ export async function tf(req,res) {
         let index=todaysFlights.map(e=>e._id).indexOf(u);
         let flight=todaysFlights[index];
         flight.colorPatch='false';
-        flight.pfr=null;
+        //flight.pfr=undefined;
         //let pfrMap=[];//pfrIndex=-1;
         if (flight.date===new Date(dateString).toLocaleDateString()) {
           let pfrMap=todaysPfrs.filter(pfr=>{
@@ -727,6 +727,7 @@ export async function tf(req,res) {
           if (pfrMap.length>0&&pfrMap[0].dateString) {
             flight.pfr=pfrMap[0];
           }
+          if (flight.pfr&&!flight.pfr.dateString) console.log(flight.flightId)
           //pfrIndex=todaysPfrs.map(e=>e.flightNumber).indexOf(flight.flightNum);
           //if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
         }

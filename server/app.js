@@ -8,6 +8,7 @@ import express from 'express';
 import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
+import localEnv from './config/local.env.js';
 import {observe} from './api/airplane/airplane.controller.js';
 import http from 'http';
 import https from 'https';
@@ -17,8 +18,8 @@ const axios = require("axios");
 const agent = new https.Agent({
     rejectUnauthorized: false
 });
-var privateKey  = fs.readFileSync('/etc/letsencrypt/live/smircich.ddns.net/privkey.pem', 'utf8');
-var certificate = fs.readFileSync('/etc/letsencrypt/live/smircich.ddns.net/fullchain.pem', 'utf8');
+var privateKey  = fs.readFileSync(localEnv.KEY, 'utf8');
+var certificate = fs.readFileSync(localEnv.CERT, 'utf8');
 var credentials = {key: privateKey, cert: certificate};
 // Populate databases with sample data
 if (config.seedDB) { require('./config/seed'); }
