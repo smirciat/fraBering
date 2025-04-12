@@ -95,7 +95,7 @@ let updateRoster=async (date)=>{
   if (!date) date=new Date();
   else date=new Date(date);
   let roster=await setRosterDay(date);
-  console.log(roster[0]);
+  //console.log(roster[10]);
 };
 
 // Start server

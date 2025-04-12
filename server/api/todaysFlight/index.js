@@ -9,7 +9,7 @@ router.get('/', controller.index);
 router.get('/stopped', controller.returnFail);
 router.post('/stopped4', controller.returnFail);
 router.post('/stopped8', controller.returnFail);
-router.post('/stopped12', controller.returnStopped);
+router.post('/stopped13', controller.returnStopped);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);

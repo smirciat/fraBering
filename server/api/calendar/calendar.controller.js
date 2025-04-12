@@ -166,7 +166,7 @@ export async function setRosterDay(dateString){
   day++;
   date.setDate(day);
   let endDate=date.toISOString();
-  console.log(startDate)
+  //console.log(startDate)
   try{//type=shift restricts response to only working days, not available or requested off
     let response=await axios.get('https://fyccqqeiahhzheubvavn.supabase.co/functions/v1/tenant-api-handler?table=calendar_events&start_plain_date_time='+startDate+'&end_plain_date_time='+endDate+'&type=shift', bodyParameters);
     //todaysRoster=response.data.data;

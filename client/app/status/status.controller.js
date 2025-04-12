@@ -180,7 +180,6 @@ class StatusComponent {
         //   this.toggleAssigned=false;
         //  window.toggleAssigned=this.toggleAssigned;
         //}
-        if (this.masterAirports) //this.setBase(this.masterAirports);
         if (!oldVal) {
           this.spinner=false;
           return;
@@ -188,6 +187,7 @@ class StatusComponent {
         //this.scroll();
           this.timeout(()=>{
             this.spinner=false;
+            if (this.masterAirports) this.setBase(this.masterAirports);
             this.setPilotList();
             this.setAirplaneList();
           },0);
@@ -723,8 +723,8 @@ class StatusComponent {
     flight.duration=duration/60;
     flight.minFlightFuel=flight.equipment.fuelBurn*(flight.duration+0.5);
     if (!flight.alternate) flight.maxFlightFuel=flight.equipment.fuelBurn*(flight.duration+1.5);
-    let calendarIndex=this.todaysCalendar.availablePilots.map(e=>e.code).indexOf('OC');
-    if (calendarIndex>-1) flight.ocName=this.todaysCalendar.availablePilots[calendarIndex].name;
+    let calendarIndex=this.wholeRoster.map(e=>e.title).indexOf('OC');
+    if (calendarIndex>-1) flight.ocName=this.wholeRoster[calendarIndex].employee_full_name;
     switch(flight.ocName){
       case 'David Olson':
         flight.ocNumber= '(907) 443-8985';
@@ -809,10 +809,14 @@ class StatusComponent {
   
   setPilotList(){
     if (!this.dateString||!this.base||!this.allPilots) return;
+    let headerList=['OC','Night Medevac','Day Medevac','Med Phone','Captains','Copilots'];
     this.http.post('/api/calendar/rosterDay',{dateString:this.dateString}).then(res=>{
+      this.pilotList=[];
+      this.coPilotList=[];
+      this.ocList=[];
+      this.sortedPilots=[];
       this.wholeRoster=res.data;
       let basePilotRoster=res.data.filter(pilot=>{
-        let location, position;
         if (pilot.location_name) {
           pilot.position=pilot.location_name.split(' ')[1];
           pilot.location=pilot.location_name.split(' ')[0];
@@ -822,43 +826,21 @@ class StatusComponent {
         if (this.base.base==="OTZ") return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO');
         return true;
       });
-      for (let pilot of basePilotRoster){
-        let index=this.allPilots.map(e=>e.name).indexOf(pilot.employee_full_name);
-        if (index>-1) pilot.pilotObj=this.allPilots[index];
-      }
-    });
-    let rf;
-    if (this.recentFlights) rf=angular.copy(this.recentFlights);//.filter(f=>{return f.pilotObject}));
-    if (!this.calendar||!this.base||!this.allPilots) return;
-    let headerList=['OC','Night Medevac','Day Medevac','Med Phone','Captains','Copilots'];
-    this.pilotList=[];
-    this.coPilotList=[];
-    this.ocList=[];
-    let index = this.calendar.map(e => e.date).indexOf(this.dateString);
-    let pilotIndex;
-    if (index>-1) {
-      this.todaysCalendar=this.calendar[index];
-      this.sortedPilots=[];
-      this.calendar[index].availablePilots.forEach(pilot=>{
-        pilotIndex = this.allPilots.map(e => e.name).indexOf(pilot.name);
-        if (pilotIndex<0){
-          console.log(pilot.name+' is not in the list of allPilots from firebase');
-          return;
+      for (let pilot of basePilotRoster){//pilot is the pilot object from acroroster
+        let p;
+        if (pilot.employee_full_name==="Michael Evans") pilot.employee_full_name="Mike Evans";
+        if (pilot.employee_full_name==="Sophia Hobbs") pilot.employee_full_name="Sophia Evans";
+        if (pilot.employee_full_name==="Mikey Evans") pilot.employee_full_name="Michael Evans";
+        let index=this.allPilots.map(e=>e.firstName + ' ' + e.lastName).indexOf(pilot.employee_full_name);
+        
+        if (index<0){
+          console.log(pilot.employee_full_name+' is not in the list of this.allPilots from firebase');
+          continue;
         }
-        let p=this.allPilots[pilotIndex];
-        //see if pilot has been assigned yet
-        //p.assigned=false;
-        //if (this.todaysFlights){
-        //  let tf=this.todaysFlights.filter(f=>{return f.pilotObject&&f.date===this.dateString});
-        //  let flightIndex=tf.map(e=>e.pilotObject._id).indexOf(p._id);
-        //  if (flightIndex>-1) p.assigned=true;
-        //  tf=this.todaysFlights.filter(f=>{return f.coPilotObject&&f.date===this.dateString});
-        //  flightIndex=tf.map(e=>e.coPilotObject._id).indexOf(p._id);
-        //  if (flightIndex>-1) p.assigned=true;
-        //}
-        let inBase=pilot.pilotBase===this.base.base;
+        else p=this.allPilots[index];//p is the pilot object from firebase
+        let inBase=p.pilotBase===this.base.base;
         //UNK Base rules
-        if (this.base.base==="UNK") {
+        if (this.base.base==="UNK"&&this.todaysFlights) {
           this.todaysFlights.forEach(flight=>{
             if (!flight.pilotObject||flight.pilotObject.displayName!==p.displayName||flight.active==='false') return;
             let x=flight.airports.indexOf('Unalakleet');
@@ -867,9 +849,11 @@ class StatusComponent {
         }
         //set up headers for sort order
         p.header='';
-        p.code=pilot.code;
+        p.code=pilot.title;
         if (inBase&&p) {
           if (p.code==='OC') p.header='OC';
+          if (p.code==='NM') p.header='Night Medevac';
+          if (p.code==='ND') p.header='Med Phone';
           if (p.code==='16') {
             if (p.far299Exp) p.header="Night Medevac";
             else p.header="Med Phone";
@@ -883,14 +867,13 @@ class StatusComponent {
           }
           this.sortedPilots.push(p);
         }
-      });
+      }//end of for of loop
       this.sortedPilots.sort((a,b)=>{
         //if (!a.header) return -1;
-        return headerList.indexOf(a.header)-headerList.indexOf(b.header);
+        return headerList.indexOf(a.header)-headerList.indexOf(b.header)||new Date(a.dateOfHire)-new Date(b.dateOfHire)||a._id-b._id;
       });
       console.log(this.sortedPilots);
-      //do the assigned thing for this.allAircraft
-    }
+    });
   }
   
   fixedWing(base){
