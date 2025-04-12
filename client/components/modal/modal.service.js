@@ -233,8 +233,8 @@ angular.module('workspaceApp')
                             {title:'OWE',val:flight.pfr.legArray[0].operatingWeightEmpty},
                             {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
                             {title:'TKS',val:tksCalc()},
-                            {title:'Operating Weight',val:isNaN(flight.pfr.legArray[0].operatingWeightEmpty+flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.legArray[0].operatingWeightEmpty+flight.pfr.legArray[0].fuel},
-                            {title:'Load Available',val:isNaN(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel) ? 0 : flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel},
+                            //{title:'Operating Weight',val:isNaN(flight.pfr.legArray[0].operatingWeight) ? 0 : flight.pfr.legArray[0].operatingWeight},
+                            {title:'Load Available',val:isNaN(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeight) ? 0 : flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeight},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
                             {title:'TOW',val:flight.pfr.legArray[0].tow}
                             ],

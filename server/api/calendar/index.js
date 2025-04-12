@@ -9,6 +9,8 @@ var router = express.Router();
 router.get('/', auth.hasRole('user'), controller.index);
 router.get('/:id', auth.hasRole('user'), controller.show);
 router.post('/', auth.hasRole('user'), controller.create);
+router.post('/rosterDay', auth.hasRole('user'), controller.rosterDay);
+router.post('/rosterMonth', auth.hasRole('user'), controller.rosterMonth);
 router.post('/month', auth.hasRole('user'), controller.month);
 router.put('/:id', auth.hasRole('user'), controller.update);
 router.patch('/:id', auth.hasRole('user'), controller.update);

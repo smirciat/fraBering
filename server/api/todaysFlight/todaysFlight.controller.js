@@ -711,7 +711,7 @@ export async function tf(req,res) {
       }
     }
     if (updated.length>0) {
-      updated = [...new Set(updated)];
+      updated = [...new Set(updated)];//removes duplicates
       updated.forEach(u=>{
         let index=todaysFlights.map(e=>e._id).indexOf(u);
         let flight=todaysFlights[index];

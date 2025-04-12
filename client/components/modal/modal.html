@@ -304,6 +304,43 @@
       </div>
       <br>
       <!--<p style="color:red; font-style:italic;margin-bottom:0px">If flight is conducted into known icing conditions, C208 aircraft will reduce MGTOW to arrive in the icing environment at or below 8807 lbs.  All aircraft must adhere to AFM flight into known icing limitations.</p>-->
+      
+     <div class="orange-line">
+        <div class="inner-modal"  ng-click="modal.showFuelInfo=!modal.showFuelInfo">
+          <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
+            FUEL REQUEST CALCULATOR&nbsp;
+            <i ng-class="modal.upOrDown(modal.showFuelInfo)"></i>  
+          </span>
+        </div>
+      </div>
+     <div ng-show="modal.showFuelInfo">
+        <div style="border:1px solid black;">
+          <div class="white">
+            <div class="inner-modal">
+              <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">FUEL REQUEST</span>
+              <span class="span-modal" style="float:right; padding-right:5px">
+                EnterTotalizer FOB lbs&nbsp;
+                <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.allDisabled()">
+              </span>
+            </div>
+          </div>
+          <div class="white">
+            <div class="inner-modal">
+              <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">Fill To: POUNDS</span>
+              <span class="span-modal" style="font-weight:bold">{{(modal.flight.pfr.legArray[0].fuel+modal.equipment.taxiFuel)/2}}&nbsp;lbs/side</span>
+              <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.flight.pfr.legArray[0].fuel+modal.equipment.taxiFuel}}&nbsp;lbs total</span>
+            </div>
+          </div>
+          <div class="white">
+            <div class="inner-modal">
+              <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">ADD: GALLONS</span>
+              <span class="span-modal" style="font-weight:bold">{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main||0}}&nbsp;gal/side</span>
+              <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main*2||0}}&nbsp;gal total</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <br>
       <p style="color:red; font-style:italic;margin-bottom:0px">Flight Into Known Icing (FIKI) conditions is determined by:</p>
       <p style="color:red; font-style:italic;margin-bottom:0px">1. Reference to <strong>AAWU 3HR Icing Forecast</strong> at Foreflight>Imagery.</p>
       <p style="color:red; font-style:italic;margin-bottom:0px">2. Reference to <strong>PIREP's</strong> less that 1HR old along route/altitude of flight.</p>
@@ -321,33 +358,6 @@
          </table>
        </div>
      </div>
-      <div style="border:1px solid black;">
-        <div class="white">
-          <div class="inner-modal">
-            <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">FUEL REQUEST</span>
-            <span class="span-modal" style="float:right; padding-right:5px">
-              EnterTotalizer FOB lbs&nbsp;
-              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.allDisabled()">
-            </span>
-          </div>
-        </div>
-        <div class="white">
-          <div class="inner-modal">
-            <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">Fill To: POUNDS</span>
-            <span class="span-modal" style="font-weight:bold">{{(modal.flight.pfr.legArray[0].fuel+modal.equipment.taxiFuel)/2}}&nbsp;lbs/side</span>
-            <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.flight.pfr.legArray[0].fuel+modal.equipment.taxiFuel}}&nbsp;lbs total</span>
-          </div>
-        </div>
-        <div class="white">
-          <div class="inner-modal">
-            <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">ADD: GALLONS</span>
-            <span class="span-modal" style="font-weight:bold">{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main||0}}&nbsp;gal/side</span>
-            <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main*2||0}}&nbsp;gal total</span>
-          </div>
-        </div>
-      </div>
-      
-      <br>
       <div class="orange-line white">
         <div class="inner-modal">
           <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">MGTOW</span>

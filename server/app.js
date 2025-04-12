@@ -9,6 +9,7 @@ import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
 import localEnv from './config/local.env.js';
+import {setRosterDay} from './api/calendar/calendar.controller.js';
 import {observe} from './api/airplane/airplane.controller.js';
 import http from 'http';
 import https from 'https';
@@ -90,13 +91,21 @@ let firebaseFunction=async ()=>{
         .catch(err=>{console.log(err)});
 };
 
+let updateRoster=async (date)=>{
+  if (!date) date=new Date();
+  else date=new Date(date);
+  let roster=await setRosterDay(date);
+  console.log(roster[0]);
+};
+
 // Start server
 function startServer() {
   app.angularFullstack = server.listen(config.port, config.ip, function() {
     console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
+    updateRoster();
     //callbackFunction();
-    //observerFunction();
-    //const job=schedule.scheduleJob('30 0 * * *',observerFunction);
+    observerFunction();
+    const job=schedule.scheduleJob('30 0 * * *',observerFunction);
     metarFunction();
     tafFunction();
     firebaseFunction().then(()=>{

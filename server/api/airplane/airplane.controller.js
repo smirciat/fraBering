@@ -279,8 +279,7 @@ export function observe(collectionName,fbDate) {
   try {
     if (unsub) unsub();//clear any previous observer
     fbQuery = firebase_db.collection('flights').where('dateString','==',fbDate);
-    unsub=fbQuery.onSnapshot(()=>{});//set up to clear this observer when this function is called again
-    observer=fbQuery.onSnapshot(querySnapshot=>{
+    unsub=fbQuery.onSnapshot(querySnapshot=>{
       tempFlights=fSort(collectionToArray(querySnapshot));
       if (firebaseAircraft.length===0) return;
       for (let flight of tempFlights){

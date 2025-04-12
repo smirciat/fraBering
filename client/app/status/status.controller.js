@@ -208,6 +208,7 @@ class StatusComponent {
         //this.setAirplaneList();
         //this.setAvailableFlights();
         this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
+          console.log(res.data)
           this.allTodaysFlights=res.data;
           this.todaysFlights=this.filterTodaysFlights(res.data);
           //this.scroll();
@@ -807,6 +808,25 @@ class StatusComponent {
   }
   
   setPilotList(){
+    if (!this.dateString||!this.base||!this.allPilots) return;
+    this.http.post('/api/calendar/rosterDay',{dateString:this.dateString}).then(res=>{
+      this.wholeRoster=res.data;
+      let basePilotRoster=res.data.filter(pilot=>{
+        let location, position;
+        if (pilot.location_name) {
+          pilot.position=pilot.location_name.split(' ')[1];
+          pilot.location=pilot.location_name.split(' ')[0];
+        }
+        if (this.base.base==="UNK") return pilot.position==='CAPT'||pilot.position==='FO';
+        if (this.base.base==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO');
+        if (this.base.base==="OTZ") return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO');
+        return true;
+      });
+      for (let pilot of basePilotRoster){
+        let index=this.allPilots.map(e=>e.name).indexOf(pilot.employee_full_name);
+        if (index>-1) pilot.pilotObj=this.allPilots[index];
+      }
+    });
     let rf;
     if (this.recentFlights) rf=angular.copy(this.recentFlights);//.filter(f=>{return f.pilotObject}));
     if (!this.calendar||!this.base||!this.allPilots) return;
