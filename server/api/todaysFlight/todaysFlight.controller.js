@@ -335,7 +335,7 @@ export async function tf(req,res) {
       staleFile=false;
     }
     console.log('Stopped value is: ' + staleFile.toString());
-    
+  if (false) {  
     let resp=await getManifests();
     let manifests=resp.flights;
     for (let flight of manifests){
@@ -383,7 +383,7 @@ export async function tf(req,res) {
       });
     }
     //console.log(manifests[7])
-    
+  }  
     
     
     

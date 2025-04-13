@@ -30,10 +30,10 @@ class StatusComponent {
     this.stopped;
     this.longPressTimer;
     this.longPressDuration = 500;
-    this.B190Configs=['Mx','Cargo','9','13','15','17','19','Medivac','Silver Sky'];
-    this.B190Equipments=[0,0,134,137,97,57,57.5,0,0];
-    this.BE20Configs=['Mx','9','Single','Tandem','Aft Tandem','Silver Sky'];
-    this.BE20Equipments=[0,0,40,40,40,40,0];
+    this.B190Configs=['Mx','Cargo','Primary 9','9','13','15','17','19','Low Hours','Medivac','Silver Sky'];
+    this.B190Equipments=[0,0,134,134,137,97,57,57.5,0,0,0];
+    this.BE20Configs=['Mx','9','Primary','Secondary','Single','Tandem','Aft Tandem','Low Hours','Silver Sky'];
+    this.BE20Equipments=[0,0,40,40,40,40,40,40,40,0];
     this.alternateArray=['OME','OTZ','UNK','BET','GAL','ANC','FAI'];
     this.airportOrder=['PAOM','PAUN','PAOT','PAGM','PASA','PASH','PAIW','PATC','PFKT','PATE','PAWM','PAGL','PFEL',
             'PAKK','PFSH','PAMK','WBB','PADG','PAPO','PALU','PAVL','PAWN','PFNO','PAIK','PASK','PAFM','PAGH','PAOB','PABL','PADE'];
@@ -874,6 +874,10 @@ class StatusComponent {
         return headerList.indexOf(a.header)-headerList.indexOf(b.header)||new Date(a.dateOfHire)-new Date(b.dateOfHire)||a._id-b._id;
       });
       console.log(this.sortedPilots);
+    })
+    .catch(err=>{
+      console.log(err);
+      if (err.status===403) this.setPilotList();
     });
   }
   
