@@ -52,6 +52,7 @@ class StatusComponent {
   }
   
   $onInit() {
+    this.http.post('/api/todaysFlights/getManifests').then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
     this.width=document.documentElement.clientWidth;
     if (this.width<=768) this.mobile=true;
     window.width=this.width;

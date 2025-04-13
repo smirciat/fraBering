@@ -9,6 +9,7 @@ import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
 import localEnv from './config/local.env.js';
+import {setBearer,getManifests} from './api/todaysFlight/todaysFlight.controller.js';
 import {setRosterDay} from './api/calendar/calendar.controller.js';
 import {observe} from './api/airplane/airplane.controller.js';
 import http from 'http';
@@ -103,6 +104,7 @@ function startServer() {
   app.angularFullstack = server.listen(config.port, config.ip, function() {
     console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
     updateRoster();
+    setBearer();
     //callbackFunction();
     observerFunction();
     const job=schedule.scheduleJob('30 0 * * *',observerFunction);

@@ -13,8 +13,10 @@ import _ from 'lodash';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
 import {quickGrab,firebaseQueryFunction} from '../airplane/airplane.controller.js';
 import {getMetar,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
+import localEnv from '../../config/local.env.js';
 import fs from 'fs';
 import config from '../../config/environment';
+let bearer='';
 let allAirports=[];
 let airplanes=[];
 let fbAirplanes=[];
@@ -260,6 +262,7 @@ async function log(){
     let line=a.split(',');
     if (!line[0]||!line[statusIndex]) return;
     let obj={
+      aircraft:line[4],
       flightStatus:line[statusIndex],
       flightNum:line[3],
       flightId:line[1],
@@ -332,6 +335,59 @@ export async function tf(req,res) {
       staleFile=false;
     }
     console.log('Stopped value is: ' + staleFile.toString());
+    
+    let resp=await getManifests();
+    let manifests=resp.flights;
+    for (let flight of manifests){
+      if (flight.flightLegs[0].crew&&flight.flightLegs[0].crew.length>0) flight.pilot=flight.flightLegs[0].crew[0].name;
+      if (flight.flightLegs[0].crew&&flight.flightLegs[0].crew.length>1) flight.coPilot=flight.flightLegs[0].crew[1].name;
+      else flight.coPilot=null;
+      //flight.aircraft=??????
+      flight.aircraft=null;
+      flight.date=new Date(flight.departureDate).toLocaleDateString();
+      flight.flightNum=flight.flightNumber;
+      for (let line of flightLog){
+        if (!line.flightNum||!line.date) continue;
+        let flightNumArr=line.flightNum.split('.');
+        if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
+          flight.aircraft=line.aircraft;
+          if (line.flightStatus) flight.flightStatus=line.flightStatus;
+        } 
+      }
+      flight.departTimes=[];
+      flight.airports=[];
+      flight.flightLegs.forEach((leg,i)=>{
+        flight.departTimes.push(new Date(leg.departureTime).toTimeString().slice(0,8));
+        flight.airports.push(leg.origin.name);
+        if (i===flight.flightLegs.length-1) {
+          //add final destination to flight.airports
+          flight.airports.push(leg.destination.name);
+          //calculate last time for flight.departTImes (need aircraft type first!)
+          let speed=160;
+          let airplanesIndex=airplanes.map(e=>e.registration).indexOf(flight.aircraft);
+          if (airplanesIndex>-1) {
+            speed=250;
+            flight.status=airplanes[airplanesIndex].status;
+          }
+          else flight.status="NORM";
+          let flightTime=60*getDistance(flight.airports[flight.airports.length-2],flight.airports[flight.airports.length-1])/speed + 10;//est flight time in minutes
+          let lastTime=new Date(flight.date);
+          let timeArr=flight.departTimes[flight.departTimes.length-1].split(':');
+          if (timeArr.length>1) lastTime.setHours(timeArr[0],timeArr[1],0);
+          else lastTime=new Date(flight.departTimes[flight.departTimes.length-1]);
+          lastTime.setMinutes(lastTime.getMinutes()+flightTime);
+          lastTime=lastTime.toTimeString().slice(0,8);
+          if (lastTime.substring(0,7)==="Invalid") lastTime=undefined;
+          if (lastTime) flight.departTimes.push(lastTime);
+        }
+      });
+    }
+    //console.log(manifests[7])
+    
+    
+    
+    
+    
     let arr=data.split('\r\n');
     if (!arr[1]) {
       console.log('failed to load csv file');
@@ -632,6 +688,7 @@ export async function tf(req,res) {
         todaysFlights[index].equipment=flight.equipment;
         todaysFlights[index].autoOnboard=flight.autoOnboard;
         todaysFlights[index].operation=flight.operation;
+        todaysFlights[index].flightLegs=flight.flightLegs;
         if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
           //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' date'); 
@@ -990,4 +1047,101 @@ function lookupPilotObjects(flight){
     if (lookupIndex>-1) coPilotObject=pilots[lookupIndex];
   }
   return {pilotObject:pilotObject,coPilotObject:coPilotObject};
+}
+
+export async function setBearer(){
+  let data = JSON.stringify({
+    "client_id": localEnv.TF_ID,
+    "client_secret": localEnv.TF_SECRET
+  });
+  let config = {
+    method: 'post',
+    url: 'https://api.tflite.com/authentication/oauth/token',
+    headers: { 
+      'Content-Type': 'application/json', 
+      'Accept': 'application/json',
+      'api-version':'v1'
+    },
+    data : data
+  };
+  
+  try{
+    let response=await axios(config);
+    bearer="Bearer "+response.data.access_token;
+    //console.log(bearer);
+    return "TF Bearer Token Set Successfully";
+  }
+  catch(err){
+    console.log(err);
+    return err;
+  }
+}
+
+export async function getManifests(req,res){
+  let date=new Date();
+  if (req&&req.body&&req.body.date) date=new Date(req.body.date);
+  if (req&&!req.body&&!req.headers&&!isNaN(new Date(req))&&new Date(req).toString!=='Invalid Date') date=new Date(req);
+  date.setHours(0, 0, 0, 0);
+  let startDate=date.toISOString();
+  let day = date.getDate();
+  day=day+2;
+  date.setDate(day);
+  let endDate=date.toISOString();
+  let config = {
+    method: 'get',
+    url: 'https://api.tflite.com/manifests?departureDate.gte='+startDate+'&departureDate.lte='+endDate,
+    headers: { 
+      'Accept': 'application/json', 
+      'api-version': 'v1', 
+      'Authorization': bearer
+    }
+  };
+  try {
+    let response=await axios(config);
+    //console.log(response.data);
+    if (res) res.status(200).json(response.data);
+    else return response.data;
+  }
+  catch(err){
+    console.log(err.response.data);
+    //if (err.response.data&&err.response.data.statusCode===401){
+      setBearer();
+    //}
+    if (res) return res.status(500).json(err.response.data);
+    return err;
+  }
+}
+
+export async function getManifest(req,res){
+  let date=new Date();
+  let flightNum='860';
+  if (req.body&&req.body.date) {
+    date=new Date(req.body.date);
+    flightNum=req.body.flightNum||flightNum;
+  }
+  date.setHours(0, 0, 0, 0);
+  let startDate=date.toISOString();
+  let config = {
+    method: 'get',
+    url: 'https://api.tflite.com/manifests/'+startDate+'/'+flightNum+'/:departureAirport',
+    headers: { 
+      'Accept': 'application/json', 
+      'api-version': 'v1', 
+      'Authorization': bearer
+    }
+  };
+  try {
+    let response=await axios(config);
+    console.log(response.data);
+    if (res) res.status(200).json(response.data);
+    else return response.data;
+  }
+  catch(err){
+    console.log(err.response.data);
+    //if (err.response.data&&err.response.data.statusCode===401){
+      setBearer();
+    //}
+    if (res) return res.status(500).json(err.response.data);
+    return err;
+  }
 }
