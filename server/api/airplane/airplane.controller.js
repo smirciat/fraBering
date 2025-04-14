@@ -280,22 +280,22 @@ export function observe(collectionName,fbDate) {
     if (unsub) unsub();//clear any previous observer
     fbQuery = firebase_db.collection('flights').where('dateString','==',fbDate);
     unsub=fbQuery.onSnapshot(querySnapshot=>{
-      tempFlights=fSort(collectionToArray(querySnapshot));
+      firebaseFlights=fSort(collectionToArray(querySnapshot));
       if (firebaseAircraft.length===0) return;
-      for (let flight of tempFlights){
+      for (let flight of firebaseFlights){
         let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
         if (index>-1) {
           if (firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
             if (!firebaseAircraft[index].recentlyUpdated) {
-              //firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
-              //updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
+              firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
+              updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
             }
           }
-          //firebaseAircraft[index].recentlyUpdated=true;
+          firebaseAircraft[index].recentlyUpdated=true;
         }
       }
       console.log('***********************');
-      console.log('Length of Array is:' + tempFlights.length);
+      console.log('Length of Array is:' + firebaseFlights.length);
     }, (error) => {console.log(error)});
     
     return;
@@ -345,8 +345,8 @@ export async function firebaseLimited(req,res){
   let limit=req.body.limit||50;
   const result=await getCollectionLimited(collection,limit);
   let array=collectionToArray(result);
-  //console.log(array);
-  res.status(200).json(array);
+  if (res) return res.status(200).json(array);
+  return array;
 }
 
 export async function updateFirebase(req,res){
@@ -368,22 +368,21 @@ export async function firebaseInterval(req,res){
     firebasePilots=collectionToArray(pilots);
     let aircraft=await getCollection('aircraft');
     firebaseAircraft=collectionToArray(aircraft);
-    let flights=await getCollectionLimited('flights',500);
-    firebaseFlights=fSort(collectionToArray(flights));
-    for (let flight of firebaseFlights){
-      let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
-      if (index>-1) {
-        if (firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
+    //let flights=await getCollectionLimited('flights',500);
+    //firebaseFlights=fSort(collectionToArray(flights));
+    //for (let flight of firebaseFlights){
+      //let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
+      //if (index>-1) {
+        //if (firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
           //console.log('This would have fired a firebase update if it weren`t commented out');
-          //this.http.post('/api/airplanes/updateFirebaseNew',{collection:'firebaseAircraft',doc:{currentAirport:firebaseFlights[x].legArray.at(-1).arr,_id:firebaseAircraft[index]._id}});
-          if (!firebaseAircraft[index].recentlyUpdated) {
-            firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
-            await updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
-          }
-        }
-        firebaseAircraft[index].recentlyUpdated=true;
-      }
-    }
+          //if (!firebaseAircraft[index].recentlyUpdated) {
+            //firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
+            //await updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
+          //}
+        //}
+        //firebaseAircraft[index].recentlyUpdated=true;
+      //}
+    //}
   }
   catch(err){
     status=404;

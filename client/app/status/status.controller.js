@@ -52,7 +52,7 @@ class StatusComponent {
   }
   
   $onInit() {
-    this.http.post('/api/todaysFlights/getManifests').then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
+    this.http.post('/api/todaysFlights/getManifest',{date:'04/13/2025',flightNum:'2875'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
     this.width=document.documentElement.clientWidth;
     if (this.width<=768) this.mobile=true;
     window.width=this.width;
@@ -741,6 +741,7 @@ class StatusComponent {
     if (flight.departTimes) flight.block=this.subtractTimes(flight.departTimes[flight.departTimes.length-1],flight.departTimes[0],flight.departTimes.length);
     let tks=0;
     if (flight.equipment.name==="Caravan") tks=20.8;
+    if (flight.bew&&flight.bew.tks) tks=flight.bew.tks;
     let equipment=0;
     let acIndex=this.B190Configs.indexOf(flight.status);
     if (flight.equipment.name==="King Air") acIndex=this.BE20Configs.indexOf(flight.status);
@@ -760,7 +761,7 @@ class StatusComponent {
       default: equipment=69;
         break;
     }
-    if (!flight.bew) flight.bew={fo:0,bew:flight.airplaneObj.tempBew.aircraftAsWeighed,equipment:equipment,tks:tks,captain:200,jumpseater:0,seatsRemoved:0,seatWeight:0};
+    if (!flight.bew||!flight.bew.bew) flight.bew={fo:0,bew:flight.airplaneObj.tempBew.aircraftAsWeighed,equipment:equipment,tks:tks,captain:200,jumpseater:0,seatsRemoved:0,seatWeight:0};
     if (!flight.pfr) flight.pfr={legArray:[{}]};
     let alts=angular.copy(this.alternateAirports);
     alts.shift({});
