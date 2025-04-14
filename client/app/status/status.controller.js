@@ -121,7 +121,7 @@ class StatusComponent {
       res.runScroll=true;
       if (!res.comment) res.comment='';
       if (!res.signature) res.signature='';
-      if (!res.runwayScore) res.runwayScore='';
+      if (res.runwayScore===undefined||res.runwayScore===null) res.runwayScore='';
       if (!res.depth) res.depth='';
       if (!res.contaminent) res.contaminent='';
       if (!res.percent) res.percent='';
@@ -642,7 +642,7 @@ class StatusComponent {
     //if (new Date(airport.timestamp) < tenHoursAgo) return 'airport-blue';
 
     score=parseInt(score,10);
-    if (isNaN(score)) return "airport-green";
+    //if (isNaN(score)) return "airport-green";
     if (score<=1) return "airport-pink";
     if (score===2) return "airport-yellow";
     return "airport-green";
@@ -822,11 +822,13 @@ class StatusComponent {
           pilot.position=pilot.location_name.split(' ')[1];
           pilot.location=pilot.location_name.split(' ')[0];
         }
+        if (pilot.title==='OC'&&pilot.type==='shift'&&pilot.location!=="HELICOPTER") return true;
         if (this.base.base==="UNK") return pilot.position==='CAPT'||pilot.position==='FO';
         if (this.base.base==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO');
         if (this.base.base==="OTZ") return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO');
         return true;
       });
+      console.log(basePilotRoster)
       for (let pilot of basePilotRoster){//pilot is the pilot object from acroroster
         let p;
         if (pilot.employee_full_name==="Michael Evans") pilot.employee_full_name="Mike Evans";
@@ -840,6 +842,7 @@ class StatusComponent {
         }
         else p=this.allPilots[index];//p is the pilot object from firebase
         let inBase=p.pilotBase===this.base.base;
+        if (pilot.title==="OC") inBase=true;
         //UNK Base rules
         if (this.base.base==="UNK"&&this.todaysFlights) {
           this.todaysFlights.forEach(flight=>{
