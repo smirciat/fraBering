@@ -118,6 +118,7 @@ class StatusComponent {
     this.runwayModal=this.Modal.confirm.runway(res=>{
       if (res.timestampString) res.timestamp=new Date(res.timestampString);
       else res.timestamp=new Date();
+      res.runScroll=true;
       if (!res.comment) res.comment='';
       if (!res.signature) res.signature='';
       if (!res.runwayScore) res.runwayScore='';
@@ -262,8 +263,6 @@ class StatusComponent {
           if (item.runScroll) {
             console.log('AirportRequiments Updated');
             console.log(array);
-            //this.updateArray=[];
-            //localLength=0;
             console.log('updating airportRequirements at: '+new Date().toLocaleString());
             this.airports=this.setBase(array);
             this.masterAirports=array;

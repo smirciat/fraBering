@@ -661,7 +661,7 @@ export async function tf(req,res) {
       
      //map flights array(from getManifests API) to todaysFlights array (from postgresql database)
       //let faIndex=fa.map(e=>e.flightNum).indexOf(flight.flightNum);
-      let faIndex=fa.map(e=>e.flightId).indexOf(flight.flightId);
+      let faIndex=fa.map(e=>e.flightNum).indexOf(flight.flightNum);
       if (faIndex<0) {
           flight.colorPatch='false';
           console.log('creating flight:');
@@ -807,7 +807,7 @@ export async function tf(req,res) {
           if (pfrMap.length>0&&pfrMap[0].dateString) {
             flight.pfr=pfrMap[0];
           }
-          if (flight.pfr&&!flight.pfr.dateString) console.log(flight.flightId)
+          if (flight.pfr&&!flight.pfr.dateString) console.log(flight.flightNum)
           //pfrIndex=todaysPfrs.map(e=>e.flightNumber).indexOf(flight.flightNum);
           //if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
         }

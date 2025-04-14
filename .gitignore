@@ -9,6 +9,7 @@ server/config/local.env.js
 server/config/environment/development.js
 server/fileserver/*
 !server/fileserver/.gitkeep
+server/api/todaysFlight/todaysFlight.controller.1.js
 npm-debug.log
 coverage
 Dockerfile
