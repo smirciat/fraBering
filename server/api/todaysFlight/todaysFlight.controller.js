@@ -560,6 +560,15 @@ export async function tf(req,res) {
       let fa=todaysFlights.filter(x=>{
         return flight.date===x.date;
       });
+      //check flightLog for flight status (remove section when reverting to tflite api)
+      for (let line of flightLog){
+        if (!line.flightNum||!line.date) continue;
+        let flightNumArr=line.flightNum.split('.');
+        if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
+          //if (line.aircraft) flight.aircraft=line.aircraft;
+          if (line.flightStatus) flight.flightStatus=line.flightStatus;
+        } 
+      }
       //update weather per destination via airportObjs
       flight.airportObjs=[];
       for (const element of flight.airports) {

@@ -116,6 +116,7 @@ class StatusComponent {
       if (index>-1) Object.assign(this.todaysFlights[index], flight);
     });
     this.runwayModal=this.Modal.confirm.runway(res=>{
+      this.spinner=true;
       if (res.timestampString) res.timestamp=new Date(res.timestampString);
       else res.timestamp=new Date();
       res.runScroll=true;
@@ -137,7 +138,14 @@ class StatusComponent {
         this.airports[index].contaminent=res.contaminent;
         this.airports[index].percent=res.percent;
         if (res._id) {//&&res.signature&&res.runwayScore){
-          this.http.patch('/api/airportRequirements/'+res._id,res).then(resp=>{});
+          this.http.patch('/api/airportRequirements/'+res._id,res).then(resp=>{
+            this.spinner=false;
+          })
+          .catch(err=>{
+            console.log(err);
+            this.spinner=false;
+            this.quickModal("Runway Update Failed!  Check Internet Connection!","Failed!",true);
+          });
         }
       }
     });
@@ -200,15 +208,10 @@ class StatusComponent {
       if (!newVal||newVal==='') return;
       let timeoutVal=0;
       if (!oldVal||oldVal==='') timeoutVal=300;
-      //this.getTakeflite({dateString:'10/20/2024',file:'tomorrow.csv'});
       this.timeout(()=>{
         this.scope.nav.isCollapsed=true;
-      //if (!oldVal||oldVal==='') return;
         this.dateString=newVal;
         this.date=new Date(this.dateString);
-        //this.setPilotList();
-        //this.setAirplaneList();
-        //this.setAvailableFlights();
         this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
           console.log(res.data)
           this.allTodaysFlights=res.data;
@@ -217,33 +220,19 @@ class StatusComponent {
           this.timeout(()=>{
             this.spinner=false;
             this.setPilotList();
-            console.log(this.todaysFlights)
             this.setAirplaneList();
           },0);
           this.socket.unsyncUpdates('todaysFlight');
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
-            //console.log(item)
             //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
             if (item.colorPatch&&item.colorPatch==='true') return;
             if (item.runScroll||(item.date===this.dateString&&event==="created")) {
               this.spinner=true;
-              //this.allTodaysFlights=array;
-              //angular.copy(this.filterTodaysFlights(this.allTodaysFlights), this.todaysFlights);
               console.log(array)
               this.todaysFlights=this.filterTodaysFlights(array);
-              //const updatedArr=this.filterTodaysFlights(res.data);
-              //for (const updated of updatedArr){
-              //  let i=this.todaysFlights.map(e=>e._id).indexOf(updated._id);
-              //  if (i===-1) this.todaysFlights.push(updated);
-              //  else {
-              //    this.customClone(this.todaysFlights[i],updated);
-              //  }
-              //}
               console.log('Todays Flight Socket fired');
               console.log(item);
               this.timeout(()=>{this.spinner=false;},0);
-              //this.spinner=true;
-              //this.timeout(()=>{this.scroll()},0);
             }
           });
         });
@@ -255,11 +244,7 @@ class StatusComponent {
       this.airports=this.setBase(res.data);
       this.socket.unsyncUpdates('airportRequirement');
       this.socket.syncUpdates('airportRequirement', this.masterAirports,(event,item,array)=>{
-        //this.masterAirports=array;
-        //this.updateArray.push(item);
-        //let localLength=angular.copy(this.updateArray.length);
         this.timeout(()=>{
-          //if (localLength===this.updateArray.length){
           if (item.runScroll) {
             console.log('AirportRequiments Updated');
             console.log(array);
@@ -285,38 +270,6 @@ class StatusComponent {
       })
       .catch(err=>{console.log(err)});
     });
-  }
-  
-  customClone(original,update){//trying to take a single object, iterate through its parameters and only update thos parameters that have changed, maintaining as many references as possible
-    for (const key in original){
-      if (update[key]){
-        if (Array.isArray(original[key])){
-          if (Array.isArray(update[key])){
-            if (update[key].length>=original[key].length){
-              for (let i=0;i<original[key].length;i++){
-                //update
-                if (typeof original[key][i]==='object'||Array.isArray(original[key][i])) original[key][i]=this.customClone(original[key][i],update[key][i]);
-                else if (update[key][i]!==original[key][i]) original[key][i]=update[key][i];
-              }
-              for (let i=original[key].length;i<update[key].length;i++){
-                original[key].push(update[key][i]);
-              }
-            }
-            else {
-              let numSplices=original[key].length-update[key].length;
-              original[key].splice(update[key].length,numSplices);
-            }
-          }
-        }
-        else {
-          //update
-          if (typeof original[key]==='object') original[key]=this.customClone(original[key],update[key]);
-          else if (update[key]!==original[key]) original[key]=update[key];
-        }
-      } 
-      //else delete original[key];
-    }
-    return original;
   }
   
   nonPilot(nonPilot){

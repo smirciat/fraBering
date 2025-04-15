@@ -1,5 +1,5 @@
-<navbar></navbar>
-<section style="background-color:rgba(51, 170, 51, .02);" ng-class="status.getLayout()" ng-if="status.Auth.isUser()">
+<navbar></navbar><!--style="background-color:rgba(51, 170, 51, .02);" -->
+<section ng-class="status.getLayout()" style="background-color:#ffffcc;" ng-if="status.Auth.isUser()">
   <div ng-show="status.spinner" class="myspinner"></div>
   <div ng-if="status.fixedWing()" ng-class="status.getColumn()">
       <div class="grid-parent" ng-repeat="airport in status.airports track by airport._id">
@@ -89,10 +89,10 @@
       </div>
       <div class="grid-parent-right" ng-repeat="airplane in status.airplanesB190 track by $index">
         <div class="airport" style="align-self:center">
-          <p>{{airplane.registration}}</p>
+          <p style="padding-left:5px; padding-right:10px;">{{airplane.registration}}</p>
         </div>
         <div class="comment"  style="align-self:top">
-          <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
+          <ui-select ng-style="modal.getWidth(12,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
             <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in status.B190Configs" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -107,10 +107,10 @@
       </div>
       <div class="grid-parent-right" ng-repeat="airplane in status.airplanesBE20 track by $index">
         <div class="airport" style="align-self:center">
-          <p>{{airplane.registration}}</p>
+          <p style="padding-left:5px; padding-right:10px;">{{airplane.registration}}</p>
         </div>
         <div class="comment"  style="align-self:top">
-          <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
+          <ui-select ng-style="modal.getWidth(12,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
             <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in status.BE20Configs" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
