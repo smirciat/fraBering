@@ -294,7 +294,6 @@ class StatusComponent {
           user=userArr[0].substring(0,1) + middle + userArr[userArr.length-1];
           //sophia Evans code
           if (userArr[0]==='sophia'&&userArr[userArr.length-1]==='evans') user = 'shobbs';
-          console.log(user)
           array=array.filter(flight=>{
             return flight.pilot===user||flight.coPilot===user;
           });

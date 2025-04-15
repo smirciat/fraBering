@@ -72,7 +72,11 @@ class NavbarController {
   }
   
   $onInit() {
-    this.isFilter=window.localStorage.getItem('isFilter');
+    this.user=this.Auth.getCurrentUser();
+    if (this.user.role==='user') this.isFilter=true;
+    let tempFilter=window.localStorage.getItem('isFilter');
+    if (tempFilter==='true') this.isFilter=true;
+    if (tempFilter==='false') this.isFilter=false;
     window.isFilter=this.isFilter;
     if (window.localStorage.getItem('baseIndex')!==null&&window.localStorage.getItem('baseIndex')!=='undefined') this.base=this.bases[window.localStorage.getItem('baseIndex')];
     else this.base=this.bases[0];
@@ -107,7 +111,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='21';
+    let version='23';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -123,7 +127,7 @@ class NavbarController {
     })
     .catch(err=>{
       console.log(err);
-      if (window.localStorage.getItem('stopped')==='true'&&(err.status===403||err.status===404)) {
+      if (err.status===403||err.status===404) {
         window.localStorage.setItem('stopped','false');
         this.window.location.reload();
       }
@@ -534,7 +538,7 @@ class NavbarController {
   
   changeIsFilter(){
     this.isFilter=!this.isFilter;
-    window.localStorage.setItem('isFilter',this.isFilter);
+    window.localStorage.setItem('isFilter',this.isFilter.toString());
   }
 }
 
