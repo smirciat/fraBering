@@ -64,6 +64,7 @@ class StatusComponent {
     //this.http.post('/api/airportRequirements/notams',{airport:'PAOM'}).then(res=>{
     //  console.log(res.data);
     //});
+    this.isFilter=window.isFilter;
     this.toggleAssigned=window.toggleAssigned;
     this.scrollInterval=this.interval(()=>{
       //this.scroll();
@@ -176,6 +177,10 @@ class StatusComponent {
     //this.scope.$watch('nav.isToggleAssigned',(newVal,oldVal)=>{
     //  this.toggleAssigned=newVal;
     //});
+    this.scope.$watch('nav.isFilter',(newVal,oldVal)=>{
+      this.isFilter=newVal;
+      this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights);
+    });
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
       this.spinner=true;
       if (!newVal||newVal==='') return;
@@ -224,6 +229,7 @@ class StatusComponent {
           },0);
           this.socket.unsyncUpdates('todaysFlight');
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
+            this.allTodaysFlights=array;
             //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
             if (item.colorPatch&&item.colorPatch==='true') return;
             if (item.runScroll||(item.date===this.dateString&&event==="created")) {
@@ -278,6 +284,22 @@ class StatusComponent {
   
   filterTodaysFlights(array){
       if (!this.dateString||!array) return array;
+      if (this.isFilter){
+        let user=this.user.name.toLowerCase();
+        let middle='';
+        let userArr=user.split(' ');
+        if (userArr.length>1&&user!=="bering air"&&this.user.role!=='admin') {
+          //mike evans code
+          if (userArr[0]==='michael'&&userArr[userArr.length-1]==='evans') middle=userArr[1].substring(0,1);
+          user=userArr[0].substring(0,1) + middle + userArr[userArr.length-1];
+          //sophia Evans code
+          if (userArr[0]==='sophia'&&userArr[userArr.length-1]==='evans') user = 'shobbs';
+          console.log(user)
+          array=array.filter(flight=>{
+            return flight.pilot===user||flight.coPilot===user;
+          });
+        }
+      }
       array.forEach(flight=>{
         if (this.dateString!==flight.date) {
           flight=undefined;

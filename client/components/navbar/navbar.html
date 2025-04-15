@@ -43,11 +43,16 @@
               </ui-select-choices>
           </ui-select>
         </li>
-        <li ng-if="nav.isAdmin()" style="padding-top:7px;padding-left:2em;">
+        <li ng-if="false&&nav.isAdmin()" style="padding-top:7px;padding-left:2em;">
           <div class="grid-parent-navbar">
             <input class="form-control" tooltip-placement="bottom" uib-tooltip="Upload Pilot Schedule CSV File Here" type="file" id="file" name="file" ng-model="nav.file"/>
             <button ng-if="nav.fileExists" class="btn btn-default" ng-click="nav.uploadCSV()">Upload CSV</button>
           </div>
+        </li>
+        <li ng-if="nav.Auth.isUser()" style="padding-top:7px;padding-left:2em;">
+          <button class="btn" ng-class="nav.filterButton(nav.isFilter)" ng-click="nav.changeIsFilter()" style="font-weight:bold">
+            {{nav.buttonMessage(nav.isFilter)}}
+          </button>
         </li>
       </ul>
 

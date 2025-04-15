@@ -72,6 +72,8 @@ class NavbarController {
   }
   
   $onInit() {
+    this.isFilter=window.localStorage.getItem('isFilter');
+    window.isFilter=this.isFilter;
     if (window.localStorage.getItem('baseIndex')!==null&&window.localStorage.getItem('baseIndex')!=='undefined') this.base=this.bases[window.localStorage.getItem('baseIndex')];
     else this.base=this.bases[0];
     window.base=this.base;
@@ -105,7 +107,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='20';
+    let version='21';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -518,6 +520,21 @@ class NavbarController {
   
   stoppedClass(stopped){
     if (window.stopped) return 'airport-purple';
+  }
+  
+  filterButton(bool){
+    if (!bool) return 'btn-default';
+    return 'btn-success';
+  }
+  
+  buttonMessage(bool){
+    if (bool) return "Show All Flights";
+    return "Show Only User`s Flights";
+  }
+  
+  changeIsFilter(){
+    this.isFilter=!this.isFilter;
+    window.localStorage.setItem('isFilter',this.isFilter);
   }
 }
 
