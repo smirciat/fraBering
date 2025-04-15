@@ -105,7 +105,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='19';
+    let version='20';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -126,6 +126,7 @@ class NavbarController {
         this.window.location.reload();
       }
       window.localStorage.setItem('stopped','false');
+      if (err.status===401) window.localStorage.setItem('stopped','true');
     });
   }
 
