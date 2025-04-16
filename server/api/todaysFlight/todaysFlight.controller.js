@@ -555,7 +555,7 @@ export async function tf(req,res) {
   
   
   
-    for (let flight of flights){
+    for (let [flightIndex, flight] of flights.entries()){
       if (!flight) return;
       let fa=todaysFlights.filter(x=>{
         return flight.date===x.date;
@@ -796,7 +796,10 @@ export async function tf(req,res) {
         if (!todaysFlights[index].pilotAgree||(!todaysFlights[index].ocRelease&&!todaysFlights[index].dispatchRelease)) {
           todaysFlights[index].airportObjsLocked=JSON.parse(JSON.stringify(todaysFlights[index].airportObjs));
         }
-        if (index>=todaysFlights.length-1) todaysFlights[index].runScroll=true;
+        if (flightIndex>=flights.length-1) {
+          todaysFlights[index].runScroll=true;
+          console.log(todaysFlights[index])
+        }
       }
     }
     if (updated.length>0) {

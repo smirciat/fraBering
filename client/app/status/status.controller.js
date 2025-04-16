@@ -230,6 +230,7 @@ class StatusComponent {
           this.socket.unsyncUpdates('todaysFlight');
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
             this.allTodaysFlights=array;
+            console.log(item)
             //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
             if (item.colorPatch&&item.colorPatch==='true') return;
             if (item.runScroll||(item.date===this.dateString&&event==="created")) {
