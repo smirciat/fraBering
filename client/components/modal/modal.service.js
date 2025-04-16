@@ -181,6 +181,7 @@ angular.module('workspaceApp')
                 isSuperAdmin = args.shift(),
                 user = args.shift(),
                 userLastname = args.shift(),
+                reasons=['No Reason','BA Employee','BA Pilot','Non-Company Handler','Other Airline Pilot','FAA','DOD'],
                 alternates=['None','PAOM','PAOT','PAUN','PABE','PAGA','PAFA','PANC'],
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
                 bgColors=['lightgreen','lightblue','#DAB1DA','yellow','orange','#ff0033'],
@@ -215,7 +216,7 @@ angular.module('workspaceApp')
                 quickModal;
             quickModal = openModal({
               modal: {
-                flightInfo:[{title:'Origin',val:flight.airportObjs[0].airport.threeLetter+'BA'},
+                flightInfo:[{title:'Origin',val:flight.pfr.flightOrigin},
                             {title:'Date',val:flight.date},
                             {title:'Time',val:flight.departTimes[0].substring(0,5)+' - '+flight.departTimes[flight.departTimes.length-1].substring(0,5)},
                             {title:'Est Flight Time',val:flight.block},
@@ -226,8 +227,7 @@ angular.module('workspaceApp')
                             ],
                 bewInfo:[{title:'Equipment Lbs',val:'equipment'},
                             {title:'Captain lbs',val:'captain'},
-                            {title:'FO lbs',val:'fo'},
-                            {title:'Jumpseater lbs',val:'jumpseater'}
+                            {title:'FO lbs',val:'fo'}
                             ],
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
                             {title:'OWE',val:flight.pfr.legArray[0].operatingWeightEmpty},
@@ -247,8 +247,10 @@ angular.module('workspaceApp')
                   return flight.bew.seatWeight;
                 },
                 oweCalc:function(){
-                  return Math.round(flight.bew.tks*9.2308+flight.bew.seatWeight*1+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.bew.jumpseater*1);
+                  return Math.round(flight.bew.tks*9.2308+flight.bew.seatWeight*1+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.jumpseaterObject.bodyWt*1+flight.jumpseaterObject.bagWt*1);
                 },
+                reasons:reasons,
+                jumpseatDisp:flight.jumpseaterObject.reason,
                 tksCalc:tksCalc,
                 fuelCalc:function(){
                   if (!flight.pfr.legArray[0].fuel) return 0;
@@ -275,6 +277,10 @@ angular.module('workspaceApp')
                   flight.alternate=null;
                 },
                 updateParam:function(key,obj){
+                  if (key==='jumpseat') {
+                    flight.jumpseaterObject.reason=obj;
+                    return;
+                  }
                   if (key==='alternate'&&obj==='None') flight.alternate=null;
                   else {
                     flight[key]=obj;

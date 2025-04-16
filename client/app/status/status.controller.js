@@ -738,6 +738,7 @@ class StatusComponent {
     if (!flight.pfr) flight.pfr={legArray:[{}]};
     let alts=angular.copy(this.alternateAirports);
     alts.shift({});
+    if (!flight.jumpseaterObject) flight.jumpseaterObject={bodyWt:'0',bagWt:'0',reason:'No Reason'};
     console.log(flight)
     this.flightModal(JSON.parse(JSON.stringify(flight)),alts,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
   }
@@ -908,7 +909,7 @@ class StatusComponent {
       baseTest=false;
       if (this.base.base==="HEL"||a.currentAirport===this.base.base) baseTest=true;
       if (this.base.base==="UNK"){
-        this.todaysFlights.forEach(flight=>{
+        if (this.todaysFlights) this.todaysFlights.forEach(flight=>{
           if (flight.aircraft!==a._id||flight.active==='false') return;
           let x=flight.airports.indexOf('Unalakleet');
           if (x>-1) baseTest=true;

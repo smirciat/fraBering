@@ -61,7 +61,9 @@ export default function(sequelize, DataTypes) {
     alternate:DataTypes.STRING,
     pilotObject:DataTypes.JSONB,
     coPilotObject:DataTypes.JSONB,
+    jumpseaterObject:DataTypes.JSONB,
     airplaneObj:DataTypes.JSONB,
-    flightLegs:DataTypes.JSONB
+    flightLegs:DataTypes.JSONB,
+    miscObject:DataTypes.JSONB
   });
 }

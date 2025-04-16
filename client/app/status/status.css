@@ -1,4 +1,3 @@
-
 .layout-OME {
   width: 100%;
   display: grid;
@@ -54,10 +53,12 @@
   height:calc(100vh - 60px);
   font-size:1.5em;
   overflow:auto;
+  scrollbar-width:none;
 }
 
 .status-column-flights{
   font-size:1.5em;
+  scrollbar-width:none;
 }
 
 .status-column-phone{
@@ -67,6 +68,7 @@
   height:calc(100vh - 60px);
   font-size:1.5em;
   overflow:auto;
+  scrollbar-width:none;
 }
 
 .status-column-flights-phone{
@@ -74,16 +76,19 @@
   grid-row: 1;
   grid-column: auto;
   font-size:1.5em;
+  scrollbar-width:none;
 }
 
 .todays-flights{
   height:70vh;
   overflow:auto;
+  scrollbar-width:none;
 }
 
 .alts{
   height:calc(30vh - 60px);
   overflow:auto;
+  scrollbar-width:none;
 }
 
 .status-column-header{

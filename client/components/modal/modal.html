@@ -249,7 +249,7 @@
       <div class="orange-line">
         <div class="inner-modal"  ng-click="modal.showOWEInfo=!modal.showOWEInfo">
           <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
-            OWE Calculator (Optional)&nbsp;
+            OWE Calculator&nbsp;
             <i ng-class="modal.upOrDown(modal.showOWEInfo)"></i>  
           </span>
         </div>
@@ -275,6 +275,17 @@
             <span class="span-modal" style="float:left; padding-left:5px;">{{item.title}}</span>
             <span class="span-modal" style="float:right; padding-right:5px">
               <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.bew[item.val]" ng-disabled="modal.allDisabled()">
+            </span>
+          </div>
+        </div>
+        <div class="orange-line white">
+          <div class="inner-modal">
+            <span class="span-modal" style="float:left; padding-left:5px;">Jumpseater Bag and Body Wt</span>
+            <span class="span-modal">
+              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.jumpseaterObject.bagWt" ng-disabled="modal.allDisabled()">
+            </span>
+            <span class="span-modal" style="float:right; padding-right:5px">
+              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.jumpseaterObject.bodyWt" ng-disabled="modal.allDisabled()">
             </span>
           </div>
         </div>
@@ -327,8 +338,8 @@
           <div class="white">
             <div class="inner-modal">
               <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">Fill To: POUNDS</span>
-              <span class="span-modal" style="font-weight:bold">{{(modal.flight.pfr.legArray[0].fuel+modal.equipment.taxiFuel)/2}}&nbsp;lbs/side</span>
-              <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.flight.pfr.legArray[0].fuel+modal.equipment.taxiFuel}}&nbsp;lbs total</span>
+              <span class="span-modal" style="font-weight:bold">{{(modal.flight.pfr.legArray[0].fuel+modal.flight.equipment.taxiFuel)/2}}&nbsp;lbs/side</span>
+              <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.flight.pfr.legArray[0].fuel+modal.flight.equipment.taxiFuel}}&nbsp;lbs total</span>
             </div>
           </div>
           <div class="white">
@@ -385,31 +396,57 @@
     </div>
   
     <br>
-    
-    <div class="modal-checkbox-layout" style="align-items: center; font-weight:bold;">
-      <div class="modal-column">
-        <table class="table table-borderless">
-          <tbody>
-            <tr><td style="text-align:center">CREW</td></tr>
-            <tr><td style="text-align:center">{{modal.flight.pilotObject.displayName||modal.flight.pilot}}</td></tr>
-            <tr ng-if="modal.flight.coPilotObject.displayName||modal.flight.coPilot">
-              <td style="text-align:center">{{modal.flight.coPilotObject.displayName||modal.flight.coPilot}}</td>
-            </tr>
-          </tbody>
-        </table>
+    <div>
+      <div class="orange-line white">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">CREW</span>
+          <!--<span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">{{modal.flight.pfr.legArray[0].mgtow}}</span>-->
+        </div>
       </div>
-      <div class="modal-column">
-        <table class="table table-borderless">
-          <tbody>
-            <tr><td>.</td></tr>
-            <tr><td><input style="width:100%" type="text" ng-model="modal.flight.pilotComment" ng-disabled="modal.allDisabled()"></td></tr>
-            <tr ng-if="modal.flight.coPilotObject.displayName||modal.flight.coPilot">
-              <td><input style="width:100%" type="text" ng-model="modal.flight.coPilotComment" ng-disabled="modal.allDisabled()"></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="orange-line white">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">{{modal.flight.pilotObject.displayName||modal.flight.pilot}}</span>
+          <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">
+            <input style="width:400px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.pilotComment" ng-disabled="modal.allDisabled()">
+          </span>
+        </div>
+      </div>
+      <div class="orange-line white" ng-if="modal.flight.coPilotObject.displayName||modal.flight.coPilot">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">{{modal.flight.coPilotObject.displayName||modal.flight.coPilot}}</span>
+          <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">
+            <input style="width:400px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.coPilotComment" ng-disabled="modal.allDisabled()">
+          </span>
+        </div>
+      </div>
+      <div class="orange-line white">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">Jumpseater</span>
+          <span class="span-modal" style="font-weight:bold; padding-left:7px"><input style="width:150px; height:27px; padding:0px;text-align: center;"  type="text" ng-model="modal.flight.jumpseaterObject.name" ng-disabled="modal.allDisabled()"></span>
+          <span class="span-modal" style="float:right; padding-left:7px;padding-right:5px;font-weight:bold;">
+            <ui-select style="line-height:28px;height:28px;width:200px" ng-model="modal.jumpseatDisp" ng-disabled="modal.allDisabled()" theme="selectize" ng-change="modal.updateParam('jumpseat',modal.jumpseatDisp)">
+              <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
+              <ui-select-choices repeat="choice in modal.reasons" >
+                <div style="line-height:28px;height:28px" ng-bind-html="choice | highlight: $select.search"></div>
+              </ui-select-choices>
+            </ui-select>
+          </span>
+        </div>
       </div>
     </div>
+    <div class="orange-line white" ng-show="modal.flight.jumpseaterObject.name">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">Bag/Body Wt</span>
+          <span class="span-modal" style="font-weight:bold; padding-left:7px">
+            <input style="width:150px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.jumpseaterObject.bagWt" ng-disabled="modal.allDisabled()">
+          </span>
+          <span class="span-modal" style="float:right; padding-left:7px;padding-right:5px;font-weight:bold;">
+            <input style="width:150px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.jumpseaterObject.bodyWt" ng-disabled="modal.allDisabled()">
+          </span>
+        </div>
+      </div>
+    </div>
+    <br>
     <hr class="my-hr">
     <div>
       <p style="font-weight:bold">ENVIRONMENT</p>
