@@ -796,10 +796,7 @@ export async function tf(req,res) {
         if (!todaysFlights[index].pilotAgree||(!todaysFlights[index].ocRelease&&!todaysFlights[index].dispatchRelease)) {
           todaysFlights[index].airportObjsLocked=JSON.parse(JSON.stringify(todaysFlights[index].airportObjs));
         }
-        if (flightIndex>=flights.length-1) {
-          todaysFlights[index].runScroll=true;
-          console.log(todaysFlights[index])
-        }
+        if (flightIndex>=flights.length-1) todaysFlights[index].runScroll=true;
       }
     }
     if (updated.length>0) {
