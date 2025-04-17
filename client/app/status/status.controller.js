@@ -98,6 +98,14 @@ class StatusComponent {
     });
     this.flightModal=this.Modal.confirm.flight(flight=>{
       this.spinner=true;
+      if (flight.security){
+        //patch pfr with pfr.remark1
+        this.http.post('/api/airplanes/updateFirebaseNew',{collection:'flights',doc:{_id:flight.pfr._id,remarks1:flight.security}}).then(res=>{
+          console.log(res.data)
+        }).catch(err=>{
+          console.log(err);
+        });
+      }
       if ((flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree&&!flight.colorLock) flight.colorLock=flight.color;
       if (flight.pilotAgree&&flight.pilotAgree!==""&&!flight.releaseTimestamp) flight.releaseTimestamp=new Date();
       if (flight.ocRelease&&flight.ocRelease!==""&&!flight.ocReleaseTimestamp) flight.ocReleaseTimestamp=new Date();
@@ -205,7 +213,7 @@ class StatusComponent {
             if (this.masterAirports) this.setBase(this.masterAirports);
             this.setPilotList();
             this.setAirplaneList();
-          },0);
+          },200);
       },0);
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
@@ -226,7 +234,7 @@ class StatusComponent {
             this.spinner=false;
             this.setPilotList();
             this.setAirplaneList();
-          },0);
+          },200);
           this.socket.unsyncUpdates('todaysFlight');
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
             this.allTodaysFlights=array;
@@ -672,76 +680,83 @@ class StatusComponent {
   }
   
   lookAtFlight(flight){
-    if (!flight.fuelPreviouslyOnboard&&!isNaN(flight.autoOnboard)&&flight.autoOnboard>0) flight.fuelPreviouslyOnboard=Math.floor(flight.autoOnboard);
-    if (!flight.fuelTotalTaxi&&flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0]) flight.fuelTotalTaxi=flight.taxiFuel*1+flight.pfr.legArray[0].fuel*1;
-    let lastname='';
-    if (this.user.name&&this.user.name.split(' ').length>1) lastname=this.user.name.split(' ')[this.user.name.split(' ').length-1];
-    if (flight.alternate){
-      let i=this.alternateAirports.map(e=>e.icao).indexOf(flight.alternate);
-      if (i>-1) flight.altObj=this.alternateAirports[i];
-    }
-    let duration=0;
-    let times=[];
-    let time1,time2;
-    flight.departTimes.forEach((t,i)=>{
-      let d=new Date();
-      const [hours, minutes, seconds] = t.toString().split(':').map(Number);
-      d.setHours(hours, minutes, seconds, 0);
-      times.push(d);
-      if (i>0) {
-        time1=times[i-1].getTime();
-        time2=times[i].getTime();
-        duration+=((time2-time1)/(60*1000)-10);
+    try{
+      if (!flight.fuelPreviouslyOnboard&&!isNaN(flight.autoOnboard)&&flight.autoOnboard>0) flight.fuelPreviouslyOnboard=Math.floor(flight.autoOnboard);
+      if (!flight.fuelTotalTaxi&&flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0]) flight.fuelTotalTaxi=flight.taxiFuel*1+flight.pfr.legArray[0].fuel*1;
+      let lastname='';
+      if (this.user.name&&this.user.name.split(' ').length>1) lastname=this.user.name.split(' ')[this.user.name.split(' ').length-1];
+      if (flight.alternate){
+        let i=this.alternateAirports.map(e=>e.icao).indexOf(flight.alternate);
+        if (i>-1) flight.altObj=this.alternateAirports[i];
       }
-    });
-    flight.duration=duration/60;
-    flight.minFlightFuel=flight.equipment.fuelBurn*(flight.duration+0.5);
-    if (!flight.alternate) flight.maxFlightFuel=flight.equipment.fuelBurn*(flight.duration+1.5);
-    let calendarIndex=this.wholeRoster.map(e=>e.title).indexOf('OC');
-    if (calendarIndex>-1) flight.ocName=this.wholeRoster[calendarIndex].employee_full_name;
-    switch(flight.ocName){
-      case 'David Olson':
-        flight.ocNumber= '(907) 443-8985';
-        break;
-      case 'Fen Kinneen':
-        flight.ocNumber= '(907) 304-1132';
-        break;
-      case 'Brian Weckwerth':
-        flight.ocNumber= '(907) 750-5890';
-        break;
+      let duration=0;
+      let times=[];
+      let time1,time2;
+      flight.departTimes.forEach((t,i)=>{
+        let d=new Date();
+        const [hours, minutes, seconds] = t.toString().split(':').map(Number);
+        d.setHours(hours, minutes, seconds, 0);
+        times.push(d);
+        if (i>0) {
+          time1=times[i-1].getTime();
+          time2=times[i].getTime();
+          duration+=((time2-time1)/(60*1000)-10);
+        }
+      });
+      flight.duration=duration/60;
+      flight.minFlightFuel=flight.equipment.fuelBurn*(flight.duration+0.5);
+      if (!flight.alternate) flight.maxFlightFuel=flight.equipment.fuelBurn*(flight.duration+1.5);
+      let calendarIndex=this.wholeRoster.map(e=>e.title).indexOf('OC');
+      if (calendarIndex>-1) flight.ocName=this.wholeRoster[calendarIndex].employee_full_name;
+      switch(flight.ocName){
+        case 'David Olson':
+          flight.ocNumber= '(907) 443-8985';
+          break;
+        case 'Fen Kinneen':
+          flight.ocNumber= '(907) 304-1132';
+          break;
+        case 'Brian Weckwerth':
+          flight.ocNumber= '(907) 750-5890';
+          break;
+      }
+      if (flight.pfr) flight.pfr.legArray[0].operatingWeightEmpty=Math.round(flight.pfr.legArray[0].operatingWeightEmpty);
+      if (flight.departTimes) flight.block=this.subtractTimes(flight.departTimes[flight.departTimes.length-1],flight.departTimes[0],flight.departTimes.length);
+      let tks=0;
+      if (flight.equipment.name==="Caravan") tks=20.8;
+      if (flight.bew&&flight.bew.tks) tks=flight.bew.tks;
+      let equipment=0;
+      let acIndex=this.B190Configs.indexOf(flight.status);
+      if (flight.equipment.name==="King Air") acIndex=this.BE20Configs.indexOf(flight.status);
+      switch(flight.equipment.name){
+        case "Caravan": equipment=69;
+          break;
+        case "King Air": 
+          if (acIndex>-1) equipment=this.BE20Equipments[acIndex];
+          break;
+        case "Beech 1900":
+          if (acIndex>-1) equipment=this.B190Equipments[acIndex];
+          break;
+        case "Casa": equipment=738;
+          break;
+        case "Sky Courier": equipment=0;
+          break;
+        default: equipment=69;
+          break;
+      }
+      if (!flight.airplaneObj.tempBew) flight.airplaneObj.tempBew={};
+      if (!flight.bew||!flight.bew.bew) flight.bew={fo:0,bew:flight.airplaneObj.tempBew.aircraftAsWeighed,equipment:equipment,tks:tks,captain:200,jumpseater:0,seatsRemoved:0,seatWeight:0};
+      if (!flight.pfr) flight.pfr={legArray:[{}]};
+      let alts=angular.copy(this.alternateAirports);
+      alts.shift({});
+      if (!flight.jumpseaterObject) flight.jumpseaterObject={bodyWt:'0',bagWt:'0',reason:'No Reason'};
+      console.log(flight);
+      this.flightModal(JSON.parse(JSON.stringify(flight)),alts,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
     }
-    if (flight.pfr) flight.pfr.legArray[0].operatingWeightEmpty=Math.round(flight.pfr.legArray[0].operatingWeightEmpty);
-    if (flight.departTimes) flight.block=this.subtractTimes(flight.departTimes[flight.departTimes.length-1],flight.departTimes[0],flight.departTimes.length);
-    let tks=0;
-    if (flight.equipment.name==="Caravan") tks=20.8;
-    if (flight.bew&&flight.bew.tks) tks=flight.bew.tks;
-    let equipment=0;
-    let acIndex=this.B190Configs.indexOf(flight.status);
-    if (flight.equipment.name==="King Air") acIndex=this.BE20Configs.indexOf(flight.status);
-    switch(flight.equipment.name){
-      case "Caravan": equipment=69;
-        break;
-      case "King Air": 
-        if (acIndex>-1) equipment=this.BE20Equipments[acIndex];
-        break;
-      case "Beech 1900":
-        if (acIndex>-1) equipment=this.B190Equipments[acIndex];
-        break;
-      case "Casa": equipment=738;
-        break;
-      case "Sky Courier": equipment=0;
-        break;
-      default: equipment=69;
-        break;
+    catch(err){
+      console.log(err);
+      this.quickModal('Error Opening Flight!','Error!',true);
     }
-    if (!flight.bew||!flight.bew.bew) flight.bew={fo:0,bew:flight.airplaneObj.tempBew.aircraftAsWeighed,equipment:equipment,tks:tks,captain:200,jumpseater:0,seatsRemoved:0,seatWeight:0};
-    if (!flight.pfr) flight.pfr={legArray:[{}]};
-    let alts=angular.copy(this.alternateAirports);
-    alts.shift({});
-    if (!flight.jumpseaterObject) flight.jumpseaterObject={bodyWt:'0',bagWt:'0',reason:'No Reason'};
-    console.log(flight)
-    this.flightModal(JSON.parse(JSON.stringify(flight)),alts,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
-  }
+  }  
   
   subtractTimes(time1, time2, arrLength) {
     const [h1, m1, s1] = time1.split(':').map(Number);

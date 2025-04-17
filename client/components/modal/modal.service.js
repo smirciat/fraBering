@@ -265,6 +265,7 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 flightModal:true,
+                securityDisp:flight.pfr.remark1||flight.security,
                 timestamp,timestamp,
                 alternates:alternates,
                 alternateDisp:alternateDisp,
@@ -279,6 +280,11 @@ angular.module('workspaceApp')
                 updateParam:function(key,obj){
                   if (key==='jumpseat') {
                     flight.jumpseaterObject.reason=obj;
+                    return;
+                  }
+                  if (key==='security') {
+                    flight.security=obj;
+                    flight.pfr.remarks1=obj;
                     return;
                   }
                   if (key==='alternate'&&obj==='None') flight.alternate=null;

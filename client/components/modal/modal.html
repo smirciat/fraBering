@@ -232,7 +232,7 @@
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">MEL</span>
             <span class="span-modal" style="float:right; padding-right:5px">
-              <input style="width:300px; height:27px; padding:0px;text-align: right; " type="text" ng-model="modal.flight.mel" ng-disabled="modal.allDisabled()">
+              <input style="width:300px; height:27px; text-align: right; " type="text" ng-model="modal.flight.mel" ng-disabled="modal.allDisabled()">
             </span>
           </div>
         </div>
@@ -240,7 +240,7 @@
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">Aircraft Other</span>
             <span class="span-modal" style="float:right; padding-right:5px">
-              <input style="width:300px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.other" ng-disabled="modal.allDisabled()">
+              <input style="width:300px; height:27px; text-align: right;" type="text" ng-model="modal.flight.other" ng-disabled="modal.allDisabled()">
             </span>
           </div>
         </div>
@@ -265,7 +265,7 @@
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">#Seats Removed from A/C (9 max)</span>
             <span class="span-modal">
-              <input style="width:75px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.bew.seatsRemoved" ng-disabled="modal.allDisabled()">
+              <input style="width:75px; height:27px; text-align: center;" type="text" ng-model="modal.flight.bew.seatsRemoved" ng-disabled="modal.allDisabled()">
             </span>
             <span class="span-modal" style="float:right; padding-right:5px">{{modal.calcSeatWeight(modal.flight.bew.seatsRemoved)}}</span>
           </div>
@@ -274,7 +274,7 @@
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">{{item.title}}</span>
             <span class="span-modal" style="float:right; padding-right:5px">
-              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.bew[item.val]" ng-disabled="modal.allDisabled()">
+              <input style="width:75px; height:27px; text-align: right;" type="text" ng-model="modal.flight.bew[item.val]" ng-disabled="modal.allDisabled()">
             </span>
           </div>
         </div>
@@ -282,10 +282,10 @@
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">Jumpseater Bag and Body Wt</span>
             <span class="span-modal">
-              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.jumpseaterObject.bagWt" ng-disabled="modal.allDisabled()">
+              <input style="width:75px; height:27px; text-align: right;" type="text" ng-model="modal.flight.jumpseaterObject.bagWt" ng-disabled="modal.allDisabled()">
             </span>
             <span class="span-modal" style="float:right; padding-right:5px">
-              <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.jumpseaterObject.bodyWt" ng-disabled="modal.allDisabled()">
+              <input style="width:75px; height:27px; text-align: right;" type="text" ng-model="modal.flight.jumpseaterObject.bodyWt" ng-disabled="modal.allDisabled()">
             </span>
           </div>
         </div>
@@ -293,7 +293,7 @@
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">TKS</span>
             <span class="span-modal">
-              <input style="width:75px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.bew.tks" ng-disabled="modal.allDisabled()">
+              <input style="width:75px; height:27px; text-align: center;" type="text" ng-model="modal.flight.bew.tks" ng-disabled="modal.allDisabled()">
               &nbsp;Gallons
             </span>
             <span class="span-modal" style="float:right; padding-right:5px">{{modal.tksCalc()}}</span>
@@ -331,7 +331,7 @@
               <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">FUEL REQUEST</span>
               <span class="span-modal" style="float:right; padding-right:5px">
                 EnterTotalizer FOB lbs&nbsp;
-                <input style="width:75px; height:27px; padding:0px;text-align: right;" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.allDisabled()">
+                <input style="width:75px; height:27px; text-align: right;" type="text" ng-model="modal.flight.fuelPreviouslyOnboard" ng-disabled="modal.allDisabled()">
               </span>
             </div>
           </div>
@@ -379,7 +379,7 @@
         <div class="inner-modal">
           <span class="span-modal" style="float:left;padding-left:5px;">{{item.title}}</span>
           <span class="span-modal" ng-if="item.title==='TKS'">
-            <input style="width:75px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.bew.tks" ng-disabled="modal.allDisabled()">
+            <input style="width:75px; height:27px; text-align: center;" type="text" ng-model="modal.flight.bew.tks" ng-disabled="modal.allDisabled()">
             &nbsp;Gallons
           </span>
           <span class="span-modal" ng-class="modal.fuelSanity(modal.flight.pfr.legArray[0].fuel)"  ng-if="item.title==='T/O Fuel'">
@@ -407,7 +407,7 @@
         <div class="inner-modal">
           <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">{{modal.flight.pilotObject.displayName||modal.flight.pilot}}</span>
           <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">
-            <input style="width:400px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.pilotComment" ng-disabled="modal.allDisabled()">
+            <input style="width:400px; height:27px; text-align: center;" type="text" ng-model="modal.flight.pilotComment" ng-disabled="modal.allDisabled()">
           </span>
         </div>
       </div>
@@ -415,14 +415,14 @@
         <div class="inner-modal">
           <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">{{modal.flight.coPilotObject.displayName||modal.flight.coPilot}}</span>
           <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">
-            <input style="width:400px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.coPilotComment" ng-disabled="modal.allDisabled()">
+            <input style="width:400px; height:27px; text-align: center;" type="text" ng-model="modal.flight.coPilotComment" ng-disabled="modal.allDisabled()">
           </span>
         </div>
       </div>
       <div class="orange-line white">
         <div class="inner-modal">
           <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">Jumpseater</span>
-          <span class="span-modal" style="font-weight:bold; padding-left:7px"><input style="width:150px; height:27px; padding:0px;text-align: center;"  type="text" ng-model="modal.flight.jumpseaterObject.name" ng-disabled="modal.allDisabled()"></span>
+          <span class="span-modal" style="font-weight:bold; padding-left:7px"><input style="width:150px; height:27px; text-align: center;"  type="text" ng-model="modal.flight.jumpseaterObject.name" ng-disabled="modal.allDisabled()"></span>
           <span class="span-modal" style="float:right; padding-left:7px;padding-right:5px;font-weight:bold;">
             <ui-select style="line-height:28px;height:28px;width:200px" ng-model="modal.jumpseatDisp" ng-disabled="modal.allDisabled()" theme="selectize" ng-change="modal.updateParam('jumpseat',modal.jumpseatDisp)">
               <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
@@ -435,15 +435,14 @@
       </div>
     </div>
     <div class="orange-line white" ng-show="modal.flight.jumpseaterObject.name">
-        <div class="inner-modal">
-          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">Bag/Body Wt</span>
-          <span class="span-modal" style="font-weight:bold; padding-left:7px">
-            <input style="width:150px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.jumpseaterObject.bagWt" ng-disabled="modal.allDisabled()">
-          </span>
-          <span class="span-modal" style="float:right; padding-left:7px;padding-right:5px;font-weight:bold;">
-            <input style="width:150px; height:27px; padding:0px;text-align: center;" type="text" ng-model="modal.flight.jumpseaterObject.bodyWt" ng-disabled="modal.allDisabled()">
-          </span>
-        </div>
+      <div class="inner-modal">
+        <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">Bag/Body Wt</span>
+        <span class="span-modal" style="font-weight:bold; padding-left:7px">
+          <input style="width:150px; height:27px; text-align: center;" type="text" ng-model="modal.flight.jumpseaterObject.bagWt" ng-disabled="modal.allDisabled()">
+        </span>
+        <span class="span-modal" style="float:right; padding-left:7px;padding-right:5px;font-weight:bold;">
+          <input style="width:150px; height:27px; text-align: center;" type="text" ng-model="modal.flight.jumpseaterObject.bodyWt" ng-disabled="modal.allDisabled()">
+        </span>
       </div>
     </div>
     <br>
@@ -498,8 +497,8 @@
     <hr class="my-hr">
     <div style="font-weight:bold;">
       <table class="table table-borderless">
-        <tr><td>SECURITY/SPECIAL OPS</td></tr>
-        <tr><td><input ng-style="modal.getWidth(500,'px')" name="security" type="text" ng-model="modal.flight.security" ng-disabled="modal.allDisabled()"></td></tr>
+        <tr><td>ENTER PFR REMARK HERE</td></tr>
+        <tr><td><input ng-style="modal.getWidth(500,'px')" name="security" type="text" ng-model="modal.securityDisp" ng-disabled="modal.allDisabled()" ng-blur="modal.updateParam('security',modal.securityDisp)"></td></tr>
       </table>
     </div>
     <hr class="my-hr">

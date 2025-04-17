@@ -410,12 +410,6 @@ export async function tf(req,res) {
     let date2=new Date(date);
     date2.setDate(date2.getDate()+1);
     date2=date2.toLocaleDateString();
-    let date3=new Date(date);
-    date3.setDate(date3.getDate()+2);
-    date3=date3.toLocaleDateString();
-    let date4=new Date(date);
-    date4.setDate(date4.getDate()+3);
-    date4=date4.toLocaleDateString();
     date=date.toLocaleDateString();
     arr.splice(0,8);
     let currentFlights=[];
@@ -490,7 +484,6 @@ export async function tf(req,res) {
           let speed=160;
           let airplanesIndex=airplanes.map(e=>e.registration).indexOf(flight.aircraft);
           if (airplanesIndex>-1) {
-            speed=250;
             flight.status=airplanes[airplanesIndex].status;
           }
           else flight.status="NORM";
@@ -557,9 +550,6 @@ export async function tf(req,res) {
   
     for (let [flightIndex, flight] of flights.entries()){
       if (!flight) return;
-      let fa=todaysFlights.filter(x=>{
-        return flight.date===x.date;
-      });
       //check flightLog for flight status (remove section when reverting to tflite api)
       for (let line of flightLog){
         if (!line.flightNum||!line.date) continue;
@@ -670,6 +660,22 @@ export async function tf(req,res) {
       
      //map flights array(from getManifests API) to todaysFlights array (from postgresql database)
       //let faIndex=fa.map(e=>e.flightNum).indexOf(flight.flightNum);
+      let matchedFA=todaysFlights.filter(f=>{return flight.date===f.date&&f.flightNum===flight.flightNum}).sort((a,b)=>{return b._id-a._id});
+      for (let x=1;x<matchedFA.length;x++){
+        let i=todaysFlights.map(e=>e._id).indexOf(matchedFA[x]._id);
+        if (i>-1) todaysFlights.splice(i,1);
+        if (matchedFA[x].pilotAgree||matchedFA[x].ocRelease||matchedFA[x].dispatchRelease){
+          console.log('Deletion Reprieve for flight ' + matchedFA[x].flightNum + ' ' + matchedFA[x].date );
+        }
+        else {
+          let entity=await TodaysFlight.find({where: {_id:matchedFA[x]._id}});
+          await entity.destroy();
+          console.log('destroyed duplicate flight ' + matchedFA[x].flightNum + ' ' + matchedFA[x].date );
+        }
+      }
+      let fa=todaysFlights.filter(f=>{
+        return flight.date===f.date;
+      });
       let faIndex=fa.map(e=>e.flightNum).indexOf(flight.flightNum);
       if (faIndex<0) {
           flight.colorPatch='false';
