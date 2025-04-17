@@ -7,6 +7,15 @@
   gap: 8px;
 }
 
+.layout-ipad {
+  width:100%;
+  display: grid;
+  grid-gap: 10px;
+  grid-auto-columns: max-content;
+  grid-template-rows: 1fr;
+  overflow-x: scroll;
+}
+
 .layout-phone {
   width:100%;
   display: grid;
@@ -61,6 +70,16 @@
   scrollbar-width:none;
 }
 
+.status-column-ipad{
+  width: 100vw;
+  grid-row: 1;
+  grid-column: auto;
+  height:calc(100vh - 120px);
+  font-size:1.5em;
+  overflow:auto;
+  scrollbar-width:none;
+}
+
 .status-column-phone{
   width: 100vw;
   grid-row: 1;
@@ -68,6 +87,14 @@
   height:calc(100vh - 60px);
   font-size:1.5em;
   overflow:auto;
+  scrollbar-width:none;
+}
+
+.status-column-flights-ipad{
+  width: 100vw;
+  grid-row: 1;
+  grid-column: auto;
+  font-size:1.5em;
   scrollbar-width:none;
 }
 

@@ -54,7 +54,8 @@ class StatusComponent {
   $onInit() {
     this.http.post('/api/todaysFlights/getManifest',{date:'04/13/2025',flightNum:'815'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
     this.width=document.documentElement.clientWidth;
-    if (this.width<=768) this.mobile=true;
+    if (this.width<768) this.mobile=true;
+    if (this.width===768) this.iPad=true;
     window.width=this.width;
     window.getWidth=function(num,kind){
       if (window.width<768) num=Math.floor(num/2);
@@ -881,16 +882,19 @@ class StatusComponent {
   }
   
   getColumnFlights(){
+    if (this.iPad) return "status-column-flights-ipad";
     if (this.mobile) return "status-column-flights-phone";
     return "status-column-flights";
   }
   
   getColumn(){
+    if (this.iPad) return "status-column-ipad";
     if (this.mobile) return "status-column-phone";
     return "status-column";
   }
   
   getLayout(){
+    if (this.iPad) return "layout-ipad";
     if (this.mobile) return "layout-phone";
     return "layout-OME";
     //if (this.base) return "layout-"+this.base.base;

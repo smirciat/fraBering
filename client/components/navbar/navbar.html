@@ -15,8 +15,24 @@
         <li ng-repeat="item in nav.menu" ui-sref-active="active">
             <a ui-sref="{{item.state}}">{{item.title}}</a>
         </li>
-        <li ng-show="nav.isAdmin()" ui-sref-active="active"><a ui-sref="admin">Admin</a></li>
-        <li ng-show="nav.Auth.isSuperAdmin()" ui-sref-active="active"><a ui-sref="audit">Audit</a></li>
+        <li ng-show="nav.Auth.isUser()" class="dropdown">
+          <a href="#" data-toggle="dropdown" class="dropdown-toggle">View <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+            <li><a>Status Board</a></li>
+            <li ng-show="nav.isAdmin()"><a>Build Next Day</a></li>
+            <li><a>Loads Available</a></li>
+            <li><a>Fuel Request</a></li>
+          </ul>
+        </li>
+        <li ng-show="nav.Auth.isUser()" class="dropdown">
+          <a href="#" data-toggle="dropdown" class="dropdown-toggle">Management <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+            <li ui-sref-active="active"><a ui-sref="main">Other</a></li>
+            <li ng-show="nav.isAdmin()" ui-sref-active="active"><a ui-sref="admin">Manage Users</a></li>
+            <li ng-show="nav.Auth.isSuperAdmin()" ui-sref-active="active"><a ui-sref="audit">Audit</a></li>
+            <li ng-show="nav.Auth.isUser()" ui-sref-active="active"><a ui-sref="roster">Roster</a></li>
+          </ul>
+        </li>
         <li style="padding-left:1em;padding-top:7px;">
           <div >
             <a style="float:left" href='#' ng-click="nav.minusDate()"><button class="btn btn-info" style="height:40px"><i class="fa fa-angle-left fa-autosize space-if"></i></button></a>

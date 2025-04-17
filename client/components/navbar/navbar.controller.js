@@ -5,11 +5,7 @@ class NavbarController {
   menu = [{
     'title': 'Home',
     'state': 'status'
-  },
-  {
-    'title': 'Other',
-    'state': 'main'
-  },
+  }
   ];
 
   isCollapsed = true;
@@ -111,7 +107,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='24';
+    let version='26';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
