@@ -213,6 +213,10 @@ angular.module('workspaceApp')
                 tksCalc=function(){
                   return Math.round(flight.bew.tks*9.2308);
                 },
+                noPfr=function(){
+                  if (flight.operation==='Test'||flight.operation==='Training'||flight.operation==='Ferry') return false;
+                  return !flight.pfr||!flight.pfr.legArray[0]||!flight.pfr.legArray[0].fuel;
+                },
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -273,6 +277,7 @@ angular.module('workspaceApp')
                 isAdmin:isAdmin,
                 isSuperAdmin:isSuperAdmin,
                 user:user,
+                noPfr:noPfr,
                 clearAlternate:function(){
                   alternateDisp='None';
                   flight.alternate=null;
@@ -357,12 +362,12 @@ angular.module('workspaceApp')
                   else return '';
                 },
                 isPilotDisabled:function(){
-                  return isWrongUser() || moreThanOneHour() || !flight.pfr.legArray[0].fuel || flight.pilotAgree || user.name==='Bering Air';
+                  return isWrongUser() || moreThanOneHour() || noPfr() || flight.pilotAgree || user.name==='Bering Air';
                 },
                 dispatchInfo:function(){
                   let string='Dispatch Release can ONLY be signed when: \r\n';
                   if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
-                  if (!flight.pfr||!flight.pfr.legArray[0]||!flight.pfr.legArray[0].fuel) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
+                  if (noPfr()) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
                   if (!isAdmin) string+='- You are logged in as an OC Manager or Dispatcher';
                   if (ocRequired(flight.color)) string+='- Flight color is NOT orange or red, and the FIKI box is NOT checked\r\n';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
@@ -371,7 +376,7 @@ angular.module('workspaceApp')
                 ocInfo:function(){
                   let string='OC Release can ONLY be signed when: \r\n';
                   if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
-                  if (!flight.pfr||!flight.pfr.legArray[0]||!flight.pfr.legArray[0].fuel) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
+                  if (noPfr()) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
                   if (!isSuperAdmin) string+='- You are logged in as an OC Manager';
                   if (!ocRequired(flight.color)) string+='- Flight color is orange or red, or the FIKI box is checked\r\n';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
@@ -380,7 +385,7 @@ angular.module('workspaceApp')
                 pilotInfo:function(){
                   let string='Pilot Acceptance can ONLY be signed when: \r\n';
                   if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
-                  if (!flight.pfr||!flight.pfr.legArray[0]||!flight.pfr.legArray[0].fuel) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
+                  if (noPfr()) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
                   if (isWrongUser()) string+='- You are logged in as the Captain of the flight.';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
                   window.alert(string);

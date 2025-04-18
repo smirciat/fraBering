@@ -819,16 +819,17 @@ export async function tf(req,res) {
         //let pfrMap=[];//pfrIndex=-1;
         if (flight.date===new Date(dateString).toLocaleDateString()) {
           let pfrMap=todaysPfrs.filter(pfr=>{
+            let matchFlightNum=pfr.flightNumber===flight.flightNum;
+            if (pfr.flightNumber&&pfr.flightNumber.substring(0,1)==='9'&&(flight.operation==='Training'||flight.operation==='Test'||flight.operation==='Ferry')) matchFlightNum=true;
             let ds=new Date(flight.date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
             if (!flight.pilotObject) flight.pilotObject={};//pfr.pilot===flight.pilotObject.displayName&&
-            return pfr.dateString===ds&&pfr.flightNumber===flight.flightNum&&pfr.pilot===flight.pilotObject.displayName&&pfr.acftNumber===flight.aircraft;
+            return pfr.dateString===ds&&matchFlightNum&&pfr.pilot===flight.pilotObject.displayName&&pfr.acftNumber===flight.aircraft;
           });
           if (pfrMap.length>0&&pfrMap[0].dateString) {
             flight.pfr=pfrMap[0];
           }
-          if (flight.pfr&&!flight.pfr.dateString) console.log(flight.flightNum)
-          //pfrIndex=todaysPfrs.map(e=>e.flightNumber).indexOf(flight.flightNum);
-          //if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
+          if (flight.pfr&&!flight.pfr.dateString) console.log(flight.flightNum);
+          //if (flight.flightNum.length>4&&flight.pfr&&flight.pfr.flightNumber) flight.flightNum=flight.pfr.flightNumber;
         }
         //console.log('Updating Flight ID: ' + todaysFlights[index].flightId);
         //console.log(todaysFlights[index]);

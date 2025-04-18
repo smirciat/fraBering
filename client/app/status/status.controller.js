@@ -1122,9 +1122,10 @@ class StatusComponent {
     return;
   }
   
-  getFlightNum(flightNum){
-    if (flightNum.length===3||flightNum.length===4) return 'BRG'+flightNum;
-    return 'ID# ' +flightNum;
+  getFlightNum(flight){
+    if (flight.flightNum.length===3||flight.flightNum.length===4) return 'BRG'+flight.flightNum;
+    if (flight.pfr&&flight.pfr.flightNumber) return 'BRG'+flight.pfr.flightNumber;
+    return 'ID# ' +flight.flightNum;
   }
   
   getFlightColor(flight){
