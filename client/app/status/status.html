@@ -33,6 +33,7 @@
           <div style="padding-left:0.5em;">
             <p style="margin:0px; border:none; display:inline-block;">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + 
                  (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong>{{flight.flightStatus}}</strong>
+                 <i ng-if="flight.knownIce" class="fa fa-solid fa-snowflake fa-autosize" aria-hidden="true"></i>
                  <i ng-if="flight.ocRelease||flight.dispatchRelease" class="fa fa-solid fa-thumbs-up fa-autosize" aria-hidden="true"></i>
                  <i ng-if="flight.pilotAgree" class="fa fa-solid fa-rocket fa-autosize" aria-hidden="true"></i></p>
             <br>

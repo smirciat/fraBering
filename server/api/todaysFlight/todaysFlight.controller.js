@@ -276,7 +276,7 @@ async function log(){
     flightLog.push(obj);
   });
   for (let flight of flightLog){
-    let sameFlights=flightLog.filter(f=>{return f.flightNum===flight.flightNum&&f.date===flight.date&&f.flightStatus});
+    let sameFlights=flightLog.filter(f=>{return f.flightNum.split('.')[0]===flight.flightNum.split('.')[0]&&f.date===flight.date&&f.flightStatus});
     if (sameFlights.length>0&&!flight.flightStatus) flight.flightStatus=sameFlights[0].flightStatus;
   }
   //console.log(flightLog);
