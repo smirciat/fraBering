@@ -275,6 +275,10 @@ async function log(){
     //});
     flightLog.push(obj);
   });
+  for (let flight of flightLog){
+    let sameFlights=flightLog.filter(f=>{return f.flightNum===flight.flightNum&&f.date===flight.date&&f.flightStatus});
+    if (sameFlights.length>0&&!flight.flightStatus) flight.flightStatus=sameFlights[0].flightStatus;
+  }
   //console.log(flightLog);
   return flightLog.sort((a,b)=>{
     return a.flightNum-b.flightNum||new Date("1970-01-01T" + a.departTime)-new Date("1970-01-01T" + b.departTime);
@@ -438,7 +442,7 @@ export async function tf(req,res) {
       obj.flightNum=temp[8];
       obj.flightId=temp[temp.length-1];
       if (index>0&&!temp[8]&&obj.flightId===currentFlights[index-1].flightId) obj.flightNum=currentFlights[index-1].flightNum;
-      if (!obj.flightNum) obj.flightNum=obj.flightId;
+      if (!obj.flightNum||obj.flightNum==='Ferry'||obj.flightNum==='Training'||obj.flightNum==='Test') obj.flightNum=obj.flightId;
       if (obj.flightNum.split('.').length>1) obj.flightNum=obj.flightNum.split('.')[0];
       currentFlights.push(obj);
       index++;
@@ -556,7 +560,7 @@ export async function tf(req,res) {
         let flightNumArr=line.flightNum.split('.');
         if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
           //if (line.aircraft) flight.aircraft=line.aircraft;
-          if (line.flightStatus) flight.flightStatus=line.flightStatus;
+          flight.flightStatus=line.flightStatus;
         } 
       }
       //update weather per destination via airportObjs
@@ -727,12 +731,12 @@ export async function tf(req,res) {
         todaysFlights[index].autoOnboard=flight.autoOnboard;
         todaysFlights[index].operation=flight.operation;
         todaysFlights[index].flightLegs=flight.flightLegs;
-        if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
+        //if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
           //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' date'); 
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].flightStatus=flight.flightStatus;
-        }
+        //}
         if (todaysFlights[index].date!==flight.date) {
           //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' date'); 

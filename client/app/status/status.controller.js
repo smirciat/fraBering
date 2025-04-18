@@ -53,6 +53,7 @@ class StatusComponent {
   
   $onInit() {
     this.http.post('/api/todaysFlights/getManifest',{date:'04/13/2025',flightNum:'815'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
+    //this.http.post('/api/todaysFlights/getManifests').then(res=>{console.log(res.data)});
     this.width=document.documentElement.clientWidth;
     if (this.width<768) this.mobile=true;
     if (this.width===768) this.iPad=true;
@@ -111,10 +112,11 @@ class StatusComponent {
       if (flight.pilotAgree&&flight.pilotAgree!==""&&!flight.releaseTimestamp) flight.releaseTimestamp=new Date();
       if (flight.ocRelease&&flight.ocRelease!==""&&!flight.ocReleaseTimestamp) flight.ocReleaseTimestamp=new Date();
       if (flight.dispatchRelease&&flight.dispatchRelease!==""&&!flight.dispatchReleaseTimestamp) flight.dispatchReleaseTimestamp=new Date();
+      flight.runScroll=true;
       //update flight in database
       this.http.patch('/api/todaysFlights/'+flight._id,flight).then(res=>{
         this.spinner=false;
-        //if (flight.pilotAgree||flight.ocRelease||flight.dispatchRelease) this.quickModal("Flight Release Signature has Been Recorded","Success!",false);
+        if (flight.pilotAgree||flight.ocRelease||flight.dispatchRelease) this.quickModal("Flight Release Signature has Been Recorded","Success!",false);
       })
       .catch(err=>{
         console.log(err);
