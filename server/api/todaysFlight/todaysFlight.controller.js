@@ -834,6 +834,13 @@ export async function tf(req,res) {
         //console.log('Updating Flight ID: ' + todaysFlights[index].flightId);
         //console.log(todaysFlights[index]);
         delete flight._id;
+        delete flight.pilotAgree;
+        delete flight.ocRelease;
+        delete flight.dipatchRelease;
+        delete flight.releaseTimestamp;
+        delete flight.ocReleaseTimestamp;
+        delete flight.dispatchReleaseTimestamp;
+        
         TodaysFlight.find({
           where: {
             _id: u

@@ -48,11 +48,11 @@ let callbackFunction=()=>{
           console.log('interval going');
         })
         .catch(err=>{console.log(err.response.data)});
-  axios.post(baseUrl + '/api/todaysFlights/record',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
-        .then((response)=>{
-          console.log('recordAssessment function successfully run');
-        })
-        .catch(err=>{console.log(err.response.data)});
+  //axios.post(baseUrl + '/api/todaysFlights/record',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
+        //.then((response)=>{
+          //console.log('recordAssessment function successfully run');
+        //})
+        //.catch(err=>{console.log(err.response.data)});
 };
 
 let metarFunction=()=>{
