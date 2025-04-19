@@ -264,6 +264,7 @@ async function log(){
     let obj={
       aircraft:line[4],
       flightStatus:line[statusIndex],
+      arrTime:line[16],
       flightNum:line[3],
       flightId:line[1],
       date:new Date(line[0]).toLocaleDateString(),
@@ -731,6 +732,11 @@ export async function tf(req,res) {
         todaysFlights[index].autoOnboard=flight.autoOnboard;
         todaysFlights[index].operation=flight.operation;
         todaysFlights[index].flightLegs=flight.flightLegs;
+        //find arrival time if same depart and dest
+        if (flight.airports[0]===flight.airports[1]&&flight.departTimes.length===2){
+          let i=flightLog.map(e=>e.flightId).indexOf(flight.flightNum);
+          if (i>-1) flight.departTimes[1]=flightLog[i].arrTime;
+        }
         //if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
           //todaysFlights[index].runScroll=true;
           //console.log(todaysFlights[index]._id+' date'); 
@@ -785,7 +791,8 @@ export async function tf(req,res) {
         todaysFlights[index].departTimes.forEach((t,i)=>{
                   let timeString=t.toString();
                   let d=new Date();
-                  const [hours, minutes, seconds] = timeString.split(":").map(Number);
+                  let [hours, minutes, seconds] = timeString.split(":").map(Number);
+                  if (!seconds) seconds=0;
                   d.setHours(hours, minutes, seconds);
                   let resp=d.toISOString();
                   if (resp.split('T').length>0) {
