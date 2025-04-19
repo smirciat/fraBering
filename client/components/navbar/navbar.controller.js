@@ -22,6 +22,8 @@ class NavbarController {
     this.scope=$scope;
     this.window=$window;
     this.timeout=$timeout;
+    this.view="board";
+    this.views=["board","next","load","fuel"];
     this.bases=[{base:"OME",four:"PAOM"},{base:"OTZ",four:"PAOT"},{base:"UNK",four:"PAUN"},{base:"HEL",four:"HELI"}];
     //this.base=this.bases[0];
     //window.base=this.base;
@@ -70,6 +72,7 @@ class NavbarController {
   $onInit() {
     this.user=this.Auth.getCurrentUser();
     if (this.user.role==='user') this.isFilter=true;
+    if (window.localStorage.getItem('view')) this.setView(this.views.indexOf(window.localStorage.getItem('view')));
     let tempFilter=window.localStorage.getItem('isFilter');
     if (tempFilter==='true') this.isFilter=true;
     if (tempFilter==='false') this.isFilter=false;
@@ -107,7 +110,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='31';
+    let version='32';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -535,6 +538,13 @@ class NavbarController {
   changeIsFilter(){
     this.isFilter=!this.isFilter;
     window.localStorage.setItem('isFilter',this.isFilter.toString());
+  }
+  
+  setView(index){
+    if (index>-1&&index<4){
+      window.localStorage.setItem('view',this.views[index]);
+      this.view=this.views[index];
+    }
   }
 }
 

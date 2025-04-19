@@ -1,6 +1,6 @@
+<div ng-show="status.spinner" class="myspinner"></div>
 <navbar></navbar><!--style="background-color:rgba(51, 170, 51, .02);" -->
-<section ng-class="status.getLayout()" style="background-color:#ffffcc;" ng-if="status.Auth.isUser()">
-  <div ng-show="status.spinner" class="myspinner"></div>
+<section ng-class="status.getLayout()" style="background-color:#ffffcc;" ng-if="status.Auth.isUser()&&status.view==='board'">
   <div ng-if="status.fixedWing()" ng-class="status.getColumn()">
       <div class="grid-parent" ng-repeat="airport in status.airports track by airport._id">
         <div class="airport" ng-class="status.airportClass(airport)"
@@ -215,6 +215,57 @@
       </div>
       
       
+  </div>
+</section>
+<section ng-if="status.view==='next'&&status.Auth.isAdmin()">
+  <h3>Next Day View</h3>
+</section>
+<section style="background-color:#ffffcc;margin:auto;width:75%;" ng-if="status.view==='load'&&status.Auth.isUser()">
+  <h3>Loads Available View</h3>
+  <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'">
+    <div ng-show="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
+      <div class="grid-parent-airport">
+        <div>
+          <p style="margin:10px; padding:10px; border:1px solid black; text-align:center; width:6em;" ng-class="flight.colorLock||flight.color" 
+                  ng-click="status.lookAtFlight(flight)">
+            {{status.getFlightNum(flight)}}
+          </p>
+        </div>
+        <div style="padding-left:0.5em;">
+          <p style="margin:0px; border:none; display:inline-block;">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + 
+               (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong>{{flight.flightStatus}}</strong></p>
+               
+          <br>
+          <div style="display:inline-block;">
+            <p style="border:none;">{{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}&nbsp;<strong>LOAD AVAILABLE: {{flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeight}}</strong></p>
+          </div>
+        </div>  
+      </div>
+    </div>  
+  </div>
+</section>
+<section style="background-color:#ffffcc;margin:auto;width:75%;" ng-if="status.view==='fuel'&&status.Auth.isUser()">
+  <h3>Fuel View</h3>
+  <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'">
+    <div ng-show="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
+      <div class="grid-parent-airport">
+        <div>
+          <p style="margin:10px; padding:10px; border:1px solid black; text-align:center; width:6em;" ng-class="flight.colorLock||flight.color" 
+                  ng-click="status.lookAtFlight(flight)">
+            {{status.getFlightNum(flight)}}
+          </p>
+        </div>
+        <div style="padding-left:0.5em;">
+          <p style="margin:0px; border:none; display:inline-block;">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + 
+               (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong>{{flight.flightStatus}}</strong></p>
+               
+          <br>
+          <div style="display:inline-block;">
+            <p style="border:none;">{{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}&nbsp;<strong>FUEL REQUEST: {{status.fuelRequest(flight)}}</strong></p>
+          </div>
+        </div>  
+      </div>
+    </div>  
   </div>
 </section>
 

@@ -30,6 +30,7 @@ class StatusComponent {
     this.stopped;
     this.longPressTimer;
     this.longPressDuration = 500;
+    this.view='board';
     this.updateKeys=['pilotAgree','releaseTimestamp','ocRelease','ocReleaseTimestamp','dispatchRelease','dispatchReleaseTimestamp','knownIce'];
     this.B190Configs=['Mx','Cargo','Primary 9','9','13','15','17','19','Low Hours','Medivac','Silver Sky'];
     this.B190Equipments=[0,0,134,134,137,97,57,57.5,0,0,0];
@@ -208,6 +209,10 @@ class StatusComponent {
     //this.scope.$watch('nav.isToggleAssigned',(newVal,oldVal)=>{
     //  this.toggleAssigned=newVal;
     //});
+    this.scope.$watch('nav.view',(newVal,oldVal)=>{
+      if (!newVal) return;
+      this.view=newVal;
+    });
     this.scope.$watch('nav.isFilter',(newVal,oldVal)=>{
       this.isFilter=newVal;
       this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights);
@@ -498,6 +503,16 @@ class StatusComponent {
       if (element) element.scrollIntoView({ behavior: 'smooth' });
       //document.body.scrollTop = document.documentElement.scrollTop = 0;
     //},0);
+  }
+  
+  fuelRequest(flight){
+    if (!flight.pfr) return "WAITING ON PILOT";
+    let response="FILL TO: "+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1);
+    if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"){
+      let main=(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1-flight.autoOnboard*1)/2;
+      response +=", " + Math.floor(main/6.7) + " GALLONS/side";
+    }
+    return response;
   }
   
   flightRiskClass(airportObjs){

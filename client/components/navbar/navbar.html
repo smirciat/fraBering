@@ -18,10 +18,10 @@
         <li ng-show="nav.Auth.isUser()" class="dropdown">
           <a href="#" data-toggle="dropdown" class="dropdown-toggle">View <b class="caret"></b></a>
           <ul class="dropdown-menu">
-            <li><a>Status Board</a></li>
-            <li ng-show="nav.isAdmin()"><a>Build Next Day</a></li>
-            <li><a>Loads Available</a></li>
-            <li><a>Fuel Request</a></li>
+            <li ng-click="nav.setView(0)"><a>Status Board</a></li>
+            <li ng-click="nav.setView(1)" ng-show="nav.isAdmin()"><a>Build Next Day</a></li>
+            <li ng-click="nav.setView(2)"><a>Loads Available</a></li>
+            <li ng-click="nav.setView(3)"><a>Fuel Request</a></li>
           </ul>
         </li>
         <li ng-show="nav.Auth.isUser()" class="dropdown">

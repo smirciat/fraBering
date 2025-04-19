@@ -269,8 +269,8 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 flightModal:true,
-                securityDisp:flight.pfr.remark1||flight.security,
-                timestamp,timestamp,
+                securityDisp:flight.pfr.remarks1||flight.security,
+                timestamp:timestamp,
                 alternates:alternates,
                 alternateDisp:alternateDisp,
                 pilotAgree:flight.pilotAgree,
@@ -297,7 +297,6 @@ angular.module('workspaceApp')
                     flight[key]=obj;
                     let i=alternateAirports.map(e=>e.icao).indexOf(flight.alternate);
                     if (i>-1) flight.altObj=alternateAirports[i];
-                    console.log(flight.altObj)
                   }
                   
                 },
