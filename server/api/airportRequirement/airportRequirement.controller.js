@@ -224,6 +224,13 @@ export async function metars(req,res) {
       delete airport.currentMetarObj;
       let tempAirport=JSON.parse(JSON.stringify(airport));
       delete tempAirport._id;
+      delete tempAirport.runwayScore;
+      delete tempAirport.depth;
+      delete tempAirport.percent;
+      delete tempAirport.contaminent;
+      delete tempAirport.signature;
+      delete tempAirport.timestamp;
+      delete tempAirport.comment;
       AirportRequirement.find({
         where: {
           _id: id

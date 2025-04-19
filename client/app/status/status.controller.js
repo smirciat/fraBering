@@ -30,6 +30,7 @@ class StatusComponent {
     this.stopped;
     this.longPressTimer;
     this.longPressDuration = 500;
+    this.updateKeys=['pilotAgree','releaseTimestamp','ocRelease','ocReleaseTimestamp','dispatchRelease','dispatchReleaseTimestamp','knownIce'];
     this.B190Configs=['Mx','Cargo','Primary 9','9','13','15','17','19','Low Hours','Medivac','Silver Sky'];
     this.B190Equipments=[0,0,134,134,137,97,57,57.5,0,0,0];
     this.BE20Configs=['Mx','9','Primary','Secondary','Single','Tandem','Aft Tandem','Low Hours','Silver Sky'];
@@ -98,7 +99,7 @@ class StatusComponent {
       let index=this.airports.map(e => e._id).indexOf(airport._id);
       if (index>-1) this.airports[index]=airport;
     });
-    this.flightModal=this.Modal.confirm.flight(flight=>{
+    this.flightModalCallback=(flight)=>{
       this.spinner=true;
       if (flight.security){
         //patch pfr with pfr.remark1
@@ -116,7 +117,23 @@ class StatusComponent {
       //update flight in database
       this.http.patch('/api/todaysFlights/'+flight._id,flight).then(res=>{
         this.spinner=false;
+        console.log('Updated Flight ' + flight.flightNum)
         if (flight.pilotAgree||flight.ocRelease||flight.dispatchRelease) this.quickModal("Flight Release Signature has Been Recorded","Success!",false);
+        //updates have been failing occasionally, even with positive confimation, try to prevent that
+        this.timeout(()=>{
+          let index=this.todaysFlights.map(e=>e._id).indexOf(flight._id);
+          if (index>-1) {
+            let match=true;
+            for (let key of this.updateKeys){
+              if (key.slice(-5)==='stamp'&&this.todaysFlights[index][key]&&flight[key]) {
+                if (new Date(this.todaysFlights[index][key]).toLocaleString()!==new Date(flight[key]).toLocaleString()) match=false;
+              }
+              else if (this.todaysFlights[index][key]!==flight[key]) match=false;
+            }
+            console.log(match);
+            if (!match) this.flightModalCallback(flight);
+          }
+        },2500);
       })
       .catch(err=>{
         console.log(err);
@@ -126,6 +143,9 @@ class StatusComponent {
       //update flight in this.todaysFlights
       let index=this.todaysFlights.map(e => e._id).indexOf(flight._id);
       if (index>-1) Object.assign(this.todaysFlights[index], flight);
+    };
+    this.flightModal=this.Modal.confirm.flight(flight=>{
+      this.flightModalCallback(flight);
     });
     this.runwayModal=this.Modal.confirm.runway(res=>{
       this.spinner=true;
@@ -198,14 +218,6 @@ class StatusComponent {
       this.timeout(()=>{
         this.scope.nav.isCollapsed=true;
         this.base=newVal;
-        //if (this.base&&this.base.base==='UNK') {
-        //  this.toggleAssigned=false;
-        //  window.toggleAssigned=this.toggleAssigned;
-        //}
-        //else {
-        //   this.toggleAssigned=false;
-        //  window.toggleAssigned=this.toggleAssigned;
-        //}
         if (!oldVal) {
           this.spinner=false;
           return;
@@ -241,7 +253,7 @@ class StatusComponent {
           this.socket.unsyncUpdates('todaysFlight');
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
             this.allTodaysFlights=array;
-            //no need to run the socket update if its just a color patch!  Runasay conndition with multiple clients ensues!
+            //no need to run the socket update if its just a color patch!  Runaway conndition with multiple clients ensues!
             if (item.colorPatch&&item.colorPatch==='true') return;
             if (item.runScroll||(item.date===this.dateString&&event==="created")) {
               this.spinner=true;

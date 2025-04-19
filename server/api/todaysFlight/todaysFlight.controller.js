@@ -836,10 +836,11 @@ export async function tf(req,res) {
         delete flight._id;
         delete flight.pilotAgree;
         delete flight.ocRelease;
-        delete flight.dipatchRelease;
+        delete flight.dispatchRelease;
         delete flight.releaseTimestamp;
         delete flight.ocReleaseTimestamp;
         delete flight.dispatchReleaseTimestamp;
+        delete flight.knownIce;
         
         TodaysFlight.find({
           where: {
