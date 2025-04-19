@@ -33,7 +33,7 @@
       <div class="modal-column" style="text-align:right"><label>Entered By: </label></div>
       <div style="display:inline-block">
         <button class="btn btn-success" ng-click="modal.signClick()">
-          <i class="fa fa-solid fa-pencil fa-autosize" ></i></button>
+          <i class="fa fa-solid fa-pen fa-autosize" ></i></button>
           <span>{{modal.manualObs.signature}}</span></div>
       <!--<div class="modal-column"><input class="form-control" name="signature" type="text" ng-model="modal.formData.signature"></div>-->
       <div class="modal-column"><label>{{modal.getTimestamp()}}</label></div>
@@ -149,7 +149,7 @@
       <div class="modal-column" style="text-align:right"><label>Entered By: </label></div>
       <div style="display:inline-block">
         <button class="btn btn-success" ng-click="modal.signClick()">
-          <i class="fa fa-solid fa-pencil fa-autosize" ></i></button>
+          <i class="fa fa-solid fa-pen fa-autosize" ></i></button>
           <span>{{modal.formData.signature}}</span></div>
       <!--<div class="modal-column"><input class="form-control" name="signature" type="text" ng-model="modal.formData.signature"></div>-->
       <div class="modal-column"><label>{{modal.timestampObj.timestampString}}</label></div>
@@ -511,7 +511,7 @@
             <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || !modal.isAdmin || modal.noPfr() || modal.flight.pfr.legArray[0].fuel<1 || modal.flight.knownIce || modal.allDisabled()">
                 <i class="fa fa-solid fa-pen fa-autosize" ></i></button>
             <span>{{modal.flight.dispatchRelease}}</span>
-            <span><i class="fa fa-solid fa-info-circle fa-autosize" ng-click="modal.dispatchInfo()"></i></span>
+            <span style="display:inline-block;padding-left:15px;height:45px;width:60px" ng-click="modal.dispatchInfo()"><i class="fa fa-solid fa-info-circle fa-autosize"></i></span>
           </div>
         <td><p style="padding-top:5px; margin-top:7px;">/</p></td>
         <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.dispatchReleaseTimestamp)}}</p></td>     
@@ -523,7 +523,7 @@
             <button class="btn btn-success" ng-click="modal.ocClick()" ng-disabled="!modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || !modal.isSuperAdmin || modal.noPfr() || modal.flight.pfr.legArray[0].fuel<1 || modal.allDisabled()">
                 <i class="fa fa-solid fa-pen fa-autosize" ></i></button>
             <span>{{modal.flight.ocRelease}}</span>
-            <span><i class="fa fa-solid fa-info-circle fa-autosize" ng-click="modal.ocInfo()"></i></span>
+            <span style="display:inline-block;padding-left:15px;height:45px;width:60px" ng-click="modal.ocInfo()"><i class="fa fa-solid fa-info-circle fa-autosize"></i></span>
           </div>
         </td>  
         <td><p style="padding-top:5px; margin-top:7px;">/</p></td>
@@ -539,7 +539,7 @@
             <button class="btn btn-success" ng-click="modal.pilotClick()" ng-disabled="modal.isPilotDisabled()">
                 <i class="fa fa-solid fa-pen fa-autosize"></i></button>
             <span>{{modal.flight.pilotAgree}}</span>
-            <span><i class="fa fa-solid fa-info-circle fa-autosize"  ng-click="modal.pilotInfo()"></i></span>
+            <span style="display:inline-block;padding-left:15px;height:45px;width:60px" ng-click="modal.pilotInfo()"><i class="fa fa-solid fa-info-circle fa-autosize" ></i></span>
           </div>
         </td>  
         <!--<td><input name="pilotAgree" type="text" ng-model="modal.pilotAgree" ng-blur="modal.acceptSig(modal.pilotAgree)" ng-disabled="modal.pilotDisabled(modal.flight) || modal.moreThanOneHour() || modal.flight.pilotAgree"></td>-->
