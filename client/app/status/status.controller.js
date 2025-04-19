@@ -509,7 +509,8 @@ class StatusComponent {
     if (!flight.pfr) return "WAITING ON PILOT";
     let response="FILL TO: "+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1);
     if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"){
-      let main=(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1-flight.autoOnboard*1)/2;
+      let fob=flight.fuelPreviouslyOnboard||flight.autoOnboard;
+      let main=(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1-fob*1)/2;
       response +=", " + Math.floor(main/6.7) + " GALLONS/side";
     }
     return response;
