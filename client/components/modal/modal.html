@@ -55,11 +55,11 @@
     </div>
     <div class="airport-modal" ng-class="modal.metarObj.windColor">
       <p style="margin:0px;padding:5px">Wind Gust/XWind</p>
-      <p style="margin:0px;padding:5px">{{modal.metarObj['Wind-Gust']+'/'+modal.metarObj.xwind}}</p>
+      <p style="margin:0px;padding:5px">{{modal.metarObj['Wind-Gust']+' / '+modal.metarObj.xwind}}</p>
     </div>
     <div class="airport-modal" ng-class="modal.metarObj.runwayColor">
       <p style="margin:0px;padding:5px">Runway Score</p>
-      <p style="margin:0px;padding:5px">{{modal.metarObj.airport.runwayScore}}</p>
+      <p style="margin:0px;padding:5px">{{modal.metarObj.airport.runwayScore+' / '+modal.metarObj.airport.openClosed}}</p>
     </div>
     <div class="airport-modal" ng-class="modal.metarObj.freezingColor">
       <p style="margin:0px;padding:5px">Freezing Precip</p>

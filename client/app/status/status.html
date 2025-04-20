@@ -5,7 +5,9 @@
       <div class="grid-parent" ng-repeat="airport in status.airports track by airport._id">
         <div class="airport" ng-class="status.airportClass(airport)"
               tooltip-placement="right" uib-tooltip="{{airport.metarObj.taf}}">
-          <h1 ng-mousedown="status.handleClick($event,airport,'taf')" id="airport{{airport._id}}">{{airport.threeLetter}}</h1>
+          <h1 ng-mousedown="status.handleClick($event,airport,'taf')" id="airport{{airport._id}}">
+            {{airport.threeLetter}}
+          </h1>
         </div>
         <div class="comment" ng-click="status.sign(airport)" ng-class="status.nonPilot(airport.nonPilot)">
           <p class="tiny">ReportedBy:</p>

@@ -875,6 +875,7 @@ function overallRiskClass(metarObj){
     //runway
     //if (!metarObj.airport) return returnString+=' '+color;
     tempColor=returnColor({yellow:3,orange:2,red:1},airport.runwayScore,'above');
+    if (airport.openClosed==="Closed") tempColor="airport-pink";
     metarObj.runwayColor=tempColor;
     metarObj.visibilityColor='airport-blue';
     metarObj.ceilingColor='airport-blue';
@@ -1051,6 +1052,7 @@ async function airportNameToMetar(airport){
   if (!res||!res.data||res.data.Error) return airport;
   let foundIndex=-1;
   for (let i=0;i<res.data.length;i++){
+    if (foundIndex>-1) break;
     if (res.data[i].country==='US'&&res.data[i].state==='AK') foundIndex=i;
   }
   if (foundIndex<0) {

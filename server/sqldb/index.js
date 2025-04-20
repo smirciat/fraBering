@@ -14,6 +14,7 @@ var db = {
 };
 
 // Insert models below
+db.Signature = db.sequelize.import('../api/signature/signature.model');
 db.Snapshot = db.sequelize.import('../api/snapshot/snapshot.model');
 db.TodaysFlight = db.sequelize.import('../api/todaysFlight/todaysFlight.model');
 db.Calendar = db.sequelize.import('../api/calendar/calendar.model');

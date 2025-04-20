@@ -251,6 +251,7 @@ angular.module('workspaceApp')
                   return flight.bew.seatWeight;
                 },
                 oweCalc:function(){
+                  if (flight.equipment.name!=="Caravan") flight.bew.tks=0;
                   return Math.round(flight.bew.tks*9.2308+flight.bew.seatWeight*1+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.jumpseaterObject.bodyWt*1+flight.jumpseaterObject.bagWt*1);
                 },
                 reasons:reasons,

@@ -24,6 +24,7 @@ export default function(app) {
   
   //
   // Insert routes below
+  app.use('/api/signatures', require('./api/signature'));
   app.use('/api/snapshots', require('./api/snapshot'));
   app.use('/api/todaysFlights', require('./api/todaysFlight'));
   app.use('/api/airportRequirements', require('./api/airportRequirement'));

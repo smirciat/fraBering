@@ -40,20 +40,16 @@ class StatusComponent {
     this.airportOrder=['PAOM','PAUN','PAOT','PAGM','PASA','PASH','PAIW','PATC','PFKT','PATE','PAWM','PAGL','PFEL',
             'PAKK','PFSH','PAMK','WBB','PADG','PAPO','PALU','PAVL','PAWN','PFNO','PAIK','PASK','PAFM','PAGH','PAOB','PABL','PADE'];
     $scope.$on('$destroy', function() {
-        socket.unsyncUpdates('airportRequirement');
-    });
-    $scope.$on('$destroy', function() {
-        socket.unsyncUpdates('airplane');
-    });
-    $scope.$on('$destroy', function() {
-        socket.unsyncUpdates('calendar');
-    });
-    $scope.$on('$destroy', function() {
         socket.unsyncUpdates('todaysFlight');
+        socket.unsyncUpdates('calendar');
+        socket.unsyncUpdates('airplane');
+        socket.unsyncUpdates('signature');
+        socket.unsyncUpdates('airportRequirement');
     });
   }
   
   $onInit() {
+    this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
     this.http.post('/api/todaysFlights/getManifest',{date:'04/13/2025',flightNum:'815'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
     //this.http.post('/api/todaysFlights/getManifests').then(res=>{console.log(res.data)});
     this.width=document.documentElement.clientWidth;
@@ -102,14 +98,14 @@ class StatusComponent {
     });
     this.flightModalCallback=(flight)=>{
       this.spinner=true;
-      if (flight.security){
+      //if (flight.security){
         //patch pfr with pfr.remark1
-        this.http.post('/api/airplanes/updateFirebaseNew',{collection:'flights',doc:{_id:flight.pfr._id,remarks1:flight.security}}).then(res=>{
-          console.log(res.data)
-        }).catch(err=>{
-          console.log(err);
-        });
-      }
+        //this.http.post('/api/airplanes/updateFirebaseNew',{collection:'flights',doc:{_id:flight.pfr._id,remarks1:flight.security}}).then(res=>{
+          //console.log(res.data)
+        //}).catch(err=>{
+          //console.log(err);
+        //});
+      //}
       if ((flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree&&!flight.colorLock) flight.colorLock=flight.color;
       if (flight.pilotAgree&&flight.pilotAgree!==""&&!flight.releaseTimestamp) flight.releaseTimestamp=new Date();
       if (flight.ocRelease&&flight.ocRelease!==""&&!flight.ocReleaseTimestamp) flight.ocReleaseTimestamp=new Date();
@@ -134,7 +130,7 @@ class StatusComponent {
             console.log(match);
             if (!match) this.flightModalCallback(flight);
           }
-        },2500);
+        },5000);
       })
       .catch(err=>{
         console.log(err);
@@ -383,6 +379,32 @@ class StatusComponent {
       //},0);
       
       return array;// array.sort((a,b)=>{return a.departTimes[0].localeCompare(b.departTimes[0])});
+  }
+  
+  filterDuplicates(arr, key1, key2) {
+    const seen = new Set();
+    return arr.filter(obj => {
+      const identifier = `${obj[key1]}-${obj[key2]}`;
+      const isDuplicate = seen.has(identifier);
+      seen.add(identifier);
+      return !isDuplicate;
+    });
+  }
+  
+  updateSignatures(item){
+    let tf=this.todaysFlights.filter(f=>{return f.date===item.date&&f.flightNum===item.flightNum});
+    if (tf.length>0) {
+      let i=this.todaysFlights.map(e=>e._id).indexOf(tf[0]._id);
+      if (i>-1) {
+        this.todaysFlights[i].knownIce=item.knownIce;
+        this.todaysFlights[i].pilotAgree=item.pilotAgree;
+        this.todaysFlights[i].dispatchRelease=item.dispatchRelease;
+        this.todaysFlights[i].ocRelease=item.ocRelease;
+        this.todaysFlights[i].releaseTimestamp=item.releaseTimestamp;
+        this.todaysFlights[i].ocReleaseTimestamp=item.ocReleaseTimestamp;
+        this.todaysFlights[i].dispatchReleaseTimestamp=item.dispatchReleaseTimestamp;
+      }
+    }
   }
   
   getUnofficial(metarObj){
@@ -653,7 +675,7 @@ class StatusComponent {
     //if (!airport.timestamp||!score) return 'airport-blue';
     const tenHoursAgo = new Date(now.getTime() - (10 * 60 * 60 * 1000)); // 10 hours in milliseconds
     //if (new Date(airport.timestamp) < tenHoursAgo) return 'airport-blue';
-
+    if (airport.openClosed==='Closed') return 'airport-pink';
     score=parseInt(score,10);
     //if (isNaN(score)) return "airport-green";
     if (score<=1) return "airport-pink";
@@ -776,6 +798,7 @@ class StatusComponent {
       }
       if (!flight.airplaneObj.tempBew) flight.airplaneObj.tempBew={};
       if (!flight.bew||!flight.bew.bew) flight.bew={fo:0,bew:flight.airplaneObj.tempBew.aircraftAsWeighed,equipment:equipment,tks:tks,captain:200,jumpseater:0,seatsRemoved:0,seatWeight:0};
+      flight.bew.bew=flight.airplaneObj.tempBew.aircraftAsWeighed;
       if (!flight.pfr) flight.pfr={legArray:[{}]};
       let alts=angular.copy(this.alternateAirports);
       alts.shift({});
