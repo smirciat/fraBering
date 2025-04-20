@@ -113,7 +113,7 @@ class StatusComponent {
       flight.runScroll=true;
       //update flight in database
       flight.updated=new Date();
-      flight.updatedBy=this.user._id;
+      flight.updatedBy=this.user.name;
       let id=flight._id;
       delete flight._id;
       this.http.post('/api/signatures',flight);
@@ -535,11 +535,16 @@ class StatusComponent {
   
   fuelRequest(flight){
     if (!flight.pfr) return "WAITING ON PILOT";
-    let response="FILL TO: "+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1);
+    let response="FILL TO: "+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1) + " LBS";
     if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"){
       let fob=flight.fuelPreviouslyOnboard||flight.autoOnboard;
       let main=(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1-fob*1)/2;
-      response +=", " + Math.floor(main/6.7) + " GALLONS/side";
+      let gallons=Math.floor(main/6.7);
+      if (gallons<0) response+=', DOUBLE CHECK FUEL REQUEST';
+      else response +=", " + Math.floor(main/6.7) + " GALLONS/side";
+    }
+    else {
+      response +=", " + Math.floor((flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1)/2) + " LBS/side";
     }
     return response;
   }
