@@ -71,13 +71,9 @@ export function index(req, res) {
 // Gets a list of Signatures
 export function day(req, res) {
   let date=req.body.date||new Date().toLocaleDateString();
-  console.log(date);
-  return Signature.findAll({where:{
-            date:date
-          },
-          order:[['_id','DESC']]
-    
-  })
+  let whereClause={where:{date:date},order:[['_id','DESC']]};
+  if (req.body.flightNum) whereClause.where.flightNum=req.body.flightNum;
+  return Signature.findAll(whereClause)
     .then(respondWithResult(res))
     .catch(handleError(res));
 }
