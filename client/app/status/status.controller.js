@@ -112,9 +112,15 @@ class StatusComponent {
       if (flight.dispatchRelease&&flight.dispatchRelease!==""&&!flight.dispatchReleaseTimestamp) flight.dispatchReleaseTimestamp=new Date();
       flight.runScroll=true;
       //update flight in database
-      this.http.patch('/api/todaysFlights/'+flight._id,flight).then(res=>{
+      flight.updated=new Date();
+      flight.updatedBy=this.user._id;
+      let id=flight._id;
+      delete flight._id;
+      this.http.post('/api/signatures',flight);
+      this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
+        flight._id=id;
         this.spinner=false;
-        console.log('Updated Flight ' + flight.flightNum)
+        console.log('Updated Flight ' + flight.flightNum);
         if (flight.pilotAgree||flight.ocRelease||flight.dispatchRelease) this.quickModal("Flight Release Signature has Been Recorded","Success!",false);
         //updates have been failing occasionally, even with positive confimation, try to prevent that
         this.timeout(()=>{
