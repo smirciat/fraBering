@@ -63,12 +63,30 @@ class RosterComponent {
       });//a.dateOfHire.localeCompare(b.dateOfHire)});
       this.http.post('/api/calendar/rosterMonth',{date:this.date}).then(resp=>{
         let arr=resp.data.filter(r=>{
-          if (!r.location_name) return false;
-          let a=r.location_name.split(' ');
-          if (a.length<2) return false;
-          return (a[1]==='FO'||a[1]==='CAPT');//&&r.type==='shift';
+          let i=this.pilots.map(e=>(e.firstName+' '+e.lastName)).indexOf(r.employee_full_name);
+          if (i<0) return false;
+          r.pilotObj=this.pilots[i];
+          return true;
+          //if (r.employee_full_name==="Nathaniel Olson") console.log(r)
+          //if (!r.location_name) return false;//multi-date vactation records have null for this field!
+          //let a=r.location_name.split(' ');
+          //if (a.length<2) return false;
+          //return (a[1]==='FO'||a[1]==='CAPT');//&&r.type==='shift';
         });
-        console.log(arr.filter(p=>{return p.employee_full_name==='Mikey Evans'}))
+        arr.forEach(record=>{
+          //look for records spanning multiple days and spread them out to multiple records
+          const startDate=new Date(record.start_plain_date_time);
+          let daysLength=this.getDaysBetweenDates(new Date(record.start_plain_date_time),new Date(record.end_plain_date_time));
+          while (daysLength>1){
+            daysLength--;
+            let newDate=new Date(startDate);
+            newDate=newDate.setDate(newDate.getDate() + daysLength);
+            let newRecord=angular.copy(record);
+            newRecord.start_plain_date_time=new Date(newDate).toISOString();
+            arr.push(newRecord);
+          }
+        });
+        //console.log(arr.filter(p=>{return p.employee_full_name==='Mikey Evans'}))
         let calendar=this.initCalendar(this.date);
         calendar.forEach(day=>{
           day.availablePilots=arr.filter(pilot=>{
@@ -81,6 +99,11 @@ class RosterComponent {
     });
   }
   
+  getDaysBetweenDates(date1, date2) {
+    const timeDifference = Math.abs(date2.getTime() - date1.getTime());
+    return Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+  }
+  
   calendarToData(calendar){
     this.data=[];//this.data will be an array of pilots with elements keyed by day of month (integer) and a code for that day, if it exists
     //iterate through pilots
@@ -91,19 +114,20 @@ class RosterComponent {
         let totalCaptOTZ=0;
         let totalFOOME=0;
         let totalFOOTZ=0;
-        element.availablePilots.forEach(pilot=>{
+        element.availablePilots.forEach(p=>{
           //if (pilot.employee_full_name==="Michael Evans") pilot.employee_full_name="Mike Evans";
-          if (pilot.employee_full_name==="Sophia Hobbs") pilot.employee_full_name="Sophia Evans";
+          if (p.employee_full_name==="Sophia Hobbs") p.employee_full_name="Sophia Evans";
           //if (pilot.employee_full_name==="Mikey Evans") pilot.employee_full_name="Michael Evans";
-          let arr=pilot.location_name.split(' ');
-          let location=arr[0];
-          let position=arr[1];
-          if (location=='NOME'){
-            if (position==='CAPT'&&this.dutyCodes.indexOf(pilot.label)>-1) totalCaptOME++;
-            if (position==='FO'&&this.dutyCodes.indexOf(pilot.label)>-1) totalFOOME++;
+          //let arr=pilot.location_name.split(' ');
+          //let location=arr[0];
+          //let position=arr[1];
+          if (p.pilotObj.pilotBase==="OME"){
+            if (p.pilotObj.far299Exp&&this.dutyCodes.indexOf(p.label)>-1) totalCaptOME++;
+            if (!p.pilotObj.far299Exp&&this.dutyCodes.indexOf(p.label)>-1) totalFOOME++;
           }
-          if (location=='NOME'){
-            if (position==='CAPT'&&this.dutyCodes.indexOf(pilot.label)>-1) totalCaptOTZ++;
+          if (p.pilotObj.pilotBase==="OTZ"){
+            if (p.pilotObj.far299Exp&&this.dutyCodes.indexOf(p.label)>-1) totalCaptOTZ++;
+            if (!p.pilotObj.far299Exp&&this.dutyCodes.indexOf(p.label)>-1) totalFOOTZ++;
           }
         });
         element.totalCaptOME=totalCaptOME;
@@ -112,15 +136,17 @@ class RosterComponent {
         element.totalFOOTZ=totalFOOTZ;
         let calendarDate=new Date(element.date);
         if (this.date.getMonth() === calendarDate.getMonth() && this.date.getFullYear() === calendarDate.getFullYear()){
-          //const index=element.availablePilots.map(e=>e.name).indexOf(pilot.name);
-          const index=element.availablePilots.map(e=>e.employee_full_name).indexOf(pilot.firstName+' '+pilot.lastName);
-          if (index>-1) {
-            if (element.availablePilots[index].label==="8") element.availablePilots[index].label="C8";
-            if (element.availablePilots[index].label==="16") {
-              if (pilot.far299Exp) element.availablePilots[index].label="NM";
-              else element.availablePilots[index].label="ND";
+          let pilotArr=element.availablePilots.filter(p=>{return p.employee_full_name===pilot.firstName+' '+pilot.lastName});//.map(e=>e.employee_full_name).indexOf(pilot.firstName+' '+pilot.lastName);
+          if (pilotArr.length>0) {
+            let newPilotArr=pilotArr.filter(e=>{return e.type==='shift'});
+            if (newPilotArr.length>0) pilotArr=newPilotArr;//ensure the one we are using is of type shift, not some other type
+            let index=0;
+            if (pilotArr[index].label==="8") pilotArr[index].label="C8";
+            if (pilotArr[index].label==="16") {
+              if (pilot.far299Exp) pilotArr[index].label="NM";
+              else pilotArr[index].label="ND";
             }
-            pilot[element.day]=element.availablePilots[index].label;
+            pilot[element.day]=pilotArr[index].label;
           }
         }
       }
