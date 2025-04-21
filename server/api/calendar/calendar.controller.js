@@ -145,8 +145,8 @@ export function destroy(req, res) {
 
 export async function rosterMonth(req, res) {
   let dateString=new Date();
-  if (req.body.dateString) dateString=req.body.dateString;
-  const roster=await setRosterDay(dateString);
+  if (req.body.date) dateString=req.body.date;
+  const roster=await setRosterMonth(dateString);
   res.status(200).json(roster);
 }
 
@@ -155,6 +155,26 @@ export async function rosterDay(req, res) {
   if (req.body.dateString) dateString=req.body.dateString;
   const roster=await setRosterDay(dateString);
   res.status(200).json(roster);
+}
+
+export async function setRosterMonth(dateString){
+  const bodyParameters = {headers: {'Authorization':localEnv.ROSTER_TOKEN} };
+  let date=new Date(dateString);
+  let firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  let lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+  firstDay.setUTCHours(0, 0, 0, 0);
+  lastDay.setUTCHours(0, 0, 0, 0);
+  let startDate=firstDay.toISOString();
+  let endDate=lastDay.toISOString();
+  try{//type=shift restricts response to only working days, not available or requested off
+    let response=await axios.get('https://fyccqqeiahhzheubvavn.supabase.co/functions/v1/tenant-api-handler?table=calendar_events&start_plain_date_time='+startDate+'&end_plain_date_time='+endDate, bodyParameters);
+    //todaysRoster=response.data.data;
+    return response.data.data;
+  }
+  catch(err){
+    console.log(err);
+    return [];
+  }
 }
 
 export async function setRosterDay(dateString){
