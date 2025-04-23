@@ -238,9 +238,9 @@ angular.module('workspaceApp')
                             {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
                             {title:'TKS',val:tksCalc()},
                             //{title:'Operating Weight',val:isNaN(flight.pfr.legArray[0].operatingWeight) ? 0 : flight.pfr.legArray[0].operatingWeight},
-                            {title:'Load Available',val:isNaN(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeight) ? 0 : flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeight},
+                            {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel)},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
-                            {title:'TOW',val:flight.pfr.legArray[0].tow}
+                            {title:'TOW',val:Math.round(flight.pfr.legArray[0].tow)}
                             ],
                 calcSeatWeight:function(num){
                   if (num>9) {

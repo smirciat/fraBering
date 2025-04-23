@@ -15,6 +15,7 @@ class StatusComponent {
     this.anchorScroll=$anchorScroll;
     this.moment=moment;
     this.Auth=Auth;
+    this.Math=Math;
     this.appConfig=appConfig;
     this.equipment=appConfig.equipment;
     this.Modal=Modal;
