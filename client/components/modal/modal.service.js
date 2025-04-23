@@ -211,6 +211,7 @@ angular.module('workspaceApp')
                   return false;
                 },
                 tksCalc=function(){
+                  return Math.round((flight.pfr.legArray[0].tksGallons*1||0)*9.2308);
                   return Math.round(flight.bew.tks*9.2308);
                 },
                 noPfr=function(){
@@ -236,7 +237,7 @@ angular.module('workspaceApp')
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
                             {title:'OWE',val:flight.pfr.legArray[0].operatingWeightEmpty},
                             {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
-                            //{title:'TKS',val:tksCalc()},
+                            {title:'TKS (From iPad)',val:Math.round((flight.pfr.legArray[0].tksGallons*1||0)*9.2308)},
                             //{title:'Operating Weight',val:isNaN(flight.pfr.legArray[0].operatingWeight) ? 0 : flight.pfr.legArray[0].operatingWeight},
                             {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-(flight.pfr.legArray[0].tksGallons*1||0)*9.2308)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-(flight.pfr.legArray[0].tksGallons*1||0)*9.2308)},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
