@@ -289,7 +289,7 @@
             </span>
           </div>
         </div>
-        <div class="orange-line white" ng-show="modal.flight.equipment.name==='Caravan'">
+        <div class="orange-line white" ng-show="false"><!--</div>modal.flight.equipment.name==='Caravan'">-->
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">TKS</span>
             <span class="span-modal">
@@ -386,7 +386,7 @@
             {{modal.fuelCalc()}}&nbsp;Hours
           </span>
           <span class="span-modal" ng-if="item.title==='OWE'&&modal.flight.equipment.name==='Caravan'">
-            (Includes TKS Weight for Now)
+            (Does Not Include TKS)
           </span>
           <span class="span-modal" style="float:right; padding-right:5px;">{{item.val}}</span>
         </div>

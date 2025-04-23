@@ -1185,6 +1185,14 @@ class StatusComponent {
     return;
   }
   
+  laCalc(flight){
+    let mgtow=flight.pfr.legArray[0].mgtow*1;
+    let owe=flight.pfr.legArray[0].operatingWeightEmpty*1;
+    let fuel=flight.pfr.legArray[0].fuel*1;
+    let tks=(flight.pfr.legArray[0].tksGallons*1||0)*9.2308;
+    return Math.round(mgtow-owe-fuel-tks);
+  }
+  
   getFlightNum(flight){
     if (flight.flightNum.length===3||flight.flightNum.length===4) return 'BRG'+flight.flightNum;
     if (flight.pfr&&flight.pfr.flightNumber) return 'BRG'+flight.pfr.flightNumber;

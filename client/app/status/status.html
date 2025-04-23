@@ -239,7 +239,7 @@
                
           <br>
           <div style="display:inline-block;">
-            <p style="border:none;">{{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}&nbsp;<strong>LOAD AVAILABLE: {{status.Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel)}}</strong></p>
+            <p style="border:none;">{{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}&nbsp;<strong>LOAD AVAILABLE: {{status.laCalc(flight)}}</strong></p>
           </div>
         </div>  
       </div>

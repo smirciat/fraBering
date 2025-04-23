@@ -236,9 +236,9 @@ angular.module('workspaceApp')
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
                             {title:'OWE',val:flight.pfr.legArray[0].operatingWeightEmpty},
                             {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
-                            {title:'TKS',val:tksCalc()},
+                            //{title:'TKS',val:tksCalc()},
                             //{title:'Operating Weight',val:isNaN(flight.pfr.legArray[0].operatingWeight) ? 0 : flight.pfr.legArray[0].operatingWeight},
-                            {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel)},
+                            {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-(flight.pfr.legArray[0].tksGallons*1||0)*9.2308)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-(flight.pfr.legArray[0].tksGallons*1||0)*9.2308)},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
                             {title:'TOW',val:Math.round(flight.pfr.legArray[0].tow)}
                             ],
@@ -252,7 +252,7 @@ angular.module('workspaceApp')
                 },
                 oweCalc:function(){
                   if (flight.equipment.name!=="Caravan") flight.bew.tks=0;
-                  return Math.round(flight.bew.tks*9.2308+flight.bew.seatWeight*1+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.jumpseaterObject.bodyWt*1+flight.jumpseaterObject.bagWt*1);
+                  return Math.round(flight.bew.seatWeight*1+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.jumpseaterObject.bodyWt*1+flight.jumpseaterObject.bagWt*1);
                 },
                 reasons:reasons,
                 jumpseatDisp:flight.jumpseaterObject.reason,
