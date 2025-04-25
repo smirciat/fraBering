@@ -35,7 +35,11 @@
     </ui-select>
     <br>
     <div>
-        <button class="btn btn-default" ng-click="audit.createCSV()">Create CSV File</button>
+        <button class="btn btn-default" ng-click="audit.createCSV()">Create CSV File (PFR Audits)</button>
+          <a class="btn btn-primary" download="result.csv" ng-href="{{ audit.url }}" ng-if="audit.complete">Download CSV File</a>
+    </div>
+    <div>
+        <button class="btn btn-default" ng-click="audit.createCSVReleases()">Create CSV File (Flight Release Audits)</button>
           <a class="btn btn-primary" download="result.csv" ng-href="{{ audit.url }}" ng-if="audit.complete">Download CSV File</a>
     </div>
 </div>

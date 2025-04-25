@@ -59,6 +59,35 @@ class AuditComponent {
     this.upDate(element);
   }
   
+  createCSVReleases(){
+    this.complete=false;
+    this.spinner=true;
+    let date=new Date(this.startDate).toLocaleDateString();
+    return this.http.post('/api/todaysFlights/dayFlights',{dateString:date}).then(res=>{
+      this.csv="PILOT,DATE,FLIGHTNUM,AIRCRAFT,BASE WX,FIKI,PILOT SIG,DISPATCH SIG,OC SIG\r\n";
+      console.log(res.data);
+      let flights=res.data;
+      //if (this.pilot) flights=flights.filter(p=>{return p.pilot===this.pilot.displayName});
+      flights.sort((a,b)=>{
+        return a.pilot.localeCompare(b.pilot);
+      });
+      for(const flight of flights){
+        let raw='';
+        let knownIce=flight.knownIce||'false';
+        let pilotAgree=flight.pilotAgree||'';
+        let dispatchRelease=flight.dispatchRelease||'';
+        let ocRelease=flight.ocRelease||'';
+        if (flight.airportObjs[0]&&flight.airportObjs[0]['Raw-Report']) raw=flight.airportObjs[0]['Raw-Report'];
+        this.csv+=flight.pilot+','+flight.date+','+flight.flightNum+','+flight.flightNum+','+raw+','+knownIce+','+pilotAgree+','+dispatchRelease+','+ocRelease+'\r\n';
+      }
+      this.spinner=false;
+      console.log(this.csv);
+      this.complete=true;
+      let blob = new Blob([ this.csv ], { type : 'text/plain' });
+      this.url = (window.URL || window.webkitURL).createObjectURL( blob );
+    });
+  }
+  
   createCSV(){
     this.complete=false;
     this.spinner=true;

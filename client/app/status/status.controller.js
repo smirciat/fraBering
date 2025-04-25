@@ -1186,6 +1186,7 @@ class StatusComponent {
   }
   
   laCalc(flight){
+    if (!flight.pfr||!flight.pfr.legArray[0]) return;
     let mgtow=flight.pfr.legArray[0].mgtow*1;
     let owe=flight.pfr.legArray[0].operatingWeightEmpty*1;
     let fuel=flight.pfr.legArray[0].fuel*1;
