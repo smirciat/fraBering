@@ -211,8 +211,13 @@ angular.module('workspaceApp')
                   return false;
                 },
                 tksCalc=function(){
-                  return Math.round((flight.pfr.legArray[0].tksGallons*1||0)*9.2308);
-                  return Math.round(flight.bew.tks*9.2308);
+                  let gals=0;
+                  if (flight.pfr.legArray[0].tksGallons) {
+                    gals=flight.pfr.legArray[0].tksGallons;
+                    if (gals>20.8) gals=20.8;
+                  }
+                  return {gals:gals,lbs:Math.round(gals*9.2308)};
+                  //return Math.round(flight.bew.tks*9.2308);
                 },
                 noPfr=function(){
                   if (flight.operation==='Test'||flight.operation==='Training'||flight.operation==='Ferry') return false;
@@ -237,9 +242,9 @@ angular.module('workspaceApp')
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
                             {title:'OWE',val:flight.pfr.legArray[0].operatingWeightEmpty},
                             {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
-                            {title:'TKS (From iPad)',val:Math.round((flight.pfr.legArray[0].tksGallons*1||0)*9.2308)},
+                            {title:'TKS (From iPad)',val:tksCalc().lbs,gals:tksCalc().gals},
                             //{title:'Operating Weight',val:isNaN(flight.pfr.legArray[0].operatingWeight) ? 0 : flight.pfr.legArray[0].operatingWeight},
-                            {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-(flight.pfr.legArray[0].tksGallons*1||0)*9.2308)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-(flight.pfr.legArray[0].tksGallons*1||0)*9.2308)},
+                            {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-tksCalc().lbs)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-tksCalc().lbs)},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
                             {title:'TOW',val:Math.round(flight.pfr.legArray[0].tow)}
                             ],
@@ -252,7 +257,7 @@ angular.module('workspaceApp')
                   return flight.bew.seatWeight;
                 },
                 oweCalc:function(){
-                  if (flight.equipment.name!=="Caravan") flight.bew.tks=0;
+                  //if (flight.equipment.name!=="Caravan") flight.bew.tks=0;
                   return Math.round(flight.bew.seatWeight*1+flight.bew.bew*1+flight.bew.equipment*1+flight.bew.captain*1+flight.bew.fo*1+flight.jumpseaterObject.bodyWt*1+flight.jumpseaterObject.bagWt*1);
                 },
                 reasons:reasons,
