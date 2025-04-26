@@ -226,6 +226,7 @@ angular.module('workspaceApp')
                 quickModal;
             quickModal = openModal({
               modal: {
+                Math:Math,
                 flightInfo:[{title:'Origin',val:flight.pfr.flightOrigin},
                             {title:'Date',val:flight.date},
                             {title:'Time',val:flight.departTimes[0].substring(0,5)+' - '+flight.departTimes[flight.departTimes.length-1].substring(0,5)},

@@ -458,6 +458,7 @@
         <span style="font-weight:bold">&nbsp;&nbsp;&nbsp;{{modal.getDestinationType($index)}}</span>
         <span style="font-weight:bold">
           {{modal.flight.departTimesZulu[$index]}}&nbsp;
+            <span ng-show="modal.flight.pfr.legArray[$index].fuel">Fuel:&nbsp;{{modal.Math.round(modal.flight.pfr.legArray[$index].fuel)}}&nbsp;lbs</span>
             <i ng-class="modal.upOrDown(modal['showInfo'+$index])"></i>  
         </span>
         <div ng-show="modal['showInfo'+$index]">
