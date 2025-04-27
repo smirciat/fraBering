@@ -181,6 +181,7 @@ angular.module('workspaceApp')
                 isSuperAdmin = args.shift(),
                 user = args.shift(),
                 userLastname = args.shift(),
+                recentFlights = args.shift(),
                 reasons=['No Reason','BA Employee','BA Pilot','Non-Company Handler','Other Airline Pilot','FAA','DOD'],
                 alternates=['None','PAOM','PAOT','PAUN','PABE','PAGA','PAFA','PANC'],
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
@@ -396,6 +397,16 @@ angular.module('workspaceApp')
                   if (isWrongUser()) string+='- You are logged in as the Captain of the flight.';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
                   window.alert(string);
+                  if (noPfr()){
+                    let pilotsPFRs=recentFlights.filter(f=>{return flight.pilotObject.displayName===f.pilot});
+                    string='Possible PFRs for this pilot:\r\n';
+                    pilotsPFRs.forEach(pfr=>{
+                      let fuel='';
+                      if (pfr.legArray[0]) fuel=pfr.legArray[0].fuel;
+                      string+=pfr.pilot+': in '+pfr.acftNumber+', Flight# '+pfr.flightNumber+', with '+fuel+' lbs Fuel\r\n';
+                    });
+                    window.alert(string);
+                  }
                 },
                 title: 'Flight Release  BRG' + flight.flightNum +' '+ flight.aircraft,
                 buttons: [ {//this is where you define you buttons and their appearances
@@ -432,7 +443,7 @@ angular.module('workspaceApp')
             quickModal.result.then(function(event) {
               cb.apply(event, [flight]); //this is where all callback is actually called
             }).catch(err=>{
-              console.log('Flight Modal Canceled')
+              console.log('Flight Modal Canceled');
               console.log(err);
             });
           };

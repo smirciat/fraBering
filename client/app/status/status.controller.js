@@ -816,7 +816,7 @@ class StatusComponent {
       alts.shift({});
       if (!flight.jumpseaterObject) flight.jumpseaterObject={bodyWt:'0',bagWt:'0',reason:'No Reason'};
       console.log(flight);
-      this.flightModal(JSON.parse(JSON.stringify(flight)),alts,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname);
+      this.flightModal(JSON.parse(JSON.stringify(flight)),alts,this.Auth.isAdmin(),this.Auth.isSuperAdmin(),this.user,lastname,this.recentFlights);
     }
     catch(err){
       console.log(err);
