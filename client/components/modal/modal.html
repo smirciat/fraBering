@@ -458,7 +458,8 @@
         <span style="font-weight:bold">&nbsp;&nbsp;&nbsp;{{modal.getDestinationType($index)}}</span>
         <span style="font-weight:bold">
           {{modal.flight.departTimesZulu[$index]}}&nbsp;
-            <span ng-show="modal.flight.pfr.legArray[$index].fuel">Fuel:&nbsp;{{modal.Math.round(modal.flight.pfr.legArray[$index].fuel)}}&nbsp;lbs</span>
+            <span ng-if="modal.flight.pfr.legArray[$index].fuel">Fuel:&nbsp;{{modal.Math.round(modal.flight.pfr.legArray[$index].fuel)}}&nbsp;lbs</span>
+            <span ng-if="($index===(modal.flight.airportObjsLocked.length-1))&&modal.flight.pfr.legArray[$index-1].fuel">Ending Fuel:&nbsp;{{modal.Math.round(modal.flight.pfr.legArray[$index-1].fuel-modal.flight.pfr.legArray[$index-1].burn)}}&nbsp;lbs</span>
             <i ng-class="modal.upOrDown(modal['showInfo'+$index])"></i>  
         </span>
         <div ng-show="modal['showInfo'+$index]">
