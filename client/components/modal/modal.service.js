@@ -224,6 +224,10 @@ angular.module('workspaceApp')
                   if (flight.operation==='Test'||flight.operation==='Training'||flight.operation==='Ferry') return false;
                   return !flight.pfr||!flight.pfr.legArray[0]||!flight.pfr.legArray[0].fuel;
                 },
+                missingPfr=function(){
+                  if (flight.operation==='Test'||flight.operation==='Training'||flight.operation==='Ferry') return false;
+                  return !flight.pfr||!flight.pfr._id;
+                },
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -393,13 +397,17 @@ angular.module('workspaceApp')
                 pilotInfo:function(){
                   let string='Pilot Acceptance can ONLY be signed when: \r\n';
                   if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
-                  if (noPfr()) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
+                  if (missingPfr()) string+='- The captain has successfully created a PFR,\r\n';
+                  if (noPfr()) string+='- The captain has entered fuel quantity on the PFR,\r\n';
                   if (isWrongUser()) string+='- You are logged in as the Captain of the flight.';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
                   window.alert(string);
-                  if (noPfr()){
+                  if (noPfr()||missingPfr()){
+                    string='';
+                    if (flight.pfr&&flight.pfr._id) string+='This flight is synced with PFR # '+flight.pfr._id+'\r\n\r\n';
                     let pilotsPFRs=recentFlights.filter(f=>{return flight.pilotObject.displayName===f.pilot});
-                    string='Possible PFRs for this pilot:\r\n';
+                    string+='Possible PFRs for this pilot (Today Only):\r\n';
+                    if (pilotsPFRs.length===0) string +='None yet, please create one and wait a few minutes for it to upload to the server.';
                     pilotsPFRs.forEach(pfr=>{
                       let fuel='';
                       if (pfr.legArray[0]) fuel=pfr.legArray[0].fuel;
