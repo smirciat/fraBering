@@ -209,6 +209,7 @@ angular.module('workspaceApp')
                   if (colors.indexOf(color)>3) return true;
                   if (flight.pfr&&flight.pfr.legArray[0].fuel<flight.equipment.minFuel) return true;
                   if (flight.knownIce) return true;
+                  if (highMinimums) return true;
                   return false;
                 },
                 tksCalc=function(){
@@ -228,10 +229,24 @@ angular.module('workspaceApp')
                   if (flight.operation==='Test'||flight.operation==='Training'||flight.operation==='Ferry') return false;
                   return !flight.pfr||!flight.pfr._id;
                 },
+                allDisabled=function(){return (flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree},
+                aircraftTypes=['C208','C408','B190','BE20','C212'],
+                highMinimums=false,
+                highMinsClass=function(){
+                  let index=aircraftTypes.indexOf(flight.equipment.short);
+                  if (index>-1) {
+                    if (flight.pilotObject&&flight.pilotObject['highMinimums'+aircraftTypes[index]]) {
+                      highMinimums=true;
+                      return 'highMinimums';
+                    }  
+                  }
+                  return;
+                },
                 quickModal;
             quickModal = openModal({
               modal: {
                 Math:Math,
+                highMinsClass:highMinsClass,
                 flightInfo:[{title:'Origin',val:flight.pfr.flightOrigin},
                             {title:'Date',val:flight.date},
                             {title:'Time',val:flight.departTimes[0].substring(0,5)+' - '+flight.departTimes[flight.departTimes.length-1].substring(0,5)},
@@ -367,17 +382,24 @@ angular.module('workspaceApp')
                   if (index===(flight.airportObjsLocked.length-1)) return "Destination";
                   return "Intermediate";
                 },
-                allDisabled:function(){return (flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree},
+                allDisabled:allDisabled,
                 style:function(color){
                   let i=colors.indexOf(color);
                   if (i>-1) return bgColors[i];
                   else return '';
+                },
+                isDispatchDisabled:function(){
+                  return ocRequired(flight.color) || moreThanOneHour() || !isAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || flight.knownIce || allDisabled();
+                },
+                isOCDisabled:function(){
+                  return !ocRequired(flight.color) || moreThanOneHour() || !isSuperAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
                 },
                 isPilotDisabled:function(){
                   return isWrongUser() || moreThanOneHour() || noPfr() || flight.pilotAgree || user.name==='Bering Air';
                 },
                 dispatchInfo:function(){
                   let string='Dispatch Release can ONLY be signed when: \r\n';
+                  if (highMinimums) string+='- The captain is NOT listed as a High Mimumums Captain,\r\n';
                   if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
                   if (noPfr()) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
                   if (!isAdmin) string+='- You are logged in as an OC Manager or Dispatcher';

@@ -61,6 +61,7 @@ export default function(sequelize, DataTypes) {
     unOfficialSource:DataTypes.STRING,
     manualObs:DataTypes.JSONB,
     manualTimestamp:DataTypes.DATE,
-    runScroll:DataTypes.BOOLEAN
+    runScroll:DataTypes.BOOLEAN,
+    pireps:DataTypes.JSONB
   });
 }

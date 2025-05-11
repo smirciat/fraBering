@@ -3,7 +3,7 @@
   <!--<button ng-if="modal.dismissable" type="button" ng-click="$dismiss()" class="close"><i class="fa fa-solid fa-window-close fa-autosize"></i></button>-->
   <h4 ng-if="modal.title" ng-bind="modal.title" class="modal-title"></h4>
 </div>
-<div class="modal-body wheat">
+<div class="modal-body wheat" ng-class="modal.highMinsClass()">
   <div ng-if="modal.metarModal">
     <div ng-repeat="metar in modal.airport.metars"><p style="font-weight:bold">{{metar}}</p></div>
   </div>
@@ -467,6 +467,9 @@
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">TAF: {{metarObj.taf}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="false&&metarObj.airport.manualObs">Ceiling: {{metarObj.airport.manualObs.ceiling}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">RUNWAY {{metarObj.airport.icao+' '+metarObj.airport.openClosed+', '+modal.formatScore(metarObj.airport.runwayScore)+' '+metarObj.airport.comment}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.airport.pireps.length>0">PIREPS:</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.airport.pireps.length===0">NO RECENT PIREPS</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-repeat="pirep in metarObj.airport.pireps">{{pirep.raw}}</p>
         </div>
       </div>
       <br>
@@ -510,7 +513,7 @@
         <td><p style="padding-top:5px; margin-top:7px; ">DISPATCHER</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || !modal.isAdmin || modal.noPfr() || modal.flight.pfr.legArray[0].fuel<1 || modal.flight.knownIce || modal.allDisabled()">
+            <button class="btn btn-success" ng-click="modal.dispatchClick()" ng-disabled="modal.isDispatchDisabled()">
                 <i class="fa fa-solid fa-pen fa-autosize" ></i></button>
             <span>{{modal.flight.dispatchRelease}}</span>
             <span style="display:inline-block;padding-left:15px;height:45px;width:60px" ng-click="modal.dispatchInfo()"><i class="fa fa-solid fa-info-circle fa-autosize"></i></span>
@@ -522,7 +525,7 @@
         <td><p style="padding-top:5px; margin-top:7px; ">OC MANAGER</p></td>
         <td>
           <div style="display:inline-block" >
-            <button class="btn btn-success" ng-click="modal.ocClick()" ng-disabled="!modal.ocRequired(modal.flight.color) || modal.moreThanOneHour() || !modal.isSuperAdmin || modal.noPfr() || modal.flight.pfr.legArray[0].fuel<1 || modal.allDisabled()">
+            <button class="btn btn-success" ng-click="modal.ocClick()" ng-disabled="modal.isOCDisabled()">
                 <i class="fa fa-solid fa-pen fa-autosize" ></i></button>
             <span>{{modal.flight.ocRelease}}</span>
             <span style="display:inline-block;padding-left:15px;height:45px;width:60px" ng-click="modal.ocInfo()"><i class="fa fa-solid fa-info-circle fa-autosize"></i></span>

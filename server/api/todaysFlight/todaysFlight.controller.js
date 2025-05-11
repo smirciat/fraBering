@@ -31,12 +31,12 @@ const agent = new https.Agent({
 });
 let stopped=false;
 let staleFile=false;
-let equipmentArr=[{id:1,name:"Caravan",wind:35,xwind:25,temp:-50,taxiFuel:35,fuelBurn:400,minFuel:600,ZFW:9062},
+let equipmentArr=[{id:1,name:"Caravan",short:"C208",wind:35,xwind:25,temp:-50,taxiFuel:35,fuelBurn:400,minFuel:600,ZFW:9062},
        //{id:2,name:"Navajo",wind:40,xwind:30,temp:-40,taxiFuel:35},
-       {id:3,name:"Casa",wind:35,xwind:25,temp:-50,taxiFuel:110,fuelBurn:700,minFuel:1323,ZFW:15653},
-       {id:4,name:"King Air",wind:40,xwind:35,temp:-50,taxiFuel:90,maxMain:1293,maxAux:529,fuelBurn:700,minFuel:1500,ZFW:11000},
-       {id:5,name:"Beech 1900",wind:40,xwind:35, temp:-50,taxiFuel:110,maxMain:1621,maxAux:621,fuelBurn:800,minFuel:1420,ZFW:15700},
-       {id:6,name:"Sky Courier",wind:40,xwind:30,temp:-50,taxiFuel:70,fuelBurn:800,minFuel:1100,ZFW:17900}];
+       {id:3,name:"Casa",short:"C212",wind:35,xwind:25,temp:-50,taxiFuel:110,fuelBurn:700,minFuel:1323,ZFW:15653},
+       {id:4,name:"King Air",short:"BE20",wind:40,xwind:35,temp:-50,taxiFuel:90,maxMain:1293,maxAux:529,fuelBurn:700,minFuel:1500,ZFW:11000},
+       {id:5,name:"Beech 1900",short:"B190",wind:40,xwind:35, temp:-50,taxiFuel:110,maxMain:1621,maxAux:621,fuelBurn:800,minFuel:1420,ZFW:15700},
+       {id:6,name:"Sky Courier",short:"C408",wind:40,xwind:30,temp:-50,taxiFuel:70,fuelBurn:800,minFuel:1100,ZFW:17900}];
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;

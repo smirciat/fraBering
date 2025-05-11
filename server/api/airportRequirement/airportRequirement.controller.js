@@ -20,6 +20,7 @@ const https = require("https");
 const agent = new https.Agent({
     rejectUnauthorized: false
 });
+let allPireps=[];
 let count=0;
 let xwind=0;
 let alternateArray=['OME','OTZ','UNK','BET','GAL','ANC','FAI'];
@@ -134,6 +135,47 @@ export function destroy(req, res) {
     .catch(handleError(res));
 }
 
+export function getPireps(req,res){
+  try {
+    let airport=req.body.airport||'OME';
+    let obj={};
+    obj=pireps(airport);
+    res.status(200).json(obj);
+  }
+  catch(err){
+    console.log(err);
+    res.status(404).json('Failed to grab metar List');
+  }
+}
+
+// Creates a new AirportRequirement in the DB
+export async function syncPireps() {
+  try {
+    let response = await axios.get('https://avwx.rest/api/pirep/PAOM?token='+process.env.AVWX_TOKEN2);
+    if (response.data&&response.data.Error) console.log(response.data.Error);
+    let data=response.data;
+    if (response.data&&response.data.data) data=response.data.data;
+    allPireps=data;
+    return data;
+  }
+  catch(err){
+    console.log(err);
+    return [];
+  }
+}
+
+// Filters only current airport from Pireps
+export function pireps(airport) {
+  try {
+    let data=allPireps.filter(p=>{return p.station===airport});
+    return data;
+  }
+  catch(err){
+    console.log(err);
+    return [];
+  }
+}
+
 // Creates a new AirportRequirement in the DB
 export async function notams(req, res) {
   try {
@@ -158,12 +200,15 @@ export async function tafs(req,res) {
     });
     for (const airport of allAirports) {
       if (alternateArray.indexOf(airport.threeLetter)>-1) {
+        //tafs
         let response = await axios.get('https://avwx.rest/api/taf/'+airport.icao+'?token='+process.env.AVWX_TOKEN2);
         if (response.data&&response.data.Error) console.log(res.data.Error);
         //console.log(response.data)
         airport.currentTaf=response.data['raw'];
         airport.currentTafObject=response.data.forecast;
       } 
+      //pireps
+      airport.pireps = pireps(airport.threeLetter);
       let tempAirport=JSON.parse(JSON.stringify(airport));
       delete tempAirport._id;
       AirportRequirement.find({

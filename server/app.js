@@ -12,6 +12,7 @@ import localEnv from './config/local.env.js';
 import {setBearer,getManifests} from './api/todaysFlight/todaysFlight.controller.js';
 import {setRosterDay} from './api/calendar/calendar.controller.js';
 import {observe} from './api/airplane/airplane.controller.js';
+import {syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
 import http from 'http';
 import https from 'https';
 const schedule = require('node-schedule');
@@ -55,7 +56,8 @@ let callbackFunction=()=>{
         //.catch(err=>{console.log(err.response.data)});
 };
 
-let metarFunction=()=>{
+let metarFunction=async ()=>{
+  await syncPireps();
   axios.post(baseUrl + '/api/airportRequirements/metars',{}, { httpsAgent: agent })
         .then((response)=>{
           console.log('metar interval going at ' +new Date().toLocaleString());

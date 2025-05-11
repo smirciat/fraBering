@@ -126,14 +126,18 @@
   background-color:#ffffcc;
 }
 
+.highMinimums{
+  background-color:rgba(152, 255, 152,0.5);
+}
+
 .inner-modal{
   text-align:center;
-  height:32px;!important
+  height:32px !important;
 }
 
 .span-modal{
   vertical-align: middle;
-  line-height:30px;!important
+  line-height:30px !important;
 }
 
 .span-modal input{
