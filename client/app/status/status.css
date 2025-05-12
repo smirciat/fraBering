@@ -268,6 +268,11 @@ div.airport-pink h1{
   font-weight:bold;
 }
 
+.airport-stripe{
+  background: repeating-linear-gradient(-45deg, lightblue, lightblue 5px, white 5px, white 10px);
+  font-weight:bold;
+}
+
 .airport-purple{
   background-color:#DAB1DA;
   font-weight:bold;
