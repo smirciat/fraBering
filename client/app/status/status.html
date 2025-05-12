@@ -40,7 +40,21 @@
                  <i ng-if="flight.pilotAgree" class="fa fa-solid fa-rocket fa-autosize" aria-hidden="true"></i></p>
             <br>
             <div style="display:inline-block;">
-              <p style="border:none;">{{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}</p>
+              <p style="border:none;">
+                <span ng-hide="flight.pfr.legArray[0].offTimeString">
+                  {{flight.departTimes[0].substring(0,5)}}
+                </span> 
+                <span ng-show="flight.pfr&&flight.pfr.legArray[0]&&flight.pfr.legArray[0].offTimeString" style="font-weight:bold;color:green;">
+                  {{flight.pfr.legArray[0].offTimeString}}
+                </span> 
+                <span>&nbsp-&nbsp</span>
+                <span ng-hide="flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString">
+                  {{flight.departTimes[flight.departTimes.length-1].substring(0,5)}}
+                </span> 
+                <span ng-show="flight.pfr&&flight.pfr.legArray[0]&&flight.pfr.legArray[0].onTimeString" style="font-weight:bold;color:red;">
+                  {{flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString}}
+                </span>
+              </p>
             </div>
             <div class="airport-card" ng-repeat="metarObj in flight.airportObjs track by $index">
               <!-- status.overallRiskClass(metarObj)  -->

@@ -151,6 +151,7 @@ export function getPireps(req,res){
 // Creates a new AirportRequirement in the DB
 export async function syncPireps() {
   try {
+    //https://aviationweather.gov/api/data/pirep?id=PAOM&format=raw&age=2&distance=50
     let response = await axios.get('https://avwx.rest/api/pirep/PAOM?token='+process.env.AVWX_TOKEN2);
     if (response.data&&response.data.Error) console.log(response.data.Error);
     let data=response.data;
