@@ -687,7 +687,7 @@ class StatusComponent {
     //if airport.timestamp is more than 10 hours old, return blue
     //if (!airport.timestamp||!score) return 'airport-blue';
     const tenHoursAgo = new Date(now.getTime() - (10 * 60 * 60 * 1000)); // 10 hours in milliseconds
-    //if (new Date(airport.timestamp) < tenHoursAgo) return 'airport-blue';
+    if (new Date(airport.timestamp) < tenHoursAgo) return 'airport-blue';
     if (airport.openClosed==='Closed') return 'airport-pink';
     score=parseInt(score,10);
     //if (isNaN(score)) return "airport-green";

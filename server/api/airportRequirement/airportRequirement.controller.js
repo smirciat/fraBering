@@ -168,6 +168,7 @@ export async function syncPireps() {
 export function pireps(airport) {
   try {
     let data=allPireps.filter(p=>{return p.station===airport});
+    //return allPireps
     return data;
   }
   catch(err){
