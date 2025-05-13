@@ -153,6 +153,7 @@ export async function syncPireps() {
   try {
     //https://aviationweather.gov/api/data/pirep?id=PAOM&format=raw&age=2&distance=50
     let response = await axios.get('https://avwx.rest/api/pirep/PAOM?token='+process.env.AVWX_TOKEN2);
+    if (!response) return [];
     if (response.data&&response.data.Error) console.log(response.data.Error);
     let data=response.data;
     if (response.data&&response.data.data) data=response.data.data;
@@ -168,7 +169,10 @@ export async function syncPireps() {
 // Filters only current airport from Pireps
 export function pireps(airport) {
   try {
-    let data=allPireps.filter(p=>{return p.station===airport});
+    let data=allPireps.filter(p=>{
+      if (p.location&&p.location.station) return p.location.station===airport;
+      return p.station===airport;
+    });
     //return allPireps
     return data;
   }
@@ -204,10 +208,12 @@ export async function tafs(req,res) {
       if (alternateArray.indexOf(airport.threeLetter)>-1) {
         //tafs
         let response = await axios.get('https://avwx.rest/api/taf/'+airport.icao+'?token='+process.env.AVWX_TOKEN2);
-        if (response.data&&response.data.Error) console.log(res.data.Error);
-        //console.log(response.data)
-        airport.currentTaf=response.data['raw'];
-        airport.currentTafObject=response.data.forecast;
+        if (response) {
+          if (response.data&&response.data.Error) console.log(res.data.Error);
+          //console.log(response.data)
+          airport.currentTaf=response.data['raw'];
+          airport.currentTafObject=response.data.forecast;
+        }
       } 
       //pireps
       airport.pireps = pireps(airport.threeLetter);

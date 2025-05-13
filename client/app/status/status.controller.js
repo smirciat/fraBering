@@ -50,7 +50,7 @@ class StatusComponent {
   }
   
   $onInit() {
-    this.http.post('/api/airportRequirements/pireps',{airport:'UNK'}).then(res=>{console.log(res.data)});
+    this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
     this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
     this.http.post('/api/todaysFlights/getManifest',{date:'04/13/2025',flightNum:'815'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
     //this.http.post('/api/todaysFlights/getManifests').then(res=>{console.log(res.data)});
