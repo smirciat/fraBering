@@ -611,6 +611,7 @@ export async function tf(req,res) {
               airport.metarObj.isOfficial=airport.manualObs.isOfficial;
               airport.metarObj.usingManual=true;
               airport.metarObj.color=overallRiskClass(airport.metarObj);
+              if (airport.manualObs.webcam) airport.metarObj.color='airport-green';
               if (!airport.metarObj.isOfficial&&airport.metarObj.usingManual) airport.metarObj.color=airport.metarObj.color+" unofficial";
             }
           }

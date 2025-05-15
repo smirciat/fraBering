@@ -89,11 +89,13 @@ class StatusComponent {
         if (response.airport.manualObs) {
           response.airport.manualObs.previousSignature=response.airport.manualObs.signature;
           response.airport.manualObs.signature=null;
+          response.airport.manualObs.webcam=null;
         }
         this.weatherModal(response.airport,this.user);
       }
     });
     this.weatherModal=this.Modal.confirm.weather(airport=>{
+      console.log(airport)
       this.http.patch('/api/airportRequirements/'+airport._id,{manualObs:airport.manualObs,manualTimestamp:airport.manualTimestamp});
       let index=this.airports.map(e => e._id).indexOf(airport._id);
       if (index>-1) this.airports[index]=airport;
@@ -537,15 +539,16 @@ class StatusComponent {
   
   fuelRequest(flight){
     if (!flight.pfr) return "WAITING ON PILOT";
-    let response="FILL TO: "+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1) + " LBS";
-    if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"){
+    let response='';
+    if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"||flight.equipment.name==="Casa"){
       let fob=flight.fuelPreviouslyOnboard||flight.autoOnboard;
       let main=(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1-fob*1)/2;
       let gallons=Math.floor(main/6.7);
       if (gallons<0) response+=', DOUBLE CHECK FUEL REQUEST';
-      else response +=", " + Math.floor(main/6.7) + " GALLONS/side";
+      else response +=" ADD " + Math.floor(main/6.7) + " GALLONS/side";
     }
     else {
+      response+=" FILL TO: "+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1) + " LBS";
       response +=", " + Math.floor((flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1)/2) + " LBS/side";
     }
     return response;
@@ -1250,6 +1253,7 @@ class StatusComponent {
             if (airport.manualObs) {
               airport.manualObs.previousSignature=airport.manualObs.signature;
               airport.manualObs.signature=null;
+              airport.manualObs.webcam=null;
             }
             this.weatherModal(airport,this.user);
             //this.tafDisplay('The TAF for ' +airport.name+' is:',airport.metarObj.taf);
@@ -1267,6 +1271,7 @@ class StatusComponent {
             if (airport.airport.manualObs) {
               airport.airport.manualObs.previousSignature=airport.airport.manualObs.signature;
               airport.airport.manualObs.signature=null;
+              airport.airport.manualObs.webcam=null;
             }
               this.weatherModal(airport.airport,this.user);
             //}
@@ -1318,9 +1323,11 @@ class StatusComponent {
       }).catch(err=>{console.log(err)});
       //return res.data[0].icao;
     }).catch(err=>{console.log(err)});
-    
   }
   
+  korey(pilot){
+    if (pilot==='krohlack') return 'korey';
+  }
 }
 
 angular.module('workspaceApp')

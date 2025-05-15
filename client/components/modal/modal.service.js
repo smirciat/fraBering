@@ -264,7 +264,6 @@ angular.module('workspaceApp')
                             {title:'OWE',val:flight.pfr.legArray[0].operatingWeightEmpty},
                             {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
                             {title:'TKS (From iPad)',val:tksCalc().lbs,gals:tksCalc().gals},
-                            //{title:'Operating Weight',val:isNaN(flight.pfr.legArray[0].operatingWeight) ? 0 : flight.pfr.legArray[0].operatingWeight},
                             {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-tksCalc().lbs)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-tksCalc().lbs)},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
                             {title:'TOW',val:Math.round(flight.pfr.legArray[0].tow)}
@@ -487,6 +486,13 @@ angular.module('workspaceApp')
                 manualObs=airport.manualObs||{},
                 timestamp=new Date().toLocaleString(),
                 manualTimestamp=airport.manualTimestamp||null,
+                isWebcamGood=function(webcam){
+                  if (webcam) return "webcam-good";
+                },
+                isWebcamBad=function(webcam){
+                  if (webcam===undefined||webcam===null) return;
+                  if (webcam===false) return "webcam-bad";
+                },
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -497,6 +503,8 @@ angular.module('workspaceApp')
                 show:false,
                 weatherModal:true,
                 timestamp:timestamp,
+                isWebcamGood:isWebcamGood,
+                isWebcamBad:isWebcamBad,
                 floor:function(num){
                   console.log(num)
                   return Math.floor(num)

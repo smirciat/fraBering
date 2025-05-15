@@ -11,14 +11,19 @@
   <div ng-if="modal.weatherModal">
     <p>Previous Timestamp: {{modal.getTimestamp()}}</p>
     <p>Previous Signature: {{modal.manualObs.previousSignature}}</p>
-    <div class="modal-timestamp-layout" style="align-items: center;">
+    <div class="modal-timestamp-layout" style="align-items: center;" ng-hide="modal.manualObs.webcam">
       <div>
         <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.visibility"></div>
         <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.ceiling"></div>
         <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.altimeter"></div>
         <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windDirection"></div>
         <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windSpeed"></div>
-        <div style="height:44px"><input class="form-control" type="checkbox" ng-model="modal.manualObs.isOfficial"></div>
+        <div style="height:44px">
+          <span style="float:right">
+            <input class="form-control" style="width:44px" type="checkbox" ng-model="modal.manualObs.isOfficial">
+          </span>
+        </div>
+        
       </div>
       <div style="margin-top:12px">
         <div style="height:44px"><label>Visibility (10 for unlimited)</label></div>
@@ -27,6 +32,20 @@
         <div style="height:44px"><label>Wind Direction (0-360)</label></div>
         <div style="height:44px"><label>Wind Speed (kts)</label></div>
         <div style="height:44px"><label>Official Weather Source?</label></div>
+      </div>
+    </div>
+    <div class="modal-timestamp-layout" style="align-items: center;">
+      <div>
+        <div style="height:44px;padding-top:10px">
+          <span style="float:right">
+            <i ng-click="modal.manualObs.webcam=true" class="fa fa-solid fa-thumbs-up fa-autosize" ng-class="modal.isWebcamGood(modal.manualObs.webcam)" style="padding-left:10px; padding-right:10px;"></i>
+            <i ng-click="modal.manualObs.webcam=false" class="fa fa-solid fa-thumbs-down fa-autosize" ng-class="modal.isWebcamBad(modal.manualObs.webcam)" style="padding-left:10px; padding-right:10px;"></i>
+          </span>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <div style="height:44px;padding-top:10px"><label>WebCam (Thumbs Up for VFR)</label></div>
+        <div style="height:44px;padding-top:10px" ng-show="modal.manualObs.webcam"><label>Confirmed! WebCam Shows VFR Conditions</label></div>
       </div>
     </div>
     <div class="modal-contaminent-layout" style="align-items: center;">
@@ -375,7 +394,7 @@
           <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">{{modal.flight.pfr.legArray[0].mgtow}}</span>
         </div>
       </div>
-      <div class="orange-line white" ng-repeat="item in modal.summaryInfo track by $index" ng-hide="(modal.flight.equipment.name==='Caravan'&&item.title==='MaxZFW')||(modal.flight.equipment.name!=='Caravan'&&item.title==='TKS')" ng-style="{'font-weight' : item.title==='T/O Fuel' ? 'bold' : '100'}">
+      <div class="orange-line white" ng-repeat="item in modal.summaryInfo track by $index" ng-hide="(modal.flight.equipment.name==='Caravan'&&item.title==='MaxZFW')||(modal.flight.equipment.name!=='Caravan'&&item.title==='TKS (From iPad)')" ng-style="{'font-weight' : item.title==='T/O Fuel' ? 'bold' : '100'}">
         <div class="inner-modal">
           <span class="span-modal" style="float:left;padding-left:5px;">{{item.title}}</span>
           <span class="span-modal" ng-if="item.title==='TKS (From iPad)'">

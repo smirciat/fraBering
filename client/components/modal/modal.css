@@ -143,3 +143,11 @@
 .span-modal input{
   
 }
+
+.webcam-good{
+  color:green;
+}
+
+.webcam-bad{
+  color:red;
+}
