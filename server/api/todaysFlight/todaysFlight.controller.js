@@ -610,8 +610,10 @@ export async function tf(req,res) {
               airport.metarObj.altimeter=airport.manualObs.altimeter;
               airport.metarObj.isOfficial=airport.manualObs.isOfficial;
               airport.metarObj.usingManual=true;
+              airport.metarObj.manualObs-airport.manualObs;
+              airport.metarObj.manualTimestamp-airport.manualTimestamp;
               airport.metarObj.color=overallRiskClass(airport.metarObj);
-              if (airport.manualObs.webcam) airport.metarObj.color='airport-green';
+              //if (airport.manualObs.webcam) airport.metarObj.color='airport-green';
               if (!airport.metarObj.isOfficial&&airport.metarObj.usingManual) airport.metarObj.color=airport.metarObj.color+" unofficial";
             }
           }
@@ -873,6 +875,11 @@ function overallRiskClass(metarObj){
     //if (metarObj.night) returnString+=' night';
     let color="airport-green";
     let tempColor="airport-green";
+    //webcam obs
+    if (metarObj.usingManual&&airport.manualObs&&airport.manualTimestamp&&isLessThanOneHourAgo(new Date(airport.manualTimestamp))&&airport.manualObs.webcam){
+      return color;      
+    }  
+    
     //runway
     //if (!metarObj.airport) return returnString+=' '+color;
     tempColor=returnColor({yellow:3,orange:2,red:1},airport.runwayScore,'above');
