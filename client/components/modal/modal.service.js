@@ -505,6 +505,15 @@ angular.module('workspaceApp')
                 timestamp:timestamp,
                 isWebcamGood:isWebcamGood,
                 isWebcamBad:isWebcamBad,
+                thumbsUp:function(){
+                  manualObs.webcam=true;
+                  manualObs.visibility=null;
+                  manualObs.ceiling=null;
+                  manualObs.altimeter=null;
+                  manualObs.windDirection=null;
+                  manualObs.windSpeed=null;
+                  manualObs.isOfficial=false;
+                },
                 floor:function(num){
                   console.log(num)
                   return Math.floor(num)

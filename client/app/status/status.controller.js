@@ -89,7 +89,7 @@ class StatusComponent {
         if (response.airport.manualObs) {
           response.airport.manualObs.previousSignature=response.airport.manualObs.signature;
           response.airport.manualObs.signature=null;
-          response.airport.manualObs.webcam=null;
+          if (response.airport.manualObs.webcam===false) response.airport.manualObs.webcam=null;
         }
         this.weatherModal(response.airport,this.user);
       }
@@ -1253,7 +1253,7 @@ class StatusComponent {
             if (airport.manualObs) {
               airport.manualObs.previousSignature=airport.manualObs.signature;
               airport.manualObs.signature=null;
-              airport.manualObs.webcam=null;
+              if (airport.manualObs.webcam===false) airport.manualObs.webcam=null;
             }
             this.weatherModal(airport,this.user);
             //this.tafDisplay('The TAF for ' +airport.name+' is:',airport.metarObj.taf);
@@ -1271,7 +1271,7 @@ class StatusComponent {
             if (airport.airport.manualObs) {
               airport.airport.manualObs.previousSignature=airport.airport.manualObs.signature;
               airport.airport.manualObs.signature=null;
-              airport.airport.manualObs.webcam=null;
+              if (airport.airport.manualObs.webcam===false) airport.airport.manualObs.webcam=null;
             }
               this.weatherModal(airport.airport,this.user);
             //}
