@@ -103,7 +103,7 @@ export function index(req, res) {
 
 //gets the current value of the stopped boolean
 export function returnStopped(req,res){
-  res.status(200).json({stopped:staleFile});
+  res.status(200).json({stopped:false});//staleFile
 }
 
 //gets the current value of the stopped boolean
@@ -324,7 +324,7 @@ export async function tf(req,res) {
     const hour=new Date().getHours();
     if (stats.mtimeMs < tenMinutesAgo) {
       staleFile=true;
-      if (hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
+      if (false&&hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
         
         axios.post(baseUrl + '/api/monitors/twilio',{to:"+19073992019",body:"Takeflite updating has stopped"}, { httpsAgent: agent }).then((res)=>{
                 stopped=true;
@@ -342,13 +342,16 @@ export async function tf(req,res) {
       staleFile=false;
     }
     console.log('Stopped value is: ' + staleFile.toString());
+  
+  let date=new Date();
+  let date2=new Date(date);
+  date2.setDate(date2.getDate()+1);
+  date2=date2.toLocaleDateString();
+  date=date.toLocaleDateString();
+  let flights=[];
     
-  if (false){
-    let date=new Date();
-    let date2=new Date(date);
-    date2.setDate(date2.getDate()+1);
-    date2=date2.toLocaleDateString();
-    date=date.toLocaleDateString();
+    
+  if (true){
     let resp=await getManifests();
     let manifests=resp.flights;
     for (let flight of manifests){
@@ -359,6 +362,7 @@ export async function tf(req,res) {
       if (flight.flightLegs[0].crew&&flight.flightLegs[0].crew.length>1) flight.coPilot=flight.flightLegs[0].crew[1].name;
       else flight.coPilot="";
       //flight.aircraft=??????
+      flight.flightStatus=null;
       flight.aircraft=null;
       flight.active=true;
       flight.date=new Date(flight.departureDate).toLocaleDateString();
@@ -367,13 +371,15 @@ export async function tf(req,res) {
         if (!line.flightNum||!line.date) continue;
         let flightNumArr=line.flightNum.split('.');
         if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
-          if (line.aircraft) flight.aircraft=line.aircraft;
-          if (line.flightStatus) flight.flightStatus=line.flightStatus;
+          //if (line.aircraft) flight.aircraft=line.aircraft;
+          //if (line.flightStatus) flight.flightStatus=line.flightStatus;
         } 
       }
       flight.departTimes=[];
       flight.airports=[];
       flight.flightLegs.forEach((leg,i)=>{
+        if (leg.flightStatus) flight.flightStatus=leg.flightStatus;
+        if (leg.registration) flight.aircraft=leg.registration;
         flight.departTimes.push(new Date(leg.departureTime).toTimeString().slice(0,8));
         flight.airports.push(leg.origin.name);
         if (i===flight.flightLegs.length-1) {
@@ -400,10 +406,11 @@ export async function tf(req,res) {
       });
     }
     //console.log(manifests[7])
+    flights=manifests;
   }  
 
 
-
+  if (false){
     let arr=data.split('\r\n');
     if (!arr[1]) {
       console.log('failed to load csv file');
@@ -411,11 +418,11 @@ export async function tf(req,res) {
       return;
     }
     let dateArr=arr[1].split(' ');
-    let date=new Date(dateArr[2]+' '+dateArr[3]+' '+dateArr[4]);
-    let date2=new Date(date);
-    date2.setDate(date2.getDate()+1);
-    date2=date2.toLocaleDateString();
-    date=date.toLocaleDateString();
+    //let date=new Date(dateArr[2]+' '+dateArr[3]+' '+dateArr[4]);
+    //let date2=new Date(date);
+    //date2.setDate(date2.getDate()+1);
+    //date2=date2.toLocaleDateString();
+    //date=date.toLocaleDateString();
     arr.splice(0,8);
     let currentFlights=[];
     let pilot="No Pilot Assigned";
@@ -521,7 +528,7 @@ export async function tf(req,res) {
         //departTimes.push(f.departTime);
       }
     });    
-    
+  }  
   
     let instance=await TodaysFlight.findAll({
       order: [['_id', 'DESC']],
@@ -561,7 +568,7 @@ export async function tf(req,res) {
         let flightNumArr=line.flightNum.split('.');
         if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
           //if (line.aircraft) flight.aircraft=line.aircraft;
-          flight.flightStatus=line.flightStatus;
+          //flight.flightStatus=line.flightStatus;
         } 
       }
       //update weather per destination via airportObjs
