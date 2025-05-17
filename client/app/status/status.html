@@ -41,11 +41,11 @@
             <br>
             <div style="display:inline-block;">
               <p style="border:none;">
-                <span ng-hide="flight.pfr.legArray[0].offTimeString">
+                <span ng-hide="flight.tfliteDepart">
                   {{flight.departTimes[0].substring(0,5)}}
                 </span> 
-                <span ng-show="flight.pfr&&flight.pfr.legArray[0]&&flight.pfr.legArray[0].offTimeString" style="font-weight:bold;color:green;">
-                  {{flight.pfr.legArray[0].offTimeString}}
+                <span ng-show="flight.tfliteDepart" style="font-weight:bold;color:green;">
+                  {{flight.tfliteDepart}}
                 </span> 
                 <span>&nbsp-&nbsp</span>
                 <span ng-hide="flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString">
@@ -260,11 +260,11 @@
     </div>  
   </div>
 </section>
-<section style="background-color:#ffffcc;margin:auto;width:75%;" ng-if="status.view==='fuel'&&status.Auth.isUser()">
+<section style="background-color:#ffffcc;margin:auto;width:90%;" ng-if="status.view==='fuel'&&status.Auth.isUser()">
   <h3>Fuel View</h3>
-  <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'">
+  <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" ng-class="status.fuelFlightColor(flight)">
     <div ng-show="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
-      <div class="grid-parent-airport">
+      <div class="grid-parent-fuel">
         <div>
           <p style="margin:10px; padding:10px; border:1px solid black; text-align:center; width:6em;" ng-class="flight.colorLock||flight.color" 
                   ng-click="status.lookAtFlight(flight)">
@@ -272,14 +272,40 @@
           </p>
         </div>
         <div style="padding-left:0.5em;">
-          <p style="margin:0px; border:none; display:inline-block;">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + 
-               (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong>{{flight.flightStatus}}</strong></p>
+          <p style="margin:0px; border:none; display:inline-block;font-weight:bold">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + 
+               (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong ng-style="status.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong></p>
                
           <br>
           <div style="display:inline-block;">
-            <p style="border:none;">{{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}&nbsp;<strong>FUEL REQUEST: {{status.fuelRequest(flight)}}</strong></p>
+            <p style="border:none;">
+              {{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}
+              &nbsp<strong style="color:green">{{flight.tfliteDepart}}</strong>&nbsp-&nbsp<strong style="color:purple"> {{flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString}}</strong>
+            </p>
           </div>
         </div>  
+        <div style="padding-left:0.5em;" ng-if="flight.pfr">
+          <p>Fuel Request:</p>
+          <p style="font-weight:bold">{{status.fuelRequest(flight)}}</p>
+        </div>
+        <div style="padding-left:0.5em;" ng-if="!flight.pfr">
+          <p>NOT READY</p>
+        </div>
+        <div style="padding-left:0.5em;">
+          <p>
+            <input type="checkbox" ng-model="flight.fueled" ng-click="status.getFuel(flight)" style="accent-color:green" ng-disabled="!flight.pfr">
+            <input style="width:30px" type="text" ng-model="flight.fueledBy" ng-blur="status.getFuel(flight,'initials')" ng-disabled="!flight.pfr">/{{flight.fueledTimestamp||''}}
+            &nbspTruck#&nbsp<input style="width:20px" type="text" ng-model="flight.truck" ng-blur="status.getFuel(flight,'truck')">
+          </p>
+          <p>
+            Start&nbsp<input style="width:50px" type="text" ng-model="flight.startFuel" ng-blur="status.getFuel(flight,'start')">
+            &nbspStop&nbsp<input style="width:50px" type="text" ng-model="flight.stopFuel" ng-blur="status.getFuel(flight,'stop')">
+            &nbspGallons Uplifted&nbsp<input style="width:30px" type="text" ng-model="flight.gallonsUplifted" ng-blur="status.getFuel(flight,'gallons')">
+          </p>
+        </div>
+        <div style="padding-left:0.5em;">
+          <p>Load Available</p>
+          <p style="font-weight:bold">{{status.laCalc(flight)}}</p>
+        </div>
       </div>
     </div>  
   </div>

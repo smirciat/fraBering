@@ -266,6 +266,7 @@ async function log(){
       flightStatus:line[statusIndex],
       arrTime:line[16],
       flightNum:line[3],
+      takeoffTime:line[13],
       flightId:line[1],
       date:new Date(line[0]).toLocaleDateString(),
       departTime:line[11]
@@ -351,7 +352,7 @@ export async function tf(req,res) {
   let flights=[];
     
     
-  if (true){
+  if (staleFile){
     let resp=await getManifests();
     let manifests=resp.flights;
     for (let flight of manifests){
@@ -364,6 +365,7 @@ export async function tf(req,res) {
       //flight.aircraft=??????
       flight.flightStatus=null;
       flight.aircraft=null;
+      flight.tfliteDepart=null;
       flight.active=true;
       flight.date=new Date(flight.departureDate).toLocaleDateString();
       flight.flightNum=flight.flightNumber;
@@ -373,6 +375,7 @@ export async function tf(req,res) {
         if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
           //if (line.aircraft) flight.aircraft=line.aircraft;
           //if (line.flightStatus) flight.flightStatus=line.flightStatus;
+          if (line.takeoffTime) flight.tfliteDepart=line.takeoffTime;
         } 
       }
       flight.departTimes=[];
@@ -410,7 +413,7 @@ export async function tf(req,res) {
   }  
 
 
-  if (false){
+  if (!staleFile){
     let arr=data.split('\r\n');
     if (!arr[1]) {
       console.log('failed to load csv file');
@@ -455,6 +458,8 @@ export async function tf(req,res) {
       currentFlights.push(obj);
       index++;
     });
+    
+    
     //I now have currentFlights with either a flightNum or FlightId in the flightNum attribute.  Before the sort, maybe run through it once to make sure its right?
     //let tempFlights=JSON.parse(JSON.stringify(currentFlights));
     currentFlights.forEach((flight,index)=>{
@@ -476,7 +481,7 @@ export async function tf(req,res) {
     });
     let departTimes=[];
     let airports=[];
-    let flights=[];
+    //let flights=[];
     let flight;
     currentFlights.push({departTime:'00:00:00',from:'here',to:'there',flightNum:'000',flightId:'000'});
     currentFlights.forEach((f,index)=>{
@@ -568,7 +573,8 @@ export async function tf(req,res) {
         let flightNumArr=line.flightNum.split('.');
         if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
           //if (line.aircraft) flight.aircraft=line.aircraft;
-          //flight.flightStatus=line.flightStatus;
+          if (!staleFile) flight.flightStatus=line.flightStatus;
+          if (line.takeoffTime) flight.tfliteDepart=line.takeoffTime;
         } 
       }
       //update weather per destination via airportObjs
@@ -752,6 +758,7 @@ export async function tf(req,res) {
           //console.log(todaysFlights[index]._id+' date'); 
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].flightStatus=flight.flightStatus;
+          todaysFlights[index].tfliteDepart=flight.tfliteDepart;
         //}
         if (todaysFlights[index].date!==flight.date) {
           //todaysFlights[index].runScroll=true;
@@ -858,6 +865,14 @@ export async function tf(req,res) {
         delete flight.ocReleaseTimestamp;
         delete flight.dispatchReleaseTimestamp;
         delete flight.knownIce;
+        delete flight.fueled;
+        delete flight.fueledBy;
+        delete flight.fueledTimestamp;
+        delete flight.truck;
+        delete flight.startFuel;
+        delete flight.stopFuel;
+        delete flight.gallonsUplifted;
+        
         
         TodaysFlight.find({
           where: {

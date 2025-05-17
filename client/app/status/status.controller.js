@@ -537,6 +537,36 @@ class StatusComponent {
     //},0);
   }
   
+  getFontColor(depart,arrive){
+    if (arrive) return {"color":"purple"};
+    if (depart) return {"color":"green"};
+  }
+  
+  getFuel(flight,kind){
+    if (kind) flight.fueled=true;
+    this.timeout(()=>{
+      if (!flight.fueled) {
+        flight.fueledBy=null;
+        flight.fueledTimestamp=null;
+        flight.truck=null;
+        flight.startFuel=null;
+        flight.stopFuel=null;
+        flight.gallonsUplifted=null;
+      }
+      else flight.fueledTimestamp=new Date().toLocaleTimeString('en-US', { timeStyle: 'short' });
+      this.http.patch('/api/todaysFlights/'+flight._id,{fueled:flight.fueled,fueledBy:flight.fueledBy,fueledTimestamp:flight.fueledTimestamp,truck:flight.truck,startFuel:flight.startFuel,stopFuel:flight.stopFuel,gallonsUplifted:flight.gallonsUplifted}).then(res=>{console.log(res.data)});
+    },0);
+  }
+  
+  fuelFlightColor(flight){
+    if (!flight.pfr) return "fuel-gray";
+    if (flight.fueled) return "fuel-green";
+  }
+  
+  fuelColor(fueled){
+    if (!fueled) return;// "fuel-red";
+  }
+  
   fuelRequest(flight){
     if (!flight.pfr) return "WAITING ON PILOT";
     let response='';
@@ -548,8 +578,8 @@ class StatusComponent {
       else response +=" ADD " + Math.floor(main/6.7) + " GALLONS/side";
     }
     else {
-      response+=" FILL TO: "+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1) + " LBS";
-      response +=", " + Math.floor((flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1)/2) + " LBS/side";
+      response+=" FILL TO: ";//+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1) + " LBS";
+      response += Math.floor((flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1)/2) + " LBS/side";
     }
     return response;
   }

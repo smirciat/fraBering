@@ -48,7 +48,7 @@ let callbackFunction=()=>{
         .then((response)=>{
           console.log('interval going');
         })
-        .catch(err=>{console.log(err.response.data)});
+        .catch(err=>{console.log(err.response.data||err)});
   //axios.post(baseUrl + '/api/todaysFlights/record',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
         //.then((response)=>{
           //console.log('recordAssessment function successfully run');

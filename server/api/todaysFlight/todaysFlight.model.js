@@ -64,6 +64,14 @@ export default function(sequelize, DataTypes) {
     jumpseaterObject:DataTypes.JSONB,
     airplaneObj:DataTypes.JSONB,
     flightLegs:DataTypes.JSONB,
-    miscObject:DataTypes.JSONB
+    miscObject:DataTypes.JSONB,
+    tfliteDepart:DataTypes.STRING,
+    fueled:DataTypes.BOOLEAN,
+    fueledBy:DataTypes.STRING,
+    fueledTimestamp:DataTypes.STRING,
+    truck:DataTypes.STRING,
+    startFuel:DataTypes.STRING,
+    stopFuel:DataTypes.STRING,
+    gallonsUplifted:DataTypes.STRING
   });
 }
