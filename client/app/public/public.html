@@ -1,0 +1,63 @@
+<navbar></navbar>
+<div ng-show="status.spinner" class="myspinner"></div>
+<div class="wheat">
+    <div class="jumbotron">
+        <h1 style="text-align:center">Bering Air Flight Status</h1>
+        <div>
+         <span style="display: table; margin: 0 auto;">
+          <h2 style="font-size:50px;display:inline-block;margin:0px;">{{public.date}} &nbsp Base: &nbsp </h2>
+          <ui-select style="width:150px;display:inline-block;margin:0px;" ng-model="public.base" theme="selectize" ng-change="public.sort()">
+            <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+            <ui-select-choices repeat="choice in public.bases" >
+              <div ng-bind-html="choice | highlight: $select.search"></div>
+            </ui-select-choices>
+          </ui-select>
+         </span>
+        </div>
+    </div>
+    <div>
+      <div ng-repeat="flight in public.flights | orderBy:'departTimes[0]'">
+        <div class="grid-parent-public">
+            <div>
+              <p style="font-weight:bold;font-size:15px">
+                <strong ng-style="public.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong>
+              </p>
+            </div>
+            <div>
+              <p style="font-weight:bold;font-size:15px">
+                Flight# &nbsp {{flight.flightNum}}
+              </p>
+            </div>
+            <div>
+              <p style="font-weight:bold;font-size:15px">
+                Scheduled Times &nbsp  
+                {{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}
+              </p>
+              <p style="font-weight:bold;font-size:15px">
+                Actual Times &nbsp
+                <strong style="color:green">{{flight.tfliteDepart}}</strong>&nbsp-&nbsp
+                <strong style="color:purple"> {{flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString}}</strong>
+              </p>
+            </div>
+            <div>
+              <p style="font-weight:bold;font-size:15px">
+                Routing: &nbsp
+                {{flight.airports.toString()}}
+              </p>
+            </div>
+            <div>
+              <p style="font-weight:bold;font-size:15px">
+                Crew: &nbsp 
+                {{flight.pilotObject.firstName||flight.pilot}}
+                <strong ng-if="flight.coPilot">and &nbsp{{flight.coPilotObject.firstName||flight.coPilot||''}}</strong>
+              </p>
+              <p style="font-weight:bold;font-size:15px">
+                Airplane: &nbsp 
+                {{flight.equipment.name}}
+              </p>
+            </div>
+        </div>
+        <hr class="public-line">
+      </div>
+    </div>
+</div>
