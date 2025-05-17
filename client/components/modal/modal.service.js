@@ -493,6 +493,7 @@ angular.module('workspaceApp')
                   if (webcam===undefined||webcam===null) return;
                   if (webcam===false) return "webcam-bad";
                 },
+                webcamEnabled=['ELI','GAM','SMK','SVA','SHH','WAA'],
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -505,14 +506,35 @@ angular.module('workspaceApp')
                 timestamp:timestamp,
                 isWebcamGood:isWebcamGood,
                 isWebcamBad:isWebcamBad,
-                thumbsUp:function(){
-                  manualObs.webcam=true;
-                  manualObs.visibility=null;
-                  manualObs.ceiling=null;
-                  manualObs.altimeter=null;
-                  manualObs.windDirection=null;
-                  manualObs.windSpeed=null;
-                  manualObs.isOfficial=false;
+                disableWebcam:function(){
+                  if (webcamEnabled.indexOf(airport.threeLetter)<0) return true;
+                },
+                clickWebcam:function(kind){
+                  setTimeout(()=>{
+                    if (kind==='webcam') {
+                      if (manualObs.webcam) {
+                        manualObs.webcamIFR=false;
+                        manualObs.isOfficial=false;
+                        manualObs.visibility=null;
+                        manualObs.ceiling=null;
+                        manualObs.altimeter=null;
+                        manualObs.windDirection=null;
+                        manualObs.windSpeed=null;
+                      }
+                      
+                    }
+                    else {
+                      if (manualObs.webcamIFR) {
+                        manualObs.webcam=false;
+                        manualObs.isOfficial=true;
+                        manualObs.visibility=null;
+                        manualObs.ceiling=null;
+                        manualObs.altimeter=null;
+                        manualObs.windDirection=null;
+                        manualObs.windSpeed=null;
+                      }
+                    }
+                  },0);
                 },
                 floor:function(num){
                   console.log(num)

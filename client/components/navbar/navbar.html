@@ -33,7 +33,7 @@
             <li ng-show="nav.Auth.isUser()" ui-sref-active="active"><a ui-sref="roster">Roster</a></li>
           </ul>
         </li>
-        <li style="padding-left:1em;padding-top:7px;">
+        <li ng-show="nav.Auth.isUser()" style="padding-left:1em;padding-top:7px;">
           <div >
             <a style="float:left" href='#' ng-click="nav.minusDate()"><button class="btn btn-info" style="height:40px"><i class="fa fa-angle-left fa-autosize space-if"></i></button></a>
             <a style="float:right" href='#' ng-click="nav.plusDate()"><button class="btn btn-info" style="height:40px"><i class="fa fa-angle-right fa-autosize space-if"></i></button></a>
@@ -51,7 +51,7 @@
               <!--<h5 ng-class="nav.socket">S</h5>-->
           </div>
         </li>
-        <li style="padding-top:7px;padding-left:2em;">
+        <li ng-show="nav.Auth.isUser()" style="padding-top:7px;padding-left:2em;">
           <ui-select style="width:10em;" ng-model="nav.base" theme="selectize" ng-disabled="disabled" ng-change="nav.updateBase()">
               <ui-select-match placeholder="Choose...">{{$select.selected.base}}</ui-select-match>
               <ui-select-choices repeat="base in nav.bases" >

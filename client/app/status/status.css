@@ -185,6 +185,15 @@
   align-items:center;
 }
 
+.grid-parent-public{
+  display: grid; 
+  grid-template-columns: 1fr 1fr 2fr 3fr 2fr; 
+  grid-gap: 0px; 
+  width: 100%; 
+  padding-left:40px;
+  align-items:center;
+}
+
 .grid-parent-airport{
   display: grid; 
   grid-template-columns: 1fr 9fr; 
@@ -321,6 +330,15 @@ div.airport-pink h1{
 .tiny{
   font-size:.5em;
   margin:0px;
+}
+
+.public-line{
+  display: block;
+  height: 1px;
+  border: 0;
+  border-top: 1px solid #ccc;
+  margin: 1em 0;
+  padding: 0;
 }
 
 @media (max-width: 991px) {

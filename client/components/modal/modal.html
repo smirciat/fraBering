@@ -11,7 +11,7 @@
   <div ng-if="modal.weatherModal">
     <p>Previous Timestamp: {{modal.getTimestamp()}}</p>
     <p>Previous Signature: {{modal.manualObs.previousSignature}}</p>
-    <div class="modal-timestamp-layout" style="align-items: center;" ng-hide="modal.manualObs.webcam">
+    <div class="modal-timestamp-layout" style="align-items: center;" ng-hide="modal.manualObs.webcam||modal.manualObs.webcamIFR">
       <div>
         <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.visibility"></div>
         <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.ceiling"></div>
@@ -20,33 +20,42 @@
         <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windSpeed"></div>
         <div style="height:44px">
           <span style="float:right">
-            <input class="form-control" style="width:44px" type="checkbox" ng-model="modal.manualObs.isOfficial">
+            <input class="form-control" style="width:44px;" type="checkbox" ng-model="modal.manualObs.isOfficial">
           </span>
         </div>
         
       </div>
       <div style="margin-top:12px">
-        <div style="height:44px"><label>Visibility (10 for unlimited)</label></div>
-        <div style="height:44px"><label>Ceiling (10000 for Clear)</label></div>
-        <div style="height:44px"><label>Altimeter Setting</label></div>
-        <div style="height:44px"><label>Wind Direction (0-360)</label></div>
-        <div style="height:44px"><label>Wind Speed (kts)</label></div>
-        <div style="height:44px"><label>Official Weather Source?</label></div>
+        <div style="height:44px"><label>&nbsp Visibility (10 for unlimited)</label></div>
+        <div style="height:44px"><label>&nbsp Ceiling (10000 for Clear)</label></div>
+        <div style="height:44px"><label>&nbsp Altimeter Setting</label></div>
+        <div style="height:44px"><label>&nbsp Wind Direction (0-360)</label></div>
+        <div style="height:44px"><label>&nbsp Wind Speed (kts)</label></div>
+        <div style="height:44px"><label>&nbsp Official Weather Source?</label></div>
       </div>
     </div>
     <div class="modal-timestamp-layout" style="align-items: center;">
       <div>
         <div style="height:44px;padding-top:10px">
-          <span style="float:right">
-            <i ng-click="modal.thumbsUp()" class="fa fa-solid fa-thumbs-up fa-autosize" ng-class="modal.isWebcamGood(modal.manualObs.webcam)" style="padding-left:10px; padding-right:10px;"></i>
-            <i ng-click="modal.manualObs.webcam=false" class="fa fa-solid fa-thumbs-down fa-autosize" ng-class="modal.isWebcamBad(modal.manualObs.webcam)" style="padding-left:10px; padding-right:10px;"></i>
+          <span style="float:right;">
+            <!--<i ng-click="modal.thumbsUp()" class="fa fa-solid fa-thumbs-up fa-autosize" ng-class="modal.isWebcamGood(modal.manualObs.webcam)" style="padding-left:10px; padding-right:10px;"></i>
+            <i ng-click="modal.manualObs.webcam=false" class="fa fa-solid fa-thumbs-down fa-autosize" ng-class="modal.isWebcamBad(modal.manualObs.webcam)" style="padding-left:10px; padding-right:10px;"></i>-->
+            <input class="form-control" type="checkbox" style="width:44px;" ng-model="modal.manualObs.webcam" ng-change="modal.clickWebcam('webcam')">
+            
+            <input class="form-control" type="checkbox" style="width:44px;" ng-model="modal.manualObs.webcamIFR" ng-change="modal.clickWebcam('webcamIFR')" ng-disabled="modal.disableWebcam()">
           </span>
         </div>
       </div>
       <div style="margin-top:12px">
-        <div style="height:44px;padding-top:10px"><label>WebCam (Thumbs Up for VFR)</label></div>
-        <div style="height:44px;padding-top:10px" ng-show="modal.manualObs.webcam"><label>Confirmed! WebCam Shows VFR Conditions</label></div>
+        <div style="height:44px;padding-top:10px"><label>&nbsp WebCam (VFR Only)</label></div>
+        <div style="height:44px;padding-top:10px"><label>&nbsp Official WebCam Observation (VFR/IFR)</label></div>
       </div>
+    </div>
+    <div>
+      <br>
+      <div style="height:44px;padding-top:10px" ng-show="modal.manualObs.webcam"><label>Confirmed! WebCam Shows VFR Conditions</label></div>
+      <div style="height:44px;padding-top:10px" ng-show="modal.manualObs.webcamIFR"><label>Confirmed! WebCam Shows Conditions IAW GOM for IFR Operations</label></div>
+      <br>
     </div>
     <div class="modal-contaminent-layout" style="align-items: center;">
       <div class="modal-column" style="text-align:right"><label>Entered By: </label></div>
