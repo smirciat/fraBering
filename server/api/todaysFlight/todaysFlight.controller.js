@@ -323,6 +323,8 @@ export async function tf(req,res) {
     console.log('Timestamp of current.csv is: ' + new Date(stats.mtimeMs).toLocaleString());
     const tenMinutesAgo = new Date(new Date().getTime() - 10 * 60 * 1000); // 10 minutes in milliseconds
     const hour=new Date().getHours();
+    const minutes=new Date().getMinutes();
+    if ((hour===23&&minutes>55)||(hour===0&&minutes<5)) return;
     if (stats.mtimeMs < tenMinutesAgo) {
       staleFile=true;
       if (false&&hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
