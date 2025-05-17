@@ -283,11 +283,11 @@
             </p>
           </div>
         </div>  
-        <div style="padding-left:0.5em;" ng-if="flight.pfr">
+        <div style="padding-left:0.5em;" ng-if="flight.pfr.legArray[0].fuel&&flight.pfr.legArray[0].fuel>99">
           <p>Fuel Request:</p>
           <p style="font-weight:bold">{{status.fuelRequest(flight)}}</p>
         </div>
-        <div style="padding-left:0.5em;" ng-if="!flight.pfr">
+        <div style="padding-left:0.5em;" ng-if="!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100">
           <p>NOT READY</p>
         </div>
         <div style="padding-left:0.5em;">

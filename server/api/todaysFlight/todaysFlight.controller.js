@@ -630,6 +630,7 @@ export async function tf(req,res) {
               if (!airport.metarObj.isOfficial&&airport.metarObj.usingManual) airport.metarObj.color=airport.metarObj.color+" unofficial";
             }
           }
+          
           airport.metarObj.taf=taf;
           airport.metarObj.TAF=TAF;
         }
@@ -901,7 +902,6 @@ function overallRiskClass(metarObj){
     if (metarObj.usingManual&&airport.manualObs&&airport.manualTimestamp&&isLessThanOneHourAgo(new Date(airport.manualTimestamp))&&airport.manualObs.webcam){
       return color;      
     }  
-    
     //runway
     //if (!metarObj.airport) return returnString+=' '+color;
     tempColor=returnColor({yellow:3,orange:2,red:1},airport.runwayScore,'above');
@@ -948,6 +948,7 @@ function overallRiskClass(metarObj){
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //return
     metarObj.color=returnString+' '+color;
+    
     return returnString+' '+color;
   }
   
@@ -1056,6 +1057,7 @@ function flightRiskClass(airportObjs){
   for (let i=0;i<airportObjs.length;i++) {
   //airportObjs.forEach(metarObj=>{
     let myClass=overallRiskClass(airportObjs[i]);
+    
     let arr=myClass.split(' ');
     arr.forEach(a=>{
       if (a==='night') night=true;

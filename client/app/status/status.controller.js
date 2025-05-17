@@ -559,7 +559,7 @@ class StatusComponent {
   }
   
   fuelFlightColor(flight){
-    if (!flight.pfr) return "fuel-gray";
+    if (!flight.pfr||!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100) return "fuel-gray";
     if (flight.fueled) return "fuel-green";
   }
   
@@ -568,7 +568,7 @@ class StatusComponent {
   }
   
   fuelRequest(flight){
-    if (!flight.pfr) return "WAITING ON PILOT";
+    if (!flight.pfr||!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100) return "WAITING ON PILOT";
     let response='';
     if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"||flight.equipment.name==="Casa"){
       let fob=flight.fuelPreviouslyOnboard||flight.autoOnboard;
