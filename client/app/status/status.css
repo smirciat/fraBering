@@ -194,6 +194,24 @@
   align-items:center;
 }
 
+.grid-parent-13{
+  display: grid; 
+  grid-template-columns: 1fr 2fr; 
+  grid-gap: 0px; 
+  width: 100%; 
+  padding-left:0px;
+  align-items:center;
+}
+
+.grid-parent-audit{
+  display: grid; 
+  grid-template-columns: 1fr 1fr 1fr; 
+  grid-gap: 0px; 
+  width: 100%; 
+  padding-left:40px;
+  align-items:center;
+}
+
 .grid-parent-airport{
   display: grid; 
   grid-template-columns: 1fr 9fr; 

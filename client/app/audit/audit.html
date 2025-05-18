@@ -1,45 +1,79 @@
 <navbar></navbar>
-<div ng-if="audit.Auth.isSuperAdmin()" style="margin-left:100px;">
+<div ng-if="audit.Auth.isSuperAdmin()" style="margin-left:60px;">
     <div ng-show="audit.spinner" class="myspinner"></div>
     <h1>Download PFR Audit to a CSV File, Open it in Microsoft Excel</h1>
-    <h3>Start Date</h3>
-    <div style="padding-left:0px;padding-top:0px" class="input-group">
-        <input style="height:40px;width:250px;" type="text" ng-model="audit.startDateStringFormatted" ng-blur="audit.entry('startDate')">
-        <span class="input-group-btn" style="float:right">
-          <button type="button" class="btn btn-default" ng-click="audit.isDatepickerOpen = !audit.isDatepickerOpen">
-            <i class="glyphicon glyphicon-calendar"></i>
-          </button>
-        </span>
-        <input style="display:none" type="text" class="form-control" uib-datepicker-popup="EEEE MMM d, yyyy" ng-model="audit.startDate" ng-change="audit.upDate('startDate')" 
-           is-open="audit.isDatepickerOpen" datepicker-options="audit.datepickerOptions" ng-required="true" close-text="Close" 
-           alt-input-formats="altInputFormats"/>
-     </div>
-     <h3>End Date</h3>
-    <div style="padding-left:0px;padding-top:0px" class="input-group">
-        <input style="height:40px;width:250px;" type="text" ng-model="audit.endDateStringFormatted" ng-blur="audit.entry('endDate')">
-        <span class="input-group-btn" style="float:right">
-          <button type="button" class="btn btn-default" ng-click="audit.isDatepicker2Open = !audit.isDatepicker2Open">
-            <i class="glyphicon glyphicon-calendar"></i>
-          </button>
-        </span>
-        <input style="display:none" type="text" class="form-control" uib-datepicker-popup="EEEE MMM d, yyyy" ng-model="audit.endDate" ng-change="audit.upDate('endDate')" 
-           is-open="audit.isDatepicker2Open" datepicker-options="audit.datepickerOptions" ng-required="true" close-text="Close" 
-           alt-input-formats="altInputFormats"/>
-     </div>
-    <h3>Choose One Pilot, or Leave Alone for All</h3>
-    <ui-select style="width:400px" ng-model="audit.pilot" theme="selectize" ng-change="audit.upDate('pilot')">
-        <ui-select-match placeholder="Choose...">{{$select.selected.displayName}}</ui-select-match>
-        <ui-select-choices repeat="pilot in audit.pilots" >
-          <div ng-bind-html="pilot.displayName | highlight: $select.search"></div>
-        </ui-select-choices>
-    </ui-select>
-    <br>
-    <div>
-        <button class="btn btn-default" ng-click="audit.createCSV()">Create CSV File (PFR Audits)</button>
-          <a class="btn btn-primary" download="result.csv" ng-href="{{ audit.url }}" ng-if="audit.complete">Download CSV File</a>
+    <div class="grid-parent-13">
+      <div>
+        <h3>Start Date</h3>
+        <div style="padding-left:0px;padding-top:0px" class="input-group">
+            <input style="height:40px;width:250px;" type="text" ng-model="audit.startDateStringFormatted" ng-blur="audit.entry('startDate')">
+            <span class="input-group-btn" style="float:right">
+              <button type="button" class="btn btn-default" ng-click="audit.isDatepickerOpen = !audit.isDatepickerOpen">
+                <i class="glyphicon glyphicon-calendar"></i>
+              </button>
+            </span>
+            <input style="display:none" type="text" class="form-control" uib-datepicker-popup="EEEE MMM d, yyyy" ng-model="audit.startDate" ng-change="audit.upDate('startDate')" 
+               is-open="audit.isDatepickerOpen" datepicker-options="audit.datepickerOptions" ng-required="true" close-text="Close" 
+               alt-input-formats="altInputFormats"/>
+         </div>
+         <h3>End Date</h3>
+        <div style="padding-left:0px;padding-top:0px" class="input-group">
+            <input style="height:40px;width:250px;" type="text" ng-model="audit.endDateStringFormatted" ng-blur="audit.entry('endDate')">
+            <span class="input-group-btn" style="float:right">
+              <button type="button" class="btn btn-default" ng-click="audit.isDatepicker2Open = !audit.isDatepicker2Open">
+                <i class="glyphicon glyphicon-calendar"></i>
+              </button>
+            </span>
+            <input style="display:none" type="text" class="form-control" uib-datepicker-popup="EEEE MMM d, yyyy" ng-model="audit.endDate" ng-change="audit.upDate('endDate')" 
+               is-open="audit.isDatepicker2Open" datepicker-options="audit.datepickerOptions" ng-required="true" close-text="Close" 
+               alt-input-formats="altInputFormats"/>
+         </div>
+        <h3>Choose One Pilot, or Leave Alone for All</h3>
+        <ui-select style="width:400px" ng-model="audit.pilot" theme="selectize" ng-change="audit.upDate('pilot')">
+            <ui-select-match placeholder="Choose...">{{$select.selected.displayName}}</ui-select-match>
+            <ui-select-choices repeat="pilot in audit.pilots" >
+              <div ng-bind-html="pilot.displayName | highlight: $select.search"></div>
+            </ui-select-choices>
+        </ui-select>
+      </div>
+      <div ng-show="audit.customAudit">
+        <h5>Select Which Fields to Include in the Custom Audit...</h5>
+        <ui-select multiple ng-model="audit.selectedItems.multipleSelect" theme="selectize">
+          <ui-select-match placeholder="Select items...">
+            {{$item.key}}
+          </ui-select-match>
+          <ui-select-choices repeat="item in audit.flightKeys track by $index">
+            <div ng-bind-html="item.combo | highlight: $select.search"></div>
+          </ui-select-choices>
+        </ui-select>
+      </div>
     </div>
-    <div>
-        <button class="btn btn-default" ng-click="audit.createCSVReleases()">Create CSV File (Flight Release Audits)</button>
-          <a class="btn btn-primary" download="result.csv" ng-href="{{ audit.url }}" ng-if="audit.complete">Download CSV File</a>
+    <br>
+    <div class="grid-parent-audit">
+        <div>
+          <p>
+            <button class="btn btn-default" ng-click="audit.createCSV()">Create CSV File (PFR Audits)</button>
+          </p>
+          <p>
+            <a class="btn btn-primary" download="result.csv" ng-href="{{ audit.url }}" ng-if="audit.complete">Download CSV File</a>
+          </p>
+        </div>
+        <div>
+          <p>
+            <button class="btn btn-default" ng-click="audit.createCSVReleases()">Create CSV File (Flight Release Audits)</button>
+          </p>
+          <p>
+            <a class="btn btn-primary" download="result.csv" ng-href="{{ audit.url }}" ng-if="audit.complete2">Download CSV File</a>
+          </p>
+        </div>
+        <div>
+          <p>
+            <button class="btn btn-warning" ng-click="audit.customAudit=true" ng-hide="audit.customAudit">Prepare Custom Audit</button>
+            <button class="btn btn-default" ng-click="audit.createCSVCustom()" ng-show="audit.customAudit">Create CSV File (Custom Audit)</button>
+          </p>
+          <p>
+            <a class="btn btn-primary" download="result.csv" ng-href="{{ audit.url }}" ng-if="audit.complete3">Download CSV File</a>
+          </p>
+        </div>
     </div>
 </div>
