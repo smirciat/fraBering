@@ -19,39 +19,41 @@
       <div ng-repeat="flight in public.flights | orderBy:'departTimes[0]'">
         <div class="grid-parent-public">
             <div>
-              <p style="font-weight:bold;font-size:15px">
+              <p ng-style="public.getFontSize(16,'px')">
                 <strong ng-style="public.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong>
               </p>
             </div>
             <div>
-              <p style="font-weight:bold;font-size:15px">
+              <p ng-style="public.getFontSize(16,'px')">
                 Flight# &nbsp {{flight.flightNum}}
               </p>
             </div>
             <div>
-              <p style="font-weight:bold;font-size:15px">
+              <p ng-style="public.getFontSize(16,'px')">
                 Scheduled Times &nbsp  
                 {{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}
               </p>
-              <p style="font-weight:bold;font-size:15px">
+              <p ng-style="public.getFontSize(16,'px')">
                 Actual Times &nbsp
                 <strong style="color:green">{{flight.tfliteDepart}}</strong>&nbsp-&nbsp
                 <strong style="color:purple"> {{flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString}}</strong>
               </p>
             </div>
             <div>
-              <p style="font-weight:bold;font-size:15px">
-                Routing: &nbsp
-                {{flight.airports.toString()}}
+              <p ng-style="public.getFontSize(16,'px')">
+                Routing:
+              </p>
+              <p ng-style="public.getFontSize(16,'px')">
+                {{public.arrayToString(flight.airports)}}
               </p>
             </div>
             <div>
-              <p style="font-weight:bold;font-size:15px">
+              <p ng-style="public.getFontSize(16,'px')">
                 Crew: &nbsp 
                 {{flight.pilotObject.firstName||flight.pilot}}
                 <strong ng-if="flight.coPilot">and &nbsp{{flight.coPilotObject.firstName||flight.coPilot||''}}</strong>
               </p>
-              <p style="font-weight:bold;font-size:15px">
+              <p ng-style="public.getFontSize(16,'px')">
                 Airplane: &nbsp 
                 {{flight.equipment.name}}
               </p>

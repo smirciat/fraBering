@@ -21,6 +21,7 @@ class PublicComponent {
   $onInit(){
     let temp=window.localStorage.getItem('myBase');
     if (temp) this.base=temp;
+    this.width=document.documentElement.clientWidth;
     this.http.post('/api/todaysFlights/dayFlights',{dateString:this.date}).then(res=>{
       this.allFlights=res.data;
       this.sort();
@@ -47,10 +48,25 @@ class PublicComponent {
     //});
   }
   
+  arrayToString(array){
+    let str='';
+    array.forEach((e,i)=>{
+      str+=e;
+      if (i<array.length-1) str+=', ';
+    });
+    return str;
+  }
+  
   getFontColor(depart,arrive){
     if (arrive) return {"color":"purple"};
     if (depart) return {"color":"green"};
   }
+  
+  getFontSize=function(num,kind){
+    if (this.width<768) num=Math.floor(num/2);
+    let val=num.toString()+kind;
+    return {"font-weight":"bold","font-size":val};
+  };
 }
 
 angular.module('workspaceApp')
