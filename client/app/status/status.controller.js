@@ -52,7 +52,7 @@ class StatusComponent {
   $onInit() {
     this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
     this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
-    this.http.post('/api/todaysFlights/getManifest',{date:'04/13/2025',flightNum:'815'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
+    this.http.post('/api/todaysFlights/getManifest',{date:'05/17/2025',flightNum:'701'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
     //this.http.post('/api/todaysFlights/getManifests').then(res=>{console.log(res.data)});
     this.width=document.documentElement.clientWidth;
     if (this.width<768) this.mobile=true;
@@ -62,6 +62,11 @@ class StatusComponent {
       if (window.width<768) num=Math.floor(num/2);
       let val=num.toString()+kind;
       return {"width":val};
+    };
+    window.getFontSize=function(num,kind){
+      if (window.width<768) num=Math.floor(num/2);
+      let val=num.toString()+kind;
+      return {"font-size":val};
     };
     //this.http.post('/api/airportRequirements/notams',{airport:'PAOM'}).then(res=>{
     //  console.log(res.data);

@@ -457,7 +457,10 @@ export async function tf(req,res) {
         obj.flightNum=temp[8];
         obj.flightId=temp[temp.length-1];
         if (index>0&&!temp[8]&&obj.flightId===currentFlights[index-1].flightId) obj.flightNum=currentFlights[index-1].flightNum;
-        if (!obj.flightNum||obj.flightNum==='Ferry'||obj.flightNum==='Training'||obj.flightNum==='Test') obj.flightNum=obj.flightId;
+        if (!obj.flightNum||obj.flightNum==='Ferry'||obj.flightNum==='Training'||obj.flightNum==='Test') {
+          obj.nonRevFlight=true;
+          obj.flightNum=obj.flightId;
+        }
         if (obj.flightNum.split('.').length>1) obj.flightNum=obj.flightNum.split('.')[0];
         currentFlights.push(obj);
         index++;
@@ -557,7 +560,13 @@ export async function tf(req,res) {
       if (fa.length===0) return;
       let index=fa.map(e=>e.flightNum).indexOf(f.flightNum);
       let active=f.active;
-      if (index===-1) active="false";
+      if (index===-1) {
+        if (!f.nonRevFlight) active="false";
+        else {
+          if (!staleFile) active="false";
+          else active="true";
+        }
+      }
       else active="true";
       if (active!==f.active) {
         f.active=active;
@@ -746,7 +755,8 @@ export async function tf(req,res) {
         let lookupObj=lookupPilotObjects(flight);
         todaysFlights[index].pilotObject=lookupObj.pilotObject;
         todaysFlights[index].coPilotObject=lookupObj.coPilotObject;
-        todaysFlights[index].runScroll=false
+        todaysFlights[index].nonRevFlight=flight.nonRevFlight;
+        todaysFlights[index].runScroll=false;
         todaysFlights[index].status=flight.status;
         todaysFlights[index].color=flight.color;
         todaysFlights[index].airplaneObj=flight.airplaneObj;
@@ -1198,12 +1208,18 @@ export async function getManifests(req,res){
     let response=await axios(config);
     //console.log(response.data);
     if (res) res.status(200).json(response.data);
-    else return response.data;
+    return response.data;
   }
   catch(err){
+    if (!err.response) err.response={data:err};
     console.log(err.response.data);
     setBearer();
-    if (err.response&&err.response.data&&err.response.data.statusCode===401&&!res) getManifests(req); 
+    let secondResponse;
+    if (err&&err.response&&err.response.data&&err.response.data.statusCode===401) {
+      secondResponse=await getManifests(req);
+      if (!res) return secondResponse;
+      else return res.status(200).json(secondResponse);
+    }
     if (res) return res.status(500).json(err.response.data);
     return err.response||err;
   }
@@ -1234,11 +1250,16 @@ export async function getManifest(req,res){
     else return response.data;
   }
   catch(err){
+    if (!err.response) err.response={data:err};
     console.log(err.response.data);
-    //if (err.response.data&&err.response.data.statusCode===401){
-      setBearer();
-    //}
+    setBearer();
+    let secondResponse;
+    if (err&&err.response&&err.response.data&&err.response.data.statusCode===401) {
+      secondResponse=await getManifest(req);
+      if (!res) return secondResponse;
+      else return res.status(200).json(secondResponse);
+    }
     if (res) return res.status(500).json(err.response.data);
-    return err;
+    return err.response||err;
   }
 }
