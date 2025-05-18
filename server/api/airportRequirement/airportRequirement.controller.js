@@ -400,7 +400,7 @@ function overallRiskClass(airport){
     metarObj.windColor=tempColor;
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //Visibility
-    if (!metarObj.Visibility||!metarObj.Ceiling||!metarObj.altimeter||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
+    if (!metarObj.Visibility||!metarObj.Ceiling||(!metarObj.altimeter&&(!metarObj.manualObs||!metarObj.usingManual||(metarObj.usingManual&&metarObj.manualObs.isOfficial)))||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
       //set colors to purple
       metarObj.ceilingColor=metarObj.visibilityColor=tempColor='airport-purple';
       if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();

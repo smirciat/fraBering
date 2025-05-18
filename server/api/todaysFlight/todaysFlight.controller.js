@@ -617,6 +617,7 @@ export async function tf(req,res) {
           airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
           airport.metarObj.aircraft=flight.aircraft;
           airport.metarObj.color=overallRiskClass(airport.metarObj);
+          airport.metarObj.usingManual=false;
           if (airport.metarObj.color===' airport-blue'||airport.metarObj.color===' airport-purple') {
             if (airport.manualObs&&airport.manualTimestamp&&isLessThanOneHourAgo(new Date(airport.manualTimestamp))){
               if (typeof airport.metarObj!=='object') airport.metarObj={};
@@ -946,7 +947,7 @@ function overallRiskClass(metarObj){
     metarObj.windColor=tempColor;
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //Visibility
-    if (!metarObj.Visibility||!metarObj.Ceiling||!metarObj.altimeter||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
+    if (!metarObj.Visibility||!metarObj.Ceiling||(!metarObj.altimeter&&(!airport.manualObs||(metarObj.usingManual&&airport.manualObs.isOfficial)))||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
       //set colors to purple
       metarObj.ceilingColor=metarObj.visibilityColor=tempColor='airport-purple';
       if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
