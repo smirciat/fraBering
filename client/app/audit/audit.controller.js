@@ -58,6 +58,8 @@ class AuditComponent {
     let res=await this.http.post('/api/todaysFlights/dayFlights',{dateString:date});
     this.flights=res.data;
     for (let flight of this.flights){
+      flight.origin='OME';
+      flight.destination='WMO';
       for (let key in flight){
         let index=this.flightKeys.findIndex(e => e.key === key && e.collection === 'flights');
         let info=typeof flight[key];
@@ -66,6 +68,22 @@ class AuditComponent {
               info:info,collection:'flights',
               combo:combo};
         if (info==='string'||info==='number'||info==='boolean'||(info==='object'&&flight[key] instanceof Date)){
+          if (info==='object') info='date';
+          if (index===-1) this.flightKeys.push(obj);
+          else {
+            obj.selected=this.flightKeys[index].selected;
+            this.flightKeys[index]=obj;
+          }
+        }
+      }
+      for (let key in flight.airportObjs[0]){
+        let index=this.flightKeys.findIndex(e => e.key === key && e.collection === 'airportObjs');
+        let info=typeof flight.airportObjs[0][key];
+        let combo=key + ' - from flights, example: ' + flight.airportObjs[0][key];
+        let obj={key:key,
+              info:info,collection:'airportObjs',
+              combo:combo};
+        if (info==='string'||info==='number'||info==='boolean'||(info==='object'&&flight.airportObjs[0][key] instanceof Date)){
           if (info==='object') info='date';
           if (index===-1) this.flightKeys.push(obj);
           else {
@@ -176,7 +194,8 @@ class AuditComponent {
       let month = String(d.getMonth() + 1).padStart(2, '0');
       let day = String(d.getDate()).padStart(2, '0');
       let year = String(d.getFullYear()).slice(-2);
-      let formattedDate=month+'/'+day+'/'+year;let pfrs=[];
+      let formattedDate=month+'/'+day+'/'+year;
+      let pfrs=[];
       if (this.refreshPfr) {
         pfrs=await this.http.post('/api/airplanes/firebaseQuery',
             {collection:'flights',parameter:'dateString',value:formattedDate,limit:300});
@@ -185,17 +204,51 @@ class AuditComponent {
       let res=await this.http.post('/api/todaysFlights/dayFlights',{dateString:date.toLocaleDateString()});
       let flights=res.data;
       //if (this.pilot) flights=flights.filter(p=>{return p.pilot===this.pilot.displayName});
+      if (this.allLegs){
+        if (flights.length>0){
+          let expandedFlights=[];
+          flights.forEach(flight=>{
+            //grab pfr from firebase if option selected, will take longer but improve accuracy
+            let pfrIndex=pfrs.findIndex(e=>e.flightNumber===flight.flightNum);
+            if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
+            for (let x=0;x<flight.airports.length-1;x++){
+              let f=angular.copy(flight);
+              f.flightNum=f.flightNum+'.'+x;
+              f.origin=f.airports[x];
+              f.destination=f.airports[x+1];
+              f.airportObj=f.airportObjs[x];
+              if (f.pfr) f.pfr.leg=f.pfr.legArray[x];
+              expandedFlights.push(f);
+            }
+          });
+          flights=expandedFlights;
+        }
+        else {
+          let expandedPfrs=[];
+          pfrs.forEach(pfr=>{
+            for (let x=0;x<pfr.legArray.length;x++){
+              let f=angular.copy(pfr);
+              f.leg=f.legArray[x];
+              expandedPfrs.push(f);
+            }
+          });
+          pfrs=expandedPfrs;
+        }
+      }
       flights.sort((a,b)=>{
         return a.pilot.localeCompare(b.pilot);
       });
       for(const flight of flights){
-        //grab pfr from firebase if option selected, will take longer but improve accuracy
-        let pfrIndex=pfrs.findIndex(e=>e.flightNumber===flight.flightNum);
-        if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
         keys.forEach((obj,i)=>{
           if (obj.collection==='flights') {
             if (flight[obj.key]&&typeof flight[obj.key]==='string') flight[obj.key]=flight[obj.key].replaceAll(',','-');
             this.csv+=flight[obj.key]+',';
+          }
+          if (obj.collection==='airportObjs') {
+            let airportObj=flight.airportObjs[0];
+            if (flight.airportObj) airportObj=flight.airportObj;
+            if (airportObj[obj.key]&&typeof airportObj[obj.key]==='string') airportObj[obj.key]=airportObj[obj.key].replaceAll(',','-');
+            this.csv+=airportObj[obj.key]+',';
           }
           if (obj.collection==='pfrs'){
             if (flight.pfr) {
@@ -209,13 +262,14 @@ class AuditComponent {
             else this.csv+=',';
           }
           if (obj.collection==='legArray'){
-            if (flight.pfr&&this.firstLeg) {
-              if (flight.pfr.legArray[0][obj.key]&&typeof flight.pfr.legArray[0][obj.key]==='string') flight.pfr.legArray[0][obj.key]=flight.pfr.legArray[0][obj.key].replaceAll(',','-');
+            if (flight.pfr&&(this.firstLeg||this.allLegs)) {
+              let leg=flight.pfr.leg||flight.pfr.legArray[0];
+              if (leg[obj.key]&&typeof leg[obj.key]==='string') leg[obj.key]=leg[obj.key].replaceAll(',','-');
               if (obj.info==='date') {
-                if (flight.pfr.legArray[0][obj.key]) this.csv+=flight.pfr.legArray[0][obj.key]._seconds+',';
+                if (leg[obj.key]) this.csv+=leg[obj.key]._seconds+',';
                 else this.csv+=',';
               }
-              else this.csv+=flight.pfr.legArray[0][obj.key]+',';
+              else this.csv+=leg[obj.key]+',';
             }
             else this.csv+=',';
           }
@@ -228,7 +282,7 @@ class AuditComponent {
       if (flights.length===0){
         for (let pfr of pfrs){
           keys.forEach((obj,i)=>{
-            if (obj.collection==='flights') {
+            if (obj.collection==='flights'||obj.collection==='airportObjs') {
               this.csv+=',';
             }
             if (obj.collection==='pfrs'){
@@ -239,6 +293,18 @@ class AuditComponent {
                   else this.csv+=',';
                 }
                 else this.csv+=pfr[obj.key]+',';
+              }
+              else this.csv+=',';
+            }
+            if (obj.collection==='legArray'){
+              if (this.firstLeg||this.allLegs) {
+                let leg=pfr.leg||pfr.legArray[0];
+                if (leg[obj.key]&&typeof leg[obj.key]==='string') leg[obj.key]=leg[obj.key].replaceAll(',','-');
+                if (obj.info==='date') {
+                  if (leg[obj.key]) this.csv+=leg[obj.key]._seconds+',';
+                  else this.csv+=',';
+                }
+                else this.csv+=leg[obj.key]+',';
               }
               else this.csv+=',';
             }
