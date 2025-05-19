@@ -14,6 +14,8 @@ class AuditComponent {
     this.endDate=new Date();
     this.endDate.setHours(14);
     this.endDateStringFormatted=this.endDate.toLocaleDateString();
+    this.refreshPfr=true;
+    this.firstLeg=true;
     this.pilots=[];
     this.pfrs=[];
     this.flights=[];
@@ -90,6 +92,26 @@ class AuditComponent {
           }
         }
       }
+      if (flight.pfr) {
+        for (let key in flight.pfr.legArray[0]){
+          let index=this.flightKeys.findIndex(e => e.key === key && e.collection === 'legArray');
+          let info=typeof flight.pfr.legArray[0][key];
+          let e=flight.pfr.legArray[0][key];
+          if (flight.pfr.legArray[0][key]&&typeof flight.pfr.legArray[0][key]==="object"&&flight.pfr.legArray[0][key]._seconds) e=flight.pfr.legArray[0][key]._seconds;
+          let combo=key + ' - from legArray (pfr), example: ' + e;
+          let obj={key:key,
+                info:info,collection:'legArray',
+                combo:combo};
+          if (info==='string'||info==='number'||info==='boolean'||(info==='object'&&(flight.pfr.legArray[0][key] instanceof Date||flight.pfr.legArray[0][key]._seconds))){
+            if (info==='object') obj.info='date';
+            if (index===-1) this.flightKeys.push(obj);
+            else {
+              obj.selected=this.flightKeys[index].selected;
+              this.flightKeys[index]=obj;
+            }
+          }
+        }
+      }
     }
     console.log(this.flightKeys);
     window.localStorage.setItem('flightKeys',JSON.stringify(this.flightKeys));
@@ -150,14 +172,26 @@ class AuditComponent {
     for (let x=startInt;x<=endInt;x++) {
       let date=new Date(this.startDate);
       date.setDate(x);
+      let d=new Date(date);
+      let month = String(d.getMonth() + 1).padStart(2, '0');
+      let day = String(d.getDate()).padStart(2, '0');
+      let year = String(d.getFullYear()).slice(-2);
+      let formattedDate=month+'/'+day+'/'+year;let pfrs=[];
+      if (this.refreshPfr) {
+        pfrs=await this.http.post('/api/airplanes/firebaseQuery',
+            {collection:'flights',parameter:'dateString',value:formattedDate,limit:300});
+        pfrs=pfrs.data;
+      }
       let res=await this.http.post('/api/todaysFlights/dayFlights',{dateString:date.toLocaleDateString()});
-      
       let flights=res.data;
       //if (this.pilot) flights=flights.filter(p=>{return p.pilot===this.pilot.displayName});
       flights.sort((a,b)=>{
         return a.pilot.localeCompare(b.pilot);
       });
       for(const flight of flights){
+        //grab pfr from firebase if option selected, will take longer but improve accuracy
+        let pfrIndex=pfrs.findIndex(e=>e.flightNumber===flight.flightNum);
+        if (pfrIndex>-1) flight.pfr=pfrs[pfrIndex];
         keys.forEach((obj,i)=>{
           if (obj.collection==='flights') {
             if (flight[obj.key]&&typeof flight[obj.key]==='string') flight[obj.key]=flight[obj.key].replaceAll(',','-');
@@ -174,11 +208,46 @@ class AuditComponent {
             }
             else this.csv+=',';
           }
+          if (obj.collection==='legArray'){
+            if (flight.pfr&&this.firstLeg) {
+              if (flight.pfr.legArray[0][obj.key]&&typeof flight.pfr.legArray[0][obj.key]==='string') flight.pfr.legArray[0][obj.key]=flight.pfr.legArray[0][obj.key].replaceAll(',','-');
+              if (obj.info==='date') {
+                if (flight.pfr.legArray[0][obj.key]) this.csv+=flight.pfr.legArray[0][obj.key]._seconds+',';
+                else this.csv+=',';
+              }
+              else this.csv+=flight.pfr.legArray[0][obj.key]+',';
+            }
+            else this.csv+=',';
+          }
           if (i===keys.length-1) {
             this.csv=this.csv.slice(0, -1);
             this.csv+="\r\n";
           }
         });
+      }
+      if (flights.length===0){
+        for (let pfr of pfrs){
+          keys.forEach((obj,i)=>{
+            if (obj.collection==='flights') {
+              this.csv+=',';
+            }
+            if (obj.collection==='pfrs'){
+              if (pfr) {
+                if (pfr[obj.key]&&typeof pfr[obj.key]==='string') pfr[obj.key]=pfr[obj.key].replaceAll(',','-');
+                if (obj.info==='date') {
+                  if (pfr[obj.key]) this.csv+=pfr[obj.key]._seconds+',';
+                  else this.csv+=',';
+                }
+                else this.csv+=pfr[obj.key]+',';
+              }
+              else this.csv+=',';
+            }
+            if (i===keys.length-1) {
+              this.csv=this.csv.slice(0, -1);
+              this.csv+="\r\n";
+            }
+          });
+        }
       }
     }
     this.spinner=false;

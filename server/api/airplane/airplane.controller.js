@@ -187,6 +187,20 @@ function fSort(flights){
   });
 }
 
+async function getDocument(collectionName, documentId) {
+  let data={};
+  const docRef = firebase_db.collection(collectionName).doc(documentId);
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    console.log('No such document!');
+  } else {
+    data=doc.data();
+    data._id=documentId;
+    console.log('Document data:', doc.data());
+  }
+  return data;
+}
+
 export async function getCollectionQuery(collectionName,limit,parameter,operator,value,timestampBoolean,parameter2,operator2,value2) {
   try {
     for (let s of [collectionName,limit,parameter,operator,value,timestampBoolean]){
@@ -314,12 +328,24 @@ function collectionToArray(result){
   return array;
 }
 
+export async function firebaseDoc(req,res){
+  let collection=req.body.collection||'flights';
+  let documentId=req.body._id||'759-051725-1';
+  try {
+    const result=await getDocument(collection,documentId);
+    return res.status(200).json(result);
+  } catch(err){
+    console.log(err);
+    return res.status(500).json(err);
+  }
+}
+
 export async function firebase(req,res){
   let collection=req.body.collection;
   const result=await getCollection(collection);
   let array=collectionToArray(result);
   //console.log(array);
-  res.status(200).json(array);
+  return res.status(200).json(array);
 }
 
 export async function firebaseQueryFunction(collection,limit,parameter,operator,value,timestampBoolean){
@@ -328,16 +354,15 @@ export async function firebaseQueryFunction(collection,limit,parameter,operator,
 }
 
 export async function firebaseQuery(req,res){
-  let collection=req.body.collection;
+  let collection=req.body.collection||'pilots';
   let limit=req.body.limit||50;
   let parameter=req.body.parameter||'pilotEmployeeNumber';
   let operator=req.body.operator||'==';
-  let value=req.body.value;
+  let value=req.body.value||'933';
   let timestampBoolean=req.body.timestampBoolean||false;
   const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean,req.body.parameter2,req.body.operator2,req.body.value2);
   let array=collectionToArray(result);
-  //console.log(array);
-  res.status(200).json(array);
+  return res.status(200).json(array);
 }
 
 export async function firebaseLimited(req,res){

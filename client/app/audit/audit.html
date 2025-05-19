@@ -37,12 +37,28 @@
         </ui-select>
       </div>
       <div ng-show="audit.customAudit">
-        <h5>Select Which Fields to Include in the Custom Audit...</h5>
+        <label style="display:inline-block;vertical-align:middle;padding:0;margin:0;">
+          Check to Import First Leg of Each Flight &nbsp
+        </label>
+        <input class="form-control" style="display:inline-block;width:20px;vertical-align:middle;padding:0;margin:0;" 
+            type="checkbox" ng-model="audit.firstLeg"><br>
+        <label style="display:inline-block;vertical-align:middle;padding:0;margin:0;">
+          Check to Import all Legs of Each Flight&nbsp
+        </label>
+        <input class="form-control" style="display:inline-block;width:20px;vertical-align:middle;padding:0;margin:0;" 
+            type="checkbox" ng-model="audit.allLegs"><br>
+        <label style="display:inline-block;vertical-align:middle;padding:0;margin:0;">
+          Check to Import PFRs from Firebase &nbsp
+        </label>
+        <input class="form-control" style="display:inline-block;width:20px;vertical-align:middle;padding:0;margin:0;" 
+              type="checkbox" ng-model="audit.refreshPfr">
+      
+        <h5>Select Which Fields to Include in the Custom Audit (start typing to search for field)</h5>
         <ui-select multiple ng-model="audit.selectedItems.multipleSelect" theme="selectize">
           <ui-select-match placeholder="Select items...">
             {{$item.key}}
           </ui-select-match>
-          <ui-select-choices repeat="item in audit.flightKeys track by $index">
+          <ui-select-choices repeat="item in audit.flightKeys | filter: $select.search track by $index">
             <div ng-bind-html="item.combo | highlight: $select.search"></div>
           </ui-select-choices>
         </ui-select>
