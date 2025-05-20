@@ -390,7 +390,7 @@ export async function tf(req,res) {
           if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
             //if (line.aircraft) flight.aircraft=line.aircraft;
             //if (line.flightStatus) flight.flightStatus=line.flightStatus;
-            if (line.takeoffTime) flight.tfliteDepart=line.takeoffTime;
+            if (line.takeoffTime&&!flight.tfliteDepart) flight.tfliteDepart=line.takeoffTime;
           } 
         }
         flight.departTimes=[];
@@ -457,10 +457,8 @@ export async function tf(req,res) {
         obj.flightNum=temp[8];
         obj.flightId=temp[temp.length-1];
         if (index>0&&!temp[8]&&obj.flightId===currentFlights[index-1].flightId) obj.flightNum=currentFlights[index-1].flightNum;
-        if (!obj.flightNum||obj.flightNum==='Ferry'||obj.flightNum==='Training'||obj.flightNum==='Test') {
-          obj.nonRevFlight=true;
-          obj.flightNum=obj.flightId;
-        }
+        if (obj.operation==='Ferry'||obj.operation==='Training'||obj.operation==='Test') obj.nonRevFlight=true;
+        if (!obj.flightNum||obj.flightNum==='Ferry'||obj.flightNum==='Training'||obj.flightNum==='Test') obj.flightNum=obj.flightId;
         if (obj.flightNum.split('.').length>1) obj.flightNum=obj.flightNum.split('.')[0];
         currentFlights.push(obj);
         index++;
@@ -580,6 +578,7 @@ export async function tf(req,res) {
   
     for (let [flightIndex, flight] of flights.entries()){
       if (!flight) return;
+      flight.tfliteDepart=null;
       //check flightLog for flight status (remove section when reverting to tflite api)
       for (let line of flightLog){
         if (!line.flightNum||!line.date) continue;
@@ -587,7 +586,7 @@ export async function tf(req,res) {
         if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
           //if (line.aircraft) flight.aircraft=line.aircraft;
           if (!staleFile) flight.flightStatus=line.flightStatus;
-          if (line.takeoffTime) flight.tfliteDepart=line.takeoffTime;
+          if (line.takeoffTime&&!flight.tfliteDepart) flight.tfliteDepart=line.takeoffTime;
         } 
       }
       //update weather per destination via airportObjs

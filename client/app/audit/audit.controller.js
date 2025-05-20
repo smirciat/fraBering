@@ -228,6 +228,7 @@ class AuditComponent {
           pfrs.forEach(pfr=>{
             for (let x=0;x<pfr.legArray.length;x++){
               let f=angular.copy(pfr);
+              f.flightNumber=f.flightNumber+'.'+x;
               f.leg=f.legArray[x];
               expandedPfrs.push(f);
             }

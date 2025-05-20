@@ -208,7 +208,7 @@ angular.module('workspaceApp')
                 ocRequired=function(color){
                   if (colors.indexOf(color)>3) return true;
                   if (flight.pfr&&flight.pfr.legArray[0].fuel<flight.equipment.minFuel) return true;
-                  if (flight.knownIce) return true;
+                  if (flight.knownIce&&flight.equipment.name==="Caravan") return true;
                   if (highMinimums) return true;
                   return false;
                 },
@@ -388,7 +388,7 @@ angular.module('workspaceApp')
                   else return '';
                 },
                 isDispatchDisabled:function(){
-                  return ocRequired(flight.color) || moreThanOneHour() || !isAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || flight.knownIce || allDisabled();
+                  return ocRequired(flight.color) || moreThanOneHour() || !isAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
                 },
                 isOCDisabled:function(){
                   return !ocRequired(flight.color) || moreThanOneHour() || !isSuperAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
@@ -402,7 +402,7 @@ angular.module('workspaceApp')
                   if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
                   if (noPfr()) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
                   if (!isAdmin) string+='- You are logged in as an OC Manager or Dispatcher';
-                  if (ocRequired(flight.color)) string+='- Flight color is NOT orange or red, and the FIKI box is NOT checked\r\n';
+                  if (ocRequired(flight.color)) string+='- Flight color is NOT orange or red, and the FIKI box is NOT checked (Caravans)\r\n';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
                   window.alert(string);
                 },
@@ -411,7 +411,7 @@ angular.module('workspaceApp')
                   if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
                   if (noPfr()) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
                   if (!isSuperAdmin) string+='- You are logged in as an OC Manager';
-                  if (!ocRequired(flight.color)) string+='- Flight color is orange or red, or the FIKI box is checked\r\n';
+                  if (!ocRequired(flight.color)) string+='- Flight color is orange or red, or the FIKI box is checked (Caravans)\r\n';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
                   window.alert(string);
                 },
