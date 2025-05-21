@@ -10,6 +10,8 @@ class PublicComponent {
     this.timeout=$timeout;
     this.socket=socket;
     this.date=new Date().toLocaleDateString();
+    this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short'});
+    this.dateString=new Date().toLocaleDateString('en-US', { weekday: 'long', year:'numeric',month:'long',day:'numeric' }).toUpperCase();
     this.flights=[];
     this.base="Nome";
     this.bases=["Nome","Kotzebue","Unalakleet"];
@@ -19,6 +21,7 @@ class PublicComponent {
   }
   
   $onInit(){
+    this.interval(()=>{this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short'});},60*1000);
     let temp=window.localStorage.getItem('myBase');
     if (temp) this.base=temp;
     this.width=document.documentElement.clientWidth;
@@ -54,7 +57,7 @@ class PublicComponent {
       str+=e;
       if (i<array.length-1) str+=', ';
     });
-    return str;
+    return str.toUpperCase();
   }
   
   getFontColor(depart,arrive){
@@ -66,7 +69,17 @@ class PublicComponent {
     if (this.width<768) num=Math.floor(num/2);
     let val=num.toString()+kind;
     return {"font-weight":"bold","font-size":val};
-  };
+  }
+  
+  background(flight){
+    if (flight.flightStatus==='Boarding') return 'public-boarding';
+    if (flight.tfliteDeparture) return 'public-departed';
+    return 'public-normal';
+  }
+  
+  isLineThrough(bool){
+    if (bool) return 'public-linethrough';
+  }
 }
 
 angular.module('workspaceApp')

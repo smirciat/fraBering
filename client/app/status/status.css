@@ -187,11 +187,11 @@
 
 .grid-parent-public{
   display: grid; 
-  grid-template-columns: 1fr 1fr 2fr 3fr 2fr; 
-  grid-gap: 0px; 
-  width: 100%; 
-  padding-left:40px;
+  grid-template-columns: 1fr 3fr 1fr 2fr 2fr; 
+  grid-gap: 1px; 
+  width: 90%; 
   align-items:center;
+  border: 1px solid white;
 }
 
 .grid-parent-13{
@@ -350,13 +350,29 @@ div.airport-pink h1{
   margin:0px;
 }
 
+.public-linethrough{
+  text-decoration: line-through;
+}
+
 .public-line{
   display: block;
   height: 1px;
   border: 0;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid white;
   margin: 1em 0;
   padding: 0;
+}
+
+.public-normal{
+  background-color:#404040;
+}
+
+.public-boarding{
+  background-color:#DAE9F8;
+}
+
+.public-departed{
+  background-color:#595959;
 }
 
 @media (max-width: 991px) {

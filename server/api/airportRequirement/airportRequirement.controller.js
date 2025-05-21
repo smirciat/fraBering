@@ -258,7 +258,10 @@ export async function metars(req,res) {
     for (const [airportIndex,airport] of allAirports.entries()) {
       airport.runScroll=false;
       if (airportIndex>=allAirports.length-1) airport.runScroll=true;
-      if (airport.icao&&airport.icao.length==4&&airport.icao!=="PAOB") airport.currentMetarObj = await getMetar(airport.icao);
+      if (airport.icao&&airport.icao.length==4&&airport.icao!=="PAOB") {
+        if (hour>=6&&hour<=17) airport.currentMetarObj = await getMetar(airport.icao);
+        else airport.currentMetarObj = await getMetarAVWX(airport.icao);
+      }
       if (!airport.currentMetarObj) continue;
       airport.currentMetar=airport.currentMetarObj.metar;
       let metarDate=new Date(airport.currentMetarObj.date);
@@ -336,6 +339,81 @@ export async function getMetarList(airport) {
    finally{
      return jsonResponse;
    }
+}
+
+export async function getMetarGOV(airport) {
+  let jsonResponse={airport:airport,metar:'missing'};
+  let url='https://api.weather.gov/stations/'+airport+'/observations/latest';
+  try {
+    let response = await axios.get(url);
+    if (response.data.properties&&response.data.properties.rawMessage) {//STATION[0]
+      jsonResponse.metar=response.data.properties.rawMessage;//response.data.STATION[0].OBSERVATIONS.metar_value_1.value;
+      jsonResponse.date=response.data.properties.timestamp;//response.data.STATION[0].OBSERVATIONS.metar_value_1.date_time;
+      if (response.data.geometry&&response.data.geometry.coordinates) {
+        response.data.geometry.coordinates[1];//response.data.STATION[0].LATITUDE;
+        response.data.geometry.coordinates[0];//response.data.STATION[0].LONGITUDE;
+      }
+    }
+   }
+   catch (err) {
+     if (err.response&&err.response.config){
+       console.log(err.response.config.url);
+     }
+     else console.log('error fetching metar for '+airport);
+   }
+   finally{
+     return jsonResponse;
+   }
+      
+}
+
+export async function getMetarAVWX(airport) {
+  let jsonResponse={airport:airport,metar:'missing'};
+  let url = 'https://avwx.rest/api/metar/' + airport + '?reporting=true&token=' + process.env.AVWX_TOKEN2;
+  try {
+    let response = await axios.get(url);
+    if (response.data&&response.data.raw){
+      jsonResponse.metar=response.data.raw;
+      jsonResponse.date=response.data.time.dt;
+    }
+   }
+   catch (err) {
+     if (err.response&&err.response.config){
+       console.log(err.response.config.url);
+     }
+     else console.log('error fetching metar for '+airport);
+   }
+   finally{
+     return jsonResponse;
+   }
+      
+}
+
+export async function getMetarSynoptic(airport) {
+  let jsonResponse={airport:airport,metar:'missing'};
+  let url = url1 + airport + url2;
+  //url='https://api.weather.gov/stations/'+airport+'/observations/latest';
+  try {
+    let response = await axios.get(url);
+    if (response.data&&response.data.STATION&&response.data.STATION[0]){//(response.data.properties&&response.data.properties.rawMessage) {//STATION[0]
+      jsonResponse.metar=response.data.STATION[0].OBSERVATIONS.metar_value_1.value;//response.data.properties.rawMessage;//response.data.STATION[0].OBSERVATIONS.metar_value_1.value;
+      jsonResponse.date=response.data.STATION[0].OBSERVATIONS.metar_value_1.date_time;//response.data.properties.timestamp;//response.data.STATION[0].OBSERVATIONS.metar_value_1.date_time;
+      //if (response.data.geometry&&response.data.geometry.coordinates) {
+        jsonResponse.latitude=response.data.STATION[0].LATITUDE;//response.data.geometry.coordinates[1];//response.data.STATION[0].LATITUDE;
+        jsonResponse.longitude=response.data.STATION[0].LONGITUDE;//response.data.geometry.coordinates[0];//response.data.STATION[0].LONGITUDE;
+      //}
+    }
+   }
+   catch (err) {
+     if (err.response&&err.response.config){
+       console.log(err.response.config.url);
+     }
+     else console.log('error fetching metar for '+airport);
+   }
+   finally{
+     return jsonResponse;
+   }
+      
 }
 
 export async function getMetar(airport) {

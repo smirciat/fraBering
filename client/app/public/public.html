@@ -1,7 +1,7 @@
 <navbar></navbar>
 <div ng-show="status.spinner" class="myspinner"></div>
-<div class="wheat">
-    <div class="jumbotron">
+<div style="background-color:black">
+    <!--<div class="jumbotron">
         <h1 style="text-align:center">Bering Air Flight Status</h1>
         <div>
          <span style="display: table; margin: 0 auto;">
@@ -14,52 +14,53 @@
           </ui-select>
          </span>
         </div>
-    </div>
+    </div>-->
     <div>
-      <div ng-repeat="flight in public.flights | orderBy:'departTimes[0]'">
-        <div class="grid-parent-public">
-            <div>
-              <p ng-style="public.getFontSize(16,'px')">
-                <strong ng-style="public.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong>
+      <div style="display: flex;justify-content: center;">
+        <div style="width:90%">
+          <span style="float:left">
+            <h3 style="color:white">Departures <img src="assets/images/kingair.png" alt="logo" /> BERING AIR</h3>
+          </span>
+          <span style="float:right">
+            <h3 style="color:white">{{public.dateString+' '+public.timeString}}</h3>
+          </span>
+        </div>
+      </div>
+      <div ng-repeat="flight in public.flights | orderBy:'departTimes[0]'" style="display: flex;justify-content: center;">
+        <div class="grid-parent-public" ng-class="public.background(flight)">
+            <div style="text-align:center">
+              <p style="color:white" ng-style="public.getFontSize(16,'px')">
+                {{flight.flightNum}}
               </p>
             </div>
-            <div>
-              <p ng-style="public.getFontSize(16,'px')">
-                Flight# &nbsp {{flight.flightNum}}
-              </p>
-            </div>
-            <div>
-              <p ng-style="public.getFontSize(16,'px')">
-                Scheduled Times &nbsp  
-                {{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}
-              </p>
-              <p ng-style="public.getFontSize(16,'px')">
-                Actual Times &nbsp
-                <strong style="color:green">{{flight.tfliteDepart}}</strong>&nbsp-&nbsp
-                <strong style="color:purple"> {{flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString}}</strong>
-              </p>
-            </div>
-            <div>
-              <p ng-style="public.getFontSize(16,'px')">
-                Routing:
-              </p>
-              <p ng-style="public.getFontSize(16,'px')">
+            <div style="text-align:center">
+              <p style="color:white" ng-style="public.getFontSize(16,'px')">
                 {{public.arrayToString(flight.airports)}}
               </p>
             </div>
-            <div>
+            <div style="text-align:center">
+              <p style="color:white" ng-style="public.getFontSize(16,'px')" ng-class="public.isLineThrough(flight.tfliteDepart)">
+                {{flight.departTimes[0].substring(0,5)}}
+              </p>
               <p ng-style="public.getFontSize(16,'px')">
-                Crew: &nbsp 
+                <strong style="color:green">{{flight.tfliteDepart}}</strong>
+              </p>
+            </div>
+            <div style="text-align:center">
+              <p style="color:white" ng-style="public.getFontSize(16,'px')">
+                <strong ng-style="public.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong>
+              </p>
+            </div>
+            <div style="text-align:center">
+              <p style="color:white" ng-style="public.getFontSize(16,'px')">
                 {{flight.pilotObject.firstName||flight.pilot}}
                 <strong ng-if="flight.coPilot">and &nbsp{{flight.coPilotObject.firstName||flight.coPilot||''}}</strong>
               </p>
-              <p ng-style="public.getFontSize(16,'px')">
-                Airplane: &nbsp 
+              <p style="color:white" ng-style="public.getFontSize(16,'px')">
                 {{flight.equipment.name}}
               </p>
             </div>
         </div>
-        <hr class="public-line">
       </div>
     </div>
 </div>
