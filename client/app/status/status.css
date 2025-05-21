@@ -350,6 +350,10 @@ div.airport-pink h1{
   margin:0px;
 }
 
+.public-span > .selectize-input{
+  margin-top:15px;
+}
+
 .public-linethrough{
   text-decoration: line-through;
 }

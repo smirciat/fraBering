@@ -9,6 +9,7 @@ class PublicComponent {
     this.interval=$interval;
     this.timeout=$timeout;
     this.socket=socket;
+    this.shouldInvert=true;
     this.date=new Date().toLocaleDateString();
     this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short'});
     this.dateString=new Date().toLocaleDateString('en-US', { weekday: 'long', year:'numeric',month:'long',day:'numeric' }).toUpperCase();
