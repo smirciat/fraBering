@@ -447,12 +447,13 @@ angular.module('workspaceApp')
                     let crew=1;
                     if (flight.coPilot) crew++;
                     if (flight.jumpseaterObject&&flight.jumpseaterObject.name) crew++;
-                    let bew=flight.bew.bew*1;
+                    let bew=flight.bew.bew*1+60;
                     if (flight.bew.seatsRemoved) bew+=1*flight.bew.seatWeight;
                     let est=bew+std*crew*1;
                     let estHigh=bew+stdHigh*crew*1;
-                    console.log(flight.bew)
-                    console.log(owe)
+                    console.log(flight.bew);
+                    console.log(bew);
+                    console.log(owe);
                     console.log(estHigh + ' ' + est);
                     if (owe>estHigh||owe<est) return 'webcam-bad';
                   }
