@@ -350,6 +350,10 @@ div.airport-pink h1{
   margin:0px;
 }
 
+.public-inverted{
+  color:white;
+}
+
 .public-span > .selectize-input{
   margin-top:15px;
 }

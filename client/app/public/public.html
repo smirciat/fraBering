@@ -3,9 +3,10 @@
 <div style="background-color:black">
     <div style="display: flex;justify-content: center;">
       <div style="width:90%;text-align:center;height:68px;line-height:68px;">
-        <span style="float:left;height:68px;line-height:68px;">
-          <h3 style="color:white;">Departures <img src="assets/images/kingair.png" alt="logo" /> BERING AIR</h3>
-        </span>
+        <!--<span style="float:left;height:68px;line-height:68px;">
+          <h3 style="color:white;" ng-style="public.getFontSize(24,'px')">Departures <img src="assets/images/kingair.png" alt="logo" /> BERING AIR</h3> "assets/images/kingair.png"
+        </span>-->
+        <span style="float:left;height:68px;line-height:68px;color:white;margin:0px;padding:0px;" ng-style="public.getFontSize(24,'px')">Departures <img ng-src="{{public.getKingAir()}}" alt="logo" /> BERING AIR</span>
         <span style="height:68px;line-height:68px;">
             <ui-select class="public-span" 
                 style="width:150px;filter:invert(100%);font-weight:bold;display:inline-block;" 
@@ -16,7 +17,7 @@
               </ui-select-choices>
             </ui-select>  
           </span>
-        <span style="float:right;height:68px;line-height:68px;color:white;font-size:24px;margin:0px;padding:0px;">
+        <span style="float:right;height:68px;line-height:68px;color:white;margin:0px;padding:0px;" ng-style="public.getFontSize(24,'px')">
         
             {{public.dateString+' '+public.timeString}}
           
@@ -26,17 +27,17 @@
     <div ng-repeat="flight in public.flights | orderBy:'departTimes[0]'" style="display: flex;justify-content: center;">
       <div class="grid-parent-public" ng-class="public.background(flight)">
           <div style="text-align:center">
-            <p style="color:white" ng-style="public.getFontSize(16,'px')">
+            <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(16,'px')">
               {{flight.flightNum}}
             </p>
           </div>
           <div style="text-align:center">
-            <p style="color:white" ng-style="public.getFontSize(16,'px')">
+            <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(16,'px')">
               {{public.arrayToString(flight.airports)}}
             </p>
           </div>
           <div style="text-align:center">
-            <p style="color:white" ng-style="public.getFontSize(16,'px')" ng-class="public.isLineThrough(flight.tfliteDepart)">
+            <p ng-style="public.getFontSize(16,'px')" ng-class="public.isLineThrough(flight)">
               {{flight.departTimes[0].substring(0,5)}}
             </p>
             <p ng-style="public.getFontSize(16,'px')">
@@ -44,16 +45,16 @@
             </p>
           </div>
           <div style="text-align:center">
-            <p style="color:white" ng-style="public.getFontSize(16,'px')">
-              <strong ng-style="public.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong>
+            <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(16,'px')">
+              <strong ng-style="public.getStatusColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{public.getFlightStatus(flight.flightStatus)}}</strong>
             </p>
           </div>
           <div style="text-align:center">
-            <p style="color:white" ng-style="public.getFontSize(16,'px')">
+            <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(16,'px')">
               {{flight.pilotObject.firstName||flight.pilot}}
               <strong ng-if="flight.coPilot">and &nbsp{{flight.coPilotObject.firstName||flight.coPilot||''}}</strong>
             </p>
-            <p style="color:white" ng-style="public.getFontSize(16,'px')">
+            <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(16,'px')">
               {{flight.equipment.name}}
             </p>
           </div>

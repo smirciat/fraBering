@@ -61,25 +61,44 @@ class PublicComponent {
     return str.toUpperCase();
   }
   
-  getFontColor(depart,arrive){
+  getStatusColor(depart,arrive){
     if (arrive) return {"color":"purple"};
     if (depart) return {"color":"green"};
   }
   
+  getFontColor(status){
+    if (status!=="Boarded") return 'public-inverted'; 
+  }
+  
   getFontSize=function(num,kind){
+    if (this.width>=1912) num=Math.floor(num*2);
     if (this.width<768) num=Math.floor(num/2);
     let val=num.toString()+kind;
     return {"font-weight":"bold","font-size":val};
   }
   
+  getKingAir(){
+    if (this.width>=1912) return "assets/images/kingair-big.png";
+    return "assets/images/kingair.png";
+  }
+  
   background(flight){
-    if (flight.flightStatus==='Boarding') return 'public-boarding';
+    if (flight.flightStatus==='Boarded') return 'public-boarding';
     if (flight.tfliteDeparture) return 'public-departed';
     return 'public-normal';
   }
   
-  isLineThrough(bool){
-    if (bool) return 'public-linethrough';
+  isLineThrough(flight){
+    let str='';
+    if (flight.flightStatus!=="Boarded") str+= 'public-inverted '; 
+    if (flight.tfliteDepart) str+= ' public-linethrough';
+    return str;
+  }
+  
+  getFlightStatus(status){
+    if (status==='Boarded') return 'Boarding';
+    if (!status) return 'On Time';
+    return status;
   }
 }
 

@@ -261,7 +261,6 @@ angular.module('workspaceApp')
                             {title:'FO lbs',val:'fo'}
                             ],
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
-                            {title:'OWE',val:flight.pfr.legArray[0].operatingWeightEmpty},
                             {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
                             {title:'TKS (From iPad)',val:tksCalc().lbs,gals:tksCalc().gals},
                             {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-tksCalc().lbs)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-tksCalc().lbs)},
@@ -435,6 +434,27 @@ angular.module('workspaceApp')
                       string+=pfr.pilot+': in '+pfr.acftNumber+', Flight# '+pfr.flightNumber+', with '+fuel+' lbs Fuel\r\n';
                     });
                     window.alert(string);
+                  }
+                },
+                checkOWE:function(){
+                  
+                            //{title:'OWE',val:flight.pfr.legArray[0].operatingWeightEmpty},
+                  //if owe too high, return 'webcam-bad';
+                  if (flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0]&&flight.pfr.legArray[0].operatingWeightEmpty) {
+                    let owe=flight.pfr.legArray[0].operatingWeightEmpty*1;
+                    let std=170;
+                    let stdHigh=300;
+                    let crew=1;
+                    if (flight.coPilot) crew++;
+                    if (flight.jumpseaterObject&&flight.jumpseaterObject.name) crew++;
+                    let bew=flight.bew.bew*1;
+                    if (flight.bew.seatsRemoved) bew+=1*flight.bew.seatWeight;
+                    let est=bew+std*crew*1;
+                    let estHigh=bew+stdHigh*crew*1;
+                    console.log(flight.bew)
+                    console.log(owe)
+                    console.log(estHigh + ' ' + est);
+                    if (owe>estHigh||owe<est) return 'webcam-bad';
                   }
                 },
                 title: 'Flight Release  BRG' + flight.flightNum +' '+ flight.aircraft,

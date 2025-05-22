@@ -149,5 +149,7 @@
 }
 
 .webcam-bad{
-  color:red;
+  background-color:red;
+  color:white;
+  font-weight:bold;
 }
