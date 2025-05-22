@@ -22,10 +22,11 @@ class PublicComponent {
   }
   
   $onInit(){
-    this.interval(()=>{this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short'});},60*1000);
+    this.interval(()=>{this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short'});},10*1000);
     let temp=window.localStorage.getItem('myBase');
     if (temp) this.base=temp;
     this.width=document.documentElement.clientWidth;
+    console.log(this.width)
     this.http.post('/api/todaysFlights/dayFlights',{dateString:this.date}).then(res=>{
       this.allFlights=res.data;
       this.sort();
@@ -70,10 +71,15 @@ class PublicComponent {
     if (status!=="Boarded") return 'public-inverted'; 
   }
   
-  getFontSize=function(num,kind){
-    if (this.width>=1912) num=Math.floor(num*2);
-    if (this.width<768) num=Math.floor(num/2);
-    let val=num.toString()+kind;
+  getFontSize=function(num,kind,mult){
+    //if (this.width>=1912) num=Math.floor(num*2);
+    //if (this.width<768) num=Math.floor(num/2);
+    mult=mult||1;
+    num=Math.round(mult*this.width/72);
+    let altnum=Math.round(3.5*this.width/72);
+    altnum=altnum+'px';
+    let val=num.toString()+'px';//+kind;
+    if (mult===1.5) return {"font-weight":"bold","font-size":val,"height":altnum,"line-height":altnum};
     return {"font-weight":"bold","font-size":val};
   }
   

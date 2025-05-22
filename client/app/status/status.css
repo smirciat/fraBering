@@ -187,7 +187,7 @@
 
 .grid-parent-public{
   display: grid; 
-  grid-template-columns: 1fr 3fr 1fr 2fr 2fr; 
+  grid-template-columns: 1fr 5fr 1fr 1fr 2fr; 
   grid-gap: 1px; 
   width: 90%; 
   align-items:center;
