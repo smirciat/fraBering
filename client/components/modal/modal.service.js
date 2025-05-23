@@ -442,8 +442,8 @@ angular.module('workspaceApp')
                   //if owe too high, return 'webcam-bad';
                   if (flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0]&&flight.pfr.legArray[0].operatingWeightEmpty) {
                     let owe=flight.pfr.legArray[0].operatingWeightEmpty*1;
-                    let std=170;
-                    let stdHigh=300;
+                    let std=145;
+                    let stdHigh=250;
                     let crew=1;
                     if (flight.coPilot) crew++;
                     if (flight.jumpseaterObject&&flight.jumpseaterObject.name) crew++;

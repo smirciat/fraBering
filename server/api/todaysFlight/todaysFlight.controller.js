@@ -1134,6 +1134,9 @@ function lookupPilotObjects(flight){
     //bmcintosh adjustment
     if (flight.pilot==='bmcintosh') flight.pilot='bmcIntosh';
     if (flight.coPilot==='bmcintosh') flight.coPilot='bmcIntosh';
+    //bmcintosh adjustment
+    if (flight.pilot==='dwolson') flight.pilot='dolson';
+    if (flight.coPilot==='dwolson') flight.coPilot='dolson';
     //m evans adjustment
     if (flight.pilot.substring(0,1)==="m"&&flight.pilot.slice(-5)==="evans") {
       displayName='M. '+flight.pilot.substring(1,2).toUpperCase()+'. Evans';
