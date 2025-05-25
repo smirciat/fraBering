@@ -12,7 +12,7 @@
 import _ from 'lodash';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
 import {quickGrab,firebaseQueryFunction,firebaseLimited} from '../airplane/airplane.controller.js';
-import {getMetar,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
+import {getMetar,getMetarAVWX,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
 import localEnv from '../../config/local.env.js';
 import fs from 'fs';
 import config from '../../config/environment';
@@ -31,6 +31,7 @@ const agent = new https.Agent({
 });
 let stopped=false;
 let staleFile=false;
+let doubleFail=false;
 let equipmentArr=[{id:1,name:"Caravan",short:"C208",wind:35,xwind:25,temp:-50,taxiFuel:35,fuelBurn:400,minFuel:600,ZFW:9062},
        //{id:2,name:"Navajo",wind:40,xwind:30,temp:-40,taxiFuel:35},
        {id:3,name:"Casa",short:"C212",wind:35,xwind:25,temp:-50,taxiFuel:110,fuelBurn:700,minFuel:1323,ZFW:15653},
@@ -103,7 +104,7 @@ export function index(req, res) {
 
 //gets the current value of the stopped boolean
 export function returnStopped(req,res){
-  res.status(200).json({stopped:false});//staleFile
+  res.status(200).json({stopped:doubleFail});//staleFile
 }
 
 //gets the current value of the stopped boolean
@@ -289,7 +290,7 @@ async function log(){
 
 export async function tf(req,res) {
   try {
-    
+    doubleFail=false;
     let file="current.csv";
     let data=fs.readFileSync(__dirname+'/../../fileserver/'+file, 'utf-8');
     let stats=fs.statSync(__dirname+'/../../fileserver/'+file, 'utf-8');
@@ -369,6 +370,11 @@ export async function tf(req,res) {
       
     if (staleFile){
       let resp=await getManifests();
+      if (!resp||!resp.flights){
+        console.log('TakeFlite API has failed to retrieve Flights!');
+        doubleFail=true;
+        return res.status(500).json('Takeflite Fail');
+      }
       let manifests=resp.flights;
       for (let flight of manifests){
         if (flight.flightLegs[0]&&flight.flightLegs[0].crew.length===0&&flight.flightLegs[1]&&flight.flightLegs[1].crew.length>0){
@@ -1114,7 +1120,7 @@ async function airportNameToMetar(airport){
     icao=res.data[foundIndex].icao;
     airport.threeLetter=res.data[foundIndex].local;
   }
-  airport.currentMetarObj = await getMetar(icao);
+  airport.currentMetarObj = await getMetarAVWX(icao);
   if (!airport.currentMetarObj||!airport.currentMetarObj.metar) return airport; 
   airport.currentMetar=airport.currentMetarObj.metar;
   let metarDate=new Date(airport.currentMetarObj.date);

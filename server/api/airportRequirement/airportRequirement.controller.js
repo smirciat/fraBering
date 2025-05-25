@@ -13,7 +13,7 @@ import _ from 'lodash';
 import {AirportRequirement} from '../../sqldb';
 import config from '../../config/environment';
 const baseUrl = 'http://localhost:' + config.port;
-const url1="https://api.synopticdata.com/v2/stations/latest?stid=";
+const url1="https://api.synopticlabs.org/v2/stations/latest?stid="; //data.com/v2/stations/latest?stid=";
 const url2="&vars=metar&token=" + process.env.TOKEN;//"&within=120&vars=metar&token=" + process.env.TOKEN;
 const axios = require("axios");
 const https = require("https");
@@ -259,7 +259,7 @@ export async function metars(req,res) {
       airport.runScroll=false;
       if (airportIndex>=allAirports.length-1) airport.runScroll=true;
       if (airport.icao&&airport.icao.length==4&&airport.icao!=="PAOB") {
-        if (hour>=6&&hour<=17) airport.currentMetarObj = await getMetar(airport.icao);
+        if (hour>=6&&hour<=17) airport.currentMetarObj = await getMetarSynoptic(airport.icao);
         else airport.currentMetarObj = await getMetarAVWX(airport.icao);
       }
       if (!airport.currentMetarObj) continue;
@@ -357,6 +357,7 @@ export async function getMetarGOV(airport) {
    }
    catch (err) {
      if (err.response&&err.response.config){
+       console.log('Error Fetching METAR:');
        console.log(err.response.config.url);
      }
      else console.log('error fetching metar for '+airport);
@@ -379,6 +380,7 @@ export async function getMetarAVWX(airport) {
    }
    catch (err) {
      if (err.response&&err.response.config){
+       console.log('Error Fetching METAR:');
        console.log(err.response.config.url);
      }
      else console.log('error fetching metar for '+airport);
@@ -406,6 +408,7 @@ export async function getMetarSynoptic(airport) {
    }
    catch (err) {
      if (err.response&&err.response.config){
+       console.log('Error Fetching METAR:');
        console.log(err.response.config.url);
      }
      else console.log('error fetching metar for '+airport);
@@ -433,6 +436,7 @@ export async function getMetar(airport) {
    }
    catch (err) {
      if (err.response&&err.response.config){
+       console.log('Error Fetching METAR:');
        console.log(err.response.config.url);
      }
      else console.log('error fetching metar for '+airport);
