@@ -27,17 +27,17 @@
     <div ng-repeat="flight in public.flights | orderBy:'departTimes[0]'" style="display: flex;justify-content: center;">
       <div class="grid-parent-public" ng-class="public.background(flight)">
           <div style="text-align:center">
-            <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(20,'px')">
+            <p ng-style="public.getFontSize(20,'px')">
               {{flight.flightNum}}
             </p>
           </div>
           <div style="text-align:center">
-            <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(20,'px')">
+            <p ng-style="public.getFontSize(20,'px')">
               {{public.arrayToString(flight.airports)}}
             </p>
           </div>
           <div style="text-align:center">
-            <p ng-style="public.getFontSize(20,'px')" ng-class="public.isLineThrough(flight)">
+            <p style="color:white" ng-style="public.getFontSize(20,'px')" ng-class="public.isLineThrough(flight)">
               {{flight.departTimes[0].substring(0,5)}}
             </p>
             <p ng-style="public.getFontSize(20,'px')">
@@ -45,12 +45,12 @@
             </p>
           </div>
           <div style="text-align:center">
-            <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(20,'px')">
-              <strong ng-style="public.getStatusColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{public.getFlightStatus(flight.flightStatus)}}</strong>
+            <p ng-style="public.getFontSize(20,'px')">
+              <strong ng-style="public.getStatusColor(flight)">{{public.getFlightStatus(flight.flightStatus)}}</strong>
             </p>
           </div>
           <div style="text-align:center">
-            <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(20,'px')">
+            <p ng-style="public.getFontSize(20,'px')">
               {{flight.pilotObject.firstName||flight.pilot}}
               <strong ng-if="flight.coPilot">and &nbsp{{flight.coPilotObject.firstName||flight.coPilot||''}}</strong>
             </p>

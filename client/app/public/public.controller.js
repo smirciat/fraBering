@@ -62,7 +62,11 @@ class PublicComponent {
     return str.toUpperCase();
   }
   
-  getStatusColor(depart,arrive){
+  getStatusColor(flight){
+    let depart=flight.tfliteDepart;
+    let arrive=flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString;
+    let bigSize=this.calcFontSize(30,1.5);
+    if (flight.flightStatus==="Boarded") return {"color":"green","font-size":bigSize+"px"};
     if (arrive) return {"color":"purple"};
     if (depart) return {"color":"green"};
   }
@@ -72,15 +76,18 @@ class PublicComponent {
   }
   
   getFontSize=function(num,kind,mult){
-    //if (this.width>=1912) num=Math.floor(num*2);
-    //if (this.width<768) num=Math.floor(num/2);
-    mult=mult||1;
-    num=Math.round(mult*this.width/72);
+    num=num||20;
+    num=this.calcFontSize(num,mult);
     let altnum=Math.round(3.5*this.width/72);
     altnum=altnum+'px';
     let val=num.toString()+'px';//+kind;
     if (mult===1.5) return {"font-weight":"bold","font-size":val,"height":altnum,"line-height":altnum};
     return {"font-weight":"bold","font-size":val};
+  }
+  
+  calcFontSize(num,mult){
+    mult=mult||1;
+    return Math.round(mult*this.width/72);
   }
   
   getKingAir(){
@@ -89,6 +96,7 @@ class PublicComponent {
   }
   
   background(flight){
+    if (flight.flightStatus==='WX Delay'||flight.flightStatus==='Delayed') return 'public-delayed';
     if (flight.flightStatus==='Boarded') return 'public-boarding';
     if (flight.tfliteDeparture) return 'public-departed';
     return 'public-normal';

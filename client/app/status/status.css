@@ -375,12 +375,28 @@ div.airport-pink h1{
   background-color:#404040;
 }
 
+.public-normal p{
+  color:white;
+}
+
 .public-boarding{
   background-color:#DAE9F8;
 }
 
+.public-boarding p{
+  color:green;
+}
+
 .public-departed{
   background-color:#595959;
+}
+
+.public-departed p{
+  color:white;
+}
+
+.public-delayed p{
+  color:red;
 }
 
 @media (max-width: 991px) {

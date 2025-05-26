@@ -301,18 +301,6 @@ export async function tf(req,res) {
     if ((hour===23&&minutes>55)||(hour===0&&minutes<5)) return;
     if (stats.mtimeMs < tenMinutesAgo) {
       staleFile=true;
-      if (false&&hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
-        
-        axios.post(baseUrl + '/api/monitors/twilio',{to:"+19073992019",body:"Takeflite updating has stopped"}, { httpsAgent: agent }).then((res)=>{
-                stopped=true;
-                console.log('Twilio message sent');
-              },function(err){
-                console.log(err);
-              });
-      }
-      //console.log('Stopped value is: ' + staleFile.toString());
-      //res.status(404).json('Current.csv has stopped updating');
-      //return;
     }
     else {
       stopped=false;
@@ -373,7 +361,13 @@ export async function tf(req,res) {
       if (!resp||!resp.flights){
         console.log('TakeFlite API has failed to retrieve Flights!');
         doubleFail=true;
-        return res.status(500).json('Takeflite Fail');
+        if (hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
+          let r=await axios.post(baseUrl + '/api/monitors/twilio',{to:"+19073992019",body:"Takeflite updating has stopped"}, { httpsAgent: agent });
+          if (r) stopped=true;
+          console.log('Twilio message sent');
+          return res.status(500).json('Takeflite Fail');
+        }
+        else return res.status(500).json('Takeflite Fail');
       }
       let manifests=resp.flights;
       for (let flight of manifests){
