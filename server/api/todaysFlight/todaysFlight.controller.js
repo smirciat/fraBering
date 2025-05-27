@@ -12,7 +12,7 @@
 import _ from 'lodash';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
 import {quickGrab,firebaseQueryFunction,firebaseLimited} from '../airplane/airplane.controller.js';
-import {getMetar,getMetarAVWX,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
+import {getMetar,getMetarAVWX,getMetarSynoptic,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
 import localEnv from '../../config/local.env.js';
 import fs from 'fs';
 import config from '../../config/environment';
@@ -651,14 +651,17 @@ export async function tf(req,res) {
         else {
           //airport name not found in database, look it up on avwx
           airport=await airportNameToMetar(airport);
-          
           //if we didn't find it, punt
           if (airport.metarObj&&airport.metarObj['Raw-Report']) {
             airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
             airport.metarObj.aircraft=flight.aircraft;
             airport.metarObj.color=overallRiskClass(airport.metarObj);
           }  
-          else airport.metarObj={airport:JSON.parse(JSON.stringify(airport))};
+          else {
+            airport.metarObj={airport:JSON.parse(JSON.stringify(airport))};
+            airport.metarObj.aircraft=flight.aircraft;
+            airport.metarObj.color=overallRiskClass(airport.metarObj);
+          }
         }
         
         flight.airportObjs.push(airport.metarObj);
@@ -1114,12 +1117,12 @@ async function airportNameToMetar(airport){
     icao=res.data[foundIndex].icao;
     airport.threeLetter=res.data[foundIndex].local;
   }
-  airport.currentMetarObj = await getMetarAVWX(icao);
+  airport.currentMetarObj = await getMetarSynoptic(icao);
   if (!airport.currentMetarObj||!airport.currentMetarObj.metar) return airport; 
   airport.currentMetar=airport.currentMetarObj.metar;
   let metarDate=new Date(airport.currentMetarObj.date);
   if (metarDate<new Date(new Date().getTime()-120*60*1000)) {
-    airport.metarObj={};
+    airport.metarObj={airport:{name:airport.name,icao:icao,threeLetter:airport.threeLetter}};
     airport.currentMetar='missing';
   }
   else {

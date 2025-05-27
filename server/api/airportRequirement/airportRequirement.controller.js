@@ -374,6 +374,7 @@ export async function getMetarAVWX(airport) {
   try {
     let response = await axios.get(url);
     if (response.data&&response.data.raw){
+      jsonResponse.airport=airport;
       jsonResponse.metar=response.data.raw;
       jsonResponse.date=response.data.time.dt;
     }
