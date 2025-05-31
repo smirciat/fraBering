@@ -11,7 +11,7 @@ class PublicComponent {
     this.socket=socket;
     this.shouldInvert=true;
     this.date=new Date().toLocaleDateString();
-    this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short'});
+    this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short',timeZone:'America/Anchorage'});
     this.dateString=new Date().toLocaleDateString('en-US', { weekday: 'long', year:'numeric',month:'long',day:'numeric' }).toUpperCase();
     this.flights=[];
     this.base="Nome";
@@ -22,7 +22,7 @@ class PublicComponent {
   }
   
   $onInit(){
-    this.interval(()=>{this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short'});},10*1000);
+    this.interval(()=>{this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short',timeZone:'America/Anchorage'});},10*1000);
     let temp=window.localStorage.getItem('myBase');
     if (temp) this.base=temp;
     this.width=document.documentElement.clientWidth;

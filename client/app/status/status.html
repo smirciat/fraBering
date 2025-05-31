@@ -293,13 +293,13 @@
           <p>
             <input type="checkbox" ng-model="flight.fueled" ng-click="status.getFuel(flight)" style="accent-color:green" ng-disabled="!flight.pfr">
             &nbspFueler&nbsp<input style="width:30px" type="text" ng-model="flight.fueledBy" ng-blur="status.getFuel(flight,'initials')" ng-disabled="!flight.pfr">/{{flight.fueledTimestamp||''}}
-            &nbspTruck#&nbsp<input style="width:20px" type="text" ng-model="flight.truck" ng-blur="status.getFuel(flight,'truck')" ng-disabled="!flight.pfr">
+            <!--&nbspTruck#&nbsp<input style="width:20px" type="text" ng-model="flight.truck" ng-blur="status.getFuel(flight,'truck')" ng-disabled="!flight.pfr">-->
           </p>
-          <p>
+          <!--<p>
             Start&nbsp<input style="width:50px" type="text" ng-model="flight.startFuel" ng-blur="status.getFuel(flight,'start')" ng-disabled="!flight.pfr">
             &nbspStop&nbsp<input style="width:50px" type="text" ng-model="flight.stopFuel" ng-blur="status.getFuel(flight,'stop')" ng-disabled="!flight.pfr">
             &nbspGallons Uplifted&nbsp<input style="width:30px" type="text" ng-model="flight.gallonsUplifted" ng-blur="status.getFuel(flight,'gallons')" ng-disabled="!flight.pfr">
-          </p>
+          </p>-->
         </div>
         <div style="padding-left:0.5em;">
           <p>Load Available</p>
