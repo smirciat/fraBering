@@ -443,7 +443,7 @@ angular.module('workspaceApp')
                   if (flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0]&&flight.pfr.legArray[0].operatingWeightEmpty) {
                     let owe=flight.pfr.legArray[0].operatingWeightEmpty*1;
                     let std=145;
-                    let stdHigh=250;
+                    let stdHigh=280;
                     let crew=1;
                     if (flight.coPilot) crew++;
                     if (flight.jumpseaterObject&&flight.jumpseaterObject.name) crew++;
@@ -451,10 +451,10 @@ angular.module('workspaceApp')
                     if (flight.bew.seatsRemoved) bew+=1*flight.bew.seatWeight;
                     let est=bew+std*crew*1;
                     let estHigh=bew+stdHigh*crew*1;
-                    console.log(flight.bew);
-                    console.log(bew);
-                    console.log(owe);
-                    console.log(estHigh + ' ' + est);
+                    //console.log(flight.bew);
+                    //console.log(bew);
+                    //console.log(owe);
+                    //console.log(estHigh + ' ' + est);
                     if (owe>estHigh||owe<est) return 'webcam-bad';
                   }
                 },
