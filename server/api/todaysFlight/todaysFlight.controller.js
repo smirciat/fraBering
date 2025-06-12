@@ -307,7 +307,7 @@ export async function tf(req,res) {
       staleFile=false;
     }
     console.log('Stopped value is: ' + staleFile.toString());
-    
+    //staleFile=true;
     let flightLog=await log();
     if (true) {//(!allAirports||allAirports.length===0) {
       allAirports=[];
@@ -396,6 +396,8 @@ export async function tf(req,res) {
         flight.departTimes=[];
         flight.airports=[];
         flight.flightLegs.forEach((leg,i)=>{
+          if (!flight.flightNum&&leg.id) flight.flightNum=leg.id;
+          if (!flight.flightId&&leg.id) flight.flightId=leg.id;
           if (leg.flightStatus) flight.flightStatus=leg.flightStatus;
           if (leg.registration) flight.aircraft=leg.registration;
           flight.departTimes.push(new Date(leg.departureTime).toTimeString().slice(0,8));
@@ -556,14 +558,18 @@ export async function tf(req,res) {
         return f.date===x.date;
       });
       if (fa.length===0) return;
-      let index=fa.map(e=>e.flightNum).indexOf(f.flightNum);
+      let matchedArr=fa.filter(e=>{
+        if (!e.flightNum||!f.flightNum) return false;
+        return e.flightNum.toString()==f.flightNum.toString();
+      });//map(e=>e.flightNum).indexOf(f.flightNum);
       let active=f.active;
-      if (index===-1) {
-        if (!f.nonRevFlight) active="false";
-        else {
-          if (!staleFile) active="false";
-          else active="true";
-        }
+      if (matchedArr.length===0) {
+        active="false";
+        //if (!f.nonRevFlight) active="false";
+        //else {
+        //  if (!staleFile) active="false";
+        //  else active="true";
+        //}
       }
       else active="true";
       if (active!==f.active) {
@@ -713,18 +719,20 @@ export async function tf(req,res) {
         }
       }
       let fa=todaysFlights.filter(f=>{
-        return flight.date===f.date;
+        if (!f.date||!f.flightNum) return false;
+        return flight.date.toString()===f.date.toString()&&flight.flightNum.toString()===f.flightNum.toString();
       });
-      let faIndex=fa.map(e=>e.flightNum).indexOf(flight.flightNum);
-      if (faIndex<0) {
+      //let faIndex=fa.map(e=>e.flightNum).indexOf(flight.flightNum);
+      if (fa.length>1) console.log('More than one Flight matching ' + flight.flightNum)
+      if (fa.length===0) {
           flight.colorPatch='false';
-          console.log('creating flight:');
+          console.log('creating flight:' + flight.flightNum + ' ' + flight.date);
           //console.log(flight);
           TodaysFlight.create(flight);
       }
-      if (faIndex>-1) {
-        updated.push(fa[faIndex]._id);
-        let index=todaysFlights.map(e=>e._id).indexOf(fa[faIndex]._id);
+      else {
+        updated.push(fa[0]._id);
+        let index=todaysFlights.map(e=>e._id).indexOf(fa[0]._id);
         if (index<0) {
           console.log('**********************');
           console.log('Missing flight '+flight.flightNum);
@@ -857,6 +865,7 @@ export async function tf(req,res) {
       updated.forEach(u=>{
         let index=todaysFlights.map(e=>e._id).indexOf(u);
         let flight=todaysFlights[index];
+        if (!flight) return;
         flight.colorPatch='false';
         //flight.pfr=undefined;
         //let pfrMap=[];//pfrIndex=-1;
