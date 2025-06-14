@@ -215,8 +215,8 @@ angular.module('workspaceApp')
                 tksCalc=function(){
                   let gals=0;
                   if (flight.pfr.legArray[0].tksGallons) {
-                    gals=flight.pfr.legArray[0].tksGallons;
-                    if (gals>20.8) gals=20.8;
+                    gals=flight.pfr.legArray[0].tksGallons*1;
+                    if (gals>20.8) gals=gals*1;//gals=20.8;
                   }
                   return {gals:gals,lbs:Math.round(gals*9.2308)};
                   //return Math.round(flight.bew.tks*9.2308);

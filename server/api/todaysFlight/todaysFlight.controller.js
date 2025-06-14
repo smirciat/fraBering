@@ -307,7 +307,7 @@ export async function tf(req,res) {
       staleFile=false;
     }
     console.log('Stopped value is: ' + staleFile.toString());
-    //staleFile=true;
+    staleFile=true;
     let flightLog=await log();
     if (true) {//(!allAirports||allAirports.length===0) {
       allAirports=[];
