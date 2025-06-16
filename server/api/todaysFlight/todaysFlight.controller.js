@@ -374,7 +374,10 @@ export async function tf(req,res) {
         if (flight.flightLegs[0]&&flight.flightLegs[0].crew.length===0&&flight.flightLegs[1]&&flight.flightLegs[1].crew.length>0){
           flight.flightLegs=flight.flightLegs.filter((leg,i)=>{return (leg.crew&&leg.crew.length>0)||i===flight.flightLegs.length-1});//weird empty routing from api on 4/13/25 for 844 and 846
         }
-        if (flight.flightLegs[0].crew&&flight.flightLegs[0].crew.length>0) flight.pilot=flight.flightLegs[0].crew[0].name;
+        if (flight.flightLegs[0].crew&&flight.flightLegs[0].crew.length>0) {
+          if (flight.flightLegs[0].crew[0].position==="First Officer") flight.flightLegs[0].crew.reverse();
+          flight.pilot=flight.flightLegs[0].crew[0].name;
+        }
         if (flight.flightLegs[0].crew&&flight.flightLegs[0].crew.length>1) flight.coPilot=flight.flightLegs[0].crew[1].name;
         else flight.coPilot="";
         //flight.aircraft=??????
