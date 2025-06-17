@@ -22,7 +22,7 @@
   <div ng-class="status.getColumnFlights()">
     <div class="todays-flights"><!---->
      <!--<div ng-repeat="flight in status.todaysFlights track by flight._id" ng-show="status.todaysFlightDisplayFilter(flight)" ng-class="status.getFlightColor(flight)">-->
-     <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" ng-class="status.getFlightColor(flight)">
+     <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" id="{{flight._id}}" ng-class="status.getFlightColor(flight)">
      <!--<div ng-repeat="flight in status.filteredFlights track by flight._id" id="{{flight._id}}" ng-class="status.getFlightColor(flight)">-->
       <div ng-show="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
         <div class="grid-parent-airport">

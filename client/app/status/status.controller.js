@@ -74,7 +74,7 @@ class StatusComponent {
     this.isFilter=window.isFilter;
     this.toggleAssigned=window.toggleAssigned;
     this.scrollInterval=this.interval(()=>{
-      //this.scroll();
+      this.scroll();
       this.renewFirebase();
     },60*60*1000);
     
@@ -245,7 +245,7 @@ class StatusComponent {
           this.spinner=false;
           return;
         }
-        //this.scroll();
+        this.scroll();
           this.timeout(()=>{
             this.spinner=false;
             if (this.masterAirports) this.setBase(this.masterAirports);
@@ -267,7 +267,7 @@ class StatusComponent {
           console.log(res.data)
           this.allTodaysFlights=res.data;
           this.todaysFlights=this.filterTodaysFlights(res.data);
-          //this.scroll();
+          this.scroll();
           this.timeout(()=>{
             this.spinner=false;
             this.setPilotList();
@@ -528,7 +528,7 @@ class StatusComponent {
       });
       this.spinner=false;
       angular.copy(filteredFlights,this.filteredFlights);
-      return;
+      //return;
       if (filteredFlights.length===0) return;
       let scrollId;
       if (new Date().toLocaleDateString()!==this.dateString) scrollId=filteredFlights[0]._id;
@@ -542,6 +542,7 @@ class StatusComponent {
       //this.anchorScroll.yOffset=500;
       //this.anchorScroll();
       console.log('auto scrolling');
+      console.log(scrollId)
       let element = document.getElementById(scrollId);
       console.log(element)
       if (element) element.scrollIntoView({ behavior: 'smooth' });
