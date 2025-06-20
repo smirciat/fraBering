@@ -9,7 +9,7 @@ import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
 import localEnv from './config/local.env.js';
-import {setBearer,getManifests} from './api/todaysFlight/todaysFlight.controller.js';
+import {setBearer,getManifests,getFlightLogs} from './api/todaysFlight/todaysFlight.controller.js';
 import {setRosterDay} from './api/calendar/calendar.controller.js';
 import {observe} from './api/airplane/airplane.controller.js';
 import {syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
@@ -44,11 +44,14 @@ require('./config/express').default(app);
 require('./routes').default(app);
 
 let callbackFunction=()=>{
-  axios.post(baseUrl + '/api/todaysFlights/tf',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
+  getFlightLogs();
+  setTimeout(()=>{
+    axios.post(baseUrl + '/api/todaysFlights/tf',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
         .then((response)=>{
           console.log('interval going');
         })
         .catch(err=>{console.log(err.response.data||err)});
+  },100);
   //axios.post(baseUrl + '/api/todaysFlights/record',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
         //.then((response)=>{
           //console.log('recordAssessment function successfully run');

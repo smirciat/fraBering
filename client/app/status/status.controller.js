@@ -54,6 +54,10 @@ class StatusComponent {
     this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
     this.http.post('/api/todaysFlights/getManifest',{date:'06/03/2025',flightNum:'682'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
     this.http.post('/api/todaysFlights/getManifests').then(res=>{console.log(res.data)});
+    this.http.post('/api/todaysFlights/getFlightLogs').then(res=>{
+      let arr=res.data.filter(log=>{return log.registration==='N148SK'});//log.registration==="N241BA"});
+      console.log(arr)
+    });
     this.width=document.documentElement.clientWidth;
     if (this.width<768) this.mobile=true;
     if (this.width===768) this.iPad=true;

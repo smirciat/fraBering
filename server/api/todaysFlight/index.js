@@ -28,6 +28,7 @@ router.post('/tf', controller.tf);
 router.post('/dayFlights', controller.dayFlights);
 router.post('/getManifests', controller.getManifests);
 router.post('/getManifest', controller.getManifest);
+router.post('/getFlightLogs', controller.getFlightLogs);
 router.post('/record', controller.recordAssessments);
 router.put('/:id', controller.update);
 router.patch('/:id', controller.update);

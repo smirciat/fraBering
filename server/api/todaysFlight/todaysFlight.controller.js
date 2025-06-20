@@ -22,6 +22,7 @@ let airplanes=[];
 let fbAirplanes=[];
 let pfrs=[];
 let pilots=[];
+let flightLog=[];
 let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
 const baseUrl = 'https://localhost:' + config.port;
 const axios = require("axios");
@@ -308,7 +309,7 @@ export async function tf(req,res) {
     }
     console.log('Stopped value is: ' + staleFile.toString());
     staleFile=true;
-    let flightLog=await log();
+    //let flightLog=await log();
     if (true) {//(!allAirports||allAirports.length===0) {
       allAirports=[];
       let instance=await AirportRequirement.findAll({});
@@ -345,15 +346,15 @@ export async function tf(req,res) {
     let flights=[];
       
       
-    let arr=data.split('\r\n');
-    if (!arr[1]) {
-      console.log('failed to load csv file');
-      res.status(404).json('failure');
-      return;
-    }
-    let dateArr=arr[1].split(' ');
-    let reportDate=new Date(dateArr[2]+' '+dateArr[3]+' '+dateArr[4]);
-    if (reportDate.toLocaleDateString()!==new Date().toLocaleDateString()) staleFile=true;
+    //let arr=data.split('\r\n');
+    //if (!arr[1]) {
+      //console.log('failed to load csv file');
+      //res.status(404).json('failure');
+      //eturn;
+    //}
+    //let dateArr=arr[1].split(' ');
+    //let reportDate=new Date(dateArr[2]+' '+dateArr[3]+' '+dateArr[4]);
+    //if (reportDate.toLocaleDateString()!==new Date().toLocaleDateString()) staleFile=true;
       
       
     if (staleFile){
@@ -389,12 +390,12 @@ export async function tf(req,res) {
         flight.flightNum=flight.flightNumber;
         for (let line of flightLog){
           if (!line.flightNum||!line.date) continue;
-          let flightNumArr=line.flightNum.split('.');
-          if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
+          //let flightNumArr=line.flightNum.split('.');
+          //if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
             //if (line.aircraft) flight.aircraft=line.aircraft;
             //if (line.flightStatus) flight.flightStatus=line.flightStatus;
-            if (line.takeoffTime&&!flight.tfliteDepart) flight.tfliteDepart=line.takeoffTime;
-          } 
+            //if (line.takeoffTime&&!flight.tfliteDepart) flight.tfliteDepart=line.takeoffTime;
+          //} 
         }
         flight.departTimes=[];
         flight.airports=[];
@@ -426,7 +427,29 @@ export async function tf(req,res) {
             if (lastTime.substring(0,7)==="Invalid") lastTime=undefined;
             if (lastTime) flight.departTimes.push(lastTime);
           }
+          
         });
+        let tempArr=flightLog.filter(log=>{
+          let logArr=log.departureDate.split('T');
+          if (logArr.length<2) return false;
+          let logDate=logArr[0].split('-');
+          logDate=new Date(logDate[1]+'/'+logDate[2]+'/'+logDate[0]).toLocaleDateString();
+          let logTime=logArr[1];
+          if (logTime) logTime=logTime.substring(0,8);
+          //if (log.registration==="N241BA") console.log(logTime)
+          //log.departureDate must equal flight.departimes[0] converted to timestamp format
+          return log.registration===flight.aircraft&&logDate===flight.date&&logTime===flight.departTimes[0]&&log.takeOff;
+        });
+        if (tempArr.length>0&&tempArr[0].takeOff.split('T').length>1) flight.tfliteDepart=tempArr[0].takeOff.split('T')[1].substring(0,5);
+        
+        //if (flight.flightNum==='812') {
+          //console.log(tempArr);
+          //console.log(flight.aircraft)
+          //console.log(flight.date)
+          //console.log(flight.departTimes[0])
+        //}
+        //if (tempArr.length>1) console.log(tempArr);
+        //if (tempArr.length===1) console.log(flight.tfliteDepart);
       }
       //console.log(manifests[7])
       flights=manifests;
@@ -587,17 +610,17 @@ export async function tf(req,res) {
   
     for (let [flightIndex, flight] of flights.entries()){
       if (!flight) return;
-      flight.tfliteDepart=null;
+      //flight.tfliteDepart=null;
       //check flightLog for flight status (remove section when reverting to tflite api)
-      for (let line of flightLog){
-        if (!line.flightNum||!line.date) continue;
-        let flightNumArr=line.flightNum.split('.');
-        if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
+      //for (let line of flightLog){
+        //if (!line.flightNum||!line.date) continue;
+        //let flightNumArr=line.flightNum.split('.');
+        //if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
           //if (line.aircraft) flight.aircraft=line.aircraft;
-          if (!staleFile) flight.flightStatus=line.flightStatus;
-          if (line.takeoffTime&&!flight.tfliteDepart) flight.tfliteDepart=line.takeoffTime;
-        } 
-      }
+          //if (!staleFile) flight.flightStatus=line.flightStatus;
+          //if (line.takeoffTime&&!flight.tfliteDepart) flight.tfliteDepart=line.takeoffTime;
+        //} 
+      //}
       //update weather per destination via airportObjs
       flight.airportObjs=[];
       for (const element of flight.airports) {
@@ -1200,6 +1223,61 @@ export async function setBearer(){
   catch(err){
     console.log(err);
     return err;
+  }
+}
+
+// Pad a number to 2 digits
+const pad = n => `${Math.floor(Math.abs(n))}`.padStart(2, '0');
+const toISOStringWithTimezone = date => {
+  return date.getFullYear() +
+    '-' + pad(date.getMonth() + 1) +
+    '-' + pad(date.getDate()) +
+    'T' + pad(date.getHours()) +
+    ':' + pad(date.getMinutes()) +
+    ':' + pad(date.getSeconds());
+};
+
+export async function getFlightLogs(req,res){
+  let date=new Date();
+  if (req&&req.body&&req.body.date) date=new Date(req.body.date);
+  if (req&&!req.body&&!req.headers&&!isNaN(new Date(req))&&new Date(req).toString!=='Invalid Date') date=new Date(req);
+  date.setHours(0, 0, 0, 0);
+  let startDate=toISOStringWithTimezone(date);
+  let day = date.getDate();
+  day=day+1;
+  date.setDate(day);
+  let endDate=toISOStringWithTimezone(date);
+  let config = {
+    method: 'get',
+    url: 'https://api.tflite.com/flightlogs?departureDate.gte='+startDate+'&departureDate.lte='+endDate,
+    headers: { 
+      'Accept': 'application/json', 
+      'api-version': 'v1', 
+      'Authorization': bearer
+    }
+  };
+  try {
+    let response=await axios(config);
+    //console.log(response.data);
+    console.log('Setting Flight Log Array');
+    flightLog=response.data;
+    console.log(flightLog.length);
+    if (res) res.status(200).json(response.data);
+    return response.data;
+  }
+  catch(err){
+    if (!err.response) err.response={data:err};
+    console.log(err.response.data);
+    setBearer();
+    let secondResponse;
+    if (err&&err.response&&err.response.data&&err.response.data.statusCode===401) {
+      secondResponse=await getFlightLogs(req);
+      flightLog=secondResponse;
+      if (!res) return secondResponse;
+      else return res.status(200).json(secondResponse);
+    }
+    if (res) return res.status(500).json(err.response.data);
+    return err.response||err;
   }
 }
 
