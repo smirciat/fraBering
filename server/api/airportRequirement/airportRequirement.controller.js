@@ -259,13 +259,27 @@ export async function metars(req,res) {
       airport.runScroll=false;
       if (airportIndex>=allAirports.length-1) airport.runScroll=true;
       if (airport.icao&&airport.icao.length==4&&airport.icao!=="PAOB") {
-        if (hour>=6&&hour<=17) airport.currentMetarObj = await getMetarSynoptic(airport.icao);
-        else airport.currentMetarObj = await getMetarAVWX(airport.icao);
+        if (hour>=6&&hour<=22) {//17
+          try{
+            airport.currentMetarArray=await getMetarList(airport.icao);
+            airport.currentMetarArray=airport.currentMetarArray.metars;
+            airport.currentMetarObj = {airport:airport.icao,metar:airport.currentMetarArray[airport.currentMetarArray.length-1]};
+          }
+          catch(err){
+            console.log(err)
+            airport.currentMetarObj = await getMetarAVWX(airport.icao);
+            airport.currentMetarArray = [airport.currentMetarObj];
+          }
+        }
+        else {
+          airport.currentMetarObj = await getMetarAVWX(airport.icao);
+          airport.currentMetarArray = [airport.currentMetarObj];
+        }
       }
       if (!airport.currentMetarObj) continue;
       airport.currentMetar=airport.currentMetarObj.metar;
       let metarDate=new Date(airport.currentMetarObj.date);
-      if (metarDate<new Date(new Date().getTime()-120*60*1000)) {
+      if (!airport.currentMetar||metarDate<new Date(new Date().getTime()-120*60*1000)) {
         airport.metarObj={};
         airport.currentMetar='missing';
       }
@@ -326,7 +340,7 @@ export async function getMetarList(airport) {
   //url='https://api.weather.gov/stations/'+airport+'/observations/latest';
   try {
     let response = await axios.get(url);
-    console.log(response.data.STATION[0].OBSERVATIONS.metar_set_1[0]);
+    //console.log(response.data.STATION[0].OBSERVATIONS.metar_set_1[0]);
     jsonResponse.metars=response.data.STATION[0].OBSERVATIONS.metar_set_1;
    }
    catch (err) {

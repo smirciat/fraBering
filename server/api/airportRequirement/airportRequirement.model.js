@@ -47,6 +47,7 @@ export default function(sequelize, DataTypes) {
       defaultValue:1
     },
     forecastRequirement: DataTypes.JSON,
+    currentMetarArray: DataTypes.JSONB,
     currentMetar: DataTypes.STRING,
     metarObj: DataTypes.JSONB,
     currentTaf: DataTypes.STRING,

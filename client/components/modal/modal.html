@@ -498,11 +498,17 @@
             <i ng-class="modal.upOrDown(modal['showInfo'+$index])"></i>  
         </span>
         <div ng-show="modal['showInfo'+$index]">
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">------------------------------OBSERVATIONS-----------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj['Raw-Report']}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-2]}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-3]}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-4]}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">------------------------------FORECAST---------------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">TAF: {{metarObj.taf}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="false&&metarObj.airport.manualObs">Ceiling: {{metarObj.airport.manualObs.ceiling}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">------------------------------NOTAMS----------------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">RUNWAY {{metarObj.airport.icao+' '+metarObj.airport.openClosed+', '+modal.formatScore(metarObj.airport.runwayScore)+' '+metarObj.airport.comment}}</p>
-          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.airport.pireps.length>0">PIREPS:</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.airport.pireps.length>0">------------------------------PIREPS----------------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.airport.pireps.length===0">NO RECENT PIREPS</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-repeat="pirep in metarObj.airport.pireps">{{pirep.raw}}</p>
         </div>
