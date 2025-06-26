@@ -278,9 +278,8 @@ export async function metars(req,res) {
       }
       if (!airport.currentMetarObj) continue;
       airport.currentMetar=airport.currentMetarObj.metar;
-      if (!airport.currentMetarObj.date) airport.currentMetarObj.date=null;
       let metarDate=new Date(airport.currentMetarObj.date);
-      if (!airport.currentMetar||metarDate<new Date(new Date().getTime()-120*60*1000)) {
+      if (!airport.currentMetar||(airport.currentMetarObj.date&&metarDate<new Date(new Date().getTime()-120*60*1000))) {
         airport.metarObj={};
         airport.currentMetar='missing';
       }
