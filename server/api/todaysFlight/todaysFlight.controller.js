@@ -388,6 +388,7 @@ export async function tf(req,res) {
         flight.active=true;
         flight.date=new Date(flight.departureDate).toLocaleDateString();
         flight.flightNum=flight.flightNumber;
+        flight.operation=flight.type;
         for (let line of flightLog){
           if (!line.flightNum||!line.date) continue;
           //let flightNumArr=line.flightNum.split('.');

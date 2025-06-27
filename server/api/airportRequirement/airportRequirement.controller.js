@@ -266,7 +266,7 @@ export async function metars(req,res) {
             airport.currentMetarObj = {airport:airport.icao,metar:airport.currentMetarArray[airport.currentMetarArray.length-1]};
           }
           catch(err){
-            console.log(err)
+            console.log(err);
             airport.currentMetarObj = await getMetarAVWX(airport.icao);
             airport.currentMetarArray = [airport.currentMetarObj];
           }
