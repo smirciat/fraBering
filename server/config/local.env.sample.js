@@ -22,5 +22,6 @@ module.exports = {
   AVWX_TOKEN2:'',
   KEY: '/etc/letsencrypt/live/domainname.com/privkey.pem',
   CERT: '/etc/letsencrypt/live/domainname.com/fullchain.pem',
-  ROSTER_TOKEN: 'Bearer (string)'
+  ROSTER_TOKEN: 'Bearer (string)',
+  NODE_OPTIONS:"--max-old-space-size=4096"
 };
