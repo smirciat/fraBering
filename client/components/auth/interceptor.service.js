@@ -2,7 +2,7 @@
 
 (function() {
 
-  function authInterceptor($rootScope, $q, $cookies, $injector, Util, $window) {
+  function authInterceptor($rootScope, $q, $cookies, $injector, Util, $window, $timeout) {
     var state;
     return {
       // Add authorization token to headers
@@ -24,13 +24,18 @@
             .go('login');
             // remove any stale tokens
             $cookies.remove('token');
+            return $q.reject(response);
           }
           else {
             //alert('storage: ' + storage + ' token: ' + token);
-            $window.location.reload();
+            $timeout(()=>{
+              $window.location.reload();
+              return $q.reject(response);
+            },0);
+            
           }
         }
-        return $q.reject(response);
+        else return $q.reject(response);
       }
     };
   }
