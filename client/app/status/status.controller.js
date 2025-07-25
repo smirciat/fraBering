@@ -3,7 +3,8 @@
 (function(){
 
 class StatusComponent {
-  constructor($http,$scope,$interval,$timeout,socket,metar,$location,$anchorScroll,moment,Auth,appConfig,Modal) {
+  constructor($http,$scope,$interval,$timeout,socket,metar,$location,$anchorScroll,moment,Auth,appConfig,Modal,$cookies) {
+    this.cookies=$cookies;
     this.headerScroll=120;
     this.http=$http;
     this.interval=$interval;
@@ -50,13 +51,20 @@ class StatusComponent {
   }
   
   $onInit() {
+    //this.cookies.remove('token');
+    let storage=window.localStorage.getItem('token');
+    let token=this.cookies.get('token');
+    if (storage&&token!==storage) {
+      this.cookies.put('token',storage);
+      this.scope.$apply();
+    }
     this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
     this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
     this.http.post('/api/todaysFlights/getManifest',{date:'06/03/2025',flightNum:'682'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
     this.http.post('/api/todaysFlights/getManifests').then(res=>{console.log(res.data)});
     this.http.post('/api/todaysFlights/getFlightLogs').then(res=>{
       let arr=res.data.filter(log=>{return log.registration==='N148SK'});//log.registration==="N241BA"});
-      console.log(arr)
+      console.log(arr);
     });
     this.width=document.documentElement.clientWidth;
     if (this.width<768) this.mobile=true;
@@ -986,6 +994,7 @@ class StatusComponent {
       console.log(this.sortedPilots);
     })
     .catch(err=>{
+      this.Auth.hasRole('user');
       console.log(err);
       if (err.status===403) this.setPilotList();
     });

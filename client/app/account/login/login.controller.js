@@ -2,7 +2,7 @@
 
 class LoginController {
   constructor(Auth, $state,$mdSidenav) {
-    this.user = {};
+    this.user = {persistent:true};
     this.errors = {};
     this.submitted = false;
     this.mdSidenav=$mdSidenav;

@@ -158,6 +158,12 @@
        * @return {Bool|Promise}
        */
       hasRole(role, callback) {
+        let storage=window.localStorage.getItem('token');
+        let token=$cookies.get('token');
+        if (!token&&storage) {
+          $cookies.put('token', storage);
+          currentUser = User.get();
+        }
         var hasRole = function(r, h) {
           return userRoles.indexOf(r) >= userRoles.indexOf(h);
         };
@@ -197,7 +203,9 @@
        * @return {String} - a token string used for authenticating
        */
       getToken() {
-        let token=$cookies.get('token')||window.localStorage.getItem('token');
+        let storage=window.localStorage.getItem('token');
+        let token=$cookies.get('token');
+        if (!token) token=storage;
         return token;
       }
     };

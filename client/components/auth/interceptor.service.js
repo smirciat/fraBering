@@ -2,7 +2,7 @@
 
 (function() {
 
-  function authInterceptor($rootScope, $q, $cookies, $injector, Util) {
+  function authInterceptor($rootScope, $q, $cookies, $injector, Util, $window) {
     var state;
     return {
       // Add authorization token to headers
@@ -17,10 +17,18 @@
       // Intercept 401s and redirect you to login
       responseError(response) {
         if (response.status === 401||(response.status === 403&&response.config.url==="/api/calendar")) {
-          (state || (state = $injector.get('$state')))
-          .go('login');
-          // remove any stale tokens
-          $cookies.remove('token');
+          let token=$cookies.get('token');
+          let storage=window.localStorage.getItem('token');
+          if (storage===token||!storage||token) {
+            (state || (state = $injector.get('$state')))
+            .go('login');
+            // remove any stale tokens
+            $cookies.remove('token');
+          }
+          else {
+            //alert('storage: ' + storage + ' token: ' + token);
+            $window.location.reload();
+          }
         }
         return $q.reject(response);
       }
