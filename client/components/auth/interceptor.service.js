@@ -31,7 +31,7 @@
             $timeout(()=>{
               $window.location.reload();
               return $q.reject(response);
-            },0);
+            },200);
             
           }
         }
