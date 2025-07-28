@@ -190,7 +190,7 @@ angular.module('workspaceApp')
                 timestamp=new Date().toLocaleString(),
                 alternateDisp=flight.alternate,
                 isWrongUser = function(){
-                  if (userLastname==='K.') userLastname="Evans";
+                  if (userLastname==='K.'||userLastname==='R.') userLastname="Evans";
                   if (!flight.pilotObject) return false;
                   //console.log(userLastname.toLowerCase()!==flight.pilotObject.lastName.toLowerCase())
                   if (typeof flight.pilotObject.lastName!=='string') flight.pilotObject={lastName:''};

@@ -1187,7 +1187,8 @@ function lookupPilotObjects(flight){
     if (flight.coPilot==='dwolson') flight.coPilot='dolson';
     //m evans adjustment
     if (flight.pilot.substring(0,1)==="m"&&flight.pilot.slice(-5)==="evans") {
-      displayName='M. '+flight.pilot.substring(1,2).toUpperCase()+'. Evans';
+      if (flight.pilot.substring(1,2).toUpperCase()==='K') displayName="M. K. Evans";
+      else displayName="M. R. Evans";
     }
     else displayName=flight.pilot.substring(0,1).toUpperCase()+'. '+flight.pilot.substring(1,2).toUpperCase()+flight.pilot.slice(2);
     lookupIndex = pilots.map(e => e.displayName).indexOf(displayName);
