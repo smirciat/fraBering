@@ -18,6 +18,7 @@ import https from 'https';
 const schedule = require('node-schedule');
 const baseUrl = 'https://localhost:' + config.port;
 const axios = require("axios");
+const helmet = require("helmet");
 const agent = new https.Agent({
     rejectUnauthorized: false
 });
@@ -33,6 +34,30 @@ var app = express();
 var cors = require('cors');
 app.use(cors());
 app.options('*', cors());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        // Allow framing only from the same origin
+        //frameAncestors: ["'self'","/'"], 
+
+        // Alternatively, allow framing from specific domains:
+        frameAncestors: ['https://www.iframe-generator.com', 'https://beringair.com'],
+
+        // Or, disallow all framing:
+        // frameAncestors: ["'none'"], 
+
+        // You can also include other CSP directives here
+        // defaultSrc: ["'self'"],
+        // scriptSrc: ["'self'", "'unsafe-inline'"], 
+        // ...
+      },
+    },
+    // It's often recommended to disable frameguard when using frame-ancestors
+    // as frame-ancestors offers more granular control.
+    frameguard: false, 
+  })
+);
 //var server = http.createServer(app);
 var server = https.createServer(credentials,app);
 var socketio = require('socket.io')(server, {
