@@ -42,7 +42,7 @@ app.use(
         //frameAncestors: ["'self'","/'"], 
 
         // Alternatively, allow framing from specific domains:
-        frameAncestors: ['https://www.iframe-generator.com', 'https://beringair.com'],
+        frameAncestors: ['https://www.beringair.com','https://www.iframe-generator.com']
 
         // Or, disallow all framing:
         // frameAncestors: ["'none'"], 
