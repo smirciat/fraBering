@@ -42,14 +42,14 @@ app.use(
         //frameAncestors: ["'self'","/'"], 
 
         // Alternatively, allow framing from specific domains:
-        frameAncestors: ['https://www.beringair.com','https://www.iframe-generator.com']
+        frameAncestors: ['https://www.beringair.com','https://www.iframe-generator.com'],
 
         // Or, disallow all framing:
         // frameAncestors: ["'none'"], 
 
         // You can also include other CSP directives here
-        // defaultSrc: ["'self'"],
-        // scriptSrc: ["'self'", "'unsafe-inline'"], 
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-eval'","https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.3/pako.min.js","https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.0.0/FileSaver.min.js","https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"], 
         // ...
       },
     },
