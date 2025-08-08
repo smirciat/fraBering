@@ -879,7 +879,7 @@ class StatusComponent {
     }
     catch(err){
       console.log(err);
-      this.quickModal('Error Opening Flight!','Error!',true);
+      this.quickModal('Error Opening Flight! ' + err.name + ' ' + err.message,'Error!',true);
     }
   }  
   
