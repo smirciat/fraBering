@@ -112,7 +112,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='88';
+    let version='89';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -547,6 +547,10 @@ class NavbarController {
       window.localStorage.setItem('view',this.views[index]);
       this.view=this.views[index];
     }
+  }
+  
+  refresh(){
+    this.scope.status.resetFlights();
   }
 }
 

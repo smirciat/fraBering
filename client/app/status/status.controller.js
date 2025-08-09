@@ -269,38 +269,9 @@ class StatusComponent {
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
       this.spinner=true;
       if (!newVal||newVal==='') return;
-      let timeoutVal=0;
-      if (!oldVal||oldVal==='') timeoutVal=300;
-      this.timeout(()=>{
-        this.scope.nav.isCollapsed=true;
-        this.dateString=newVal;
-        this.date=new Date(this.dateString);
-        this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
-          console.log(res.data)
-          this.allTodaysFlights=res.data;
-          this.todaysFlights=this.filterTodaysFlights(res.data);
-          this.scroll();
-          this.timeout(()=>{
-            this.spinner=false;
-            this.setPilotList();
-            this.setAirplaneList();
-          },200);
-          this.socket.unsyncUpdates('todaysFlight');
-          this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
-            this.allTodaysFlights=array;
-            //no need to run the socket update if its just a color patch!  Runaway conndition with multiple clients ensues!
-            if (item.colorPatch&&item.colorPatch==='true') return;
-            if (item.runScroll||(item.date===this.dateString&&event==="created")) {
-              this.spinner=true;
-              console.log(array)
-              this.todaysFlights=this.filterTodaysFlights(array);
-              console.log('Todays Flight Socket fired');
-              console.log(item);
-              this.timeout(()=>{this.spinner=false;},0);
-            }
-          });
-        });
-      },timeoutVal);
+      this.timeoutVal=0;
+      if (!oldVal||oldVal==='') this.timeoutVal=300;
+      this.resetFlights(newVal);
     });
     
     this.http.get('/api/airportRequirements').then(res=>{
@@ -1383,6 +1354,41 @@ class StatusComponent {
   
   korey(pilot){
     if (pilot==='krohlack') return 'korey';
+  }
+  
+  resetFlights(newVal){
+    if (!newVal) newVal=this.dateString;
+    this.spinner=true;
+    this.timeout(()=>{
+        this.scope.nav.isCollapsed=true;
+        this.dateString=newVal;
+        this.date=new Date(this.dateString);
+        this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
+          console.log(res.data)
+          this.allTodaysFlights=res.data;
+          this.todaysFlights=this.filterTodaysFlights(res.data);
+          this.scroll();
+          this.timeout(()=>{
+            this.spinner=false;
+            this.setPilotList();
+            this.setAirplaneList();
+          },200);
+          this.socket.unsyncUpdates('todaysFlight');
+          this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
+            this.allTodaysFlights=array;
+            //no need to run the socket update if its just a color patch!  Runaway conndition with multiple clients ensues!
+            if (item.colorPatch&&item.colorPatch==='true') return;
+            if (item.runScroll||(item.date===this.dateString&&event==="created")) {
+              this.spinner=true;
+              console.log(array)
+              this.todaysFlights=this.filterTodaysFlights(array);
+              console.log('Todays Flight Socket fired');
+              console.log(item);
+              this.timeout(()=>{this.spinner=false;},0);
+            }
+          });
+        });
+      },this.timeoutVal);
   }
 }
 
