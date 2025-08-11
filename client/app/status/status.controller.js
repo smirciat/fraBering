@@ -801,7 +801,9 @@ class StatusComponent {
       flight.duration=duration/60;
       flight.minFlightFuel=flight.equipment.fuelBurn*(flight.duration+0.5);
       if (!flight.alternate) flight.maxFlightFuel=flight.equipment.fuelBurn*(flight.duration+1.5);
-      let calendarIndex=this.wholeRoster.map(e=>e.title).indexOf('OC');
+      let calendarIndex=-1;
+      if (this.wholeRoster) calendarIndex=this.wholeRoster.map(e=>e.title).indexOf('OC');
+      else this.setPilotList();//refresh wholeroster;
       if (calendarIndex>-1) flight.ocName=this.wholeRoster[calendarIndex].employee_full_name;
       switch(flight.ocName){
         case 'David Olson':
