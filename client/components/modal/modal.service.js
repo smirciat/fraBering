@@ -605,7 +605,7 @@ angular.module('workspaceApp')
                 user = args.shift(),
                 formData = airport||{},
                 timestampObj={timestampString:""},
-                scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
+                scores=[{score:'N/A',descr:'N/A'},{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
                 contaminents=["None","Ice","Wet Ice","Snow","Compact Snow","Compact Snow/Ice","Dry Snow","Wet Snow","Slush","Drift","Water","Mud","Dirt","Debris"],
                 percents=['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'],
                 depths=['0','1/8 inch','1/4 inch','1/2 inch','3/4 inch','1 inch','2 inches','3 inches','4 inches','6 inches','8 inches','10 inches','1 foot or more'],
@@ -646,7 +646,7 @@ angular.module('workspaceApp')
                 depthDisp:formData.depth||"",
                 percentDisp:formData.percent||"",
                 contaminentDisp:formData.contaminent||"",
-                runwayObj:scores[scores.map(e=>e.score).indexOf(formData.runwayScore*1)]||scores[5],
+                runwayObj:scores[scores.map(e=>e.score).indexOf(formData.runwayScore*1)]||scores[6],
                 signClick:function(){
                   formData.signature=user.name;
                   timestampObj.timestampString=new Date().toLocaleString();
