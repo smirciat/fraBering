@@ -16,6 +16,7 @@ import {getMetar,getMetarAVWX,getMetarSynoptic,getMetarList,parseADDS} from '../
 import localEnv from '../../config/local.env.js';
 import fs from 'fs';
 import config from '../../config/environment';
+let busy=false;
 let bearer='';
 let allAirports=[];
 let airplanes=[];
@@ -290,6 +291,12 @@ async function log(){
 }
 
 export async function tf(req,res) {
+  if (busy) {
+    busy=false;
+    //if (res) return res.status(500).json('tf module is busy');
+    //else return;
+  }
+  busy=true;
   const memoryUsage = process.memoryUsage();
   console.log('Memory Usage:');
   console.log(`RSS: ${memoryUsage.rss / (1024 * 1024)} MB`);
@@ -373,9 +380,13 @@ export async function tf(req,res) {
           let r=await axios.post(baseUrl + '/api/monitors/twilio',{to:"+19073992019",body:"Takeflite updating has stopped"}, { httpsAgent: agent });
           if (r) stopped=true;
           console.log('Twilio message sent');
+          busy=false;
           return res.status(500).json('Takeflite Fail');
         }
-        else return res.status(500).json('Takeflite Fail');
+        else {
+          busy=false;
+          return res.status(500).json('Takeflite Fail');
+        }
       }
       let manifests=resp.flights;
       for (let flight of manifests){
@@ -946,9 +957,11 @@ export async function tf(req,res) {
           .catch(handleErrorMultiple(res));
       });
     }
+    busy=false;
     res.status(200).json('success');
   }
   catch(err){
+    busy=false;
     console.log(err);
     res.status(404).json("Failure");
   }

@@ -120,7 +120,13 @@ class StatusComponent {
           airport.manualObs.visibility=arr[0]/arr[1];
         }
       }
-      this.http.patch('/api/airportRequirements/'+airport._id,{manualObs:airport.manualObs,manualTimestamp:airport.manualTimestamp});
+      this.http.patch('/api/airportRequirements/'+airport._id,{manualObs:airport.manualObs,manualTimestamp:airport.manualTimestamp}).then(r=>{
+        //this.http.post('/api/todaysFlights/tf').then(res=>{
+        //  console.log(res)
+        //}).catch(err=>{
+        //  console.log(err);
+        //});
+      });
       let index=this.airports.map(e => e._id).indexOf(airport._id);
       if (index>-1) this.airports[index]=airport;
     });

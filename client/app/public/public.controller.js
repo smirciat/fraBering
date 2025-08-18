@@ -28,13 +28,25 @@ class PublicComponent {
     this.width=document.documentElement.clientWidth;
     console.log(this.width)
     this.http.post('/api/todaysFlights/dayFlights',{dateString:this.date}).then(res=>{
-      this.allFlights=res.data;
+      //this.allFlights=res.data;
+      this.filterFlights(res.data);
       this.sort();
       this.socket.unsyncUpdates('todaysFlight');
       this.socket.syncUpdates('todaysFlight', this.allFlights,(event,item,array)=>{
-        this.allFlights=array;
+        //this.allFlights=array;
+        this.filterFlights(array);
         if (item.runScroll) this.sort();
       });
+    });
+  }
+  
+  filterFlights(flights){
+    this.allFlights=flights.filter(flight=>{
+      if (!flight.flightNum) return false;
+      let f=flight.flightNum.toString();
+      let char=f.substring(0,1);
+      if (!Number.isInteger(char*1)) return false;
+      return f.length===3&&(char*1)%2===0;
     });
   }
   

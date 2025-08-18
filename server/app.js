@@ -75,7 +75,11 @@ let callbackFunction=()=>{
         .then((response)=>{
           console.log('interval going');
         })
-        .catch(err=>{console.log(err.response.data||err)});
+        .catch(err=>{
+          let e=err;
+          if (err&&err.response) e=err.response.data;
+          console.log(e);
+        });
   },100);
   //axios.post(baseUrl + '/api/todaysFlights/record',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
         //.then((response)=>{
