@@ -21,7 +21,7 @@ export default function(app) {
 
   //app.use('/auth/mobile', require('./auth/mobile').default);
   app.use('/auth', require('./auth').default);
-  
+  app.use('/api/todaysFlights/mobile', require('./api/todaysFlight/indexMobile'));
   //
   // Insert routes below
   app.use('/api/signatures', require('./api/signature'));

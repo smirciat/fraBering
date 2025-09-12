@@ -16,6 +16,7 @@ import {getMetar,getMetarAVWX,getMetarSynoptic,getMetarList,parseADDS} from '../
 import localEnv from '../../config/local.env.js';
 import fs from 'fs';
 import config from '../../config/environment';
+const MOBILE_TOKEN=localEnv.MOBILE_TOKEN;
 let busy=false;
 let bearer='';
 let allAirports=[];
@@ -116,7 +117,19 @@ export function returnFail(req,res){
 
 // Gets a list of TodaysFlights
 export function dayFlights(req, res) {
-  let date=req.body.dateString;
+  let date=new Date(req.body.dateString).toLocaleDateString();
+  return TodaysFlight.findAll({
+      where:{
+        date:date
+      }
+    })
+    .then(respondWithResult(res))
+    .catch(handleError(res));
+}
+
+export function dayFlightsMobile(req, res) {
+  if (!req.body||req.body.token!==MOBILE_TOKEN) return res.status(401).json('Mismatched Token');
+  let date=new Date(req.body.dateString).toLocaleDateString();
   return TodaysFlight.findAll({
       where:{
         date:date
@@ -131,6 +144,18 @@ export function show(req, res) {
   return TodaysFlight.find({
     where: {
       _id: req.params.id
+    }
+  })
+    .then(handleEntityNotFound(res))
+    .then(respondWithResult(res))
+    .catch(handleError(res));
+}
+
+export function showMobile(req, res) {
+  if (!req.body||req.body.token!==MOBILE_TOKEN) return res.status(401).json('Mismatched Token');
+  return TodaysFlight.find({
+    where: {
+      _id: req.body.id
     }
   })
     .then(handleEntityNotFound(res))
@@ -157,6 +182,25 @@ export function update(req, res) {
   })
     .then(handleEntityNotFound(res))
     .then(saveUpdates(req.body))
+    .then(respondWithResult(res))
+    .catch(handleError(res));
+}
+
+// Updates an existing TodaysFlight in the DB
+export function updateMobile(req, res) {
+  if (!req.body||req.body.token!==MOBILE_TOKEN) return res.status(401).json('Mismatched Token');
+  let id;
+  if (req.body.flight) id=req.body.flight._id;
+  if (req.body.flight._id) {
+    delete req.body.flight._id;
+  }
+  return TodaysFlight.find({
+    where: {
+      _id: id
+    }
+  })
+    .then(handleEntityNotFound(res))
+    .then(saveUpdates(req.body.flight||req.body))
     .then(respondWithResult(res))
     .catch(handleError(res));
 }

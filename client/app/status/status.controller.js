@@ -60,7 +60,7 @@ class StatusComponent {
     }
     this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
     this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
-    this.http.post('/api/todaysFlights/getManifest',{date:'06/03/2025',flightNum:'682'}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
+    //this.http.post('/api/todaysFlights/mobile/updateFlight',{token:'!2QokQilQ=ztHzAeSU74jP/KgD406dEbJ81NCDSAiuyEr3lE3TPh66bRrvNy5P7k',flight:{_id:20819,active:'true'}}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
     this.http.post('/api/todaysFlights/getManifests').then(res=>{console.log(res.data)});
     this.http.post('/api/todaysFlights/getFlightLogs').then(res=>{
       let arr=res.data.filter(log=>{return log.registration==='N148SK'});//log.registration==="N241BA"});
@@ -930,6 +930,7 @@ class StatusComponent {
         if (pilot.employee_full_name==="Donald Showalter") pilot.employee_full_name="Keith Showalter";
         if (pilot.employee_full_name==="Timothy Kunkel") pilot.employee_full_name="Tim Kunkel";
         if (pilot.employee_full_name==="Jacob Larson") pilot.employee_full_name="Jake Larson";
+        if (pilot.employee_full_name==="Nik La Croix") pilot.employee_full_name="Nikolas Lacroix";
         //if (pilot.employee_full_name==="Mikey Evans") pilot.employee_full_name="Michael Evans";
         let index=this.allPilots.map(e=>e.firstName + ' ' + e.lastName).indexOf(pilot.employee_full_name);
         
