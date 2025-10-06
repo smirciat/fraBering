@@ -169,7 +169,8 @@ export async function syncPireps() {
 // Filters only current airport from Pireps
 export function pireps(airport) {
   try {
-    let data=allPireps.filter(p=>{
+    let data=[];
+    if (allPireps) data=allPireps.filter(p=>{
       if (p.location&&p.location.station) return p.location.station===airport;
       return p.station===airport;
     });

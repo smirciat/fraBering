@@ -152,6 +152,17 @@ class StatusComponent {
       delete flight._id;
       this.http.post('/api/signatures',flight);
       this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
+        let minFlight={};
+        minFlight.dateString=flight.date;
+        minFlight.flightNumber=flight.flightNum;
+        minFlight.pilotAgree=flight.pilotAgree;
+        minFlight.ocRelease= flight.ocRelease;
+        minFlight.dispatchRelease= flight.dispatchRelease;
+        minFlight.releaseTimestamp= flight.releaseTimestamp;
+        minFlight.ocReleaseTimestamp= flight.ocReleaseTimestamp;
+        minFlight.dispatchReleaseTimestamp= flight.dispatchReleaseTimestamp;
+        minFlight.knownIce= flight.knownIce;
+        this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
         flight._id=id;
         this.spinner=false;
         console.log('Updated Flight ' + flight.flightNum);

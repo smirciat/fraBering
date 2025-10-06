@@ -213,8 +213,13 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
     const collectionRef = firebase_db.collection(collectionName);
     let date1,date2,date3;
     let querySnapshot, querySnapshot1, querySnapshot2;
-    if (!value2) querySnapshot = await collectionRef.where(parameter, operator , value).orderBy('date', 'desc').limit(limit).get();
-    else querySnapshot = await collectionRef.where(parameter, operator , value).where(parameter2, operator2 , value2).orderBy('date', 'desc').limit(limit).get();
+    if (collectionName==='releases') {
+      querySnapshot = await collectionRef.where(parameter, operator , value).where(parameter2, operator2 , value2).limit(limit).get();
+    }
+    else {
+      if (!value2) querySnapshot = await collectionRef.where(parameter, operator , value).orderBy('date', 'desc').limit(limit).get();
+      else querySnapshot = await collectionRef.where(parameter, operator , value).where(parameter2, operator2 , value2).orderBy('date', 'desc').limit(limit).get();
+    }
     if (parameter==="false"){//"dateString")  {
       date3=new Date(value);
       date2=new Date(value);
@@ -278,14 +283,28 @@ async function getCollection(collectionName) {
 }
 
 async function updateDocument(collection,docId,data) {
-   const docRef = firebase_db.collection(collection).doc(docId);
-   try {
-     await docRef.update(data);
-     console.log('Document successfully updated!');
-     return true;
-   } catch (error) {
-     console.error('Error updating document:', error);
-     return false;
+   let docRef;
+   if (docId) {
+     docRef = firebase_db.collection(collection).doc(docId);
+     try {
+       await docRef.update(data);
+       console.log('Document successfully updated!');
+       return true;
+     } catch (error) {
+       console.error('Error updating document:', error);
+       return false;
+     }
+   }
+   else {
+     docRef = firebase_db.collection(collection).doc();
+     try {
+       await docRef.set(data);
+       console.log('Document successfully created!');
+       return true;
+     } catch (error) {
+       console.error('Errorcreating document:', error);
+       return false;
+     }
    }
 }
 
@@ -351,6 +370,20 @@ export async function firebase(req,res){
 export async function firebaseQueryFunction(collection,limit,parameter,operator,value,timestampBoolean){
   const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean);
   return collectionToArray(result);
+}
+
+export async function firebaseMin(req,res){
+  if (!req.body||!req.body.flight) return res.status(404).json('need flight in req.body!');
+  const result=await getCollectionQuery('releases',1,'dateString','==',req.body.flight.dateString,false,'flightNumber','==',req.body.flight.flightNumber);
+  let array=collectionToArray(result);
+  let id;
+  if (array.length>0) id=array[0]._id;
+  updateDocument('releases', id, req.body.flight).then(()=>{
+    return res.status(200).json({flight:req.body.flight,response:'Updated'});
+  }).catch(err=>{
+    console.log(err);
+    return res.status(500).json('Firebase Write Failure');
+  });
 }
 
 export async function firebaseQuery(req,res){
