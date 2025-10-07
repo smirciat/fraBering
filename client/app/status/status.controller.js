@@ -164,6 +164,9 @@ class StatusComponent {
         minFlight.ocReleaseTimestamp= flight.ocReleaseTimestamp;
         minFlight.dispatchReleaseTimestamp= flight.dispatchReleaseTimestamp;
         minFlight.knownIce= flight.knownIce;
+        if (flight.pilotObject&&flight.pilotObject.displayName) minFlight.pilot=flight.pilotObject.displayName;
+        else minFlight.pilot=flight.pilot;
+        minFlight.aircraft=flight.aircraft;
         this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
         flight._id=id;
         this.spinner=false;
