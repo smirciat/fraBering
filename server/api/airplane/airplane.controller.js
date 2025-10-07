@@ -283,6 +283,7 @@ async function getCollection(collectionName) {
 }
 
 async function updateDocument(collection,docId,data) {
+   if (data.date) data.date=new Date(data.date);
    let docRef;
    if (docId) {
      docRef = firebase_db.collection(collection).doc(docId);
