@@ -154,7 +154,7 @@ class StatusComponent {
       this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
         let minFlight={};
         minFlight.dbId=flight._id;
-        minFlight.date=new Date(flight.date).toLocaleDateString();
+        minFlight.date=new Date(flight.date);
         minFlight.dateString=flight.date;
         minFlight.flightNumber=flight.flightNum;
         minFlight.pilotAgree=flight.pilotAgree;
