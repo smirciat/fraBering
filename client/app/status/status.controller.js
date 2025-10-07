@@ -153,7 +153,7 @@ class StatusComponent {
       this.http.post('/api/signatures',flight);
       this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
         let minFlight={};
-        minFlight.dbId=flight._id;
+        minFlight.dbId=id;
         minFlight.date=new Date(flight.date);
         minFlight.dateString=flight.date;
         minFlight.flightNumber=flight.flightNum;
