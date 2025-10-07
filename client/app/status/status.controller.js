@@ -154,8 +154,8 @@ class StatusComponent {
       this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
         let minFlight={};
         minFlight.dbId=id;
-        minFlight.date=new Date(flight.date);
-        minFlight.dateString=flight.date;
+        //minFlight.date=new Date(flight.date);
+        minFlight.dateString=this.formatDate(new Date(flight.date));
         minFlight.flightNumber=flight.flightNum;
         minFlight.pilotAgree=flight.pilotAgree;
         minFlight.ocRelease= flight.ocRelease;
@@ -164,8 +164,9 @@ class StatusComponent {
         minFlight.ocReleaseTimestamp= flight.ocReleaseTimestamp;
         minFlight.dispatchReleaseTimestamp= flight.dispatchReleaseTimestamp;
         minFlight.knownIce= flight.knownIce;
-        if (flight.pilotObject&&flight.pilotObject.displayName) minFlight.pilot=flight.pilotObject.displayName;
-        else minFlight.pilot=flight.pilot;
+        minFlight.pilotObject=flight.pilotObject;
+        //if (flight.pilotObject&&flight.pilotObject.displayName) minFlight.pilot=flight.pilotObject.displayName;
+        //else minFlight.pilot=flight.pilot;
         minFlight.aircraft=flight.aircraft;
         this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
         flight._id=id;
@@ -514,6 +515,13 @@ class StatusComponent {
       //console.log(this.airports);
     },0);
   }
+  
+  formatDate = (date) => {
+    const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const dd = String(date.getDate()).padStart(2, '0');
+    const yy = String(date.getFullYear()).slice(-2); // Get last two digits of the year
+    return `${mm}/${dd}/${yy}`;
+  };
   
   scroll(){
     if (!this) {

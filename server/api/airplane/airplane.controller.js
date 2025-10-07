@@ -283,7 +283,6 @@ async function getCollection(collectionName) {
 }
 
 async function updateDocument(collection,docId,data) {
-   if (data.date) data.date=new Date(data.date);
    let docRef;
    if (docId) {
      docRef = firebase_db.collection(collection).doc(docId);
@@ -375,11 +374,15 @@ export async function firebaseQueryFunction(collection,limit,parameter,operator,
 
 export async function firebaseMin(req,res){
   if (!req.body||!req.body.flight) return res.status(404).json('need flight in req.body!');
-  const result=await getCollectionQuery('releases',1,'dateString','==',req.body.flight.dateString,false,'flightNumber','==',req.body.flight.flightNumber);
+  const result=await getCollectionQuery('flights',1,'dateString','==',req.body.flight.dateString,false,'flightNumber','==',req.body.flight.flightNumber);
   let array=collectionToArray(result);
-  let id;
-  if (array.length>0) id=array[0]._id;
-  updateDocument('releases', id, req.body.flight).then(()=>{
+  array=array.filter(f=>f.acftNumber===req.body.flight.aircraft&&!f.isArchived);
+  if (req.body.flight.pilotObject) array=array.filter(f=>f.pilot===req.body.flight.pilotObject.displayName);
+  if (array.length===0) return res.status(404).json('no matching pfr found');
+  let id=array[0]._id;
+  delete req.body.flight.pilotObject;
+  delete req.body.flight.aircraft;
+  updateDocument('flights', id, req.body.flight).then(()=>{
     return res.status(200).json({flight:req.body.flight,response:'Updated'});
   }).catch(err=>{
     console.log(err);
