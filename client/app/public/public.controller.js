@@ -99,6 +99,7 @@ class PublicComponent {
   
   calcFontSize(num,mult){
     mult=mult||1;
+    if (this.width<=790) mult=mult*2;
     return Math.round(mult*this.width/72);
   }
   
@@ -109,6 +110,7 @@ class PublicComponent {
   
   background(flight){
     if (flight.flightStatus==='WX Delay'||flight.flightStatus==='Delayed') return 'public-delayed';
+    if (flight.flightStatus==='Cancelled'||flight.flightStatus==='Closed') return 'public-cancelled';
     if (flight.flightStatus==='Boarded') return 'public-boarding';
     if (flight.tfliteDeparture) return 'public-departed';
     return 'public-normal';

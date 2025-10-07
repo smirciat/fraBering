@@ -396,6 +396,10 @@ div.airport-pink h1{
 }
 
 .public-delayed p{
+  color:yellow;
+}
+
+.public-cancelled p{
   color:red;
 }
 
