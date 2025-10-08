@@ -76,7 +76,8 @@ class PublicComponent {
   
   getStatusColor(flight){
     let depart=flight.tfliteDepart;
-    let arrive=flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString;
+    let arrive;
+    if (flight.pfr) arrive=flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString;
     let bigSize=this.calcFontSize(30,1.5);
     if (flight.flightStatus==="Boarded") return {"color":"green","font-size":bigSize+"px"};
     if (arrive) return {"color":"purple"};

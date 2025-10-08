@@ -400,7 +400,7 @@ class StatusComponent {
         //flight.color=this.flightRiskClass(airportObjs);
         //if (!match&&flight.active==='true'&&flight.date===new Date().toLocaleDateString()) this.http.patch('/api/todaysFlights/'+flight._id,{airportObjs:airportObjs,color:flight.color,colorPatch:'true'});
       });
-      array=array.filter(flight=>{return flight});
+      array=array.filter(flight=>flight.aircraft&&flight.aircraft.substring(0,1)==="N");
       //this.timeout(()=>{
         //this.setPilotList();
         //this.setAirplaneList();
@@ -1066,7 +1066,7 @@ class StatusComponent {
           if (x>-1) baseTest=true;
         });
       }
-      return baseTest&&aircraftTypes.indexOf(a.acftType)>-1;
+      return baseTest&&aircraftTypes.indexOf(a.acftType)>-1&&a._id&&a._id.substring(0,1)==="N";
     });
     if (this.base.base==="HEL") this.displayedAircraft=this.allAircraft.filter(a=>{
       return aircraftTypes.indexOf(a.acftType)>-1;
@@ -1206,7 +1206,7 @@ class StatusComponent {
     }
     else inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
     
-    return (flight.date===date)&&inBase&&flight.active==='true'&&!old;
+    return (flight.date===date)&&inBase&&flight.active==='true'&&!old&&flight.aircraft&&flight.aircraft.substring(0,1)==="N";
   }
   
   activeClass(active){
