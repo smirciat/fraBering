@@ -129,6 +129,8 @@ export function destroy(req, res) {
 function fSort(flights){
   return flights.sort((a,b)=>{
     if (a.dateString!==b.dateString) return new Date(b.dateString)-new Date(a.dateString);
+    if (!a.legArray) return -1;
+    if (!b.legArray) return 1;
     let aArr=JSON.parse(JSON.stringify(a.legArray));
     let bArr=JSON.parse(JSON.stringify(b.legArray));
     let aNow=aArr.pop();
