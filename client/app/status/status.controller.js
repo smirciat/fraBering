@@ -168,7 +168,9 @@ class StatusComponent {
         //if (flight.pilotObject&&flight.pilotObject.displayName) minFlight.pilot=flight.pilotObject.displayName;
         //else minFlight.pilot=flight.pilot;
         minFlight.aircraft=flight.aircraft;
-        this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
+        this.timeout(()=>{
+          this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
+        },0);
         flight._id=id;
         this.spinner=false;
         console.log('Updated Flight ' + flight.flightNum);
