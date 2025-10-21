@@ -149,7 +149,6 @@ class StatusComponent {
       flight.updated=new Date();
       flight.updatedBy=this.user.name;
       let id=flight._id;
-      delete flight._id;
       this.http.post('/api/signatures',flight);
       this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
         let minFlight={};
@@ -169,9 +168,8 @@ class StatusComponent {
         //else minFlight.pilot=flight.pilot;
         minFlight.aircraft=flight.aircraft;
         this.timeout(()=>{
-          this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
+          //this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
         },0);
-        flight._id=id;
         this.spinner=false;
         console.log('Updated Flight ' + flight.flightNum);
         if (flight.pilotAgree||flight.ocRelease||flight.dispatchRelease) this.quickModal("Flight Release Signature has Been Recorded","Success!",false);

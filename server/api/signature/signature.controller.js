@@ -92,6 +92,7 @@ export function show(req, res) {
 
 // Creates a new Signature in the DB
 export function create(req, res) {
+  if (req.body&&req.body._id) delete req.body._id;
   return Signature.create(req.body)
     .then(respondWithResult(res, 201))
     .catch(handleError(res));

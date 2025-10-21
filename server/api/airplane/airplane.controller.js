@@ -374,21 +374,44 @@ export async function firebaseQueryFunction(collection,limit,parameter,operator,
   return collectionToArray(result);
 }
 
-export async function firebaseMin(req,res){
-  if (!req.body||!req.body.flight) return res.status(404).json('need flight in req.body!');
-  const result=await getCollectionQuery('flights',1,'dateString','==',req.body.flight.dateString,false,'flightNumber','==',req.body.flight.flightNumber);
+function formatDate(date) {
+  const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+  const dd = String(date.getDate()).padStart(2, '0');
+  const yy = String(date.getFullYear()).slice(-2); // Get last two digits of the year
+  return `${mm}/${dd}/${yy}`;
+}
+
+export async function firebaseMin(flight){
+  console.log(flight._id)
+  if (!flight) return 'need flight!';
+  let minFlight={};
+  minFlight.dbId=flight._id;
+  minFlight.dateString=formatDate(new Date(flight.date));
+  minFlight.flightNumber=flight.flightNum;
+  minFlight.pilotAgree=flight.pilotAgree;
+  minFlight.ocRelease= flight.ocRelease;
+  minFlight.dispatchRelease= flight.dispatchRelease;
+  minFlight.releaseTimestamp= flight.releaseTimestamp;
+  minFlight.ocReleaseTimestamp= flight.ocReleaseTimestamp;
+  minFlight.dispatchReleaseTimestamp= flight.dispatchReleaseTimestamp;
+  minFlight.knownIce= flight.knownIce;
+  minFlight.pilotObject=flight.pilotObject;
+  minFlight.aircraft=flight.aircraft;
+  console.log(minFlight)
+  const result=await getCollectionQuery('flights',1,'dateString','==',minFlight.dateString,false,'flightNumber','==',minFlight.flightNumber);
   let array=collectionToArray(result);
-  array=array.filter(f=>f.acftNumber===req.body.flight.aircraft&&!f.isArchived);
-  if (req.body.flight.pilotObject) array=array.filter(f=>f.pilot===req.body.flight.pilotObject.displayName);
-  if (array.length===0) return res.status(404).json('no matching pfr found');
+  array=array.filter(f=>f.acftNumber===minFlight.aircraft&&!f.isArchived);
+  if (flight.pilotObject) array=array.filter(f=>f.pilot===flight.pilotObject.displayName);
+  if (array.length===0) return 'no matching pfr found';
   let id=array[0]._id;
-  delete req.body.flight.pilotObject;
-  delete req.body.flight.aircraft;
-  updateDocument('flights', id, req.body.flight).then(()=>{
-    return res.status(200).json({flight:req.body.flight,response:'Updated'});
+  delete minFlight.pilotObject;
+  delete minFlight.aircraft;
+  updateDocument('flights', id, minFlight).then(()=>{
+    console.log('minFlight updated');
+    return 'Updated';
   }).catch(err=>{
     console.log(err);
-    return res.status(500).json('Firebase Write Failure');
+    return 'Firebase Write Failure';
   });
 }
 

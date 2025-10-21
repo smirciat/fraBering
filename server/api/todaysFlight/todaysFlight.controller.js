@@ -11,7 +11,7 @@
 
 import _ from 'lodash';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
-import {quickGrab,firebaseQueryFunction,firebaseLimited} from '../airplane/airplane.controller.js';
+import {quickGrab,firebaseQueryFunction,firebaseLimited,firebaseMin} from '../airplane/airplane.controller.js';
 import {getMetar,getMetarAVWX,getMetarSynoptic,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
 import localEnv from '../../config/local.env.js';
 import fs from 'fs';
@@ -172,6 +172,8 @@ export function create(req, res) {
 
 // Updates an existing TodaysFlight in the DB
 export function update(req, res) {
+  try {firebaseMin(req.body)}
+  catch(err){console.log(err)}
   if (req.body._id) {
     delete req.body._id;
   }
