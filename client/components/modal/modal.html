@@ -500,9 +500,9 @@
         <div ng-show="modal['showInfo'+$index]">
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">------------------------------OBSERVATIONS-----------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj['Raw-Report']}}</p>
-          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-2]}}</p>
+          <!--<p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-2]}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-3]}}</p>
-          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-4]}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-4]}}</p>-->
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">------------------------------FORECAST---------------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">TAF: {{metarObj.taf}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="false&&metarObj.airport.manualObs">Ceiling: {{metarObj.airport.manualObs.ceiling}}</p>
