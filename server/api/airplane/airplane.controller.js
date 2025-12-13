@@ -322,8 +322,8 @@ export function observe(collectionName,fbDate) {
         if (index>-1) {
           if (firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
             if (!firebaseAircraft[index].recentlyUpdated) {
-              firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
-              updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
+              //firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
+              //updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
             }
           }
           firebaseAircraft[index].recentlyUpdated=true;
