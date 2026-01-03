@@ -378,6 +378,9 @@ class StatusComponent {
             let night=false;
             if (flight.departTimes.length>listIndex&&this.masterAirports[i].metarObj) {
               night=this.isItNight(this.masterAirports[i].metarObj.airport,flight.departTimes[listIndex]);
+              if (listIndex>0&&!night&&flight.arriveTimes){
+                night=this.isItNight(this.masterAirports[i].metarObj.airport,flight.arriveTimes[listIndex-1]);
+              }
             }
             if (!this.masterAirports[i].metarObj) this.masterAirports[i].metarObj={airport:{threeLetter:a}};
             airportObjs.push(angular.copy(this.masterAirports[i].metarObj));

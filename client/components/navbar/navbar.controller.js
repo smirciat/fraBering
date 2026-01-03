@@ -112,7 +112,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='9';
+    let version='10';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);

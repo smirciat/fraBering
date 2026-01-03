@@ -24,6 +24,7 @@ export default function(sequelize, DataTypes) {
     daysOfWeek: DataTypes.ARRAY(DataTypes.INTEGER),
     airports: DataTypes.ARRAY(DataTypes.STRING),
     departTimes: DataTypes.ARRAY(DataTypes.TIME),
+    arriveTimes: DataTypes.ARRAY(DataTypes.TIME),
     departTimesZulu: DataTypes.JSONB,
     base: DataTypes.STRING,
     status: DataTypes.STRING,

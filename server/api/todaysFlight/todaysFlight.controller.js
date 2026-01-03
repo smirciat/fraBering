@@ -463,6 +463,7 @@ export async function tf(req,res) {
           //} 
         }
         flight.departTimes=[];
+        flight.arriveTimes=[];
         flight.airports=[];
         flight.flightLegs.forEach((leg,i)=>{
           if (!flight.flightNum&&leg.id) flight.flightNum=leg.id;
@@ -470,6 +471,7 @@ export async function tf(req,res) {
           if (leg.flightStatus) flight.flightStatus=leg.flightStatus;
           if (leg.registration) flight.aircraft=leg.registration;
           flight.departTimes.push(new Date(leg.departureTime).toTimeString().slice(0,8));
+          flight.arriveTimes.push(new Date(leg.arrivalTime).toTimeString().slice(0,8));
           flight.airports.push(leg.origin.name);
           if (i===flight.flightLegs.length-1) {
             //add final destination to flight.airports
@@ -490,7 +492,8 @@ export async function tf(req,res) {
             lastTime.setMinutes(lastTime.getMinutes()+flightTime);
             lastTime=lastTime.toTimeString().slice(0,8);
             if (lastTime.substring(0,7)==="Invalid") lastTime=undefined;
-            if (lastTime) flight.departTimes.push(lastTime);
+            //if (lastTime) flight.departTimes.push(lastTime);
+            flight.departTimes.push(flight.arriveTimes[flight.arriveTimes.length-1]);
           }
           
         });
@@ -905,6 +908,12 @@ export async function tf(req,res) {
           //console.log(todaysFlights[index]._id+' aircraft'); 
           //updated.push(todaysFlights[index]._id);
           todaysFlights[index].aircraft=flight.aircraft;
+        }
+        if (flight.arriveTimes) {
+          todaysFlights[index].arriveTimes=flight.arriveTimes;
+          //if (todaysFlights[index].departTimes.length-todaysFlights[index].arriveTimes.length===1){
+          //  todaysFlights[index].departTimes[todaysFlights[index].departTimes.length-1]=todaysFlights[index].arriveTimes[todaysFlights[index].arriveTimes.length-1];
+          //}
         }
         if (todaysFlights[index].departTimes[0]!==flight.departTimes[0]){
           //todaysFlights[index].runScroll=true;
