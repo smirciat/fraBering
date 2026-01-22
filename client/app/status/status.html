@@ -233,7 +233,32 @@
   </div>
 </section>
 <section ng-if="status.view==='next'&&status.Auth.isAdmin()">
-  <h3>Next Day View</h3>
+  <h3>FIKI View</h3>
+  <table class="table table-hover" style="font-weight:bold;">
+    <thead>
+      <tr>
+        <th><span style="float:right;">FIKI?</span></th>
+        <th>Flight#</th>
+        <th>Captain</th>
+        <th>Routing</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'">
+        <td>
+          <div>
+            <span style="float:right">
+              <input class="form-control" style="width:20px; height:20px; margin:0px;" type="checkbox" 
+                ng-model="flight.knownIce" ng-change="status.updateKnownIce(flight)">
+            </span>
+          </div>  
+        </td>
+        <td>{{flight.flightNum}}</td>
+        <td>{{flight.pilotObject.displayName||flight.pilot}}</td>
+        <td>{{flight.airports.toString()}}</td>
+      </tr>
+    </tbody>
+  </table>
 </section>
 <section style="background-color:#ffffcc;margin:auto;width:75%;" ng-if="status.view==='load'&&status.Auth.isUser()">
   <h3>Loads Available View</h3>

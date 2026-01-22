@@ -414,6 +414,14 @@ class StatusComponent {
       return array;// array.sort((a,b)=>{return a.departTimes[0].localeCompare(b.departTimes[0])});
   }
   
+  updateKnownIce(flight){
+    if (!flight||!flight._id) return;
+    let f={knownIce:flight.knownIce};
+    this.http.patch('/api/todaysFlights/'+flight._id,f).then(res=>{
+      console.log(res.data);
+    });
+  }
+  
   filterDuplicates(arr, key1, key2) {
     const seen = new Set();
     return arr.filter(obj => {
