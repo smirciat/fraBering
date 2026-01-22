@@ -262,22 +262,22 @@ export async function metars(req,res) {
       if (airport.icao&&airport.icao.length==4&&airport.icao!=="PAOB") {
         if (hour>=6&&hour<=17) airport.currentMetarObj = await getMetarSynoptic(airport.icao);
         else airport.currentMetarObj = await getMetarAVWX(airport.icao);
-        //if (hour>=6&&hour<=17) {//17
-        //  try{
-        //    airport.currentMetarArray=await getMetarList(airport.icao);
-        //    airport.currentMetarArray=airport.currentMetarArray.metars;
-        //    airport.currentMetarObj = {airport:airport.icao,metar:airport.currentMetarArray[airport.currentMetarArray.length-1]};
-        //  }
-        //  catch(err){
-        //    console.log(err);
-        //    airport.currentMetarObj = await getMetarAVWX(airport.icao);
-        //    airport.currentMetarArray = [airport.currentMetarObj];
-        //  }
-        //}
-        //else {
-        //  airport.currentMetarObj = await getMetarAVWX(airport.icao);
-        //  airport.currentMetarArray = [airport.currentMetarObj];
-        //}
+        if (hour>=6&&hour<=17) {//17
+          try{
+            airport.currentMetarArray=await getMetarList(airport.icao);
+            airport.currentMetarArray=airport.currentMetarArray.metars;
+            //airport.currentMetarObj = {airport:airport.icao,metar:airport.currentMetarArray[airport.currentMetarArray.length-1]};
+          }
+          catch(err){
+            console.log(err);
+            //airport.currentMetarObj = await getMetarAVWX(airport.icao);
+            airport.currentMetarArray = [airport.currentMetarObj];
+          }
+        }
+        else {
+          //airport.currentMetarObj = await getMetarAVWX(airport.icao);
+          airport.currentMetarArray = [airport.currentMetarObj];
+        }
       }
       if (!airport.currentMetarObj) continue;
       airport.currentMetar=airport.currentMetarObj.metar;

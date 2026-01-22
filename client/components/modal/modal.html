@@ -379,26 +379,7 @@
           </div>
         </div>
       </div>
-      <br>
-      <p style="color:red; font-style:italic;margin-bottom:0px">Flight Into Known of Forecast Icing (FIKI) conditions is determined by:</p>
-      <p style="color:red; font-style:italic;margin-bottom:0px">1. Reference to appropriate <strong>Icing Forecast</strong>, and</p>
-      <p style="color:red; font-style:italic;margin-bottom:0px">2. Reference to company or official <strong>PIREP's</strong> within < 3 hours along route/altitude of flight.</p>
-      <p style="color:red; font-style:italic;margin-bottom:0px">3. Check the FIKI box if light or greater icing is indicated (uncheck if conditions allow).</p>
-      <p style="color:red; font-style:italic;margin-bottom:0px" ng-if="modal.flight.equipment.name==='Caravan'">4. C208: reduce MGTOW to arrive in icing area < 8807 lbs.</p>
-      <p style="color:red; font-style:italic;margin-bottom:0px">&nbsp &nbsp All aircraft adhere to AFM icing limitations.</p>
-      <div class="modal-environment-layout" style="font-weight:bold;">
-       <div class="modal-column">
-         <table class="table table-borderless">
-           <tr>
-             <td><span style="padding-top:5px;margin-top:5px">FIKI?</span></td>
-             <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.allDisabled()"></td>
-           </tr><tr>
-             <td><span style="padding-top:5px;margin-top:5px">FIKI REMARK:</span></td>
-             <td><textarea class="form-control" style="height:50px;padding-top:5px;margin-top:5px" ng-style="modal.getWidth(450,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.allDisabled()"></textarea></td>
-           </tr>
-         </table>
-       </div>
-     </div>
+      
       <div class="orange-line white">
         <div class="inner-modal">
           <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">MGTOW</span>
@@ -482,9 +463,109 @@
       </div>
     </div>-->
     <br>
+    
     <hr class="my-hr">
     <div>
-      <p style="font-weight:bold">ENVIRONMENT</p>
+     <div class="orange-line">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
+            ENVIROMNENT&nbsp;
+            
+          </span>
+        </div>
+      </div>
+      <div class="modal-environment-layout" style="font-weight:bold;">
+       <div class="modal-column">
+         <table class="table table-borderless">
+           <tr>
+             <td><span style="padding-top:5px;margin-top:5px">FIKI?</span></td>
+             <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.allDisabled()"></td>
+           </tr><tr>
+             <td><span style="padding-top:5px;margin-top:5px">FIKI REMARK:</span></td>
+             <td><textarea class="form-control" style="height:50px;padding-top:5px;margin-top:5px" ng-style="modal.getWidth(450,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.allDisabled()"></textarea></td>
+           </tr>
+         </table>
+       </div>
+      </div>
+      <div>
+        <p style="color:red; font-size:1em; border:2px dashed red; background-color: rgba(255, 0, 0, 0.1)">
+          <strong>&nbsp Takeoff Prohibited in -FZRA, FZRA, +FZRA, -FZDZ, FZDZ, +FZDZ, +SN, PL, or GR.</strong>
+        </p>
+      </div>
+      <div>
+        <p style="color:red; background-color: rgba(0, 0, 255, 0.1); text-align:center;">
+          ***A C208 FIKI Policy Job Aid is located in the Bering Air > Dispatch Folder***
+        </p>
+      </div>
+      <p style="color:red; font-style:italic;margin-bottom:0px">Flight Into Known of Forecast Icing (FIKI) conditions is determined by:</p>
+      <p style="color:red; font-style:italic;margin-bottom:0px">1. Reference to appropriate <strong>Icing Forecast</strong>, and</p>
+      <p style="color:red; font-style:italic;margin-bottom:0px">2. Reference to company or official <strong>PIREP's</strong> within < 3 hours along route/altitude of flight.</p>
+      <p style="color:red; font-style:italic;margin-bottom:0px">3. Check the FIKI box if light or greater icing is indicated (uncheck if conditions allow).</p>
+      <p style="color:red; font-style:italic;margin-bottom:0px" ng-if="modal.flight.equipment.name==='Caravan'">4. C208: reduce MGTOW to arrive in icing area < 8807 lbs.</p>
+      <p style="color:red; font-style:italic;margin-bottom:0px">&nbsp &nbsp All aircraft adhere to AFM icing limitations.</p>
+      <br>
+      <div class="orange-line" ng-click="modal.showFIKIInfo=!modal.showFIKIInfo">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
+            FIKI ADDITIONAL&nbsp;<i ng-class="modal.upOrDown(modal.showFIKIInfo)"></i> 
+          </span>
+        </div>
+      </div>
+      <div ng-show="modal.showFIKIInfo">
+        <br>
+        <p><strong>DISPATCH / OPERATIONAL CONTROL</strong></p>
+        <p>1. Check the FIKI Box if light or greater icing is indicated (Uncheck if conditions allow)</p>
+        <p><strong>PILOT</strong></p>
+        <p>1. Check the FIKI Box if light or greater icing is indicated (Uncheck if conditions allow)</p>
+        <p>2. Plan ice mitigation strategy (route, altitude, step-climb, fuel burn prior to icing)</p>
+        <p>3. Plan icing exit strategy (routes, altitudes, alternates, freezing level, bases/tops)</p>
+        <p>4. Enter a short FIKI Remark with the reason and enter first leg MGTOW in Flight Report.</p>
+        <p>5. Further legs MGTOW set at pilot's discretion.</p>
+        <p><strong>C208</strong></p>
+        <div class="grid-parent-fiki" style="background-color:white;">
+          <div style="text-align:left;">
+            The C208 requires a takeoff weight between 8807-9062 so that the aircraft will arrive in the icing environment at or below 8807 lbs. Each leg MGTOW is at pilot discretion based on the conditions for that leg. Fill TKS tank to an appropriate level at or above 11.7 gallons for FIKI conditions. Remain clear of icing or embedded forecast icing until gross weight is less than 8807 lbs. If icing is encountered over 8807 lbs, EXIT icing immediately.
+          </div>
+          <div>
+            <div style="border:1px solid black; text-align:right; background-color:lightblue;">Minutes to Icing:</div>
+            <div style="border:1px solid black; text-align:right;">0-9 minutes &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">10 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">15 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">20 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">25 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">30 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">35 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">36 &nbsp</div>
+          </div>
+          <div>
+            <div style="border:1px solid black; text-align:right; background-color:lightblue;">MGTOW &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">8807 lbs. &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">8877 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">8912 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">8947 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">8982 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">9017 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">9052 &nbsp</div>
+            <div style="border:1px solid black; text-align:right;">9062 &nbsp</div>
+          </div>
+        </div>
+        <br>
+        <p><strong>ALL AIRCRAFT / ALL DEPARTURES</strong></p>
+        <p>1. Adhere to all AFM icing limitations.</p>
+        <p>2. Adhere to Clean Aircraft Concept (GOM 07.03, 07.15)</p>
+        <p>3. Verify the aircraft is clean during the Walkaround (GOM 07.13)</p>
+        <p>4. Takeoff Prohibited in -FZRA, FZRA, +FZRA, -FZDZ, FZDZ, +FZDZ, +SN, PL, or GR.</p>
+        <p>5. For takeoff in other possible ground icing conditions:</p>
+        <p>&nbsp &nbsp &nbsp a. Reference the HOT table for EXPECTED protection time (GOM 07.27), and</p>
+        <p>&nbsp &nbsp &nbsp b. Accomplish PTOCC within 5 min. of takeoff (GOM 07.21).</p>
+        <p><strong>ALL AIRCRAFT / ENROUTE</strong></p>
+        <p>1. Altitudes and routes must be within GOM 06.19 IFR/VFR/DAY/NIGHT limitations.</p>
+        <p>2. PIREPS for unforecast conditions are required (company and official)</p>
+        <p>3. Dispatch will record and distribute PIREPS and other hazardous information (GOM 05.37)</p>
+      </div>
+      
+    
+      <br>
       <div ng-repeat="metarObj in modal.flight.airportObjsLocked track by $index" ng-click="modal['showInfo'+$index]=!modal['showInfo'+$index]">
         <br>
         <div class='airport-card' ng-class="metarObj.color">
@@ -501,9 +582,9 @@
         <div ng-show="modal['showInfo'+$index]">
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">------------------------------OBSERVATIONS-----------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj['Raw-Report']}}</p>
-          <!--<p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-2]}}</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-2]}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-3]}}</p>
-          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-4]}}</p>-->
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">{{metarObj.airport.currentMetarArray[metarObj.airport.currentMetarArray.length-4]}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">------------------------------FORECAST---------------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.taf">TAF: {{metarObj.taf}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="false&&metarObj.airport.manualObs">Ceiling: {{metarObj.airport.manualObs.ceiling}}</p>
@@ -541,10 +622,17 @@
         <br>
       </div>
     </div>
+    <br>
     <hr class="my-hr">
+    <div class="orange-line">
+        <div class="inner-modal">
+          <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold;">
+            ENTER PFR REMARK HERE&nbsp;
+          </span>
+        </div>
+      </div>
     <div style="font-weight:bold;">
       <table class="table table-borderless">
-        <tr><td>ENTER PFR REMARK HERE</td></tr>
         <tr><td><input ng-style="modal.getWidth(500,'px')" name="security" type="text" ng-model="modal.securityDisp" ng-disabled="modal.allDisabled()" ng-blur="modal.updateParam('security',modal.securityDisp)"></td></tr>
       </table>
     </div>

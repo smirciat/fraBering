@@ -203,6 +203,15 @@
   align-items:center;
 }
 
+.grid-parent-fiki{
+  display: grid; 
+  grid-template-columns: 8fr 3fr 3fr; 
+  grid-gap: 0px; 
+  width: 100%; 
+  padding-left:10px;
+  align-items:center;
+}
+
 .grid-parent-audit{
   display: grid; 
   grid-template-columns: 1fr 1fr 1fr; 
