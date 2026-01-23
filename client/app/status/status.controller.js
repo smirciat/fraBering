@@ -33,6 +33,11 @@ class StatusComponent {
     this.longPressTimer;
     this.longPressDuration = 500;
     this.view='board';
+    this.northWest=['PHO','KVL','WTK','RDG','TNC','WAA','SHH','TLA','KTS'];
+    this.southWest=['GAM','SVA'];
+    this.northEast=['ORV','IAN','WLK','OBU','ABL','SHG','WMO','GLV','ELI','KKA','SKK','UNK'];
+    this.southEast=['UNK','SKK','SMK','WBB','BKC','DRG'];
+    this.bulkFIKIChoices=['No Selection','Clear All','All Routes FIKI','Northwest','SouthWest','NorthEast-East', 'SouthEast-South'];
     this.updateKeys=['pilotAgree','releaseTimestamp','ocRelease','ocReleaseTimestamp','dispatchRelease','dispatchReleaseTimestamp','knownIce'];
     this.B190Configs=['Mx','Cargo','Primary 9','9','13','15','17','19','Low Hours','Medivac','Silver Sky'];
     this.B190Equipments=[0,0,134,134,137,97,57,57.5,0,0,0];
@@ -419,6 +424,75 @@ class StatusComponent {
     let f={knownIce:flight.knownIce};
     this.http.patch('/api/todaysFlights/'+flight._id,f).then(res=>{
       console.log(res.data);
+    });
+  }
+  
+  bulkFIKI(selection){
+    let flights=this.todaysFlights.filter(this.todaysFlightDisplayFilter);
+    console.log(flights);
+    switch (selection) {
+      case 'No Selection':
+        return;
+        break;
+      case 'Clear All':
+        flights.forEach(flight=>{
+          flight.knownIce=false;
+        });
+        break;
+      case 'All Routes FIKI':
+        flights.forEach(flight=>{
+          flight.knownIce=true;
+        });
+        break;
+      case 'Northwest':
+        flights=flights.filter(flight=>{
+          if (!flight.airportObjs) return false;
+          let threeLetters=flight.airportObjs.map(el=>el.airport.threeLetter);
+          return this.northWest.some(element => threeLetters.includes(element));
+        });
+        flights.forEach(flight=>{
+          flight.knownIce=true;
+        });
+        break;
+      case 'SouthWest':
+        flights=flights.filter(flight=>{
+          if (!flight.airportObjs) return false;
+          let threeLetters=flight.airportObjs.map(el=>el.airport.threeLetter);
+          return this.southWest.some(element => threeLetters.includes(element));
+        });
+        flights.forEach(flight=>{
+          flight.knownIce=true;
+        });
+        break;
+      case 'NorthEast-East':
+        flights=flights.filter(flight=>{
+          if (!flight.airportObjs) return false;
+          let threeLetters=flight.airportObjs.map(el=>el.airport.threeLetter);
+          return this.northEast.some(element => threeLetters.includes(element));
+        });
+        flights.forEach(flight=>{
+          flight.knownIce=true;
+        });
+        break;
+      case 'SouthEast-South':
+        flights=flights.filter(flight=>{
+          if (!flight.airportObjs) return false;
+          let threeLetters=flight.airportObjs.map(el=>el.airport.threeLetter);
+          return this.southEast.some(element => threeLetters.includes(element));
+        });
+        flights.forEach(flight=>{
+          flight.knownIce=true;
+        });
+        break;
+      default:
+        return;
+        break;
+    }
+    flights.forEach(flight=>{
+      let f={knownIce:flight.knownIce};
+      this.http.patch('/api/todaysFlights/'+flight._id,f).then(res=>{
+        console.log(res.data);
+      });
     });
   }
   
@@ -1219,7 +1293,7 @@ class StatusComponent {
         if (flight.airports[i]==='Unalakleet') inBase=true;
       }
     }
-    else inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
+    else if (flight.airports&&flight.airports.length>0) inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
     
     return (flight.date===date)&&inBase&&flight.active==='true'&&!old&&flight.aircraft&&flight.aircraft.substring(0,1)==="N";
   }

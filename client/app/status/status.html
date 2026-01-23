@@ -232,14 +232,28 @@
       
   </div>
 </section>
-<section ng-if="status.view==='next'&&status.Auth.isAdmin()">
+<section ng-if="status.view==='next'&&status.Auth.isAdmin()" style="background-color:#ffffcc; padding-left:10px;">
   <h3>FIKI View</h3>
+  <div style="display:inline-block;">
+    <h5 style="display:inline-block; margin-right:20px;">Bulk Edit FIKI --></h5>
+    <div class="comment"  style="display:inline-block;">
+      <ui-select ng-style="modal.getWidth(25,'em')" style="line-height:28px;height:28px" ng-model="status.positiveFiki" theme="selectize" ng-change="status.bulkFIKI(status.positiveFiki)">
+        <ui-select-match style="line-height:28px;height:28px" placeholder="No Selection">&nbsp&nbsp&nbsp{{$select.selected}}&nbsp&nbsp&nbsp</ui-select-match>
+        <ui-select-choices repeat="choice in status.bulkFIKIChoices" >
+          <div ng-bind-html="choice | highlight: $select.search"></div>
+        </ui-select-choices>
+      </ui-select>
+    <!--<div class="comment"  style="align-self:center" ng-click="status.editConfiguration(airplane)">
+      <p>{{airplane.status}}</p>-->
+    </div>
+  </div>
   <table class="table table-hover" style="font-weight:bold;">
     <thead>
       <tr>
-        <th><span style="float:right;">FIKI?</span></th>
-        <th>Flight#</th>
-        <th>Captain</th>
+        <th><span style="float:right;">FIKI? &nbsp</span></th>
+        <th>&nbsp Flight#</th>
+        <th style="text-align:center;">Departs</th>
+        <th style="text-align:center;">Crew</th>
         <th>Routing</th>
       </tr>
     </thead>
@@ -248,14 +262,29 @@
         <td>
           <div>
             <span style="float:right">
-              <input class="form-control" style="width:20px; height:20px; margin:0px;" type="checkbox" 
+              <input class="form-control" style="width:42px; height:42px; margin:10px; padding:10px;" type="checkbox" 
                 ng-model="flight.knownIce" ng-change="status.updateKnownIce(flight)">
             </span>
           </div>  
         </td>
-        <td>{{flight.flightNum}}</td>
-        <td>{{flight.pilotObject.displayName||flight.pilot}}</td>
-        <td>{{flight.airports.toString()}}</td>
+        <td>
+          <div>
+            <p style="margin:10px; padding:10px; border:1px solid black; text-align:center; width:6em;" ng-class="flight.colorLock||flight.color" 
+                    ng-click="status.lookAtFlight(flight)">
+              {{status.getFlightNum(flight)}}
+            </p>
+          </div>
+        </td>
+        <td><p style="margin:10px; padding:10px; text-align:center;">{{flight.departTimes[0].toString().substring(0,5)}}</p></td>
+        <td><p style="margin:10px; padding:10px; text-align:center;">{{flight.pilotObject.displayName||flight.pilot}}/{{flight.coPilotObject.displayName}}</p></td>
+        <td>
+          <div class="airport-card" ng-repeat="metarObj in flight.airportObjs track by $index">
+            <div ng-class="metarObj.color">
+                <p style="margin:0px;padding:10px" tooltip-placement="bottom" uib-tooltip="{{metarObj['Raw-Report']}}"
+                    ng-mousedown="status.handleClick($event,metarObj,'metar',flight._id,$index)">{{metarObj.airport.threeLetter}}</p>
+            </div>
+          </div>
+        </td>
       </tr>
     </tbody>
   </table>
