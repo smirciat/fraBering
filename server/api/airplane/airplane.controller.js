@@ -320,7 +320,7 @@ export function observe(collectionName,fbDate) {
       for (let flight of firebaseFlights){
         let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
         if (index>-1) {
-          if (firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
+          if (flight.legArray&&flight.legArray.length&&flight.legArray[flight.legArray.length-1]&&firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
             if (!firebaseAircraft[index].recentlyUpdated) {
               //firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
               //updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
