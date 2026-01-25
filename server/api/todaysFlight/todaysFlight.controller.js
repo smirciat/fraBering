@@ -787,8 +787,11 @@ export async function tf(req,res) {
       let acPfrs=pfrs.filter((pfr)=>{return pfr.acftNumber===flight.aircraft});
       if (acPfrs.length>0){
         acPfrs.sort((a,b)=>{
-          let aTime=a.legArray[a.legArray.length-1].onTime||'1/1/1979';
-          let bTime=b.legArray[b.legArray.length-1].onTime||'1/1/1979';
+          let aTime, bTime;
+          if (!a.legArray[a.legArray.length-1]) aTime='1/1/1979';
+          else aTime=a.legArray[a.legArray.length-1].onTime||'1/1/1979';
+          if (!b.legArray[b.legArray.length-1]) bTime='1/1/1979';
+          else bTime=b.legArray[b.legArray.length-1].onTime||'1/1/1979';
           return new Date(aTime)-new Date(bTime);
         });
         acPfrs=acPfrs.filter(pfr=>{return pfr.legArray&&pfr.legArray[pfr.legArray.length-1]&&pfr.legArray[pfr.legArray.length-1].onTime&&pfr.legArray[pfr.legArray.length-1].onTime._seconds});
