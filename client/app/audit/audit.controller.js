@@ -101,7 +101,7 @@ class AuditComponent {
         let obj={key:key,
               info:info,collection:'pfrs',
               combo:combo};
-        if (info==='string'||info==='number'||info==='boolean'||(info==='object'&&(flight.pfr[key] instanceof Date||flight.pfr[key]._seconds))){
+        if (info==='string'||info==='number'||info==='boolean'||(info==='object'&&(flight.pfr[key] instanceof Date||(flight.pfr[key]&&flight.pfr[key]._seconds)))){
           if (info==='object') obj.info='date';
           if (index===-1) this.flightKeys.push(obj);
           else {
@@ -379,6 +379,7 @@ class AuditComponent {
       });
       for(const pfr of pfrs){
         if (!pfr.legArray) continue;
+        if (!pfr.legArray[0]) pfr.legArray[0]={fuel:'no fuel entered'};
         this.csv+=pfr.pilot+','+pfr.dateString+','+pfr.flightNumber+','+pfr.acftNumber+','+pfr.acftType+','+pfr.owe+','+pfr.legArray[0].fuel+','+(pfr.legArray[0].mgtow*1-pfr.legArray[0].fuel*1-pfr.owe)+','+pfr.legArray[0].mgtow+','+pfr.legArray[0].cg+','+pfr.legArray[0].operatingWeight+','+pfr.legArray[0].tow+'\r\n';
       }
       this.spinner=false;
