@@ -10,6 +10,8 @@
 'use strict';
 
 import _ from 'lodash';
+import sequelize from 'sequelize';
+
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
 import {quickGrab,firebaseQueryFunction,firebaseLimited,firebaseMin} from '../airplane/airplane.controller.js';
 import {getMetar,getMetarAVWX,getMetarSynoptic,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
@@ -121,6 +123,23 @@ export function dayFlights(req, res) {
   return TodaysFlight.findAll({
       where:{
         date:date
+      }
+    })
+    .then(respondWithResult(res))
+    .catch(handleError(res));
+}
+
+// Gets a list of TodaysFlights
+export function flightRange(req, res) {
+  let startDate=new Date(req.body.startDate).toISOString();
+  let endDate=new Date(req.body.endDate).toISOString();
+  const format = 'MM-DD-YYYY';
+  return TodaysFlight.findAll({
+      where: {
+        dateObject: {
+          $between:[startDate,endDate]
+          //$between: ['2026-01-21 09:00:00', '2026-01-31 09:00']
+        }
       }
     })
     .then(respondWithResult(res))
@@ -825,6 +844,7 @@ export async function tf(req,res) {
           flight.colorPatch='false';
           console.log('creating flight:' + flight.flightNum + ' ' + flight.date);
           //console.log(flight);
+          flight.dateObject=new Date(flight.date).toISOString();
           TodaysFlight.create(flight);
       }
       else {
@@ -990,6 +1010,7 @@ export async function tf(req,res) {
         }
         //console.log('Updating Flight ID: ' + todaysFlights[index].flightId);
         //console.log(todaysFlights[index]);
+        
         delete flight._id;
         delete flight.pilotAgree;
         delete flight.ocRelease;

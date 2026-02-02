@@ -13,6 +13,8 @@ export default function(sequelize, DataTypes) {
       defaultValue: 'true'
     },
     date: DataTypes.STRING,
+    dateForPG: DataTypes.DATE,
+    dateObject: DataTypes.DATE,
     pilot: DataTypes.STRING,
     coPilot: DataTypes.STRING,
     aircraft: DataTypes.STRING,

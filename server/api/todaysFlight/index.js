@@ -26,6 +26,7 @@ router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);
 router.post('/dayFlights', controller.dayFlights);
+router.post('/flightRange', controller.flightRange);
 router.post('/getManifests', controller.getManifests);
 router.post('/getManifest', controller.getManifest);
 router.post('/getFlightLogs', controller.getFlightLogs);

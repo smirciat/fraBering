@@ -331,12 +331,18 @@ class AuditComponent {
     this.complete3=false;
     this.spinner=true;
     let date=new Date(this.startDate).toLocaleDateString();
+    let date1=new Date(this.endDate).toLocaleDateString();
+    this.http.post('/api/todaysFlights/flightRange',{startDate:date,endDate:date1}).then(res=>{
+      console.log(res.data);
+    });
     return this.http.post('/api/todaysFlights/dayFlights',{dateString:date}).then(res=>{
       this.csv="PILOT,DATE,FLIGHTNUM,AIRCRAFT,FIKI,PILOT SIG,DISPATCH SIG,OC SIG,ROUTING,BASE WX,OTHER WX\r\n";
       console.log(res.data);
       let flights=res.data;
       //if (this.pilot) flights=flights.filter(p=>{return p.pilot===this.pilot.displayName});
       flights.sort((a,b)=>{
+        if (!a.pilot) return -1;
+        if (!b.pilot) return 1;
         return a.pilot.localeCompare(b.pilot);
       });
       for(const flight of flights){

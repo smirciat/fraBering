@@ -63,6 +63,25 @@ class StatusComponent {
       this.cookies.put('token',storage);
       this.scope.$apply();
     }
+    let ctr=60;
+    let tempD='2/3/2026';
+    while (ctr<60){
+      this.http.post('/api/todaysFlights/dayFLights',{dateString:tempD}).then(res=>{
+        res.data.forEach(f=>{
+          f.dateObject=new Date(f.date);
+          console.log(f);
+          this.http.patch('/api/todaysFlights/'+f._id,{dateObject:new Date(f.dateObject)}).then(res=>{
+            console.log(res.data);
+          });
+        });
+      });
+      tempD=new Date(tempD);
+      tempD = new Date(tempD.getTime());
+      tempD.setDate(tempD.getDate() - 1);
+      tempD=tempD.toLocaleDateString();
+      ctr++;
+    }
+    
     this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
     this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
     //this.http.post('/api/todaysFlights/mobile/updateFlight',{token:'!2QokQilQ=ztHzAeSU74jP/KgD406dEbJ81NCDSAiuyEr3lE3TPh66bRrvNy5P7k',flight:{_id:20819,active:'true'}}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
