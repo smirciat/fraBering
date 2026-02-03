@@ -330,12 +330,12 @@ class AuditComponent {
     this.complete2=false;
     this.complete3=false;
     this.spinner=true;
-    let date=new Date(this.startDate).toLocaleDateString();
-    let date1=new Date(this.endDate).toLocaleDateString();
+    let date=new Date(this.startDate);
+    let date1=new Date(this.endDate);
     this.http.post('/api/todaysFlights/flightRange',{startDate:date,endDate:date1}).then(res=>{
       console.log(res.data);
     });
-    return this.http.post('/api/todaysFlights/dayFlights',{dateString:date}).then(res=>{
+    return this.http.post('/api/todaysFlights/flightRange',{startDate:date,endDate:date1}).then(res=>{
       this.csv="PILOT,DATE,FLIGHTNUM,AIRCRAFT,FIKI,PILOT SIG,DISPATCH SIG,OC SIG,ROUTING,BASE WX,OTHER WX\r\n";
       console.log(res.data);
       let flights=res.data;
