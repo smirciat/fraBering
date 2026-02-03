@@ -131,14 +131,16 @@ export function dayFlights(req, res) {
 
 // Gets a list of TodaysFlights
 export function flightRange(req, res) {
-  let startDate=new Date(req.body.startDate).toISOString();
-  let endDate=new Date(req.body.endDate).toISOString();
-  const format = 'MM-DD-YYYY';
+  req.body.startDate=new Date(req.body.startDate);
+  req.body.startDate.setHours(0, 0, 0, 0);
+  let startDate=req.body.startDate.toISOString();
+  req.body.endDate=new Date(req.body.endDate);
+  req.body.endDate.setHours(0, 0, 0, 0);
+  let endDate=req.body.endDate.toISOString();
   return TodaysFlight.findAll({
       where: {
         dateObject: {
-          $between:[startDate,endDate]
-          //$between: ['2026-01-21 09:00:00', '2026-01-31 09:00']
+          $between: [startDate,endDate]
         }
       }
     })
