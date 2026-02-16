@@ -887,11 +887,11 @@ export async function tf(req,res) {
         todaysFlights[index].coPilotObject=lookupObj.coPilotObject;
         if (!todaysFlights[index].pilot) {
           todaysFlights[index].pilotObject=null;
-          todaysFlights[index].pilot='';
+          todaysFlights[index].pilot=null;
         }
         if (!todaysFlights[index].coPilot) {
           todaysFlights[index].coPilotObject=null;
-          todaysFlights[index].coPilot='';
+          todaysFlights[index].coPilot=null;
         }
         todaysFlights[index].nonRevFlight=flight.nonRevFlight;
         todaysFlights[index].runScroll=false;

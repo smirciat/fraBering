@@ -51,8 +51,8 @@
           </div>
           <div style="text-align:center">
             <p ng-style="public.getFontSize(20,'px')">
-              {{flight.pilotObject.firstName||flight.pilot}}
-              <strong ng-if="flight.coPilot">and &nbsp{{flight.coPilotObject.firstName||flight.coPilot||''}}</strong>
+              {{flight.pilotObject.firstName||''}}
+              <strong ng-if="flight.coPilot">and &nbsp{{flight.coPilotObject.firstName||''}}</strong>
             </p>
             <p ng-class="public.getFontColor(flight.flightStatus)" ng-style="public.getFontSize(20,'px')">
               {{flight.equipment.name}}
