@@ -17,6 +17,7 @@ export default function(sequelize, DataTypes) {
     },
     baseGroup: DataTypes.STRING,
     comment: DataTypes.STRING,
+    pilotComment: DataTypes.STRING,
     signature: DataTypes.STRING,
     timestamp: DataTypes.DATE,
     runways: DataTypes.ARRAY(DataTypes.INTEGER),
