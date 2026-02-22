@@ -500,6 +500,20 @@ function overallRiskClass(airport){
     metarObj.windColor=tempColor;
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //Visibility
+    if (!metarObj.Visibility||metarObj.Visibility==='99'||metarObj.Visibility===99) {
+      metarObj.visibilityColor='airport-purple';
+    }
+    else {
+      tempColor=returnColor(airport.visibilityRequirement, metarObj.Visibility,'above',airport);
+      metarObj.visibilityColor=tempColor;
+    }
+    if (!metarObj.Ceiling||metarObj.Ceiling=='9999'||metarObj.Ceiling==9999) {
+      metarObj.visibilityColor='airport-purple';
+    }
+    else {
+      tempColor=returnColor(airport.ceilingRequirement,metarObj.Ceiling,'above',airport);
+      metarObj.ceilingColor=tempColor;
+    }
     if (!metarObj.Visibility||!metarObj.Ceiling||(!metarObj.altimeter&&(!metarObj.manualObs||!metarObj.usingManual||(metarObj.usingManual&&metarObj.manualObs.isOfficial)))||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
       //set colors to purple
       metarObj.ceilingColor=metarObj.visibilityColor=tempColor='airport-purple';
@@ -507,12 +521,10 @@ function overallRiskClass(airport){
       return returnString+' '+color;
     }
     //visibility
-    tempColor=returnColor(airport.visibilityRequirement, metarObj.Visibility,'above',airport);
-    metarObj.visibilityColor=tempColor;
+    
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //ceiling
-    tempColor=returnColor(airport.ceilingRequirement,metarObj.Ceiling,'above',airport);
-    metarObj.ceilingColor=tempColor;
+    
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //return
     metarObj.color=returnString+' '+color;
