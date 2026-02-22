@@ -480,6 +480,7 @@ function overallRiskClass(airport){
     metarObj.visibilityColor='airport-blue';
     metarObj.ceilingColor='airport-blue';
     metarObj.windColor='airport-blue';
+    metarObj.altimeterColor='airport-blue';
     metarObj.freezingColor='airport-green';
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //if (airport.name==='Gambell') console.log(airport);
@@ -502,30 +503,41 @@ function overallRiskClass(airport){
     //Visibility
     if (!metarObj.Visibility||metarObj.Visibility==='99'||metarObj.Visibility===99) {
       metarObj.visibilityColor='airport-purple';
+      tempColor='airport-purple';
     }
     else {
       tempColor=returnColor(airport.visibilityRequirement, metarObj.Visibility,'above',airport);
       metarObj.visibilityColor=tempColor;
     }
+    //visibility
+    
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    
     if (!metarObj.Ceiling||metarObj.Ceiling=='9999'||metarObj.Ceiling==9999) {
-      metarObj.visibilityColor='airport-purple';
+      metarObj.ceilingColor='airport-purple';
+      tempColor='airport-purple';
     }
     else {
       tempColor=returnColor(airport.ceilingRequirement,metarObj.Ceiling,'above',airport);
       metarObj.ceilingColor=tempColor;
     }
-    if (!metarObj.Visibility||!metarObj.Ceiling||(!metarObj.altimeter&&(!metarObj.manualObs||!metarObj.usingManual||(metarObj.usingManual&&metarObj.manualObs.isOfficial)))||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
-      //set colors to purple
-      metarObj.ceilingColor=metarObj.visibilityColor=tempColor='airport-purple';
-      if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
-      return returnString+' '+color;
-    }
-    //visibility
-    
-    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //ceiling
-    
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    
+    if ((!metarObj.altimeter&&(!metarObj.manualObs||!metarObj.usingManual||(metarObj.usingManual&&metarObj.manualObs.isOfficial)))) {
+      metarObj.altimeterColor='airport-purple';
+      tempColor='airport-purple';
+    }
+    //altimeter
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    
+    //if (!metarObj.Visibility||!metarObj.Ceiling||(!metarObj.altimeter&&(!metarObj.manualObs||!metarObj.usingManual||(metarObj.usingManual&&metarObj.manualObs.isOfficial)))||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
+      //set colors to purple
+      //metarObj.ceilingColor=metarObj.visibilityColor=tempColor='airport-purple';
+      //if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+      //return returnString+' '+color;
+    //}
+    
     //return
     metarObj.color=returnString+' '+color;
     return returnString+' '+color;

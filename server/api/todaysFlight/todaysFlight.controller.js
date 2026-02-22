@@ -27,7 +27,7 @@ let fbAirplanes=[];
 let pfrs=[];
 let pilots=[];
 let flightLog=[];
-let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
+let colors=['airport-green','airport-blue','airport-yellow','airport-purple','airport-orange','airport-pink'];
 const baseUrl = 'https://localhost:' + config.port;
 const axios = require("axios");
 const https = require("https");
@@ -1074,6 +1074,7 @@ function overallRiskClass(metarObj){
     metarObj.visibilityColor='airport-blue';
     metarObj.ceilingColor='airport-blue';
     metarObj.windColor='airport-blue';
+    metarObj.altimeterColor='airport-blue';
     metarObj.freezingColor='airport-green';
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //if (airport.name==='Gambell') console.log(airport);
@@ -1090,29 +1091,53 @@ function overallRiskClass(metarObj){
       color='airport-pink';
     }
     //wind
-    tempColor=returnWindColor(metarObj.aircraft,metarObj['Wind-Gust'],metarObj['Wind-Direction'],airport);//this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
+    tempColor=returnWindColor(undefined,metarObj['Wind-Gust'],metarObj['Wind-Direction'],airport);//this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
     metarObj.windColor=tempColor;
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //Visibility
-    if (!metarObj.Visibility||!metarObj.Ceiling||(!metarObj.altimeter&&(!airport.manualObs||(metarObj.usingManual&&airport.manualObs.isOfficial)))||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
-      //set colors to purple
-      metarObj.ceilingColor=metarObj.visibilityColor=tempColor='airport-purple';
-      if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
-      return returnString+' '+color;
+    if (!metarObj.Visibility||metarObj.Visibility==='99'||metarObj.Visibility===99) {
+      metarObj.visibilityColor='airport-purple';
+      tempColor='airport-purple';
+    }
+    else {
+      tempColor=returnColor(airport.visibilityRequirement, metarObj.Visibility,'above',airport);
+      metarObj.visibilityColor=tempColor;
     }
     //visibility
-    if (!airport.visibilityRequirement) airport.visibilityRequirement={yellow:3,orange:2,red:1};
-    tempColor=returnColor(airport.visibilityRequirement, metarObj.Visibility,'above',airport);
-    metarObj.visibilityColor=tempColor;
+    
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    
+    if (!metarObj.Ceiling||metarObj.Ceiling=='9999'||metarObj.Ceiling==9999) {
+      metarObj.ceilingColor='airport-purple';
+      tempColor='airport-purple';
+    }
+    else {
+      tempColor=returnColor(airport.ceilingRequirement,metarObj.Ceiling,'above',airport);
+      metarObj.ceilingColor=tempColor;
+    }
     //ceiling
-    if (!airport.ceilingRequirement) airport.ceilingRequirement={yellow:1000,orange:500,red:500};
-    tempColor=returnColor(airport.ceilingRequirement,metarObj.Ceiling,'above',airport);
-    metarObj.ceilingColor=tempColor;
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    
+    if ((!metarObj.altimeter&&(!metarObj.manualObs||!metarObj.usingManual||(metarObj.usingManual&&metarObj.manualObs.isOfficial)))) {
+      metarObj.altimeterColor='airport-purple';
+      tempColor='airport-purple';
+    }
+    else if (metarObj.altimeter) {
+      metarObj.altimeterColor='airport-green';
+      tempColor='airport-green';
+    }
+    //altimeter
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+    
+    //if (!metarObj.Visibility||!metarObj.Ceiling||(!metarObj.altimeter&&(!metarObj.manualObs||!metarObj.usingManual||(metarObj.usingManual&&metarObj.manualObs.isOfficial)))||metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) {
+      //set colors to purple
+      //metarObj.ceilingColor=metarObj.visibilityColor=tempColor='airport-purple';
+      //if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
+      //return returnString+' '+color;
+    //}
+    
     //return
     metarObj.color=returnString+' '+color;
-    
     return returnString+' '+color;
   }
   

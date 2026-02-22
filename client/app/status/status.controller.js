@@ -236,6 +236,8 @@ class StatusComponent {
       if (!res.contaminent) res.contaminent='';
       if (!res.percent) res.percent='';
       if (!res.openClosed) res.openClosed='';
+      if (res.companyPirep) res.companyPirep=new Date().toLocaleString() + ' > ' + res.companyPirep;
+      
       let index = this.airports.map(e => e._id).indexOf(res._id);
       if (index>-1) {
         this.airports[index].signature=res.signature;
@@ -246,6 +248,11 @@ class StatusComponent {
         this.airports[index].depth=res.depth;
         this.airports[index].contaminent=res.contaminent;
         this.airports[index].percent=res.percent;
+        if (res.companyPirep){
+          res.companyPireps=this.airports[index].companyPireps;
+          if (!res.companyPireps) res.companyPireps=[];
+          res.companyPireps.unshift(res.companyPirep);
+        }
         if (res._id) {//&&res.signature&&res.runwayScore){
           this.http.patch('/api/airportRequirements/'+res._id,res).then(resp=>{
             this.spinner=false;

@@ -21,6 +21,7 @@ export default function(sequelize, DataTypes) {
     signature: DataTypes.STRING,
     timestamp: DataTypes.DATE,
     runways: DataTypes.ARRAY(DataTypes.INTEGER),
+    companyPireps: DataTypes.ARRAY(DataTypes.STRING),
     runwayScore: {
       type: DataTypes.STRING,
       defaultValue:"5"

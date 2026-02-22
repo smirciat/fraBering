@@ -189,6 +189,17 @@ angular.module('workspaceApp')
                 scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
                 timestamp=new Date().toLocaleString(),
                 alternateDisp=flight.alternate,
+                checkPirep=function(pirep){
+                  if (!pirep) return false;
+                  let arr=pirep.split('>');
+                  let tempDate,threeHoursAgo;
+                  if (arr.length>1) {
+                    tempDate=new Date(arr[0]);
+                    threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+                    return tempDate.getTime() > threeHoursAgo;
+                  }
+                  return false;
+                },
                 isWrongUser = function(){
                   if (userLastname==='K.'||userLastname==='R.') userLastname="Evans";
                   if (!flight.pilotObject) return false;
@@ -282,6 +293,7 @@ angular.module('workspaceApp')
                 reasons:reasons,
                 jumpseatDisp:flight.jumpseaterObject.reason,
                 tksCalc:tksCalc,
+                checkPirep:checkPirep,
                 fuelCalc:function(){
                   if (!flight.pfr.legArray[0].fuel) return 0;
                   return (flight.pfr.legArray[0].fuel/flight.equipment.fuelBurn).toFixed(1);
