@@ -406,3 +406,4 @@ angular.module('workspaceApp')
   });
 
 })();
+
