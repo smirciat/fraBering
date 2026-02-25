@@ -4,6 +4,7 @@
 
 'use strict';
 
+//require('dotenv').config({ path: './local.env.js' });
 import express from 'express';
 import favicon from 'serve-favicon';
 import morgan from 'morgan';

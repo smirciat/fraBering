@@ -12,6 +12,7 @@
 import _ from 'lodash';
 import {Monitor} from '../../sqldb';
 import config from '../../config/environment';
+import localEnv from '../../config/local.env.js';
 const port = config.port;
 const axios = require("axios");
 const https = require("https");
@@ -19,8 +20,8 @@ const agent = new https.Agent({
     rejectUnauthorized: false
 });
 var client = require('twilio')(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
+  localEnv.TWILIO_ACCOUNT_SID,
+  localEnv.TWILIO_AUTH_TOKEN
 );
 
 function respondWithResult(res, statusCode) {
@@ -115,7 +116,7 @@ export function monitor(req,res){
 
 export function twilio(req,res){
   var params = {
-    from: process.env.TWILIO_PHONE_NUMBER,
+    from: localEnv.TWILIO_PHONE_NUMBER,
     to: req.body.to,
     //mediaUrl:req.body.mediaUrl,
     body: req.body.body

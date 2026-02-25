@@ -12,9 +12,10 @@
 import _ from 'lodash';
 import {AirportRequirement} from '../../sqldb';
 import config from '../../config/environment';
+import localEnv from '../../config/local.env.js';
 const baseUrl = 'http://localhost:' + config.port;
 const url1="https://api.synopticlabs.org/v2/stations/latest?stid="; //data.com/v2/stations/latest?stid=";
-const url2="&vars=metar&token=" + process.env.TOKEN;//"&within=120&vars=metar&token=" + process.env.TOKEN;
+const url2="&vars=metar&token=" + localEnv.TOKEN;//"&within=120&vars=metar&token=" + process.env.TOKEN;
 const axios = require("axios");
 const https = require("https");
 const agent = new https.Agent({
@@ -152,7 +153,7 @@ export function getPireps(req,res){
 export async function syncPireps() {
   try {
     //https://aviationweather.gov/api/data/pirep?id=PAOM&format=raw&age=2&distance=50
-    let response = await axios.get('https://avwx.rest/api/pirep/PAOM?token='+process.env.AVWX_TOKEN2);
+    let response = await axios.get('https://avwx.rest/api/pirep/PAOM?token='+localEnv.AVWX_TOKEN2);
     if (!response) return [];
     if (response.data&&response.data.Error) console.log(response.data.Error);
     let data=response.data;
@@ -187,7 +188,7 @@ export function pireps(airport) {
 export async function notams(req, res) {
   try {
     let icao=req.body.airport;
-    let response = await axios.get('https://avwx.rest/api/notam/'+icao+'?token='+process.env.AVWX_TOKEN2);
+    let response = await axios.get('https://avwx.rest/api/notam/'+icao+'?token='+localEnv.AVWX_TOKEN2);
     if (response.data&&response.data.Error) console.log(res.data.Error);
     else res.status(200).json(response.data);
   }
@@ -208,7 +209,7 @@ export async function tafs(req,res) {
     for (const airport of allAirports) {
       if (alternateArray.indexOf(airport.threeLetter)>-1) {
         //tafs
-        let response = await axios.get('https://avwx.rest/api/taf/'+airport.icao+'?token='+process.env.AVWX_TOKEN2);
+        let response = await axios.get('https://avwx.rest/api/taf/'+airport.icao+'?token='+localEnv.AVWX_TOKEN2);
         if (response) {
           if (response.data&&response.data.Error) console.log(res.data.Error);
           //console.log(response.data)
@@ -387,7 +388,7 @@ export async function getMetarGOV(airport) {
 
 export async function getMetarAVWX(airport) {
   let jsonResponse={airport:airport,metar:'missing'};
-  let url = 'https://avwx.rest/api/metar/' + airport + '?reporting=true&token=' + process.env.AVWX_TOKEN2;
+  let url = 'https://avwx.rest/api/metar/' + airport + '?reporting=true&token=' + localEnv.AVWX_TOKEN2;
   try {
     let response = await axios.get(url);
     if (response.data&&response.data.raw){
@@ -756,7 +757,7 @@ function testSky(str) {
 }
 
 export function autoCheck(req,res){
-  if (!req.body.monitor.password||req.body.monitor.password!==process.env.PASSWORD) {
+  if (!req.body.monitor.password||req.body.monitor.password!==localEnv.PASSWORD) {
     res.status(501).end();
     return null;
   }

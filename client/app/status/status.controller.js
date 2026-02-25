@@ -84,8 +84,9 @@ class StatusComponent {
     
     this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
     this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
-    this.http.post('/api/todaysFlights/getManifests',{date:'2/14/2026'}).then(res=>{console.log(res.data)});
-    this.http.post('/api/todaysFlights/getFlightLogs').then(res=>{
+    this.http.post('/api/todaysFlights/getManifests',{date:'2/25/2026'}).then(res=>{console.log(res.data)});
+    this.http.post('/api/todaysFlights/getFlightLogs',{date:'2/24/2026'}).then(res=>{
+      console.log(res.data);
       let arr=res.data.filter(log=>{return log.registration==='N148SK'});
       console.log(arr);
     });
