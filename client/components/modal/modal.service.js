@@ -627,6 +627,7 @@ angular.module('workspaceApp')
                 checkPirep=function(){
                   let str='';
                   let count=1;
+                  if (!airport||!airport.companyPireps||airport.companyPireps.length<1) return str;
                   airport.companyPireps.forEach(pirep=>{
                     if (!pirep) return;
                     let arr=pirep.split('>');
