@@ -35,7 +35,8 @@ export default function(app) {
 
   app.set('appPath', path.join(config.root, 'client'));
   app.use(express.static(app.get('appPath')));
-  app.use(morgan('dev'));
+  //app.use(morgan('dev'));
+  app.use(morgan(':remote-addr :method :url :status :response-time ms - :res[content-length] :referrer :user-agent'));
 
   app.set('views', config.root + '/server/views');
   app.engine('html', require('ejs').renderFile);
