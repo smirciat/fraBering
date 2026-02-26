@@ -365,6 +365,21 @@ class StatusComponent {
     if (nonPilot) return 'airport-gray';
   }
   
+  checkPirep(pireps){
+    if (!pireps||pireps.length===0) return '';
+    let str='';
+    pireps.forEach(pirep=>{
+      let arr,tempDate,threeHoursAgo;
+      arr=pirep.split('>');
+      if (arr.length>1) {
+        tempDate=new Date(arr[0]);
+        threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+        if (tempDate.getTime() > threeHoursAgo) str += ' ' + arr[1];
+      }
+    });
+    return str;
+  }
+  
   filterTodaysFlights(array){
       if (!this.dateString||!array) return array;
       if (this.isFilter){

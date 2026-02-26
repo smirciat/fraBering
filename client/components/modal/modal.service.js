@@ -624,6 +624,24 @@ angular.module('workspaceApp')
                 timestamp=null,
                 unOfficial=!!formData.unOfficialSource,
                 official=!!formData.officialSource,
+                checkPirep=function(){
+                  let str='';
+                  let count=1;
+                  airport.companyPireps.forEach(pirep=>{
+                    if (!pirep) return;
+                    let arr=pirep.split('>');
+                    let tempDate,threeHoursAgo;
+                    if (arr.length>1) {
+                      tempDate=new Date(arr[0]);
+                      threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+                      if (tempDate.getTime() > threeHoursAgo) {
+                        str += ' ' + count + ') ' + pirep + '\n';
+                        count++;
+                      }
+                    }
+                  });
+                  return str;
+                }, 
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -635,6 +653,7 @@ angular.module('workspaceApp')
                 unOfficial:unOfficial,
                 official:official,
                 getWidth:window.getWidth,
+                checkPirep:checkPirep,
                 makeUnOfficial:function(){
                   if (formData.unOfficialSource) {
                     formData.officialSource=null;
@@ -655,6 +674,7 @@ angular.module('workspaceApp')
                 scores:scores,
                 timestampObj:timestampObj,
                 timestamp:timestamp,
+                checkPirep:checkPirep,
                 depthDisp:formData.depth||"",
                 percentDisp:formData.percent||"",
                 contaminentDisp:formData.contaminent||"",

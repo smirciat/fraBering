@@ -15,7 +15,7 @@
           <p class="tiny" ng-if="airport.signature">{{status.getDate(airport.timestamp)}}</p>
         </div>
         <div class="comment" ng-click="status.sign(airport)" ng-class="status.nonPilot(airport.nonPilot)">
-          <p>{{airport.comment}}.&nbsp{{airport.pilotComment}}</p>
+          <p>{{airport.comment||''}}.&nbsp{{airport.pilotComment||''}}.&nbsp{{status.checkPirep(airport.companyPireps)}}</p>
         </div>
       </div>
   </div>

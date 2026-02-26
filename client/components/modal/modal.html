@@ -170,6 +170,9 @@
     <label>Company PIREP (Internal)</label>
     <textarea class="form-control" style="height:76px;" ng-model="modal.formData.companyPirep"></textarea>
     <br>
+    <p>----------------Previous Recent Company PIREPS----------------</p>
+    <p style="white-space: pre-wrap;">{{modal.checkPirep()}}</p>
+    <br>
     <div class="modal-contaminent-layout" style="align-items: end;">
       <div class="modal-column"><input class="form-control" type="checkbox" ng-model="modal.official"></div>
       <div class="modal-column"><label>Official Source</label></div>
