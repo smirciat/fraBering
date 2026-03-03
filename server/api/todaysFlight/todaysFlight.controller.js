@@ -1142,7 +1142,7 @@ function overallRiskClass(metarObj){
   }
   
   function returnColor(limitObj,observation,direction,airport){
-    if (!observation||observation==="") {
+    if (!observation||observation===""||!limitObj) {
       return '';
       //console.log('returnColor');
       //return 'airport-purple';

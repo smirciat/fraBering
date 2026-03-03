@@ -331,7 +331,12 @@ export function observe(collectionName,fbDate) {
       }
       console.log('***********************');
       console.log('Length of Array is:' + firebaseFlights.length);
-    }, (error) => {console.log(error)});
+    }, (error) => {
+      console.log('Firebase Observer Error!!!!!!!!!!!!!!!!!!!!!!!');
+      console.log(error);
+      
+      
+    });
     
     return;
   } catch (error) {

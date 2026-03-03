@@ -1,7 +1,9 @@
 'use strict';
 
 
-import localEnv from '../local.env.js';
+import localEnv from '../local.env';
+console.log('production');
+console.log(localEnv.SEQUELIZE_URI);
 
 // Production specific configuration
 // =================================
