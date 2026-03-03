@@ -1270,6 +1270,7 @@ function isLessThanOneHourAgo(date) {
 async function airportNameToMetar(airport){
   let icao='';
   if (airport.name==='Barrow') airport.name="PABR";
+  if (airport.name==='Alakanuk') airport.name="PAUK";
   let res=await axios.get('https://avwx.rest/api/search/station?text=' + airport.name + '&reporting=true&token=' + localEnv.AVWX_TOKEN2);
   if (!res||!res.data||res.data.Error) return airport;
   let foundIndex=-1;
