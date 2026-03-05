@@ -770,13 +770,24 @@ export async function tf(req,res) {
           airport.metarObj.TAF=TAF;
         }
         else {
+          let alakanuk=false;
+          if (airport.name==='Alakanuk') {
+            airport.name='Emmonak';
+            alakanuk=true;
+          }
           //airport name not found in database, look it up on avwx
           airport=await airportNameToMetar(airport);
+          if (alakanuk) {
+            airport.name='Alakanuk';
+            airport.threeLetter='AUK';
+            airport.icao='PAUK';
+          }
           //if we didn't find it, punt
           if (airport.metarObj&&airport.metarObj['Raw-Report']) {
             airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
             airport.metarObj.aircraft=flight.aircraft;
             airport.metarObj.color=overallRiskClass(airport.metarObj);
+            if (alakanuk) console.log(airport.metarObj);
           }  
           else {
             airport.metarObj={airport:JSON.parse(JSON.stringify(airport))};

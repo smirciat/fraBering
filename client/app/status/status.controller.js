@@ -1105,7 +1105,8 @@ class StatusComponent {
         }
         //set up headers for sort order
         p.header='';
-        p.code=pilot.title;
+        //p.code=pilot.title;
+        p.code=pilot.label;
         if (inBase&&p) {
           if (p.code==='OC') p.header='OC';
           if (p.code==='NM') p.header='Night Medevac';
