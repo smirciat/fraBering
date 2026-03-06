@@ -327,6 +327,14 @@ div.airport-pink h1{
   font-weight:bold;
 }
 
+.font-green{
+  color:green;
+}
+
+.font-purple{
+  color:purple;
+}
+
 .fuel-red{
   background-color:pink;
 }

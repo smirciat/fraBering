@@ -1221,6 +1221,16 @@ class StatusComponent {
     else return [];
   }
   
+  fuelClass(flight){
+    if (flight.fueled) return 'font-green';
+    return 'font-purple';
+  }
+  
+  loadAvailable(flight){
+    if (!flight.pfr||!flight.pfr.legArray||flight.pfr.legArray.length<1) return;
+    return Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeight);
+  }
+  
   setAvailableFlights(){
     return;
     if (!this.base) return;
