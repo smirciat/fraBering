@@ -457,6 +457,15 @@ export async function tf(req,res) {
       }
       let manifests=resp.flights;
       for (let flight of manifests){
+        //make sure each flight date is midnight for Daylight Savings Time
+        let currentHours,tempDate;
+        tempDate=new Date(flight.departureDate);
+        currentHours=tempDate.getHours();
+        if (currentHours===23) {
+          tempDate.setDate(tempDate.getDate() + 1);
+          flight.departureDate=tempDate.toLocaleDateString();
+        }
+        
         if (flight.flightLegs[0]&&flight.flightLegs[0].crew.length===0&&flight.flightLegs[1]&&flight.flightLegs[1].crew.length>0){
           flight.flightLegs=flight.flightLegs.filter((leg,i)=>{return (leg.crew&&leg.crew.length>0)||i===flight.flightLegs.length-1});//weird empty routing from api on 4/13/25 for 844 and 846
         }
@@ -1434,11 +1443,15 @@ export async function getManifests(req,res){
   let date=new Date();
   if (req&&req.body&&req.body.date) date=new Date(req.body.date);
   if (req&&!req.body&&!req.headers&&!isNaN(new Date(req))&&new Date(req).toString!=='Invalid Date') date=new Date(req);
-  date.setHours(0, 0, 0, 0);
-  let startDate=date.toISOString();
   let day = date.getDate();
-  day=day+2;
+  day=day-1;
   date.setDate(day);
+  date.setHours(23, 0, 0, 0);
+  day = date.getDate();
+  let startDate=date.toISOString();
+  day=day+3;
+  date.setDate(day);
+  date.setHours(1, 0, 0, 0);
   let endDate=date.toISOString();
   let config = {
     method: 'get',

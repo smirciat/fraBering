@@ -1227,7 +1227,7 @@ class StatusComponent {
   }
   
   loadAvailable(flight){
-    if (!flight.pfr||!flight.pfr.legArray||flight.pfr.legArray.length<1) return;
+    if (!flight.pfr||!flight.pfr.legArray||flight.pfr.legArray.length<1||!flight.pfr.legArray[0].mgtow||!flight.pfr.legArray[0].operatingWeight) return;
     return Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeight);
   }
   
