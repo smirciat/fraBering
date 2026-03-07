@@ -9,13 +9,13 @@
             {{airport.threeLetter}}
           </h1>
         </div>
-        <div class="comment" ng-click="status.sign(airport)" ng-class="status.nonPilot(airport.nonPilot)">
+        <div class="comment" ng-click="status.sign(airport)"><!-- ng-class="status.nonPilot(airport.nonPilot)">-->
           <p class="tiny">ReportedBy:</p>
           <p class="tiny">{{airport.signature}}</p>
           <p class="tiny" ng-if="airport.signature">{{status.getDate(airport.timestamp)}}</p>
         </div>
-        <div class="comment" ng-click="status.sign(airport)" ng-class="status.nonPilot(airport.nonPilot)">
-          <p>{{airport.comment||''}}.&nbsp{{airport.pilotComment||''}}.&nbsp{{status.checkPirep(airport.companyPireps)}}</p>
+        <div class="comment" ng-click="status.sign(airport)"><!--ng-class="status.nonPilot(airport.nonPilot)">-->
+          <p style="margin-left:3px;text-align:left;white-space:pre-wrap;">{{status.formatComments(airport)}}</p>
         </div>
       </div>
   </div>

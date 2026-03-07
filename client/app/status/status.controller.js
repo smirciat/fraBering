@@ -365,6 +365,15 @@ class StatusComponent {
     if (nonPilot) return 'airport-gray';
   }
   
+  formatComments(airport){
+    let str='';
+    if (airport.comment) str+='NOTAM: ' + airport.comment + '\n';
+    if (airport.pilotComment) str+='-----------------\nPilot: ' + airport.pilotComment + '\n';
+    let pireps=this.checkPirep(airport.companyPireps);
+    if (pireps) str+='-----------------\nRecent Pireps: \n-----------------\n' + pireps;
+    return str;
+  }
+  
   checkPirep(pireps){
     if (!pireps||pireps.length===0) return '';
     let str='';
@@ -374,7 +383,8 @@ class StatusComponent {
       if (arr.length>1) {
         tempDate=new Date(arr[0]);
         threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
-        if (tempDate.getTime() > threeHoursAgo) str += ' ' + arr[1];
+        //if (tempDate.getTime() > threeHoursAgo) str += ' ' + arr[1] + '\n';
+        if (tempDate.getTime() > threeHoursAgo) str += ' ' + pirep + '\n';
       }
     });
     return str;

@@ -458,10 +458,9 @@ export async function tf(req,res) {
       let manifests=resp.flights;
       for (let flight of manifests){
         //make sure each flight date is midnight for Daylight Savings Time
-        let currentHours,tempDate;
-        tempDate=new Date(flight.departureDate);
-        currentHours=tempDate.getHours();
-        if (currentHours===23) {
+        let tempDate=new Date(flight.departureDate);
+        let currentHours=tempDate.getHours();
+        if (currentHours>=22) {
           tempDate.setDate(tempDate.getDate() + 1);
           flight.departureDate=tempDate.toLocaleDateString();
         }
