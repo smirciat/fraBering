@@ -180,13 +180,17 @@ export async function setRosterMonth(dateString){
 export async function setRosterDay(dateString){
   const bodyParameters = {headers: {'Authorization':localEnv.ROSTER_TOKEN} };
   let date=new Date(dateString);
-  date.setUTCHours(0, 0, 0, 0);
+  date.setUTCHours(1, 0, 0, 0);
   let startDate=date.toISOString();
   let day = date.getDate();
   day++;
   date.setDate(day);
   let endDate=date.toISOString();
-  //console.log(startDate)
+  //dst stuff
+  day=day-2;
+  date.setDate(day);
+  date.setUTCHours(23, 0, 0, 0);
+  startDate=date.toISOString();
   try{//type=shift restricts response to only working days, not available or requested off
     let response=await axios.get('https://fyccqqeiahhzheubvavn.supabase.co/functions/v1/tenant-api-handler?table=calendar_events&start_plain_date_time='+startDate+'&end_plain_date_time='+endDate+'&type=shift', bodyParameters);
     //todaysRoster=response.data.data;
