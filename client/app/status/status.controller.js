@@ -1066,7 +1066,7 @@ class StatusComponent {
   
   setPilotList(){
     if (!this.dateString||!this.base||!this.allPilots) return;
-    let headerList=['OC','Night Medevac','Day Medevac','Med Phone','Captains','Copilots'];
+    let headerList=['OC','Night Medevac','Med Phone','Day Medevac','Captains','Copilots','Dispatch','Mx Supervisor','Fueler','Cargo Lead'];
     this.http.post('/api/calendar/rosterDay',{dateString:this.dateString}).then(res=>{
       this.pilotList=[];
       this.coPilotList=[];
@@ -1080,8 +1080,8 @@ class StatusComponent {
         }
         if (pilot.title==='OC'&&pilot.type==='shift'&&pilot.location!=="HELICOPTER") return true;
         if (this.base.base==="UNK") return pilot.position==='CAPT'||pilot.position==='FO';
-        if (this.base.base==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO');
-        if (this.base.base==="OTZ") return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO');
+        if (this.base.base==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==="MS"||pilot.label==='D');
+        if (this.base.base==="OTZ") return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==="MS"||pilot.label==='D');
         return true;
       });
       console.log(basePilotRoster)
@@ -1100,7 +1100,12 @@ class StatusComponent {
         
         if (index<0){
           console.log(pilot.employee_full_name+' is not in the list of this.allPilots from firebase');
-          continue;
+          p=pilot;
+          p.pilotBase=pilot.location;
+          if (pilot.location==="NOME") p.pilotBase="OME";
+          if (pilot.location==="KOTZEBUE") p.pilotBase="OTZ";
+          p.name=pilot.employee_full_name;
+          //continue;
         }
         else p=this.allPilots[index];//p is the pilot object from firebase
         let inBase=p.pilotBase===this.base.base;
@@ -1126,6 +1131,10 @@ class StatusComponent {
             else p.header="Med Phone";
           }
           if (p.code==='DM') p.header='Day Medevac';
+          if (p.code==="D") p.header='Dispatch';
+          if (p.code==='MS') p.header='Mx Supervisor';
+          if (p.code==='F') p.header="Fueler";
+          if (p.code==='CS') p.header="Cargo Lead";
           if (p.far299Exp) {
             if (!p.header) p.header='Captains';
           }
