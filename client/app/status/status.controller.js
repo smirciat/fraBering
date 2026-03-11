@@ -1078,6 +1078,8 @@ class StatusComponent {
           pilot.position=pilot.location_name.split(' ')[1];
           pilot.location=pilot.location_name.split(' ')[0];
         }
+        if (pilot.label==="OTZ") pilot.location="KOTZEBUE";
+        if (pilot.label==="OME") pilot.location="NOME";
         if (pilot.title==='OC'&&pilot.type==='shift'&&pilot.location!=="HELICOPTER") return true;
         if (this.base.base==="UNK") return pilot.position==='CAPT'||pilot.position==='FO';
         if (this.base.base==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==="MS"||pilot.label==='D');
@@ -1108,8 +1110,10 @@ class StatusComponent {
           //continue;
         }
         else p=this.allPilots[index];//p is the pilot object from firebase
+        if (pilot.label==="OTZ") p.pilotBase="OTZ";
+        if (pilot.label==="OME") p.pilotBase="OME";
         let inBase=p.pilotBase===this.base.base;
-        if (pilot.title==="OC") inBase=true;
+        if (pilot.label==="OC") inBase=true;
         //UNK Base rules
         if (this.base.base==="UNK"&&this.todaysFlights) {
           this.todaysFlights.forEach(flight=>{
