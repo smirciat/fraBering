@@ -81,7 +81,7 @@
     <div ng-repeat="pilot in status.sortedPilots track by $index">
       <h1 ng-if="status.showHeader('sortedPilots','header',$index)">{{pilot.header}}</h1>
       <h1 ng-if="status.fixedWing('HEL')&&$index===0">Helicopter Pilots</h1>
-      <p>{{pilot.name + '-' + pilot.code}}</p>
+      <p ng-hide="pilot.assigned">{{pilot.name + '-' + pilot.code}}</p>
     </div>
   </div>
   <div ng-class="status.getColumn()">

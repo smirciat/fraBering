@@ -1066,7 +1066,7 @@ class StatusComponent {
   
   setPilotList(){
     if (!this.dateString||!this.base||!this.allPilots) return;
-    let headerList=['OC','Night Medevac','Med Phone','Day Medevac','Captains','Copilots','Dispatch','Mx Supervisor','Fueler','Cargo Lead'];
+    let headerList=['OC','Night Medevac','Med Phone','Day Medevac','Unassigned Captains','Unassigned Copilots','Dispatch','Mx Supervisor','Fueler','Cargo Lead'];
     this.http.post('/api/calendar/rosterDay',{dateString:this.dateString}).then(res=>{
       this.pilotList=[];
       this.coPilotList=[];
@@ -1086,7 +1086,7 @@ class StatusComponent {
         if (this.base.base==="OTZ") return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==="MS"||pilot.label==='D');
         return true;
       });
-      console.log(basePilotRoster)
+      console.log(basePilotRoster);
       for (let pilot of basePilotRoster){//pilot is the pilot object from acroroster
         let p;
         //if (pilot.employee_full_name==="Michael Evans") pilot.employee_full_name="Mike Evans";
@@ -1140,10 +1140,10 @@ class StatusComponent {
           if (p.code==='F') p.header="Fueler";
           if (p.code==='CS') p.header="Cargo Lead";
           if (p.far299Exp) {
-            if (!p.header) p.header='Captains';
+            if (!p.header) p.header='Unassigned Captains';
           }
           else {
-            if (!p.header) p.header='Copilots';
+            if (!p.header) p.header='Unassigned Copilots';
           }
           this.sortedPilots.push(p);
         }
@@ -1556,6 +1556,19 @@ class StatusComponent {
     if (pilot==='krohlack') return 'korey';
   }
   
+  availablePilots(){
+    if (!this.sortedPilots) return;
+    this.sortedPilots.forEach(pilot=>{
+      if (!pilot.takeFliteUsername&&pilot.firstName&&pilot.lastName) pilot.takeFliteUsername=pilot.firstName.substring(0,1)+pilot.lastName;
+      pilot.assigned=false;
+      if (!pilot.takeFliteUsername) return;
+      let index = this.todaysFlights.map(e => e.pilot.toLowerCase()).indexOf(pilot.takeFliteUsername.toLowerCase());
+      if (index>-1) pilot.assigned=true;
+      index = this.todaysFlights.map(e => e.coPilot.toLowerCase()).indexOf(pilot.takeFliteUsername.toLowerCase());
+      if (index>-1) pilot.assigned=true;
+    });
+  }
+  
   resetFlights(newVal){
     if (!newVal) newVal=this.dateString;
     this.spinner=true;
@@ -1572,6 +1585,7 @@ class StatusComponent {
             this.spinner=false;
             this.setPilotList();
             this.setAirplaneList();
+            this.availablePilots();
           },200);
           this.socket.unsyncUpdates('todaysFlight');
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
@@ -1582,6 +1596,8 @@ class StatusComponent {
               this.spinner=true;
               console.log(array)
               this.todaysFlights=this.filterTodaysFlights(array);
+              this.availablePilots();
+              
               console.log('Todays Flight Socket fired');
               console.log(item);
               this.timeout(()=>{this.spinner=false;},0);
