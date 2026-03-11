@@ -46,6 +46,8 @@ class StatusComponent {
     this.alternateArray=['OME','OTZ','UNK','BET','GAL','ANC','FAI'];
     this.airportOrder=['PAOM','PAUN','PAOT','PAGM','PASA','PASH','PAIW','PATC','PFKT','PATE','PAWM','PAGL','PFEL',
             'PAKK','PFSH','PAMK','WBB','PADG','PAPO','PALU','PAVL','PAWN','PFNO','PAIK','PASK','PAFM','PAGH','PAOB','PABL','PADE'];
+    this.captainPlusMinus="+";
+    this.copilotPlusMinus="+";
     $scope.$on('$destroy', function() {
         socket.unsyncUpdates('todaysFlight');
         socket.unsyncUpdates('calendar');
@@ -317,6 +319,7 @@ class StatusComponent {
             if (this.masterAirports) this.setBase(this.masterAirports);
             this.setPilotList();
             this.setAirplaneList();
+            this.availablePilots();
           },200);
       },0);
     });
@@ -1064,6 +1067,54 @@ class StatusComponent {
     //}
   }
   
+  plusOrMinus(header){
+    if (header==="Unassigned Captains") {
+      return this.captainPlusMinus;
+    }
+    if (header==="Unassigned Copilots") {
+      return this.copilotPlusMinus;
+    }
+  }
+  
+  hideFromHeader(header){
+    if (header==="Unassigned Captains"&&this.captainPlusMinus==='+') {
+      return true;
+    }
+    if (header==="Unassigned Copilots"&&this.copilotPlusMinus==='+') {
+      return true;
+    }
+    return false;
+  }
+  
+  showPlusOrMinus(header){
+    if (header==="Unassigned Captains") {
+      if (this.captainPlusMinus==='+') {
+        this.captainPlusMinus='-';
+      }
+      else {
+        this.captainPlusMinus='+';
+      }
+    }
+    if (header==="Unassigned Copilots") {
+      if (this.copilotPlusMinus==='+') {
+        this.copilotPlusMinus='-';
+      }
+      else {
+        this.copilotPlusMinus='+';
+      }
+    }
+  }
+  
+  newHeader(header){
+    if (header==="Unassigned Captains"&&this.captainPlusMinus==='-') {
+      return "Captains";
+    }
+    if (header==="Unassigned Copilots"&&this.copilotPlusMinus==='-') {
+      return "Copilots";
+    }
+    return header;
+  }
+  
   setPilotList(){
     if (!this.dateString||!this.base||!this.allPilots) return;
     let headerList=['OC','Night Medevac','Med Phone','Day Medevac','Unassigned Captains','Unassigned Copilots','Dispatch','Mx Supervisor','Fueler','Cargo Lead'];
@@ -1558,13 +1609,17 @@ class StatusComponent {
   
   availablePilots(){
     if (!this.sortedPilots) return;
+    this.todaysFlights.forEach(flight=>{
+      if (flight.pilot) flight.pilot=flight.pilot.toLowerCase();
+      if (flight.coPilot) flight.coPilot=flight.coPilot.toLowerCase();
+    });
     this.sortedPilots.forEach(pilot=>{
       if (!pilot.takeFliteUsername&&pilot.firstName&&pilot.lastName) pilot.takeFliteUsername=pilot.firstName.substring(0,1)+pilot.lastName;
       pilot.assigned=false;
       if (!pilot.takeFliteUsername) return;
-      let index = this.todaysFlights.map(e => e.pilot.toLowerCase()).indexOf(pilot.takeFliteUsername.toLowerCase());
+      let index = this.todaysFlights.map(e => e.pilot).indexOf(pilot.takeFliteUsername.toLowerCase());
       if (index>-1) pilot.assigned=true;
-      index = this.todaysFlights.map(e => e.coPilot.toLowerCase()).indexOf(pilot.takeFliteUsername.toLowerCase());
+      index = this.todaysFlights.map(e => e.coPilot).indexOf(pilot.takeFliteUsername.toLowerCase());
       if (index>-1) pilot.assigned=true;
     });
   }
@@ -1586,7 +1641,7 @@ class StatusComponent {
             this.setPilotList();
             this.setAirplaneList();
             this.availablePilots();
-          },200);
+          },500);
           this.socket.unsyncUpdates('todaysFlight');
           this.socket.syncUpdates('todaysFlight', this.allTodaysFlights,(event,item,array)=>{
             this.allTodaysFlights=array;
