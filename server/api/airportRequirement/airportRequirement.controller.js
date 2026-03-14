@@ -280,18 +280,41 @@ export async function metars(req,res) {
           airport.currentMetarArray = [airport.currentMetarObj];
         }
       }
-      if (!airport.currentMetarObj) continue;
-      airport.currentMetar=airport.currentMetarObj.metar;
-      let metarDate=new Date(airport.currentMetarObj.date);
-      if (!airport.currentMetar||(airport.currentMetarObj.date&&metarDate<new Date(new Date().getTime()-120*60*1000))) {
-        airport.metarObj={};
-        airport.currentMetar='missing';
+      if (!airport.currentMetarObj) {
+        //adjacent metar if WBB or OBU
+        if (airport.threeLetter==='OBU') {
+          try {
+            let res=await getMetarSynoptic('PAGH');
+            airport.metarObj={adjacentMetar:res.metar};
+          }
+          catch(err) {
+            console.log(err);
+          }
+        }
+        if (airport.threeLetter==='WBB') {
+          try {
+            let res=await getMetarSynoptic('PAMK');
+            airport.metarObj={adjacentMetar:res.metar};
+          }
+          catch(err) {
+            console.log(err);
+          }
+        }
+        //continue;
       }
       else {
-        airport.metarObj=parseADDS(airport.currentMetarObj.metar);
-        //add all the colors here:
-        airport.metarObj.color=overallRiskClass(airport);
-        airport.metarObj.xwind=xwind;
+        airport.currentMetar=airport.currentMetarObj.metar;
+        let metarDate=new Date(airport.currentMetarObj.date);
+        if (!airport.currentMetar||(airport.currentMetarObj.date&&metarDate<new Date(new Date().getTime()-120*60*1000))) {
+          airport.metarObj={};
+          airport.currentMetar='missing';
+        }
+        else {
+          airport.metarObj=parseADDS(airport.currentMetarObj.metar);
+          //add all the colors here:
+          airport.metarObj.color=overallRiskClass(airport);
+          airport.metarObj.xwind=xwind;
+        }
       }
       let id=airport._id;
       //delete airport._id;
