@@ -1148,7 +1148,7 @@ class StatusComponent {
         if (pilot.employee_full_name==="Nik La Croix") pilot.employee_full_name="Nikolas Lacroix";
         if (pilot.employee_full_name==="Conor  Murray") pilot.employee_full_name="Conor Murray";
         if (pilot.employee_full_name==="Josh Bryant") pilot.employee_full_name="Joshua Bryant";
-        //if (pilot.employee_full_name==="Mikey Evans") pilot.employee_full_name="Michael Evans";
+        if (pilot.employee_full_name==="Michael K. Evans") pilot.employee_full_name="Mikey Evans";
         let index=this.allPilots.map(e=>e.firstName + ' ' + e.lastName).indexOf(pilot.employee_full_name);
         
         if (index<0){
