@@ -1613,13 +1613,16 @@ class StatusComponent {
       if (flight.pilot) flight.pilot=flight.pilot.toLowerCase();
       if (flight.coPilot) flight.coPilot=flight.coPilot.toLowerCase();
     });
+    let todaysFlights=this.todaysFlights.filter(flight=>{
+      return flight.date===this.dateString;
+    });
     this.sortedPilots.forEach(pilot=>{
       if (!pilot.takeFliteUsername&&pilot.firstName&&pilot.lastName) pilot.takeFliteUsername=pilot.firstName.substring(0,1)+pilot.lastName;
       pilot.assigned=false;
       if (!pilot.takeFliteUsername) return;
-      let index = this.todaysFlights.map(e => e.pilot).indexOf(pilot.takeFliteUsername.toLowerCase());
+      let index = todaysFlights.map(e => e.pilot).indexOf(pilot.takeFliteUsername.toLowerCase());
       if (index>-1) pilot.assigned=true;
-      index = this.todaysFlights.map(e => e.coPilot).indexOf(pilot.takeFliteUsername.toLowerCase());
+      index = todaysFlights.map(e => e.coPilot).indexOf(pilot.takeFliteUsername.toLowerCase());
       if (index>-1) pilot.assigned=true;
     });
   }

@@ -320,12 +320,12 @@ export function observe(collectionName,fbDate) {
       for (let flight of firebaseFlights){
         let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
         if (index>-1) {
-          //if (flight.legArray&&flight.legArray.length&&flight.legArray[flight.legArray.length-1]&&firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
-            //if (!firebaseAircraft[index].recentlyUpdated) {
-              //firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
-              //updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
-            //}
-          //}
+          if (flight.legArray&&flight.legArray.length&&flight.legArray[flight.legArray.length-1]&&firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
+            if (!firebaseAircraft[index].recentlyUpdated) {
+              firebaseAircraft[index].currentAirportRelease=flight.legArray[flight.legArray.length-1].arr;
+              updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirportRelease:firebaseAircraft[index].currentAirportRelease});
+            }
+          }
           firebaseAircraft[index].recentlyUpdated=true;
         }
       }
@@ -460,21 +460,20 @@ export async function firebaseInterval(req,res){
     firebasePilots=collectionToArray(pilots);
     let aircraft=await getCollection('aircraft');
     firebaseAircraft=collectionToArray(aircraft);
-    //let flights=await getCollectionLimited('flights',500);
-    //firebaseFlights=fSort(collectionToArray(flights));
-    //for (let flight of firebaseFlights){
-      //let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
-      //if (index>-1) {
-        //if (firebaseAircraft[index].currentAirport!==flight.legArray[flight.legArray.length-1].arr) {
-          //console.log('This would have fired a firebase update if it weren`t commented out');
-          //if (!firebaseAircraft[index].recentlyUpdated) {
-            //firebaseAircraft[index].currentAirport=flight.legArray[flight.legArray.length-1].arr;
-            //await updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirport:firebaseAircraft[index].currentAirport});
-          //}
-        //}
-        //firebaseAircraft[index].recentlyUpdated=true;
-      //}
-    //}
+    let flights=await getCollectionLimited('flights',500);
+    firebaseFlights=fSort(collectionToArray(flights));
+    for (let flight of firebaseFlights){
+      let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
+      if (index>-1) {
+        if (firebaseAircraft[index].currentAirportRelease!==flight.legArray[flight.legArray.length-1].arr) {
+          if (!firebaseAircraft[index].recentlyUpdated) {
+            firebaseAircraft[index].currentAirportRelease=flight.legArray[flight.legArray.length-1].arr;
+            await updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirportRelease:firebaseAircraft[index].currentAirportRelease});
+          }
+        }
+        firebaseAircraft[index].recentlyUpdated=true;
+      }
+    }
   }
   catch(err){
     status=404;
