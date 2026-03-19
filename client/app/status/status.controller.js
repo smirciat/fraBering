@@ -1609,12 +1609,12 @@ class StatusComponent {
   
   availablePilots(){
     if (!this.sortedPilots) return;
-    this.todaysFlights.forEach(flight=>{
+    let todaysFlights=this.allTodaysFlights.filter(flight=>{
+      return flight.date===this.dateString;
+    });
+    todaysFlights.forEach(flight=>{
       if (flight.pilot) flight.pilot=flight.pilot.toLowerCase();
       if (flight.coPilot) flight.coPilot=flight.coPilot.toLowerCase();
-    });
-    let todaysFlights=this.todaysFlights.filter(flight=>{
-      return flight.date===this.dateString;
     });
     this.sortedPilots.forEach(pilot=>{
       if (!pilot.takeFliteUsername&&pilot.firstName&&pilot.lastName) pilot.takeFliteUsername=pilot.firstName.substring(0,1)+pilot.lastName;
