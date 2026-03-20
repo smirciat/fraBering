@@ -1263,7 +1263,8 @@ class StatusComponent {
       a.acftType=a.acftType.trim();
       if (a.acftType==="Sky Courier") a.acftType="Courier";
       baseTest=false;
-      if (this.base.base==="HEL"||a.currentAirport===this.base.base) baseTest=true;
+      if (!a.currentAirportRelease) a.currentAirportRelease=a.currentAirport;
+      if (this.base.base==="HEL"||a.currentAirportRelease===this.base.base) baseTest=true;
       if (this.base.base==="UNK"){
         if (this.todaysFlights) this.todaysFlights.forEach(flight=>{
           if (flight.aircraft!==a._id||flight.active==='false') return;
