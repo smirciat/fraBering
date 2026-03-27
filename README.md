@@ -2,6 +2,12 @@
 
 This project was generated with the [Angular Full-Stack Generator](https://github.com/DaftMonk/generator-angular-fullstack) version 3.8.0.
 
+## Key Frameworks/Tools
+
+- [AngularJS](https://angularjs.org)
+- [Sequelize (connected to PostgreSQL database)](https://sequelize.org/)
+- [Grunt](http://gruntjs.com/)
+
 ## Getting Started
 
 ### Prerequisites
