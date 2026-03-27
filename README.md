@@ -6,7 +6,9 @@ This project was generated with the [Angular Full-Stack Generator](https://githu
 
 - [AngularJS](https://angularjs.org)
 - [Sequelize (connected to PostgreSQL database)](https://sequelize.org/)
+- [PostgreSQL v13](https://www.postgresql.org/)
 - [Grunt](http://gruntjs.com/)
+- [NodeJS v10](https://nodejs.org/en)
 
 ## Getting Started
 
