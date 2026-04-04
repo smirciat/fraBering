@@ -191,11 +191,20 @@ angular.module('workspaceApp')
                 alternateDisp=flight.alternate,
                 checkPirep=function(pirep){
                   if (!pirep) return false;
+                  let flightTime,tempDate,threeHoursAgo;
+                  flightTime=Date.now();
+                  if (flight.releaseTimestamp&&(flight.ocReleaseTimestamp||flight.dispatchReleaseTimestamp)) {
+                    let latest=new Date(flight.releaseTimestamp);
+                    let date2=new Date(flight.ocReleaseTimestamp);
+                    let date3=new Date(flight.dispatchReleaseTimestamp);
+                    if (flight.ocReleaseTimestamp && date2 > latest) latest = date2;
+                    if (flight.dispatchReleaseTimestamp && date3 > latest) latest = date3;
+                    flightTime=latest.getTime();
+                  }
                   let arr=pirep.split('>');
-                  let tempDate,threeHoursAgo;
                   if (arr.length>1) {
                     tempDate=new Date(arr[0]);
-                    threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+                    threeHoursAgo = flightTime - 3 * 60 * 60 * 1000;
                     return tempDate.getTime() > threeHoursAgo;
                   }
                   return false;
