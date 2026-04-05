@@ -401,7 +401,7 @@ class StatusComponent {
         let userArr=user.split(' ');
         if (userArr.length>1&&user!=="bering air"&&this.user.role!=='admin') {
           //mike evans code
-          if (userArr[0]==='michael'&&userArr[userArr.length-1]==='evans') middle=userArr[1].substring(0,1);
+          if (userArr[0]==='mike'&&userArr[userArr.length-1]==='evans') middle=userArr[1].substring(0,1);
           user=userArr[0].substring(0,1) + middle + userArr[userArr.length-1];
           //sophia Evans code
           if (userArr[0]==='sophia'&&userArr[userArr.length-1]==='evans') user = 'shobbs';
@@ -742,8 +742,10 @@ class StatusComponent {
       let main=(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1-fob*1)/2;
       let gallons=Math.floor(main/6.7);
       if (gallons<0) response+=', DOUBLE CHECK FUEL REQUEST';
+      else if (flight.pfr) response += ' ' + flight.pfr.fuelRequestString;
       else response +=" ADD " + Math.floor(main/6.7) + " GALLONS/side";
     }
+    else if (flight.pfr) response += ' ' + flight.pfr.fuelRequestString;
     else {
       response+=" FILL TO: ";//+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1) + " LBS";
       response += Math.floor((flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1)/2) + " LBS/side";
@@ -1626,6 +1628,7 @@ class StatusComponent {
       index = todaysFlights.map(e => e.coPilot).indexOf(pilot.takeFliteUsername.toLowerCase());
       if (index>-1) pilot.assigned=true;
     });
+    console.log(this.sortedPilots)
   }
   
   resetFlights(newVal){
