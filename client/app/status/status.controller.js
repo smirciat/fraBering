@@ -742,10 +742,10 @@ class StatusComponent {
       let main=(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1-fob*1)/2;
       let gallons=Math.floor(main/6.7);
       if (gallons<0) response+=', DOUBLE CHECK FUEL REQUEST';
-      else if (flight.pfr) response += ' ' + flight.pfr.fuelRequestString;
+      else if (flight.pfr&&flight.pfr.fuelRequestString) response += ' ' + flight.pfr.fuelRequestString;
       else response +=" ADD " + Math.floor(main/6.7) + " GALLONS/side";
     }
-    else if (flight.pfr) response += ' ' + flight.pfr.fuelRequestString;
+    else if (flight.pfr&&flight.pfr.fuelRequestString) response += ' ' + flight.pfr.fuelRequestString;
     else {
       response+=" FILL TO: ";//+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1) + " LBS";
       response += Math.floor((flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1)/2) + " LBS/side";
