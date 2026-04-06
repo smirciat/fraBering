@@ -401,8 +401,12 @@ class StatusComponent {
         let userArr=user.split(' ');
         if (userArr.length>1&&user!=="bering air"&&this.user.role!=='admin') {
           //mike evans code
-          if (userArr[0]==='mike'&&userArr[userArr.length-1]==='evans') middle=userArr[1].substring(0,1);
-          user=userArr[0].substring(0,1) + middle + userArr[userArr.length-1];
+          if (userArr[0]==='michael'&&userArr[userArr.length-1]==='evans') {
+            middle=userArr[1].substring(0,1);
+            if (middle==='K.') user='mkevans';
+            else user='mevans';
+          }
+          else user=userArr[0].substring(0,1) + middle + userArr[userArr.length-1];
           //sophia Evans code
           if (userArr[0]==='sophia'&&userArr[userArr.length-1]==='evans') user = 'shobbs';
           array=array.filter(flight=>{
