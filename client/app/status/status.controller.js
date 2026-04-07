@@ -402,8 +402,8 @@ class StatusComponent {
         if (userArr.length>1&&user!=="bering air"&&this.user.role!=='admin') {
           //mike evans code
           if (userArr[0]==='michael'&&userArr[userArr.length-1]==='evans') {
-            middle=userArr[1].substring(0,1);
-            if (middle==='k.') user='mkevans';
+            middle=userArr[1].substring(0,1).toLowerCase();
+            if (middle==='k') user='mkevans';
             else user='mevans';
           }
           else user=userArr[0].substring(0,1) + middle + userArr[userArr.length-1];
