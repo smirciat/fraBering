@@ -1346,7 +1346,8 @@ function lookupPilotObjects(flight){
   //import coPilot
   if (flight.coPilot) {
     if (flight.coPilot.substring(0,1)==="m"&&flight.coPilot.slice(-5)==="evans") {
-      displayName='M. '+flight.coPilot.substring(1,2).toUpperCase()+'. Evans';
+      if (flight.coPilot.substring(1,2).toUpperCase()==='K') displayName="M. K. Evans";
+      else displayName="M. R. Evans";
     }
     else if (flight.coPilot.substring(0,1)==="k"&&flight.coPilot.slice(-9)==="showalter") {
       displayName='D. Showalter';
