@@ -11,6 +11,7 @@
 
 import _ from 'lodash';
 import {Airplane} from '../../sqldb';
+let io;
 const admin = require('firebase-admin');
 const serviceAccount = require('../../firebase.json');
 //initialize admin SDK using serciceAcountKey
@@ -19,9 +20,14 @@ admin.initializeApp({
 });
 const firebase_db = admin.firestore();
 let observer, unsub, fbQuery, tempFlights;
+let allFlights=[];
 let firebaseFlights=[];
 let firebasePilots=[];
 let firebaseAircraft=[];
+
+export function setupSocket(socketio){
+  io=socketio;
+}
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -126,7 +132,8 @@ export function destroy(req, res) {
     .catch(handleError(res));
 }
 
-function fSort(flights){
+function fSort(flights,dateString){
+  if (dateString) flights=flights.filter(flight=>flight.dateString===dateString);
   return flights.sort((a,b)=>{
     if (a.dateString!==b.dateString) return new Date(b.dateString)-new Date(a.dateString);
     if (!a.legArray) return -1;
@@ -311,11 +318,22 @@ async function updateDocument(collection,docId,data) {
 }
 
 export function observe(collectionName,fbDate) {
+  let aWeekAgo=new Date(fbDate);
+  aWeekAgo.setDate(aWeekAgo.getDate() - 10);
   try {
     if (unsub) unsub();//clear any previous observer
-    fbQuery = firebase_db.collection('flights').where('dateString','==',fbDate);
+    fbQuery = firebase_db.collection('flights').where('date','>',aWeekAgo);//.where('dateString','==',fbDate);
     unsub=fbQuery.onSnapshot(querySnapshot=>{
-      firebaseFlights=fSort(collectionToArray(querySnapshot));
+      allFlights=collectionToArray(querySnapshot);
+      firebaseFlights=fSort(allFlights,fbDate);
+      //emit socket message with updated firebaseFLights
+      try {
+        io.emit('firebaseFlights',allFlights);
+      }
+      catch(err) {
+        console.log(err);
+      }
+      //update current location of an aircraft based on new completed pfr
       if (firebaseAircraft.length===0) return;
       for (let flight of firebaseFlights){
         let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
@@ -485,7 +503,7 @@ export async function firebaseInterval(req,res){
 }
 
 export function firebaseGrab(req,res){
-  let json={flights:firebaseFlights,pilots:firebasePilots,aircraft:firebaseAircraft};
+  let json={flights:allFlights,pilots:firebasePilots,aircraft:firebaseAircraft};
   res.status(200).json(json);
 }
 

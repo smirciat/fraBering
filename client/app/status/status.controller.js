@@ -334,7 +334,7 @@ class StatusComponent {
       this.timeoutVal=0;
       if (!oldVal||oldVal==='') this.timeoutVal=300;
       this.resetFlights(newVal);
-      this.initHelis();
+      this.timeout(()=>{this.syncHelis()},0);
     });
     
     this.http.get('/api/airportRequirements').then(res=>{
@@ -572,14 +572,25 @@ class StatusComponent {
   
   initHelis(){
     this.http.post('/api/airplanes/firebaseGrab').then(res=>{
-      let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H","MD500"];
-      this.heliFlights=res.data.flights.filter(flight=>{
-        return helis.indexOf(flight.acftType)>-1&&flight.acftNumber
-          &&flight.acftNumber.substring(0,1).toUpperCase()==="N"
-          &&this.date.toLocaleDateString()===new Date(flight.dateString).toLocaleDateString();
+      this.heliFirebaseFlights=res.data.flights;
+      this.syncHelis(this.heliFirebaseFlights);
+      this.socket.socket.removeAllListeners('firebaseFlights');
+      this.socket.socket.on('firebaseFlights',(firebaseFlights)=>{
+        console.log(firebaseFlights);
+        this.heliFirebaseFlights=firebaseFlights;
+        this.syncHelis(firebaseFlights);
       });
-      console.log(this.heliFlights);
-      
+    });
+  }
+  
+  syncHelis(firebaseFlights){
+    if (!firebaseFlights) firebaseFlights=this.heliFirebaseFlights;
+    if (!firebaseFlights) return;
+    let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H","MD500"];
+    this.heliFlights=firebaseFlights.filter(flight=>{
+      return helis.indexOf(flight.acftType)>-1&&flight.acftNumber
+        &&flight.acftNumber.substring(0,1).toUpperCase()==="N"
+        &&this.date.toLocaleDateString()===new Date(flight.dateString).toLocaleDateString();
     });
   }
   
@@ -1184,7 +1195,7 @@ class StatusComponent {
         let index=this.allPilots.map(e=>e.firstName + ' ' + e.lastName).indexOf(pilot.employee_full_name);
         
         if (index<0){
-          console.log(pilot.employee_full_name+' is not in the list of this.allPilots from firebase');
+          //console.log(pilot.employee_full_name+' is not in the list of this.allPilots from firebase');
           p=pilot;
           p.pilotBase=pilot.location;
           if (pilot.location==="NOME") p.pilotBase="OME";
@@ -1292,21 +1303,26 @@ class StatusComponent {
     //  if (aircraftIndex>-1) aircraft.assigned=true;
     //});
     this.displayedAircraft=this.allAircraft.filter(a=>{
+      if (a._id&&a._id.substring(0,1).toUpperCase()!=="N") return false;
       a.acftType=a.acftType.trim();
       if (a.acftType==="Sky Courier") a.acftType="Courier";
       baseTest=false;
       if (!a.currentAirportRelease) a.currentAirportRelease=a.currentAirport;
       if (this.base.base==="HEL"||a.currentAirportRelease===this.base.base) baseTest=true;
-      if (this.base.base==="UNK"){
+      if (this.base.base==="UNK") {//||this.base.base==="OTZ"||this.base.base==="OME"){
+        let ap="Unalakleet";
+        //if (this.base.base==="OTZ") ap="Kotzebue";
+        //if (this.base.base==="OME") ap="Nome";
         if (this.todaysFlights) this.todaysFlights.forEach(flight=>{
           if (flight.aircraft!==a._id||flight.active==='false') return;
-          let x=flight.airports.indexOf('Unalakleet');
+          let x=flight.airports.indexOf(ap);
           if (x>-1) baseTest=true;
         });
       }
-      return baseTest&&aircraftTypes.indexOf(a.acftType)>-1&&a._id&&a._id.substring(0,1)==="N";
+      return baseTest&&aircraftTypes.indexOf(a.acftType)>-1&&a._id;
     });
     if (this.base.base==="HEL") this.displayedAircraft=this.allAircraft.filter(a=>{
+      if (a._id&&a._id.substring(0,1).toUpperCase()!=="N") return false;
       return aircraftTypes.indexOf(a.acftType)>-1;
     });
     this.displayedAircraft.sort((a,b)=>{
@@ -1445,15 +1461,21 @@ class StatusComponent {
     let inBase;
     if (window.base&&window.base.base==='HEL') inBase=false;
     else if (window.base&&window.base.base==='OTZ')  {
-      inBase=flight.airports[0]==='Kotzebue'||flight.airports.at(-1)==='Kotzebue';
+      for (let i=0;i<flight.airports.length;i++){
+        if (flight.airports[i]==='Kotzebue') inBase=true;
+      }
     }
     else if (window.base&&window.base.base==='UNK')  {
       for (let i=0;i<flight.airports.length;i++){
         if (flight.airports[i]==='Unalakleet') inBase=true;
       }
     }
-    else if (flight.airports&&flight.airports.length>0) inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
-    
+    else if (flight.airports&&flight.airports.length>0) {
+      for (let i=0;i<flight.airports.length;i++){
+        if (flight.airports[i]==='Nome') inBase=true;
+      }
+      //inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
+    }
     return (flight.date===date)&&inBase&&flight.active==='true'&&!old&&flight.aircraft&&flight.aircraft.substring(0,1)==="N";
   }
   
