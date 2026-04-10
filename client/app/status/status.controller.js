@@ -49,6 +49,7 @@ class StatusComponent {
     this.captainPlusMinus="+";
     this.copilotPlusMinus="+";
     $scope.$on('$destroy', function() {
+        socket.socket.removeAllListeners('firebaseFlights');
         socket.unsyncUpdates('todaysFlight');
         socket.unsyncUpdates('calendar');
         socket.unsyncUpdates('airplane');

@@ -319,7 +319,7 @@ async function updateDocument(collection,docId,data) {
 
 export function observe(collectionName,fbDate) {
   let aWeekAgo=new Date(fbDate);
-  aWeekAgo.setDate(aWeekAgo.getDate() - 10);
+  aWeekAgo.setDate(aWeekAgo.getDate() - 4);
   try {
     if (unsub) unsub();//clear any previous observer
     fbQuery = firebase_db.collection('flights').where('date','>',aWeekAgo);//.where('dateString','==',fbDate);
