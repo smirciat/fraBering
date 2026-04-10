@@ -11,7 +11,7 @@
 
 import _ from 'lodash';
 import sequelize from 'sequelize';
-
+import nodemailer from 'nodemailer';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
 import {quickGrab,firebaseQueryFunction,firebaseLimited,firebaseMin} from '../airplane/airplane.controller.js';
 import {getMetar,getMetarAVWX,getMetarSynoptic,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
@@ -43,6 +43,23 @@ let equipmentArr=[{id:1,name:"Caravan",short:"C208",wind:35,xwind:25,temp:-50,ta
        {id:4,name:"King Air",short:"BE20",wind:40,xwind:35,temp:-50,taxiFuel:90,maxMain:1293,maxAux:529,fuelBurn:700,minFuel:1500,ZFW:11000},
        {id:5,name:"Beech 1900",short:"B190",wind:40,xwind:35, temp:-50,taxiFuel:110,maxMain:1621,maxAux:621,fuelBurn:800,minFuel:1420,ZFW:15700},
        {id:6,name:"Sky Courier",short:"C408",wind:40,xwind:30,temp:-50,taxiFuel:70,fuelBurn:800,minFuel:1100,ZFW:17900}];
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // use false for STARTTLS; true for SSL on port 465
+  auth: {
+    user: localEnv.GMAIL_ADDRESS,
+    pass: localEnv.GMAIL_APP_PASS,
+  }
+});
+
+// Configure the mailoptions object
+const mailOptions = {
+  from: localEnv.GMAIL_ADDRESS,
+  to: localEnv.GMAIL_AMBLER_ADDRESS,
+  subject: 'Bering Air Flight Release',
+  html: 'This is an automatically generated email, please do not reply to this address<br><br>'
+};
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -193,7 +210,29 @@ export function create(req, res) {
 
 // Updates an existing TodaysFlight in the DB
 export function update(req, res) {
-  try {firebaseMin(req.body)}
+  let flight=req.body;
+  try {firebaseMin(flight)}
+  catch(err){console.log(err)}
+  
+  try {
+    if (flight.flightNum&&flight.flightNum.length===3&&flight.flightNum.substring(0,2)==='56'&&flight.newlyReleased) {
+      mailOptions.html+='Flight#: ' + flight.flightNum + '<br>';
+      mailOptions.html+='Time: ' + new Date().toLocaleString() + '<br>';
+      mailOptions.html+='Pilot: ' + flight.pilotObject.displayName + '<br>';
+      mailOptions.html+='Aircraft: ' + flight.aircraft + '<br>';
+      mailOptions.html+='Route: ' + flight.airports.toString() + '<br>';
+      mailOptions.html+='Pilot Release: ' + flight.pilotAgree + ' ' + flight.releaseTimestamp + '<br>';
+      if (flight.dispatchRelease) mailOptions.html+='Dispatch Release: ' + flight.dispatchRelease + ' ' + flight.dispatchReleaseTimestamp + '<br>';
+      if (flight.ocRelease) mailOptions.html+='Operational Control Release: ' + flight.ocRelease + ' ' + flight.ocReleaseTimestamp + '<br>';
+      transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+          console.log('Error:', error);
+        } else {
+          console.log('Email sent: ', info.response);
+        }
+      });
+    }
+  }
   catch(err){console.log(err)}
   if (req.body._id) {
     delete req.body._id;

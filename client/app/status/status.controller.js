@@ -83,6 +83,7 @@ class StatusComponent {
       tempD=tempD.toLocaleDateString();
       ctr++;
     }
+    this.initHelis();
     
     this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
     this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
@@ -166,7 +167,11 @@ class StatusComponent {
           //console.log(err);
         //});
       //}
-      if ((flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree&&!flight.colorLock) flight.colorLock=flight.color;
+      flight.newlyReleased=false;
+      if ((flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree&&!flight.colorLock) {
+        flight.colorLock=flight.color;
+        flight.newlyReleased=true;
+      }
       if (flight.pilotAgree&&flight.pilotAgree!==""&&!flight.releaseTimestamp) flight.releaseTimestamp=new Date();
       if (flight.ocRelease&&flight.ocRelease!==""&&!flight.ocReleaseTimestamp) flight.ocReleaseTimestamp=new Date();
       if (flight.dispatchRelease&&flight.dispatchRelease!==""&&!flight.dispatchReleaseTimestamp) flight.dispatchReleaseTimestamp=new Date();
@@ -329,6 +334,7 @@ class StatusComponent {
       this.timeoutVal=0;
       if (!oldVal||oldVal==='') this.timeoutVal=300;
       this.resetFlights(newVal);
+      this.initHelis();
     });
     
     this.http.get('/api/airportRequirements').then(res=>{
@@ -564,6 +570,23 @@ class StatusComponent {
     });
   }
   
+  initHelis(){
+    this.http.post('/api/airplanes/firebaseGrab').then(res=>{
+      let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H","MD500"];
+      this.heliFlights=res.data.flights.filter(flight=>{
+        return helis.indexOf(flight.acftType)>-1&&flight.acftNumber
+          &&flight.acftNumber.substring(0,1).toUpperCase()==="N"
+          &&this.date.toLocaleDateString()===new Date(flight.dateString).toLocaleDateString();
+      });
+      console.log(this.heliFlights);
+      
+    });
+  }
+  
+  consoleLog(text){
+    console.log(text);
+  }
+  
   updateSignatures(item){
     let tf=this.todaysFlights.filter(f=>{return f.date===item.date&&f.flightNum===item.flightNum});
     if (tf.length>0) {
@@ -641,12 +664,14 @@ class StatusComponent {
               ||e.icao==="PAOM"||e.icao==="PAUN"||e.icao==="PAOT";
         });
       }
+      else if (this.scope.nav.base.four==="HELI") this.airports=airports;
       else {
         this.airports=airports.filter(e=>{
           return (e.threeLetter&&e.threeLetter!==""&&(e.baseGroup===window.base.four))
               ||e.icao==="PAOM"||e.icao==="PAUN"||e.icao==="PAOT";
         });
       }
+      
       this.airports.sort((a,b)=>{
         let aI=this.airportOrder.indexOf(a.icao);
         let bI=this.airportOrder.indexOf(b.icao);
@@ -1239,8 +1264,8 @@ class StatusComponent {
   getLayout(){
     if (this.iPad) return "layout-ipad";
     if (this.mobile) return "layout-phone";
+    if (this.base) return "layout-"+this.base.base;
     return "layout-OME";
-    //if (this.base) return "layout-"+this.base.base;
   }
   
   showHeader(collection,field,index){

@@ -1,7 +1,8 @@
 <div ng-show="status.spinner" class="myspinner"></div>
 <navbar></navbar><!--style="background-color:rgba(51, 170, 51, .02);" -->
 <section ng-class="status.getLayout()" style="background-color:#ffffcc;" ng-if="status.Auth.isUser()&&status.view==='board'">
-  <div ng-if="status.fixedWing()" ng-class="status.getColumn()">
+  <!--<div ng-if="status.fixedWing()" ng-class="status.getColumn()">-->
+    <div ng-class="status.getColumn()">
       <div class="grid-parent" ng-repeat="airport in status.airports track by airport._id">
         <div class="airport" ng-class="status.airportClass(airport)"
               tooltip-placement="right" uib-tooltip="{{airport.metarObj.taf}}">
@@ -20,7 +21,7 @@
       </div>
   </div>
   <div ng-class="status.getColumnFlights()">
-    <div class="todays-flights"><!---->
+    <div ng-if="status.fixedWing()" class="todays-flights"><!---->
      <!--<div ng-repeat="flight in status.todaysFlights track by flight._id" ng-show="status.todaysFlightDisplayFilter(flight)" ng-class="status.getFlightColor(flight)">-->
      <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" id="{{flight._id}}" ng-class="status.getFlightColor(flight)">
      <!--<div ng-repeat="flight in status.filteredFlights track by flight._id" id="{{flight._id}}" ng-class="status.getFlightColor(flight)">-->
@@ -67,7 +68,26 @@
         </div>
       </div>
     </div>
-    <!--<div ng-repeat="n in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]" style="height:3em"></div>-->
+   </div>
+   <div ng-if="!status.fixedWing()" class="todays-flights">
+     <div ng-repeat="flight in status.heliFlights" ng-click="status.consoleLog(flight)">
+       <div class="light-border">
+         <div style="padding-left:0.5em;">
+          <p style="margin:0px; border:none;">
+            <!--<span style="float:left;margin-right:5px;">-->
+            <strong>{{' ' + flight.acftNumber + ', ' + flight.pilot}}</strong>
+            <strong ng-if="flight.coPilot">{{'/ ' + flight.coPilot+', '}}</strong>
+          </p>
+          <p>
+            <strong> 
+              {{flight.custCompany + ' ' + flight.missionDetails}}
+            </strong>
+            <!--</span>-->
+          </p>
+          <br style="clear:both">
+         </div>
+       </div>
+     </div>
    </div>
    <div class="alts">
      <div><h1 style="width:100%; text-align:center;">Alternate Airports</h1></div>
@@ -101,7 +121,8 @@
     </div>
   </div>-->
   <div ng-if="status.fixedWing()" ng-class="status.getColumn()">
-    <div ng-if="status.base.base==='OME'">
+    <!--<div ng-if="status.base.base==='OME'">-->
+    <div ng-if="false">
       <div style="width:100%;text-align:center;">
         <h1>Beech 1900s</h1>
       </div>
