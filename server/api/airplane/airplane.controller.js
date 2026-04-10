@@ -478,7 +478,7 @@ export async function firebaseInterval(req,res){
     firebasePilots=collectionToArray(pilots);
     let aircraft=await getCollection('aircraft');
     firebaseAircraft=collectionToArray(aircraft);
-    let flights=await getCollectionLimited('flights',750);
+    let flights=await getCollectionLimited('flights',500);
     firebaseFlights=fSort(collectionToArray(flights));
     for (let flight of firebaseFlights){
       let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
