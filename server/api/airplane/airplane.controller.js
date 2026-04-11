@@ -265,13 +265,7 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
 
 export async function getCollectionDate(collectionName,limit,date) {
   try {
-    date = new Date(date);
-
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0'); // January is 0!
-    const yyyy = date.getFullYear();
-    
-    const formattedDate = `${dd}/${mm}/${yyyy}`;
+    const formattedDate = formatDate(date);
     
     const collectionRef = firebase_db.collection(collectionName);
     const querySnapshot = await collectionRef.where('dateString','==','formattedDate').limit(limit).get();
@@ -442,7 +436,6 @@ function formatDate(date) {
 }
 
 export async function firebaseMin(flight){
-  console.log(flight._id)
   if (!flight) return 'need flight!';
   let minFlight={};
   minFlight.dbId=flight._id;
@@ -457,7 +450,6 @@ export async function firebaseMin(flight){
   minFlight.knownIce= flight.knownIce;
   minFlight.pilotObject=flight.pilotObject;
   minFlight.aircraft=flight.aircraft;
-  console.log(minFlight)
   const result=await getCollectionQuery('flights',1,'dateString','==',minFlight.dateString,false,'flightNumber','==',minFlight.flightNumber);
   let array=collectionToArray(result);
   array=array.filter(f=>f.acftNumber===minFlight.aircraft&&!f.isArchived);

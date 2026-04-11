@@ -84,6 +84,7 @@ class StatusComponent {
       tempD=tempD.toLocaleDateString();
       ctr++;
     }
+    this.heliFLights=[];
     this.initHelis();
     
     this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
@@ -331,6 +332,7 @@ class StatusComponent {
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
       this.spinner=true;
+      this.heliFLights=[];
       if (!newVal||newVal==='') return;
       this.timeoutVal=0;
       if (!oldVal||oldVal==='') this.timeoutVal=300;
