@@ -117,7 +117,7 @@
   "scripts": {
     "test": "grunt test",
     "update-webdriver": "node node_modules/protractor/bin/webdriver-manager update",
-    "start": "NODE_ENV='production' NODE_OPTIONS='--max-old-space-size=4096' node server"
+    "start": "NODE_ENV='production' node --max-old-space-size=4096 server"
   },
   "private": true
 }
