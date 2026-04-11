@@ -200,7 +200,7 @@ class StatusComponent {
         //else minFlight.pilot=flight.pilot;
         minFlight.aircraft=flight.aircraft;
         this.timeout(()=>{
-          //this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
+          this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
         },0);
         this.spinner=false;
         console.log('Updated Flight ' + flight.flightNum);
@@ -335,7 +335,7 @@ class StatusComponent {
       this.timeoutVal=0;
       if (!oldVal||oldVal==='') this.timeoutVal=300;
       this.resetFlights(newVal);
-      this.timeout(()=>{this.syncHelis()},0);
+      this.timeout(()=>{this.initHelis()},0);
     });
     
     this.http.get('/api/airportRequirements').then(res=>{
@@ -572,11 +572,12 @@ class StatusComponent {
   }
   
   initHelis(){
-    this.http.post('/api/airplanes/firebaseGrab').then(res=>{
-      this.heliFirebaseFlights=res.data.flights;
+    this.http.post('/api/airplanes/firebaseDate',{collection:"flights",limit:100,date:this.date}).then(res=>{
+      this.heliFirebaseFlights=res.data;
       this.syncHelis(this.heliFirebaseFlights);
       this.socket.socket.removeAllListeners('firebaseFlights');
       this.socket.socket.on('firebaseFlights',(firebaseFlights)=>{
+        if (firebaseFlights[0]&&new Date(firebaseFlights[0].dateString).toLocaleDateString()!==this.dateString) return;
         console.log(firebaseFlights);
         this.heliFirebaseFlights=firebaseFlights;
         this.syncHelis(firebaseFlights);

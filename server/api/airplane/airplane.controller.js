@@ -263,6 +263,28 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
   }
 }
 
+export async function getCollectionDate(collectionName,limit,date) {
+  try {
+    date = new Date(date);
+
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0'); // January is 0!
+    const yyyy = date.getFullYear();
+    
+    const formattedDate = `${dd}/${mm}/${yyyy}`;
+    
+    const collectionRef = firebase_db.collection(collectionName);
+    const querySnapshot = await collectionRef.where('dateString','==','formattedDate').limit(limit).get();
+
+    querySnapshot.forEach((doc) => {
+      //console.log(doc.id, '=>', doc.data());
+    });
+    return querySnapshot;
+  } catch (error) {
+    console.error('Error getting collection:', error);
+  }
+}
+
 export async function getCollectionLimited(collectionName,limit) {
   try {
     const collectionRef = firebase_db.collection(collectionName);
@@ -289,6 +311,21 @@ async function getCollection(collectionName) {
   } catch (error) {
     console.error('Error getting collection:', error);
   }
+}
+
+async function updateDocumentSub(collection,docId,data) {
+   let docRef;
+   if (docId) {
+     docRef = firebase_db.collection(collection).doc(docId);
+     try {
+       await docRef.collection("release").doc("releaseStatus").set(data);
+       console.log('Document successfully updated!');
+       return true;
+     } catch (error) {
+       console.error('Error updating document:', error);
+       return false;
+     }
+   }
 }
 
 async function updateDocument(collection,docId,data) {
@@ -322,7 +359,7 @@ export function observe(collectionName,fbDate) {
   aWeekAgo.setDate(aWeekAgo.getDate() - 4);
   try {
     if (unsub) unsub();//clear any previous observer
-    fbQuery = firebase_db.collection('flights').where('date','>',aWeekAgo);//.where('dateString','==',fbDate);
+    fbQuery = firebase_db.collection('flights').where('dateString','==',fbDate);
     unsub=fbQuery.onSnapshot(querySnapshot=>{
       allFlights=collectionToArray(querySnapshot);
       firebaseFlights=fSort(allFlights,fbDate);
@@ -427,9 +464,8 @@ export async function firebaseMin(flight){
   if (flight.pilotObject) array=array.filter(f=>f.pilot===flight.pilotObject.displayName);
   if (array.length===0) return 'no matching pfr found';
   let id=array[0]._id;
-  delete minFlight.pilotObject;
-  delete minFlight.aircraft;
-  updateDocument('flights', id, minFlight).then(()=>{
+  
+  updateDocumentSub('flights', id, minFlight).then(()=>{
     console.log('minFlight updated');
     return 'Updated';
   }).catch(err=>{
@@ -448,6 +484,16 @@ export async function firebaseQuery(req,res){
   const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean,req.body.parameter2,req.body.operator2,req.body.value2);
   let array=collectionToArray(result);
   return res.status(200).json(array);
+}
+
+export async function firebaseDate(req,res){
+  let collection=req.body.collection;
+  let limit=req.body.limit||50;
+  let date=req.body.date||new Date();
+  const result=await getCollectionDate(collection,limit,date);
+  let array=collectionToArray(result);
+  if (res) return res.status(200).json(array);
+  return array;
 }
 
 export async function firebaseLimited(req,res){
