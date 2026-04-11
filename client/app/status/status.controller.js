@@ -378,11 +378,20 @@ class StatusComponent {
   }
   
   formatComments(airport){
+    if (airport.threeLetter==="OME") console.log(airport.pireps)
     let str='';
     if (airport.comment) str+='NOTAM: ' + airport.comment + '\n';
     if (airport.pilotComment) str+='-----------------\nPilot: ' + airport.pilotComment + '\n';
     let pireps=this.checkPirep(airport.companyPireps);
     if (pireps) str+='-----------------\nRecent Pireps: \n-----------------\n' + pireps;
+    if (airport.pireps&&airport.pireps.length>0) {
+      str+='-----------------\nOfficial Pireps: \n-----------------\n';
+      airport.pireps.forEach(pirep=>{
+        if (pirep.icing) str+='Icing: ' + pirep.icing.severity + ' ' ;
+        str+=pirep.raw;
+      });
+      
+    }
     return str;
   }
   

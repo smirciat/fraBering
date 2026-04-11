@@ -149,21 +149,41 @@ export function getPireps(req,res){
   }
 }
 
-// Creates a new AirportRequirement in the DB
+// Periodically check for new pireps
 export async function syncPireps() {
+  allPireps=[];
+  console.log('#####################################################')
   try {
     //https://aviationweather.gov/api/data/pirep?id=PAOM&format=raw&age=2&distance=50
-    let response = await axios.get('https://avwx.rest/api/pirep/PAOM?token='+localEnv.AVWX_TOKEN2);
-    if (!response) return [];
-    if (response.data&&response.data.Error) console.log(response.data.Error);
-    let data=response.data;
-    if (response.data&&response.data.data) data=response.data.data;
-    allPireps=data;
-    return data;
+    let response = await axios.get('https://avwx.rest/api/pirep/PAOT?token='+localEnv.AVWX_TOKEN2);
+    if (response) {
+      if (response.data&&response.data.Error) console.log(response.data.Error);
+      if (response.data&&response.data.data) allPireps=allPireps.concat(response.data.data);
+    }
   }
   catch(err){
     console.log(err);
-    return [];
+  }
+  
+  try {
+    let response = await axios.get('https://avwx.rest/api/pirep/PAOM?token='+localEnv.AVWX_TOKEN2);
+    if (response) {
+      if (response.data&&response.data.Error) console.log(response.data.Error);
+      if (response.data&&response.data.data) allPireps=allPireps.concat(response.data.data);
+    }
+  }
+  catch(err){
+    console.log(err);
+  }
+  try {
+    let response = await axios.get('https://avwx.rest/api/pirep/PAUN?token='+localEnv.AVWX_TOKEN2);
+    if (response) {
+      if (response.data&&response.data.Error) console.log(response.data.Error);
+      if (response.data&&response.data.data) allPireps=allPireps.concat(response.data.data);
+    }
+  }
+  catch(err){
+    console.log(err);
   }
 }
 

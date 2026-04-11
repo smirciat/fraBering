@@ -594,13 +594,14 @@
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="false&&metarObj.airport.manualObs">Ceiling: {{metarObj.airport.manualObs.ceiling}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">------------------------------NOTAMS----------------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px">RUNWAY {{metarObj.airport.icao+' '+metarObj.airport.openClosed+', '+modal.formatScore(metarObj.airport.runwayScore)+' '+metarObj.airport.comment+'. '+metarObj.airport.pilotComment}}</p>
-          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="modal.checkPirep(metarObj.airport.companyPireps[0])">------------------------------PIREPS----------------------------</p>
-          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="!modal.checkPirep(metarObj.airport.companyPireps[0])">---------------------------NO RECENT PIREPS-------------------------</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="modal.checkPirep(metarObj.airport.companyPireps[0])">------------------------COMPANY PIREPS----------------------------</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="!modal.checkPirep(metarObj.airport.companyPireps[0])">--------------------NO RECENT COMPANY PIREPS-------------------------</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="modal.checkPirep(metarObj.airport.companyPireps[0])">{{metarObj.airport.companyPireps[0]}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="modal.checkPirep(metarObj.airport.companyPireps[1])">{{metarObj.airport.companyPireps[1]}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="modal.checkPirep(metarObj.airport.companyPireps[2])">{{metarObj.airport.companyPireps[2]}}</p>
           <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="modal.checkPirep(metarObj.airport.companyPireps[3])">{{metarObj.airport.companyPireps[3]}}</p>
-          <!--<p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-repeat="pirep in metarObj.airport.pireps">{{pirep.raw}}</p>-->
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-if="metarObj.airport.pireps.length>0">------------------------OFFICIAL PIREPS----------------------------</p>
+          <p style="font-weight:bold; margin-left:0.5em; margin-bottom:0px" ng-repeat="pirep in metarObj.airport.pireps">Icing: {{pirep.icing.severity}}&nbsp{{pirep.raw}}</p>
         </div>
       </div>
       <br>
