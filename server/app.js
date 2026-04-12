@@ -98,7 +98,7 @@ let metarFunction=async ()=>{
           console.log('metar interval going at ' +new Date().toLocaleString());
         })
         .catch(err=>{
-          if (err.response) console.log(err.response.data)
+          if (err.response) console.log(err.response.data);
           else console.log(err);
         });
 };

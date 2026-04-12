@@ -211,7 +211,9 @@ export function create(req, res) {
 // Updates an existing TodaysFlight in the DB
 export function update(req, res) {
   let flight=req.body;
-  try {firebaseMin(flight)}
+  try {
+    if (flight.pfr&&flight.pfr._id) firebaseMin(flight);
+  }
   catch(err){console.log(err)}
   
   try {
@@ -234,6 +236,7 @@ export function update(req, res) {
     }
   }
   catch(err){console.log(err)}
+  
   if (req.body._id) {
     delete req.body._id;
   }

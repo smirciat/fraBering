@@ -448,16 +448,17 @@ export async function firebaseMin(flight){
   minFlight.ocReleaseTimestamp= flight.ocReleaseTimestamp;
   minFlight.dispatchReleaseTimestamp= flight.dispatchReleaseTimestamp;
   minFlight.knownIce= flight.knownIce;
-  minFlight.pilotObject=flight.pilotObject;
+  //minFlight.pilotObject=flight.pilotObject;
   minFlight.aircraft=flight.aircraft;
-  const result=await getCollectionQuery('flights',1,'dateString','==',minFlight.dateString,false,'flightNumber','==',minFlight.flightNumber);
-  let array=collectionToArray(result);
-  array=array.filter(f=>f.acftNumber===minFlight.aircraft&&!f.isArchived);
-  if (flight.pilotObject) array=array.filter(f=>f.pilot===flight.pilotObject.displayName);
-  if (array.length===0) return 'no matching pfr found';
-  let id=array[0]._id;
+  //const result=await getCollectionQuery('flights',1,'dateString','==',minFlight.dateString,false,'flightNumber','==',minFlight.flightNumber);
+  //let array=collectionToArray(result);
+  //array=array.filter(f=>f.acftNumber===minFlight.aircraft&&!f.isArchived);
+  //if (flight.pilotObject) array=array.filter(f=>f.pilot===flight.pilotObject.displayName);
+  //if (array.length===0) return 'no matching pfr found';
+  if (flight.pfr&&flight.pfr._id) minFlight.pfrNum=flight.pfr._id;
+  else return 'No Pfr Attached to Flight';
   
-  updateDocumentSub('flights', id, minFlight).then(()=>{
+  updateDocumentSub('flights', minFlight.pfrNum, minFlight).then(()=>{
     console.log('minFlight updated');
     return 'Updated';
   }).catch(err=>{

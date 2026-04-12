@@ -88,7 +88,7 @@ class StatusComponent {
     this.initHelis();
     
     this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
-    this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
+    //this.http.post('/api/signatures/day',{date:this.dateString}).then(res=>{console.log(res.data)});
     this.http.post('/api/todaysFlights/getManifests',{date:'2/25/2026'}).then(res=>{console.log(res.data)});
     this.http.post('/api/todaysFlights/getFlightLogs',{date:'2/24/2026'}).then(res=>{
       console.log(res.data);
@@ -182,27 +182,8 @@ class StatusComponent {
       flight.updated=new Date();
       flight.updatedBy=this.user.name;
       let id=flight._id;
-      this.http.post('/api/signatures',flight);
+      //this.http.post('/api/signatures',flight);
       this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
-        let minFlight={};
-        minFlight.dbId=id;
-        //minFlight.date=new Date(flight.date);
-        minFlight.dateString=this.formatDate(new Date(flight.date));
-        minFlight.flightNumber=flight.flightNum;
-        minFlight.pilotAgree=flight.pilotAgree;
-        minFlight.ocRelease= flight.ocRelease;
-        minFlight.dispatchRelease= flight.dispatchRelease;
-        minFlight.releaseTimestamp= flight.releaseTimestamp;
-        minFlight.ocReleaseTimestamp= flight.ocReleaseTimestamp;
-        minFlight.dispatchReleaseTimestamp= flight.dispatchReleaseTimestamp;
-        minFlight.knownIce= flight.knownIce;
-        minFlight.pilotObject=flight.pilotObject;
-        //if (flight.pilotObject&&flight.pilotObject.displayName) minFlight.pilot=flight.pilotObject.displayName;
-        //else minFlight.pilot=flight.pilot;
-        minFlight.aircraft=flight.aircraft;
-        this.timeout(()=>{
-          this.http.post('/api/airplanes/firebaseMin',{flight:minFlight});
-        },0);
         this.spinner=false;
         console.log('Updated Flight ' + flight.flightNum);
         if (flight.pilotAgree||flight.ocRelease||flight.dispatchRelease) this.quickModal("Flight Release Signature has Been Recorded","Success!",false);
@@ -378,19 +359,17 @@ class StatusComponent {
   }
   
   formatComments(airport){
-    if (airport.threeLetter==="OME") console.log(airport.pireps)
     let str='';
     if (airport.comment) str+='NOTAM: ' + airport.comment + '\n';
     if (airport.pilotComment) str+='-----------------\nPilot: ' + airport.pilotComment + '\n';
     let pireps=this.checkPirep(airport.companyPireps);
-    if (pireps) str+='-----------------\nRecent Pireps: \n-----------------\n' + pireps;
+    if (pireps) str+='-----------------\nRecent Pireps: \n-----------------\n' + pireps + '\n';
     if (airport.pireps&&airport.pireps.length>0) {
       str+='-----------------\nOfficial Pireps: \n-----------------\n';
       airport.pireps.forEach(pirep=>{
         if (pirep.icing) str+='Icing: ' + pirep.icing.severity + ' ' ;
-        str+=pirep.raw;
-      });
-      
+        str+=pirep.raw+'\n\n';
+      }); 
     }
     return str;
   }

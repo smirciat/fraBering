@@ -152,7 +152,7 @@ export function getPireps(req,res){
 // Periodically check for new pireps
 export async function syncPireps() {
   allPireps=[];
-  console.log('#####################################################')
+  //console.log('#####################################################')
   try {
     //https://aviationweather.gov/api/data/pirep?id=PAOM&format=raw&age=2&distance=50
     let response = await axios.get('https://avwx.rest/api/pirep/PAOT?token='+localEnv.AVWX_TOKEN2);
