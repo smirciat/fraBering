@@ -312,7 +312,7 @@ async function updateDocumentSub(collection,docId,data) {
    if (docId) {
      docRef = firebase_db.collection(collection).doc(docId);
      try {
-       await docRef.collection("release").doc("releaseStatus").set(data);
+       await docRef.collection("release").doc("releaseStatus").update(data);
        console.log('Document successfully updated!');
        return true;
      } catch (error) {
