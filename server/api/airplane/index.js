@@ -13,7 +13,6 @@ router.patch('/:id', controller.update);
 router.delete('/:id', controller.destroy);
 router.post('/firebase',controller.firebase);
 router.post('/firebaseDoc',controller.firebaseDoc);
-router.post('/firebaseMin',controller.firebaseMin);
 router.post('/firebaseGrab',controller.firebaseGrab);
 router.post('/firebaseDate',controller.firebaseLimited);
 router.post('/firebaseLimited',controller.firebaseLimited);
