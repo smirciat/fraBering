@@ -99,10 +99,10 @@
   </div>
   <div ng-class="status.getColumn()">
     <div ng-repeat="pilot in status.sortedPilots track by $index">
-      <h1 ng-if="status.showHeader('sortedPilots','header',$index)" ng-click="status.showPlusOrMinus(pilot.header)">
+      <p class="smaller" ng-if="status.showHeader('sortedPilots','header',$index)" ng-click="status.showPlusOrMinus(pilot.header)">
         {{status.newHeader(pilot.header)}}&nbsp{{status.plusOrMinus(pilot.header)}}
-      </h1>
-      <h1 ng-if="status.fixedWing('HEL')&&$index===0">Helicopter Pilots</h1>
+      </p>
+      <!--<p class="smaller" ng-if="status.fixedWing('HEL')&&$index===0">Helicopter Pilots</p>-->
       <p ng-hide="pilot.assigned&&status.hideFromHeader(pilot.header)">{{pilot.name + '-' + pilot.code}}</p>
     </div>
   </div>

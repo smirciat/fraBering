@@ -1152,7 +1152,7 @@ class StatusComponent {
   
   setPilotList(){
     if (!this.dateString||!this.base||!this.allPilots) return;
-    let headerList=['OC','Night Medevac','Med Phone','Day Medevac','Unassigned Captains','Unassigned Copilots','Dispatch','Mx Supervisor','Fueler','Cargo Lead'];
+    let headerList=['OC','Dispatch','Fueler','Cargo Lead','Medevac','Unassigned Captains','Unassigned Copilots'];
     this.http.post('/api/calendar/rosterDay',{dateString:this.dateString}).then(res=>{
       this.pilotList=[];
       this.coPilotList=[];
@@ -1167,9 +1167,15 @@ class StatusComponent {
         if (pilot.label==="OTZ") pilot.location="KOTZEBUE";
         if (pilot.label==="OME") pilot.location="NOME";
         if (pilot.title==='OC'&&pilot.type==='shift'&&pilot.location!=="HELICOPTER") return true;
-        if (this.base.base==="UNK") return pilot.position==='CAPT'||pilot.position==='FO';
+        if (this.base.base==="UNK") {
+          if (pilot.location==="NOME"&&(pilot.label==="ND"||pilot.label==="D")) return true;
+          return pilot.position==='CAPT'||pilot.position==='FO';
+        }
         if (this.base.base==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==="MS"||pilot.label==='D');
-        if (this.base.base==="OTZ") return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==="MS"||pilot.label==='D');
+        if (this.base.base==="OTZ") {
+          if (pilot.location==="NOME"&&pilot.label==="ND") return true;
+          return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==="MS"||pilot.label==='D');
+        }
         return true;
       });
       console.log(basePilotRoster);
@@ -1200,6 +1206,8 @@ class StatusComponent {
         if (pilot.label==="OME") p.pilotBase="OME";
         let inBase=p.pilotBase===this.base.base;
         if (pilot.label==="OC") inBase=true;
+        if ((pilot.label==="ND"||pilot.label==="D")&&this.base.base==='UNK') inBase=true;
+        if (pilot.label==="ND"&&this.base.base==='OTZ') inBase=true;
         //UNK Base rules
         if (this.base.base==="UNK"&&this.todaysFlights) {
           this.todaysFlights.forEach(flight=>{
@@ -1214,15 +1222,14 @@ class StatusComponent {
         p.code=pilot.label;
         if (inBase&&p) {
           if (p.code==='OC') p.header='OC';
-          if (p.code==='NM') p.header='Night Medevac';
-          if (p.code==='ND') p.header='Med Phone';
+          if (p.code==='NM') p.header='Medevac';
+          if (p.code==='ND') p.header='Dispatch';
           if (p.code==='16') {
-            if (p.far299Exp) p.header="Night Medevac";
-            else p.header="Med Phone";
+            if (p.far299Exp) p.header="Medevac";
+            else p.header="Dispatch";
           }
-          if (p.code==='DM') p.header='Day Medevac';
+          if (p.code==='DM') p.header='Medevac';
           if (p.code==="D") p.header='Dispatch';
-          if (p.code==='MS') p.header='Mx Supervisor';
           if (p.code==='F') p.header="Fueler";
           if (p.code==='CS') p.header="Cargo Lead";
           if (p.far299Exp) {
@@ -1274,7 +1281,7 @@ class StatusComponent {
   
   showHeader(collection,field,index){
     if (!this[collection]||!this.base) return false;
-    if (this.base.base==='HEL'&&collection==="sortedPilots") return false; 
+    //if (this.base.base==='HEL'&&collection==="sortedPilots") return false; 
     if (index===0) return true;
     return this[collection][index][field]!==this[collection][index-1][field];
   }
