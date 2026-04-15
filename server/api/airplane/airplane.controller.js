@@ -20,6 +20,7 @@ admin.initializeApp({
 });
 const firebase_db = admin.firestore();
 let observer, unsub, fbQuery, tempFlights;
+let previousPfrs=[];
 let allFlights=[];
 let firebaseFlights=[];
 let firebasePilots=[];
@@ -348,7 +349,14 @@ async function updateDocument(collection,docId,data) {
    }
 }
 
-export function observe(collectionName) {
+export async function setPreviousPfrs(){
+  previousPfrs=await firebaseLimited({body:{collection:'flights',limit:300}});
+  previousPfrs=previousPfrs.filter(pfr=>{
+    return pfr.dateString!==formatDate(new Date());
+  });
+}
+
+export function observe() {
   let dateString=formatDate();
   try {
     if (unsub) unsub();//clear any previous observer
@@ -512,14 +520,14 @@ export async function updateFirebase(req,res){
 
 export async function firebaseInterval(req,res){
   let status=200;
+  let allPfrs=[];
   try{
     let pilots=await getCollection('pilots');
     firebasePilots=collectionToArray(pilots);
     let aircraft=await getCollection('aircraft');
     firebaseAircraft=collectionToArray(aircraft);
-    let flights=await getCollectionLimited('flights',500);
-    firebaseFlights=fSort(collectionToArray(flights));
-    for (let flight of firebaseFlights){
+    allPfrs=firebaseFlights.concat(previousPfrs);
+    for (let flight of allPfrs){
       let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
       if (index>-1) {
         if (firebaseAircraft[index].currentAirportRelease!==flight.legArray[flight.legArray.length-1].arr) {
@@ -537,7 +545,7 @@ export async function firebaseInterval(req,res){
     console.log(err);
   }
   finally{
-    res.status(status).json('firebase interval complete');
+    res.status(status).json(allPfrs);
   }
 }
 
@@ -547,6 +555,6 @@ export function firebaseGrab(req,res){
 }
 
 export function quickGrab(){
-  let json={flights:firebaseFlights,pilots:firebasePilots,aircraft:firebaseAircraft};
+  let json={flights:firebaseFlights,pilots:firebasePilots,aircraft:firebaseAircraft,previousPfrs:previousPfrs};
   return json;
 }

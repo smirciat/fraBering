@@ -362,12 +362,6 @@ function deg2rad(deg) {
 }
 
 export async function tf(req,res) {
-  if (busy) {
-    busy=false;
-    //if (res) return res.status(500).json('tf module is busy');
-    //else return;
-  }
-  busy=true;
   const memoryUsage = process.memoryUsage();
   console.log('Memory Usage:');
   console.log(`RSS: ${memoryUsage.rss / (1024 * 1024)} MB`);
@@ -396,13 +390,13 @@ export async function tf(req,res) {
     fbAirplanes=qGrab.aircraft;
     pilots=qGrab.pilots;
     let todaysPfrs=qGrab.flights;
+    pfrs=qGrab.previousPfrs.concat(qGrab.flights);
     let d=new Date();
     let month = String(d.getMonth() + 1).padStart(2, '0');
     let day = String(d.getDate()).padStart(2, '0');
     let year = String(d.getFullYear()).slice(-2);
     let dateString=month+'/'+day+'/'+year;
-    pfrs=await firebaseLimited({body:{collection:'flights',limit:200}});
-  
+    
     let date=new Date();
     let date2=new Date(date);
     date2.setDate(date2.getDate()+1);
@@ -665,7 +659,6 @@ export async function tf(req,res) {
       }
       
      //map flights array(from getManifests API) to todaysFlights array (from postgresql database)
-      //let faIndex=fa.map(e=>e.flightNum).indexOf(flight.flightNum);
       let matchedFA=todaysFlights.filter(f=>{return flight.date===f.date&&f.flightNum===flight.flightNum}).sort((a,b)=>{return b._id-a._id});
       for (let x=1;x<matchedFA.length;x++){
         let i=todaysFlights.map(e=>e._id).indexOf(matchedFA[x]._id);
@@ -683,7 +676,6 @@ export async function tf(req,res) {
         if (!f.date||!f.flightNum) return false;
         return flight.date.toString()===f.date.toString()&&flight.flightNum.toString()===f.flightNum.toString();
       });
-      //let faIndex=fa.map(e=>e.flightNum).indexOf(flight.flightNum);
       if (fa.length>1) console.log('More than one Flight matching ' + flight.flightNum);
       if (fa.length===0) {
           flight.colorPatch='false';
@@ -717,8 +709,6 @@ export async function tf(req,res) {
         lastFlights.sort((a,b)=>{
           return new Date(b.date)-new Date(a.date);
         });
-        //let temp=lastFlights.map(e=>{return {date:e.date,flightNum:e.flightNum,bew:e.bew}});
-        //if (todaysFlights[index].flightNum==='840') console.log(temp); 
         for (let f of lastFlights){//f.pfr&&f.pfr.legArray[f.pfr.legArray.length-1].onTime&&
           if (f.bew&&f.bew.tks&&!todaysFlights[index].bew&&flight.date===new Date().toLocaleDateString()){
             todaysFlights[index].bew={tks:f.bew.tks};
@@ -750,61 +740,34 @@ export async function tf(req,res) {
           let i=flightLog.map(e=>e.flightId).indexOf(flight.flightNum);
           if (i>-1) flight.departTimes[1]=flightLog[i].arrTime;
         }
-        //if (flight.flightStatus&&todaysFlights[index].flightStatus!==flight.flightStatus) {
-          //todaysFlights[index].runScroll=true;
-          //console.log(todaysFlights[index]._id+' date'); 
-          //updated.push(todaysFlights[index]._id);
-          todaysFlights[index].flightStatus=flight.flightStatus;
-          todaysFlights[index].tfliteDepart=flight.tfliteDepart;
-        //}
+        todaysFlights[index].flightStatus=flight.flightStatus;
+        todaysFlights[index].tfliteDepart=flight.tfliteDepart;
+        
         if (todaysFlights[index].date!==flight.date) {
-          //todaysFlights[index].runScroll=true;
-          //console.log(todaysFlights[index]._id+' date'); 
-          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].date=flight.date;
         }
         if (todaysFlights[index].flightNum!==flight.flightNum) {
-          //console.log(todaysFlights[index]._id+' flightNum'); 
-          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].flightNum=flight.flightNum;
         }
         if (todaysFlights[index].pilot!==flight.pilot){
-          //console.log(todaysFlights[index]._id+' pilot'); 
-          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].pilot=flight.pilot;
         }
         if (todaysFlights[index].coPilot!==flight.coPilot){
-          //console.log(todaysFlights[index]._id+' copilot'); 
-          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].coPilot=flight.coPilot;
         }
         if (todaysFlights[index].aircraft!==flight.aircraft){
-          //console.log(todaysFlights[index]._id+' aircraft'); 
-          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].aircraft=flight.aircraft;
         }
         if (flight.arriveTimes) {
           todaysFlights[index].arriveTimes=flight.arriveTimes;
-          //if (todaysFlights[index].departTimes.length-todaysFlights[index].arriveTimes.length===1){
-          //  todaysFlights[index].departTimes[todaysFlights[index].departTimes.length-1]=todaysFlights[index].arriveTimes[todaysFlights[index].arriveTimes.length-1];
-          //}
         }
         if (todaysFlights[index].departTimes[0]!==flight.departTimes[0]){
-          //todaysFlights[index].runScroll=true;
-          //console.log(todaysFlights[index]._id+' departTimes'); 
-          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
         if (todaysFlights[index].departTimes.length!==flight.departTimes.length){
-          //todaysFlights[index].runScroll=true;
-          //console.log(todaysFlights[index]._id+' departTimes'); 
-          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
         if (todaysFlights[index].departTimes[todaysFlights[index].departTimes.length-1]!==flight.departTimes[flight.departTimes.length-1]){
-          //todaysFlights[index].runScroll=true;
-          //console.log(todaysFlights[index]._id+' departTimes'); 
-          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].departTimes=flight.departTimes;
         }
         todaysFlights[index].departTimesZulu=JSON.parse(JSON.stringify(todaysFlights[index].departTimes));
@@ -823,12 +786,8 @@ export async function tf(req,res) {
                     } 
                   }
         });
-        //if (JSON.stringify(todaysFlights[index].airports)!==JSON.stringify(flight.airports)){
-          //console.log(todaysFlights[index]._id+' airports'); 
-          //updated.push(todaysFlights[index]._id);
           todaysFlights[index].airports=flight.airports;
           todaysFlights[index].departTimes=flight.departTimes;
-        //}
         todaysFlights[index].airportObjs=flight.airportObjs;
         if (!todaysFlights[index].pilotAgree||(!todaysFlights[index].ocRelease&&!todaysFlights[index].dispatchRelease)) {
           todaysFlights[index].airportObjsLocked=JSON.parse(JSON.stringify(todaysFlights[index].airportObjs));
@@ -860,10 +819,7 @@ export async function tf(req,res) {
           else {
             flight.pfr=null;
           }
-          //if (flight.flightNum.length>4&&flight.pfr&&flight.pfr.flightNumber) flight.flightNum=flight.pfr.flightNumber;
         }
-        //console.log('Updating Flight ID: ' + todaysFlights[index].flightId);
-        //console.log(todaysFlights[index]);
         
         delete flight._id;
         delete flight.pilotAgree;
@@ -890,11 +846,9 @@ export async function tf(req,res) {
           .catch(handleErrorMultiple(res));
       });
     }
-    busy=false;
     res.status(200).json('success');
   }
   catch(err){
-    busy=false;
     console.log(err);
     res.status(404).json("Failure");
   }

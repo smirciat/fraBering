@@ -12,7 +12,7 @@ import localEnv from './config/local.env.js';
 import {setupSocket} from './api/airplane/airplane.controller.js';
 import {setBearer,getManifests,getFlightLogs} from './api/todaysFlight/todaysFlight.controller.js';
 import {setRosterDay} from './api/calendar/calendar.controller.js';
-import {observe} from './api/airplane/airplane.controller.js';
+import {observe,setPreviousPfrs} from './api/airplane/airplane.controller.js';
 import {syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
 
 //import http from 'http';
@@ -111,15 +111,17 @@ let tafFunction=()=>{
         .catch(err=>{console.log(err)});
 };
 
-let observerFunction=()=>{
-  observe('flights');
+let observerFunction=async ()=>{
+  await setPreviousPfrs();
+  await observe();
 };
 
 let firebaseFunction=async ()=>{
   return axios.post(baseUrl + '/api/airplanes/firebaseInterval',{}, { httpsAgent: agent })
         .then((response)=>{
           console.log('firebase interval going at ' +new Date().toLocaleString());
-          console.log(response.data);
+          console.log('All Pfrs Length:')
+          console.log(response.data.length);
         })
         .catch(err=>{console.log(err)});
 };
@@ -128,17 +130,16 @@ let updateRoster=async (date)=>{
   if (!date) date=new Date();
   else date=new Date(date);
   let roster=await setRosterDay(date);
-  //console.log(roster[10]);
 };
 
 // Start server
 function startServer() {
-  app.angularFullstack = server.listen(config.port, config.ip, function() {
+  app.angularFullstack = server.listen(config.port, config.ip, async function() {
     console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
     updateRoster();
     setBearer();
     //callbackFunction();
-    observerFunction();
+    await observerFunction();
     const job=schedule.scheduleJob('30 0 * * *',observerFunction);
     metarFunction();
     tafFunction();
