@@ -19,12 +19,12 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 const firebase_db = admin.firestore();
-let observer, unsub, fbQuery, tempFlights;
-let previousPfrs=[];
-let allFlights=[];
-let firebaseFlights=[];
-let firebasePilots=[];
-let firebaseAircraft=[];
+let unsub;
+export let previousPfrs=[];
+export let allFlights=[];
+export let firebaseFlights=[];
+export let firebasePilots=[];
+export let firebaseAircraft=[];
 
 export function setupSocket(socketio){
   io=socketio;
@@ -266,10 +266,8 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
 
 export async function getCollectionDate(collectionName,limit,date) {
   try {
-    const formattedDate = formatDate(date);
-    
     const collectionRef = firebase_db.collection(collectionName);
-    const querySnapshot = await collectionRef.where('dateString','==','formattedDate').limit(limit).get();
+    const querySnapshot = await collectionRef.where('dateString','==',formatDate(date)).limit(limit).get();
 
     querySnapshot.forEach((doc) => {
       //console.log(doc.id, '=>', doc.data());
@@ -362,7 +360,7 @@ export function observe() {
   let dateString=formatDate();
   try {
     if (unsub) unsub();//clear any previous observer
-    fbQuery = firebase_db.collection('flights').where('dateString','==',dateString);
+    const fbQuery = firebase_db.collection('flights').where('dateString','==',dateString);
     unsub=fbQuery.onSnapshot(querySnapshot=>{
       allFlights=collectionToArray(querySnapshot);
       firebaseFlights=fSort(allFlights,dateString);
@@ -460,11 +458,6 @@ export async function firebaseMin(flight){
   minFlight.knownIce= flight.knownIce;
   //minFlight.pilotObject=flight.pilotObject;
   minFlight.aircraft=flight.aircraft;
-  //const result=await getCollectionQuery('flights',1,'dateString','==',minFlight.dateString,false,'flightNumber','==',minFlight.flightNumber);
-  //let array=collectionToArray(result);
-  //array=array.filter(f=>f.acftNumber===minFlight.aircraft&&!f.isArchived);
-  //if (flight.pilotObject) array=array.filter(f=>f.pilot===flight.pilotObject.displayName);
-  //if (array.length===0) return 'no matching pfr found';
   if (flight.pfr&&flight.pfr._id) minFlight.pfrNum=flight.pfr._id;
   else return 'No Pfr Attached to Flight';
   
@@ -492,7 +485,7 @@ export async function firebaseQuery(req,res){
 export async function firebaseDate(req,res){
   let collection=req.body.collection;
   let limit=req.body.limit||150;
-  let date=req.body.date||new Date();
+  let date=new Date(req.body.date);
   const result=await getCollectionDate(collection,limit,date);
   let array=collectionToArray(result);
   if (res) return res.status(200).json(array);
@@ -532,7 +525,7 @@ export async function firebaseInterval(req,res){
     for (let flight of allPfrs){
       let index = firebaseAircraft.map(e => e._id).indexOf(flight.acftNumber);
       if (index>-1) {
-        if (firebaseAircraft[index].currentAirportRelease!==flight.legArray[flight.legArray.length-1].arr) {
+        if (flight.legArray[flight.legArray.length-1]&&firebaseAircraft[index].currentAirportRelease!==flight.legArray[flight.legArray.length-1].arr) {
           if (!firebaseAircraft[index].recentlyUpdated) {
             firebaseAircraft[index].currentAirportRelease=flight.legArray[flight.legArray.length-1].arr;
             await updateDocument('aircraft', firebaseAircraft[index]._id, {currentAirportRelease:firebaseAircraft[index].currentAirportRelease});

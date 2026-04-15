@@ -14,7 +14,7 @@ router.delete('/:id', controller.destroy);
 router.post('/firebase',controller.firebase);
 router.post('/firebaseDoc',controller.firebaseDoc);
 router.post('/firebaseGrab',controller.firebaseGrab);
-router.post('/firebaseDate',controller.firebaseLimited);
+router.post('/firebaseDate',controller.firebaseDate);
 router.post('/firebaseLimited',controller.firebaseLimited);
 router.post('/firebaseQuery',controller.firebaseQuery);
 router.post('/firebaseInterval',controller.firebaseInterval);

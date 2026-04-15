@@ -9,23 +9,17 @@
 
 'use strict';
 
-import _ from 'lodash';
-import sequelize from 'sequelize';
 import nodemailer from 'nodemailer';
 import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
-import {quickGrab,firebaseQueryFunction,firebaseLimited,firebaseMin} from '../airplane/airplane.controller.js';
-import {getMetar,getMetarAVWX,getMetarSynoptic,getMetarList,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
+import {firebaseMin,firebaseFlights,firebaseAircraft,firebasePilots,previousPfrs} from '../airplane/airplane.controller.js';
+import {getMetarSynoptic,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
 import localEnv from '../../config/local.env.js';
-import fs from 'fs';
 import config from '../../config/environment';
 const MOBILE_TOKEN=localEnv.MOBILE_TOKEN;
-let busy=false;
 let bearer='';
 let allAirports=[];
 let airplanes=[];
-let fbAirplanes=[];
 let pfrs=[];
-let pilots=[];
 let flightLog=[];
 let colors=['airport-green','airport-blue','airport-yellow','airport-purple','airport-orange','airport-pink'];
 const baseUrl = 'https://localhost:' + config.port;
@@ -371,7 +365,6 @@ export async function tf(req,res) {
   //console.log(`Array Buffers: ${memoryUsage.arrayBuffers / (1024 * 1024)} MB`);
   try {
     staleFile=true;
-    //let flightLog=await log();
     if (true) {//(!allAirports||allAirports.length===0) {
       allAirports=[];
       let instance=await AirportRequirement.findAll({});
@@ -386,11 +379,7 @@ export async function tf(req,res) {
         if (i.dataValues) airplanes.push(i.dataValues);
       });
     }
-    let qGrab=quickGrab();
-    fbAirplanes=qGrab.aircraft;
-    pilots=qGrab.pilots;
-    let todaysPfrs=qGrab.flights;
-    pfrs=qGrab.previousPfrs.concat(qGrab.flights);
+    pfrs=previousPfrs.concat(firebaseFlights);
     let d=new Date();
     let month = String(d.getMonth() + 1).padStart(2, '0');
     let day = String(d.getDate()).padStart(2, '0');
@@ -405,7 +394,6 @@ export async function tf(req,res) {
     
     let flights=[];
 
-    if (staleFile){
       let resp=await getManifests();
       if (!resp||!resp.flights){
         console.log('TakeFlite API has failed to retrieve Flights!');
@@ -488,7 +476,6 @@ export async function tf(req,res) {
         
       }
       flights=manifests;
-    }  
   
     let instance=await TodaysFlight.findAll({
       order: [['_id', 'DESC']],
@@ -500,6 +487,7 @@ export async function tf(req,res) {
       if (i.dataValues&&(i.dataValues.date===date||i.dataValues.date===date2)) todaysFlights.push(i.dataValues);
       if (i.dataValues) allFlights.push(i.dataValues);
     });
+    instance={};
     let updated=[];
     for (let f of todaysFlights) {
       let fa=flights.filter(x=>{
@@ -525,17 +513,6 @@ export async function tf(req,res) {
     
     for (let [flightIndex, flight] of flights.entries()){
       if (!flight) return;
-      //flight.tfliteDepart=null;
-      //check flightLog for flight status (remove section when reverting to tflite api)
-      //for (let line of flightLog){
-        //if (!line.flightNum||!line.date) continue;
-        //let flightNumArr=line.flightNum.split('.');
-        //if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
-          //if (line.aircraft) flight.aircraft=line.aircraft;
-          //if (!staleFile) flight.flightStatus=line.flightStatus;
-          //if (line.takeoffTime&&!flight.tfliteDepart) flight.tfliteDepart=line.takeoffTime;
-        //} 
-      //}
       //update weather per destination via airportObjs
       flight.airportObjs=[];
       for (const element of flight.airports) {
@@ -631,12 +608,12 @@ export async function tf(req,res) {
       }
       else console.log('No airportObjs?');
       
-      let fbIndex=fbAirplanes.map(e=>e._id).indexOf(flight.aircraft);
-      if (fbIndex>-1) flight.airplaneObj=fbAirplanes[fbIndex];
+      let fbIndex=firebaseAircraft.map(e=>e._id).indexOf(flight.aircraft);
+      if (fbIndex>-1) flight.airplaneObj=firebaseAircraft[fbIndex];
       let eqIndex=-1;
-      if (fbIndex>-1&&fbAirplanes[fbIndex]) {
-        if (fbAirplanes[fbIndex].acftType.trim()==="Courier") fbAirplanes[fbIndex].acftType="Sky Courier";
-        eqIndex=equipmentArr.map(e=>e.name).indexOf(fbAirplanes[fbIndex].acftType.trim());
+      if (fbIndex>-1&&firebaseAircraft[fbIndex]) {
+        if (firebaseAircraft[fbIndex].acftType.trim()==="Courier") firebaseAircraft[fbIndex].acftType="Sky Courier";
+        eqIndex=equipmentArr.map(e=>e.name).indexOf(firebaseAircraft[fbIndex].acftType.trim());
         if (eqIndex>-1) {
           flight.equipment=equipmentArr[eqIndex];
           flight.taxiFuel=equipmentArr[eqIndex].taxiFuel;
@@ -802,10 +779,8 @@ export async function tf(req,res) {
         let flight=todaysFlights[index];
         if (!flight) return;
         flight.colorPatch='false';
-        //flight.pfr=undefined;
-        //let pfrMap=[];//pfrIndex=-1;
         if (flight.date===new Date(dateString).toLocaleDateString()) {
-          let pfrMap=todaysPfrs.filter(pfr=>{
+          let pfrMap=firebaseFlights.filter(pfr=>{
             let matchFlightNum=pfr.flightNumber===flight.flightNum;
             if (pfr.flightNumber&&pfr.flightNumber.substring(0,1)==='9'&&(flight.operation==='Training'||flight.operation==='Test'||flight.operation==='Ferry')) matchFlightNum=true;
             let ds=new Date(flight.date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
@@ -970,10 +945,10 @@ function overallRiskClass(metarObj){
       return 'airport-green';
     }
     let equipment=JSON.parse(JSON.stringify(equipmentArr[0]));
-    if (fbAirplanes) {
-      let index=fbAirplanes.map(e=>e._id).indexOf(aircraft);
-      if (index>-1&&fbAirplanes[index]) {
-        index=equipmentArr.map(e=>e.name).indexOf(fbAirplanes[index].acftType);
+    if (firebaseAircraft) {
+      let index=firebaseAircraft.map(e=>e._id).indexOf(aircraft);
+      if (index>-1&&firebaseAircraft[index]) {
+        index=equipmentArr.map(e=>e.name).indexOf(firebaseAircraft[index].acftType);
         if (index>-1) equipment=JSON.parse(JSON.stringify(equipmentArr[index]));
       }
     }
@@ -1118,8 +1093,8 @@ function lookupPilotObjects(flight){
       else displayName="M. R. Evans";
     }
     else displayName=flight.pilot.substring(0,1).toUpperCase()+'. '+flight.pilot.substring(1,2).toUpperCase()+flight.pilot.slice(2);
-    lookupIndex = pilots.map(e => e.displayName).indexOf(displayName);
-    if (lookupIndex>-1) pilotObject=pilots[lookupIndex];
+    lookupIndex = firebasePilots.map(e => e.displayName).indexOf(displayName);
+    if (lookupIndex>-1) pilotObject=firebasePilots[lookupIndex];
   }
   //import coPilot
   if (flight.coPilot) {
@@ -1131,8 +1106,8 @@ function lookupPilotObjects(flight){
       displayName='D. Showalter';
     }
     else displayName=flight.coPilot.substring(0,1).toUpperCase()+'. '+flight.coPilot.substring(1,2).toUpperCase()+flight.coPilot.slice(2);
-    lookupIndex = pilots.map(e => e.displayName).indexOf(displayName);
-    if (lookupIndex>-1) coPilotObject=pilots[lookupIndex];
+    lookupIndex = firebasePilots.map(e => e.displayName).indexOf(displayName);
+    if (lookupIndex>-1) coPilotObject=firebasePilots[lookupIndex];
   }
   return {pilotObject:pilotObject,coPilotObject:coPilotObject};
 }
