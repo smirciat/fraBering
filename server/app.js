@@ -112,12 +112,7 @@ let tafFunction=()=>{
 };
 
 let observerFunction=()=>{
-  let date=new Date();
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-  const year = date.getFullYear()%100;
-  let dateString= `${month}/${day}/${year}`;
-  observe('flights',dateString);
+  observe('flights');
 };
 
 let firebaseFunction=async ()=>{

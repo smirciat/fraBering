@@ -281,9 +281,9 @@ export async function metars(req,res) {
       airport.runScroll=false;
       if (airportIndex>=allAirports.length-1) airport.runScroll=true;
       if (airport.icao&&airport.icao.length==4&&airport.icao!=="PAOB") {
-        if (hour>=6&&hour<=17) airport.currentMetarObj = await getMetarSynoptic(airport.icao);
+        if (hour>=0&&hour<=23) airport.currentMetarObj = await getMetarSynoptic(airport.icao);
         else airport.currentMetarObj = await getMetarAVWX(airport.icao);
-        if (hour>=6&&hour<=17) {//17
+        if (hour>=0&&hour<=23) {//17
           try{
             airport.currentMetarArray=await getMetarList(airport.icao);
             airport.currentMetarArray=airport.currentMetarArray.metars;

@@ -361,44 +361,6 @@ function deg2rad(deg) {
   return deg * (Math.PI/180);
 }
 
-async function log(){
-  let file="log.csv";
-  let data=fs.readFileSync(__dirname+'/../../fileserver/'+file, 'utf-8');
-  let arr=data.split('\r\n');
-  let headers=arr.shift().split(',');
-  let statusIndex=30;
-  let tempIndex=headers.indexOf('Flight Status');
-  if (tempIndex>-1) statusIndex=tempIndex;
-  let flightLog=[];
-  arr.forEach(a=>{
-    let line=a.split(',');
-    if (!line[0]||!line[statusIndex-1]) return;
-    let obj={
-      aircraft:line[4],
-      flightStatus:line[statusIndex],
-      arrTime:line[16],
-      flightNum:line[3],
-      takeoffTime:line[13],
-      flightId:line[1],
-      date:new Date(line[0]).toLocaleDateString(),
-      departTime:line[11]
-    };
-    //console.log(obj.flightStatus);
-    //headers.forEach((h,index)=>{
-    //  obj[h]=line[index];
-    //});
-    flightLog.push(obj);
-  });
-  for (let flight of flightLog){
-    let sameFlights=flightLog.filter(f=>{return f.flightNum.split('.')[0]===flight.flightNum.split('.')[0]&&f.date===flight.date&&f.flightStatus});
-    if (sameFlights.length>0&&!flight.flightStatus) flight.flightStatus=sameFlights[0].flightStatus;
-  }
-  //console.log(flightLog);
-  return flightLog.sort((a,b)=>{
-    return a.flightNum-b.flightNum||new Date("1970-01-01T" + a.departTime)-new Date("1970-01-01T" + b.departTime);
-  });
-}
-
 export async function tf(req,res) {
   if (busy) {
     busy=false;
@@ -414,23 +376,6 @@ export async function tf(req,res) {
   //console.log(`External: ${memoryUsage.external / (1024 * 1024)} MB`);
   //console.log(`Array Buffers: ${memoryUsage.arrayBuffers / (1024 * 1024)} MB`);
   try {
-    doubleFail=false;
-    let file="current.csv";
-    let data=fs.readFileSync(__dirname+'/../../fileserver/'+file, 'utf-8');
-    let stats=fs.statSync(__dirname+'/../../fileserver/'+file, 'utf-8');
-    console.log('Timestamp of current.csv is: ' + new Date(stats.mtimeMs).toLocaleString());
-    const tenMinutesAgo = new Date(new Date().getTime() - 10 * 60 * 1000); // 10 minutes in milliseconds
-    const hour=new Date().getHours();
-    const minutes=new Date().getMinutes();
-    if ((hour===23&&minutes>55)||(hour===0&&minutes<5)) return;
-    if (stats.mtimeMs < tenMinutesAgo) {
-      staleFile=true;
-    }
-    else {
-      stopped=false;
-      staleFile=false;
-    }
-    console.log('Stopped value is: ' + staleFile.toString());
     staleFile=true;
     //let flightLog=await log();
     if (true) {//(!allAirports||allAirports.length===0) {
@@ -451,51 +396,26 @@ export async function tf(req,res) {
     fbAirplanes=qGrab.aircraft;
     pilots=qGrab.pilots;
     let todaysPfrs=qGrab.flights;
-    //firebaseQueryFunction(collection,limit,parameter,operator,value,timestampBoolean)
     let d=new Date();
     let month = String(d.getMonth() + 1).padStart(2, '0');
     let day = String(d.getDate()).padStart(2, '0');
     let year = String(d.getFullYear()).slice(-2);
     let dateString=month+'/'+day+'/'+year;
-    pfrs=await firebaseLimited({body:{collection:'flights',limit:200}});//'flights',200,'dateString','==',dateString,false);
-    //let formattedDate=new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
-    //.filter(pfr=>{return pfr.dateString===formattedDate});  
+    pfrs=await firebaseLimited({body:{collection:'flights',limit:200}});
   
     let date=new Date();
     let date2=new Date(date);
     date2.setDate(date2.getDate()+1);
     date2=date2.toLocaleDateString();
     date=date.toLocaleDateString();
+    
     let flights=[];
-      
-      
-    //let arr=data.split('\r\n');
-    //if (!arr[1]) {
-      //console.log('failed to load csv file');
-      //res.status(404).json('failure');
-      //eturn;
-    //}
-    //let dateArr=arr[1].split(' ');
-    //let reportDate=new Date(dateArr[2]+' '+dateArr[3]+' '+dateArr[4]);
-    //if (reportDate.toLocaleDateString()!==new Date().toLocaleDateString()) staleFile=true;
-      
-      
+
     if (staleFile){
       let resp=await getManifests();
       if (!resp||!resp.flights){
         console.log('TakeFlite API has failed to retrieve Flights!');
         doubleFail=true;
-        if (hour>=7&&hour<22&&!stopped) {//only text me during waking hours, and only do it once, then turn stopped variable to true to prevent future texts
-          let r=await axios.post(baseUrl + '/api/monitors/twilio',{to:"+19073992019",body:"Takeflite updating has stopped"}, { httpsAgent: agent });
-          if (r) stopped=true;
-          console.log('Twilio message sent');
-          busy=false;
-          return res.status(500).json('Takeflite Fail');
-        }
-        else {
-          busy=false;
-          return res.status(500).json('Takeflite Fail');
-        }
       }
       let manifests=resp.flights;
       for (let flight of manifests){
@@ -526,12 +446,6 @@ export async function tf(req,res) {
         flight.operation=flight.type;
         for (let line of flightLog){
           if (!line.flightNum||!line.date) continue;
-          //let flightNumArr=line.flightNum.split('.');
-          //if (flightNumArr.length>0&&flightNumArr[0]===flight.flightNum&&line.date===flight.date){
-            //if (line.aircraft) flight.aircraft=line.aircraft;
-            //if (line.flightStatus) flight.flightStatus=line.flightStatus;
-            //if (line.takeoffTime&&!flight.tfliteDepart) flight.tfliteDepart=line.takeoffTime;
-          //} 
         }
         flight.departTimes=[];
         flight.arriveTimes=[];
@@ -563,7 +477,6 @@ export async function tf(req,res) {
             lastTime.setMinutes(lastTime.getMinutes()+flightTime);
             lastTime=lastTime.toTimeString().slice(0,8);
             if (lastTime.substring(0,7)==="Invalid") lastTime=undefined;
-            //if (lastTime) flight.departTimes.push(lastTime);
             flight.departTimes.push(flight.arriveTimes[flight.arriveTimes.length-1]);
           }
           
@@ -575,136 +488,12 @@ export async function tf(req,res) {
           logDate=new Date(logDate[1]+'/'+logDate[2]+'/'+logDate[0]).toLocaleDateString();
           let logTime=logArr[1];
           if (logTime) logTime=logTime.substring(0,8);
-          //if (log.registration==="N241BA") console.log(logTime)
-          //log.departureDate must equal flight.departimes[0] converted to timestamp format
           return log.registration===flight.aircraft&&logDate===flight.date&&logTime===flight.departTimes[0]&&log.takeOff;
         });
         if (tempArr.length>0&&tempArr[0].takeOff.split('T').length>1) flight.tfliteDepart=tempArr[0].takeOff.split('T')[1].substring(0,5);
         
-        //if (flight.flightNum==='812') {
-          //console.log(tempArr);
-          //console.log(flight.aircraft)
-          //console.log(flight.date)
-          //console.log(flight.departTimes[0])
-        //}
-        //if (tempArr.length>1) console.log(tempArr);
-        //if (tempArr.length===1) console.log(flight.tfliteDepart);
       }
-      //console.log(manifests[7])
       flights=manifests;
-    }  
-  
-  
-    if (!staleFile){
-      
-      arr.splice(0,8);
-      let currentFlights=[];
-      let pilot="No Pilot Assigned";
-      let index=0;
-      arr.forEach((a)=>{
-        if (!a||typeof a!=='string') return;
-        let temp=a.split(',');
-        if (!temp[2]) return;
-        let obj={};
-        if (temp[0]) {
-          pilot=temp[0];
-        }
-        obj.pilot=pilot;
-        obj.date=new Date(temp[2]).toLocaleDateString();
-        if (obj.date==='Invalid Date') {
-          console.log(a);
-          return;
-        }
-        obj.departTime=new Date(temp[2]).toTimeString().slice(0,8);
-        obj.coPilot=temp[3];
-        obj.aircraft=temp[4];
-        obj.operation=temp[5];
-        obj.from=temp[6];
-        obj.to=temp[7];
-        obj.flightNum=temp[8];
-        obj.flightId=temp[temp.length-1];
-        if (index>0&&!temp[8]&&obj.flightId===currentFlights[index-1].flightId) obj.flightNum=currentFlights[index-1].flightNum;
-        if (obj.operation==='Ferry'||obj.operation==='Training'||obj.operation==='Test') obj.nonRevFlight=true;
-        if (!obj.flightNum||obj.flightNum==='Ferry'||obj.flightNum==='Training'||obj.flightNum==='Test') obj.flightNum=obj.flightId;
-        if (obj.flightNum.split('.').length>1) obj.flightNum=obj.flightNum.split('.')[0];
-        currentFlights.push(obj);
-        index++;
-      });
-      
-      
-      //I now have currentFlights with either a flightNum or FlightId in the flightNum attribute.  Before the sort, maybe run through it once to make sure its right?
-      //let tempFlights=JSON.parse(JSON.stringify(currentFlights));
-      currentFlights.forEach((flight,index)=>{
-        if (flight.flightNum.length>4||flight.flightNum.length<3) {
-          let sameId=currentFlights.filter(f=>{return f.flightId===flight.flightId});
-          sameId.forEach(f=>{
-            if (f.flightNum.length<=4&&f.flightNum.length>=3) flight.flightNum=f.flightNum;
-          });
-        }
-      });
-      currentFlights.sort((a,b)=>{
-        let aDate=new Date(a.date);
-        let bDate=new Date(b.date);
-        let aArr=a.departTime.split(':');
-        let bArr=b.departTime.split(':');
-        if (aArr.length>1) aDate.setHours(aArr[0],aArr[1],0);
-        if (bArr.length>1) bDate.setHours(bArr[0],bArr[1],0);
-        return a.pilot.localeCompare(b.pilot)||new Date(a.date)-new Date(b.date)||a.flightNum.localeCompare(b.flightNum)||aDate-bDate;
-      });
-      let departTimes=[];
-      let airports=[];
-      //let flights=[];
-      let flight;
-      currentFlights.push({departTime:'00:00:00',from:'here',to:'there',flightNum:'000',flightId:'000'});
-      currentFlights.forEach((f,index)=>{
-        //still same flight
-        if (index>0&&f.flightNum===currentFlights[index-1].flightNum&&f.date===currentFlights[index-1].date){
-          airports.push(f.from);
-          departTimes.push(f.departTime);
-        }
-        //new flight
-        if (index===0||f.flightNum!==currentFlights[index-1].flightNum||index===currentFlights.length-1||f.date!==currentFlights[index-1].date) { 
-          //close out previous flight
-          if (index>0) {
-            //if (index>=currentFlights.length-1) airports.push(currentFlights[index].to);
-            airports.push(currentFlights[index-1].to);
-            flight.airports=airports;
-            //calculate flight time for last leg here---------------------------------------------------------------------------
-            let speed=160;
-            let airplanesIndex=airplanes.map(e=>e.registration).indexOf(flight.aircraft);
-            if (airplanesIndex>-1) {
-              flight.status=airplanes[airplanesIndex].status;
-            }
-            else flight.status="NORM";
-            let flightTime=60*getDistance(currentFlights[index-1].to,currentFlights[index-1].from)/speed + 10;//est flight time in minutes
-            let lastTime=new Date(currentFlights[index-1].date);
-            let timeArr=currentFlights[index-1].departTime.split(':');
-            if (false){//(index>=currentFlights.length-1) {
-              flightTime=60*getDistance(currentFlights[index].to,currentFlights[index].from)/speed + 10;
-              lastTime=new Date(currentFlights[index].date);
-              timeArr=currentFlights[index].departTime.split(':');
-            }
-            if (timeArr.length>1) lastTime.setHours(timeArr[0],timeArr[1],0);
-            else lastTime=new Date(currentFlights[index-1].departTime);
-            //if (f.pilot==='sgordon') console.log(lastTime.toLocaleString());
-            lastTime.setMinutes(lastTime.getMinutes()+flightTime);
-            lastTime=lastTime.toTimeString().slice(0,8);
-            if (lastTime.substring(0,7)==="Invalid") lastTime=undefined;
-            if (lastTime) departTimes.push(lastTime);
-            flight.departTimes=departTimes;
-            delete flight.departTime;
-            delete flight.to;
-            delete flight.from;
-            flights.push(flight);
-          }
-          //initialize new flight
-          flight=f;
-          airports=[f.from];
-          //airports.push(f.from);
-          departTimes=[f.departTime];
-          //departTimes.push(f.departTime);
-        }
-      });    
     }  
   
     let instance=await TodaysFlight.findAll({
@@ -730,11 +519,6 @@ export async function tf(req,res) {
       let active=f.active;
       if (matchedArr.length===0) {
         active="false";
-        //if (!f.nonRevFlight) active="false";
-        //else {
-        //  if (!staleFile) active="false";
-        //  else active="true";
-        //}
       }
       else active="true";
       if (active!==f.active) {
@@ -744,9 +528,7 @@ export async function tf(req,res) {
       }
       //return;
     }
-  
-  
-  
+    
     for (let [flightIndex, flight] of flights.entries()){
       if (!flight) return;
       //flight.tfliteDepart=null;
@@ -902,7 +684,7 @@ export async function tf(req,res) {
         return flight.date.toString()===f.date.toString()&&flight.flightNum.toString()===f.flightNum.toString();
       });
       //let faIndex=fa.map(e=>e.flightNum).indexOf(flight.flightNum);
-      if (fa.length>1) console.log('More than one Flight matching ' + flight.flightNum)
+      if (fa.length>1) console.log('More than one Flight matching ' + flight.flightNum);
       if (fa.length===0) {
           flight.colorPatch='false';
           console.log('creating flight:' + flight.flightNum + ' ' + flight.date);

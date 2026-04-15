@@ -2,6 +2,7 @@
 
 
 import localEnv from '../local.env.js';
+import fs from 'fs';
 
 // Production specific configuration
 // =================================
@@ -24,7 +25,10 @@ module.exports = {
       protocol:'postgres',
       logging: false,
       dialectOptions: {
-          ssl: true
+          ssl: {
+            require: true,
+            rejectUnauthorized: false,
+          }
       },
       storage: 'dev.sqlite',
       define: {

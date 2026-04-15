@@ -348,15 +348,14 @@ async function updateDocument(collection,docId,data) {
    }
 }
 
-export function observe(collectionName,fbDate) {
-  let aWeekAgo=new Date(fbDate);
-  aWeekAgo.setDate(aWeekAgo.getDate() - 4);
+export function observe(collectionName) {
+  let dateString=formatDate();
   try {
     if (unsub) unsub();//clear any previous observer
-    fbQuery = firebase_db.collection('flights').where('dateString','==',fbDate);
+    fbQuery = firebase_db.collection('flights').where('dateString','==',dateString);
     unsub=fbQuery.onSnapshot(querySnapshot=>{
       allFlights=collectionToArray(querySnapshot);
-      firebaseFlights=fSort(allFlights,fbDate);
+      firebaseFlights=fSort(allFlights,dateString);
       //emit socket message with updated firebaseFLights
       try {
         io.emit('firebaseFlights',allFlights);
@@ -429,6 +428,7 @@ export async function firebaseQueryFunction(collection,limit,parameter,operator,
 }
 
 function formatDate(date) {
+  if (!date) date=new Date();
   const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
   const dd = String(date.getDate()).padStart(2, '0');
   const yy = String(date.getFullYear()).slice(-2); // Get last two digits of the year
