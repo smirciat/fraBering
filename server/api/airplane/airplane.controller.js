@@ -350,10 +350,12 @@ async function updateDocument(collection,docId,data) {
 }
 
 export async function setPreviousPfrs(){
-  previousPfrs=await firebaseLimited({body:{collection:'flights',limit:300}});
+  previousPfrs=await firebaseLimited({body:{collection:'flights',limit:500}});
   previousPfrs=previousPfrs.filter(pfr=>{
     return pfr.dateString!==formatDate(new Date());
   });
+  const querySnapshot = await firebase_db.collection('flights').where('dateString','==',formatDate()).get();
+  firebaseFlights=collectionToArray(querySnapshot);
 }
 
 export function observe() {
@@ -489,7 +491,7 @@ export async function firebaseQuery(req,res){
 
 export async function firebaseDate(req,res){
   let collection=req.body.collection;
-  let limit=req.body.limit||50;
+  let limit=req.body.limit||150;
   let date=req.body.date||new Date();
   const result=await getCollectionDate(collection,limit,date);
   let array=collectionToArray(result);

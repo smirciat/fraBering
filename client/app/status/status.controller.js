@@ -367,8 +367,12 @@ class StatusComponent {
     if (airport.pireps&&airport.pireps.length>0) {
       str+='-----------------\nOfficial Pireps: \n-----------------\n';
       airport.pireps.forEach(pirep=>{
-        if (pirep.icing) str+='Icing: ' + pirep.icing.severity + ' ' ;
-        str+=pirep.raw+'\n\n';
+        if (pirep.time&&pirep.time.dt) str+=new Date(pirep.time.dt).toLocaleString() + ': ';
+        if (pirep.icing) str+='Icing: ' + pirep.icing.severity + ', ' ;
+        if (pirep.aircraft) str+='Aircraft: ' + pirep.aircraft.code + ', ' ;
+        if (pirep.clouds&&pirep.clouds.length>0) str+='Base: ' + pirep.clouds[0].base + '00, ' ;
+        if (pirep.turbulence) str+='Turbulence: ' + pirep.turbulence.severity+ ', ' ;
+        str+='\n\n';
       }); 
     }
     return str;
@@ -562,7 +566,7 @@ class StatusComponent {
   }
   
   initHelis(){
-    this.http.post('/api/airplanes/firebaseDate',{collection:"flights",limit:100,date:this.date}).then(res=>{
+    this.http.post('/api/airplanes/firebaseDate',{collection:"flights",date:this.date}).then(res=>{
       this.heliFirebaseFlights=res.data;
       this.syncHelis(this.heliFirebaseFlights);
       this.socket.socket.removeAllListeners('firebaseFlights');

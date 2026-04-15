@@ -23,9 +23,10 @@ This project was generated with the [Angular Full-Stack Generator](https://githu
 ### Developing
 
 1. Run `npm install` to install server dependencies.
+  --ensure package-lock.json file is present
   --use node 4 for first run through, may need to insall python ~2.7 to make it work
   --use node 6 and run `npm install` again
-  --finally, use node 10 and run `npm install`
+  --finally, use node 10 or 12 (12 preferred) and run `npm install`
 
 2. Run `bower install` to install front-end dependencies.
   --some bower components may not automatically install.  They will need to be added manually after viewing the console  
@@ -37,6 +38,9 @@ This project was generated with the [Angular Full-Stack Generator](https://githu
 ## Build & development
 
 Run `grunt build` for building and `grunt serve` for preview.
+
+1.  For production, run `grunt build` after any changes
+2.  After successful build, navigate to /dist folder and run `npm start`
 
 ## Testing
 
