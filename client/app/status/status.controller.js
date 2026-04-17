@@ -363,15 +363,15 @@ class StatusComponent {
     if (airport.comment) str+='NOTAM: ' + airport.comment + '\n';
     if (airport.pilotComment) str+='-----------------\nPilot: ' + airport.pilotComment + '\n';
     let pireps=this.checkPirep(airport.companyPireps);
-    if (pireps) str+='-----------------\nRecent Pireps: \n-----------------\n' + pireps + '\n';
+    if (pireps) str+='-----------------\nRecent Pireps: \n-----------------\n' + pireps;
     if (airport.pireps&&airport.pireps.length>0) {
       str+='-----------------\nOfficial Pireps: \n-----------------\n';
       airport.pireps.forEach(pirep=>{
-        if (pirep.time&&pirep.time.dt) str+=new Date(pirep.time.dt).toLocaleString() + ': ';
-        if (pirep.icing) str+='Icing: ' + pirep.icing.severity + ', ' ;
-        if (pirep.aircraft) str+='Aircraft: ' + pirep.aircraft.code + ', ' ;
-        if (pirep.clouds&&pirep.clouds.length>0) str+='Base: ' + pirep.clouds[0].base + '00, ' ;
-        if (pirep.turbulence) str+='Turbulence: ' + pirep.turbulence.severity+ ', ' ;
+        if (pirep.time&&pirep.time.dt) str+=new Date(pirep.time.dt).toLocaleTimeString() + ' > ';
+        if (pirep.icing&&pirep.icing.severity) str+='Icing: ' + pirep.icing.severity + ', ' ;
+        if (pirep.aircraft&&pirep.aircraft.code) str+='Aircraft: ' + pirep.aircraft.code + ', ' ;
+        if (pirep.clouds&&pirep.clouds.length>0&&pirep.clouds[0].base) str+='Base: ' + pirep.clouds[0].base + '00, ' ;
+        if (pirep.turbulence&&pirep.turbulence.severity) str+='Turbulence: ' + pirep.turbulence.severity+ ', ' ;
         str+='\n\n';
       }); 
     }
@@ -387,8 +387,7 @@ class StatusComponent {
       if (arr.length>1) {
         tempDate=new Date(arr[0]);
         threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
-        //if (tempDate.getTime() > threeHoursAgo) str += ' ' + arr[1] + '\n';
-        if (tempDate.getTime() > threeHoursAgo) str += ' ' + pirep + '\n';
+        if (tempDate.getTime() > threeHoursAgo&&pirep) str += ' ' + pirep.substring(pirep.indexOf(" ") + 1) + '\n';
       }
     });
     return str;
@@ -1175,10 +1174,10 @@ class StatusComponent {
           if (pilot.location==="NOME"&&(pilot.label==="ND"||pilot.label==="D")) return true;
           return pilot.position==='CAPT'||pilot.position==='FO';
         }
-        if (this.base.base==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==="MS"||pilot.label==='D');
+        if (this.base.base==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==='D');
         if (this.base.base==="OTZ") {
           if (pilot.location==="NOME"&&pilot.label==="ND") return true;
-          return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==="MS"||pilot.label==='D');
+          return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==='D');
         }
         return true;
       });

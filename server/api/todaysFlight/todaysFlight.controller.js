@@ -397,7 +397,7 @@ export async function tf(req,res) {
       let resp=await getManifests();
       if (!resp||!resp.flights){
         console.log('TakeFlite API has failed to retrieve Flights!');
-        doubleFail=true;
+        //doubleFail=true;
       }
       let manifests=resp.flights;
       for (let flight of manifests){
