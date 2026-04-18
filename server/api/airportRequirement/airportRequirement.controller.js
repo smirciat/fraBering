@@ -185,6 +185,7 @@ export async function syncPireps() {
   catch(err){
     console.log(err);
   }
+  return allPireps;
 }
 
 // Filters only current airport from Pireps

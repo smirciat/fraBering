@@ -10,9 +10,9 @@ import sqldb from './sqldb';
 import config from './config/environment';
 import localEnv from './config/local.env.js';
 import {setupSocket} from './api/airplane/airplane.controller.js';
-import {setBearer,getManifests,getFlightLogs} from './api/todaysFlight/todaysFlight.controller.js';
+import {setBearer,getFlightLogs} from './api/todaysFlight/todaysFlight.controller.js';
 import {setRosterDay} from './api/calendar/calendar.controller.js';
-import {observe,setPreviousPfrs} from './api/airplane/airplane.controller.js';
+import {observe,observePilots,setPreviousPfrs} from './api/airplane/airplane.controller.js';
 import {syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
 
 //import http from 'http';
@@ -84,11 +84,6 @@ let callbackFunction=()=>{
           console.log(e);
         });
   },100);
-  //axios.post(baseUrl + '/api/todaysFlights/record',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
-        //.then((response)=>{
-          //console.log('recordAssessment function successfully run');
-        //})
-        //.catch(err=>{console.log(err.response.data)});
 };
 
 let metarFunction=async ()=>{
@@ -114,6 +109,7 @@ let tafFunction=()=>{
 let observerFunction=async ()=>{
   await setPreviousPfrs();
   await observe();
+  await observePilots();
 };
 
 let firebaseFunction=async ()=>{
@@ -138,9 +134,8 @@ function startServer() {
     console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
     updateRoster();
     setBearer();
-    //callbackFunction();
     await observerFunction();
-    const job=schedule.scheduleJob('30 0 * * *',observerFunction);
+    schedule.scheduleJob('30 0 * * *',observerFunction);
     metarFunction();
     tafFunction();
     firebaseFunction().then(()=>{

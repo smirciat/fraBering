@@ -19,7 +19,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 const firebase_db = admin.firestore();
-let unsub;
+let unsub,unsubPilots;
 export let previousPfrs=[];
 export let allFlights=[];
 export let firebaseFlights=[];
@@ -354,6 +354,17 @@ export async function setPreviousPfrs(){
   });
   const querySnapshot = await firebase_db.collection('flights').where('dateString','==',formatDate()).get();
   firebaseFlights=collectionToArray(querySnapshot);
+}
+
+export function observePilots() {
+  try {
+    if (unsubPilots) unsubPilots();//clear any previous observer
+    const fbQuery = firebase_db.collection('pilots');
+    unsubPilots=fbQuery.onSnapshot(querySnapshot=>{
+      firebasePilots=collectionToArray(querySnapshot);
+    });
+  }
+  catch(err) {console.log(err)}
 }
 
 export function observe() {
