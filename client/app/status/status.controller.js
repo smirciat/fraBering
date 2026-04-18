@@ -362,7 +362,12 @@ class StatusComponent {
     let str='';
     if (airport.comment) str+='NOTAM: ' + airport.comment + '\n';
     if (airport.pilotComment) str+='-----------------\nPilot: ' + airport.pilotComment + '\n';
-    let pireps=this.checkPirep(airport.companyPireps);
+    return str;
+  }
+  
+  formatPireps(airport){
+    let str='';
+    let pireps=this.checkPirep(airport);
     if (pireps) str+='-----------------\nRecent Pireps: \n-----------------\n' + pireps;
     if (airport.pireps&&airport.pireps.length>0) {
       str+='-----------------\nOfficial Pireps: \n-----------------\n';
@@ -378,16 +383,32 @@ class StatusComponent {
     return str;
   }
   
-  checkPirep(pireps){
+  expandRetract(airport){
+    let str='';
+    if ((!airport.pireps||airport.pireps.length===0)&&(!airport.companyPireps||airport.companyPireps.length===0)) return str;
+    if (airport.expand) {
+      str+='Click to Show Fewer Pireps -\n';
+    }
+    else str+='Click to Show Older Pireps +\n';
+    return str;
+  }
+  
+  checkPirep(airport){
+    let pireps=airport.companyPireps;
     if (!pireps||pireps.length===0) return '';
     let str='';
     pireps.forEach(pirep=>{
       let arr,tempDate,threeHoursAgo;
-      arr=pirep.split('>');
-      if (arr.length>1) {
-        tempDate=new Date(arr[0]);
-        threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
-        if (tempDate.getTime() > threeHoursAgo&&pirep) str += ' ' + pirep.substring(pirep.indexOf(" ") + 1) + '\n';
+      if (airport.expand) {
+        str+=pirep + '\n\n';
+      }
+      else {
+        arr=pirep.split('>');
+        if (arr.length>1) {
+          tempDate=new Date(arr[0]);
+          threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+          if (tempDate.getTime() > threeHoursAgo&&pirep) str += ' ' + pirep.substring(pirep.indexOf(" ") + 1) + '\n';
+        }
       }
     });
     return str;

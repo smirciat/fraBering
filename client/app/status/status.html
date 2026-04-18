@@ -15,8 +15,9 @@
           <p class="tiny">{{airport.signature}}</p>
           <p class="tiny" ng-if="airport.signature">{{status.getDate(airport.timestamp)}}</p>
         </div>
-        <div class="comment" ng-click="status.sign(airport)"><!--ng-class="status.nonPilot(airport.nonPilot)">-->
-          <p style="margin-left:3px;text-align:left;white-space:pre-wrap;">{{status.formatComments(airport)}}</p>
+        <div class="comment"><!--ng-class="status.nonPilot(airport.nonPilot)">-->
+          <p ng-click="airport.expand=!airport.expand" class='tiny' style="color:green;margin-left:3px;text-align:left;white-space:pre-wrap;">{{status.expandRetract(airport)}}</p>
+          <p ng-click="status.sign(airport)" style="margin-left:3px;text-align:left;white-space:pre-wrap;">{{status.formatComments(airport)}}{{status.formatPireps(airport)}}</p>
         </div>
       </div>
   </div>
