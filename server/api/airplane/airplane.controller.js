@@ -326,12 +326,12 @@ async function updateDocument(collection,docId,data) {
    if (docId) {
      docRef = firebase_db.collection(collection).doc(docId);
      try {
-       await docRef.update(data);
+       await docRef.set(data,{merge:true});
        console.log('Document successfully updated!');
-       return true;
+       return data;
      } catch (error) {
        console.error('Error updating document:', error);
-       return false;
+       return {resp:'failure'};
      }
    }
    else {
@@ -339,10 +339,10 @@ async function updateDocument(collection,docId,data) {
      try {
        await docRef.set(data);
        console.log('Document successfully created!');
-       return true;
+       return data;
      } catch (error) {
        console.error('Errorcreating document:', error);
-       return false;
+       return {resp:'failure'};
      }
    }
 }
@@ -519,8 +519,8 @@ export async function updateFirebase(req,res){
   let id = localDoc._id.toString();
   delete localDoc._id;
   console.log(localDoc)
-  updateDocument(collection, id, localDoc).then(()=>{
-    res.status(200).json('Updated');
+  updateDocument(collection, id, localDoc).then((response)=>{
+    res.status(200).json(response);
   });
 }
 
