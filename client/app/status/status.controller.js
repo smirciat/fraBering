@@ -109,9 +109,16 @@ class StatusComponent {
       let val=num.toString()+kind;
       return {"font-size":val};
     };
-    //this.http.post('/api/airportRequirements/notams',{airport:'PAOM'}).then(res=>{
-    //  console.log(res.data);
-    //});
+    this.getWidth=window.getWidth;
+    this.getInputWidth=function(kind){
+      let columnWidth=this.width*3/8;
+      if (kind) return {"width":Math.floor(columnWidth*9.5/15)};
+      return {"width":Math.floor(columnWidth*1.3/15)};
+    };
+    this.getChatFontSize=function(){
+      return {"font-size":Math.floor(this.width/120)};
+    };
+    
     this.isFilter=window.isFilter;
     this.toggleAssigned=window.toggleAssigned;
     this.scrollInterval=this.interval(()=>{

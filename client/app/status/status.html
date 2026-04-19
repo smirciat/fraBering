@@ -73,10 +73,78 @@
    </div>
    <div ng-if="!status.fixedWing()" class="todays-flights">
      <div ng-repeat="flight in status.heliFlights" ng-click="status.consoleLog(flight)">
-       <div class="light-border">
+      <div class="chat-body" ng-style="status.getChatFontSize()">
+        <div class="chat-card">
+      
+          <!-- Header -->
+          <header class="chat-header">
+            <div class="chat-flight-id">{{flight.acftNumber}}</div>
+      
+            <div class="chat-flight-info">
+              <div class="chat-top-row">
+                <span>{{flight.acftType}}, {{flight.pilot}}, <strong class="chat-status">{{flight.status}}</strong></span>
+                <span class="chat-meta">OC ✔ PT / 10:03am</span>
+                <span class="chat-fuel">Fuel: {{flight.legArray[0].fuel}}</span>
+                <span class="chat-la">LA: </span>
+              </div>
+      
+              <div class="chat-sub-row">
+                <span>{{flight.fltPlan.depTime}} - {{flight.fltPlan.arrTime}}</span>
+                <span>{{flight.fltPlan.dep}} - {{flight.fltPlan.arr}}</span>
+                <span>ETE {{flight.fltPlan.timeEnroute||'00'}} hrs</span>
+                <span><strong>Remarks:</strong>{{flight.missionDetails}}</span>
+              </div>
+            </div>
+          </header>
+      
+          <!-- Status Row -->
+          <section class="chat-status-row">
+            <div>OFF at <textarea class="chat-input" ng-style="status.getInputWidth()"   ></textarea></div>
+            <div>5min AFF track check ✔ KS / 11:05am</div>
+            <div>ETA: <strong>{{flight.fltPlan.arrTime}}</strong></div>
+            <div>ON at <textarea class="chat-input" ng-style="status.getInputWidth()" ></textarea></div>
+          </section>
+      
+          <!-- Route Updates -->
+          <section class="chat-updates">
+            <div class="chat-updates-header">
+              <p><strong>Route Updates</strong></p>
+              <span>Next Update: <textarea class="chat-input" ng-style="status.getInputWidth()"  ></textarea></span>
+            </div>
+      
+            <div class="chat-update-row">
+              <label>Time</label>
+              <textarea class="chat-input" ng-style="status.getInputWidth()"  ></textarea>
+              <span>/</span>
+              <textarea class="chat-input chat-wide" ng-style="status.getInputWidth('wide')" ></textarea>
+              <span>/</span>
+              <textarea class="chat-input" ng-style="status.getInputWidth()"   ></textarea>
+            </div>
+      
+            <div class="chat-update-row">
+              <label>Time</label>
+              <textarea class="chat-input" ng-style="status.getInputWidth()"  ></textarea>
+              <span>/</span>
+              <textarea class="chat-input chat-wide" ng-style="status.getInputWidth('wide')"  ></textarea>
+              <span>/</span>
+              <textarea class="chat-input" ng-style="status.getInputWidth()"   ></textarea>
+            </div>
+      
+            <div class="chat-update-row">
+              <label>Time</label>
+              <textarea class="chat-input" ng-style="status.getInputWidth()"  ></textarea>
+              <span>/</span>
+              <textarea class="chat-input chat-wide" ng-style="status.getInputWidth('wide')" ></textarea>
+              <span>/</span>
+              <textarea class="chat-input" ng-style="status.getInputWidth()" ></textarea>
+            </div>
+          </section>
+      
+        </div>
+      </div>
+       <!--<div class="light-border">
          <div style="padding-left:0.5em;">
           <p style="margin:0px; border:none;">
-            <!--<span style="float:left;margin-right:5px;">-->
             <strong>{{' ' + flight.acftNumber + ', ' + flight.pilot}}</strong>
             <strong ng-if="flight.coPilot">{{'/ ' + flight.coPilot+', '}}</strong>
           </p>
@@ -84,11 +152,10 @@
             <strong> 
               {{flight.custCompany + ' ' + flight.missionDetails}}
             </strong>
-            <!--</span>-->
           </p>
           <br style="clear:both">
          </div>
-       </div>
+       </div>-->
      </div>
    </div>
    <div class="alts">
@@ -133,7 +200,7 @@
           <p style="padding-left:5px; padding-right:10px;">{{airplane.registration}}</p>
         </div>
         <div class="comment"  style="align-self:top">
-          <ui-select ng-style="modal.getWidth(12,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
+          <ui-select ng-style="status.getWidth(12,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
             <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in status.B190Configs" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -151,7 +218,7 @@
           <p style="padding-left:5px; padding-right:10px;">{{airplane.registration}}</p>
         </div>
         <div class="comment"  style="align-self:top">
-          <ui-select ng-style="modal.getWidth(12,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
+          <ui-select ng-style="status.getWidth(12,'em')" style="line-height:28px;height:28px" ng-model="airplane.status" theme="selectize" ng-change="status.editConfiguration(airplane)">
             <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
             <ui-select-choices repeat="choice in status.BE20Configs" >
               <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -270,7 +337,7 @@
   <div style="display:inline-block;">
     <h5 style="display:inline-block; margin-right:20px;">Bulk Edit FIKI --></h5>
     <div class="comment"  style="display:inline-block;">
-      <ui-select ng-style="modal.getWidth(25,'em')" style="line-height:28px;height:28px" ng-model="status.positiveFiki" theme="selectize" ng-change="status.bulkFIKI(status.positiveFiki)">
+      <ui-select ng-style="status.getWidth(25,'em')" style="line-height:28px;height:28px" ng-model="status.positiveFiki" theme="selectize" ng-change="status.bulkFIKI(status.positiveFiki)">
         <ui-select-match style="line-height:28px;height:28px" placeholder="No Selection">&nbsp&nbsp&nbsp{{$select.selected}}&nbsp&nbsp&nbsp</ui-select-match>
         <ui-select-choices repeat="choice in status.bulkFIKIChoices" >
           <div ng-bind-html="choice | highlight: $select.search"></div>
