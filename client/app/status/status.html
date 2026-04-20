@@ -78,7 +78,7 @@
       
           <!-- Header -->
           <header class="chat-header">
-            <div class="chat-flight-id">{{flight.acftNumber}}</div>
+            <div class="chat-flight-id" ng-style="status.getChatFontSize('lg')">{{flight.acftNumber}}</div>
       
             <div class="chat-flight-info">
               <div class="chat-top-row">
@@ -88,8 +88,7 @@
                   <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.ocSign" ng-model-options="{ updateOn: 'blur' }"
                       ng-change="status.updateFirebase('ocSign',flight,true)" placeholder="Int/Time"></textarea>
                 </span>
-                <span class="chat-fuel">Fuel: {{flight.legArray[0].fuel}}</span>
-                <span class="chat-la">LA: </span>
+                <span class="chat-fuel">Fuel: {{flight.legArray[0].fuel}}&nbspLA:</span>
               </div>
       
               <div class="chat-sub-row">
@@ -121,50 +120,50 @@
           <!-- Route Updates -->
           <section class="chat-updates">
             <div class="chat-updates-header">
-              <p><strong>Route Updates</strong></p>
+              <span ng-click="flight.extend=!flight.extend"><strong>Route Updates</strong>&nbsp<i ng-class="status.upOrDown(flight.extend)"></i></span>
               <span>Location/Plan</span>
               <span>Next Update: 
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.nextUpdate" ng-model-options="{ updateOn: 'blur' }"
                       ng-change="status.updateFirebase('nextUpdate',flight)" placeholder="00:00"></textarea>
               </span>
             </div>
-      
-            <div class="chat-update-row">
-              <label>Time</label>
-              <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time1" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('time1',flight)" placeholder="00:00"></textarea>
-              <span>/</span>
-              <textarea class="chat-input" ng-style="status.getInputWidth('wide')" ng-model="flight.location1" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('location1',flight)" placeholder="Location/Route Update"></textarea>
-              <span>/</span>
-              <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next1" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('next1',flight)" placeholder="00:00"></textarea>
+            <div ng-if="flight.extend">
+              <div class="chat-update-row">
+                <label>Time</label>
+                <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time1" ng-model-options="{ updateOn: 'blur' }"
+                        ng-change="status.updateFirebase('time1',flight)" placeholder="00:00"></textarea>
+                <span>/</span>
+                <textarea class="chat-input" ng-style="status.getInputWidth('wide')" ng-model="flight.location1" ng-model-options="{ updateOn: 'blur' }"
+                        ng-change="status.updateFirebase('location1',flight)" placeholder="Location/Route Update"></textarea>
+                <span>/</span>
+                <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next1" ng-model-options="{ updateOn: 'blur' }"
+                        ng-change="status.updateFirebase('next1',flight)" placeholder="00:00"></textarea>
+              </div>
+        
+              <div class="chat-update-row">
+                <label>Time</label>
+                <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time2" ng-model-options="{ updateOn: 'blur' }"
+                        ng-change="status.updateFirebase('time2',flight)" placeholder="00:00"></textarea>
+                <span>/</span>
+                <textarea class="chat-input" ng-style="status.getInputWidth('wide')" ng-model="flight.location2" ng-model-options="{ updateOn: 'blur' }"
+                        ng-change="status.updateFirebase('location2',flight)" placeholder="Location/Route Update"></textarea>
+                <span>/</span>
+                <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next2" ng-model-options="{ updateOn: 'blur' }"
+                        ng-change="status.updateFirebase('next2',flight)" placeholder="00:00"></textarea>
+              </div>
+              
+              <div class="chat-update-row">
+                <label>Time</label>
+                <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time3" ng-model-options="{ updateOn: 'blur' }"
+                        ng-change="status.updateFirebase('time3',flight)" placeholder="00:00"></textarea>
+                <span>/</span>
+                <textarea class="chat-input" ng-style="status.getInputWidth('wide')" ng-model="flight.location3" ng-model-options="{ updateOn: 'blur' }"
+                        ng-change="status.updateFirebase('location3',flight)" placeholder="Location/Route Update"></textarea>
+                <span>/</span>
+                <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next3" ng-model-options="{ updateOn: 'blur' }"
+                        ng-change="status.updateFirebase('next3',flight)" placeholder="00:00"></textarea>
+              </div>
             </div>
-      
-            <div class="chat-update-row">
-              <label>Time</label>
-              <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time2" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('time2',flight)" placeholder="00:00"></textarea>
-              <span>/</span>
-              <textarea class="chat-input" ng-style="status.getInputWidth('wide')" ng-model="flight.location2" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('location2',flight)" placeholder="Location/Route Update"></textarea>
-              <span>/</span>
-              <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next2" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('next2',flight)" placeholder="00:00"></textarea>
-            </div>
-            
-            <div class="chat-update-row">
-              <label>Time</label>
-              <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time3" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('time3',flight)" placeholder="00:00"></textarea>
-              <span>/</span>
-              <textarea class="chat-input" ng-style="status.getInputWidth('wide')" ng-model="flight.location3" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('location3',flight)" placeholder="Location/Route Update"></textarea>
-              <span>/</span>
-              <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next3" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('next3',flight)" placeholder="00:00"></textarea>
-            </div>
-            
           </section>
       
         </div>

@@ -511,11 +511,9 @@ div.airport-pink h1{
 .chat-flight-id {
   background: #0f4c5c;
   color: white;
-  font-size: 1.5em;
   font-weight: bold;
   padding: 10px;
   margin-bottom:2px;
-  min-width: 160px;
   text-align: center;
 }
 
@@ -529,6 +527,10 @@ div.airport-pink h1{
   flex-wrap: wrap;
   gap: 15px;
   margin-bottom: 5px;
+}
+
+.chat-top-row > :last-child {
+  margin-left: auto;
 }
 
 .chat-status {
@@ -553,7 +555,6 @@ div.airport-pink h1{
 .chat-input {
   border: 1px solid #333;
   margin: 0px 10px 0px 10px;
-  height:25px;
 }
 
 .chat-input.chat-wide {
@@ -579,5 +580,5 @@ div.airport-pink h1{
 }
 
 .chat-update-row label {
-  width: 50px;
+  width: 3em;
 }

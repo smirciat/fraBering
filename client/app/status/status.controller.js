@@ -111,13 +111,28 @@ class StatusComponent {
     };
     this.getWidth=window.getWidth;
     this.getInputWidth=function(kind){
-      let columnWidth=this.width*3/8;
-      if (kind==="wide") return {"width":Math.floor(columnWidth*9.5/15)};
-      if (kind==="init") return {"width":Math.floor(columnWidth*2/15),"height":"25px"};
-      return {"width":Math.floor(columnWidth*1.3/15)};
+      let modifier=1;
+      let heightMod=1;
+      let fontMod=1;
+      if (this.width>768) modifier=3/7;
+      else {
+        heightMod=2;
+        fontMod=3;
+      }
+      let columnWidth=this.width*modifier;
+      if (kind==="wide") return {"width":Math.floor(columnWidth*9.5/15),"height":Math.floor(heightMod*columnWidth/33),"font-size":Math.floor(fontMod*this.width/(120))};
+      if (kind==="init") return {"width":Math.floor(columnWidth*2/15),"height":Math.floor(heightMod*columnWidth/33),"font-size":Math.floor(fontMod*this.width/(120))};
+      return {"width":Math.floor(columnWidth*1.3/15),"height":Math.floor(heightMod*columnWidth/33),"font-size":Math.floor(fontMod*this.width/(120))};
     };
-    this.getChatFontSize=function(){
-      return {"font-size":Math.floor(this.width/120)};
+    this.getChatFontSize=function(size){
+      let modifier=1;
+      if (this.width<=768) modifier=5;
+      if (size==='lg') return {"font-size":Math.floor(modifier*this.width/80),"height":Math.floor(modifier*this.width/34)};
+      return {"font-size":Math.floor(modifier*this.width/120)};
+    };
+    this.upOrDown=function(bool){
+      if (!bool) return "fa fa-solid fa-angle-down fa-lg";
+      return "fa fa-solid fa-angle-up fa-lg";
     };
     
     this.isFilter=window.isFilter;
