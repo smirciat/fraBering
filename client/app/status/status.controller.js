@@ -609,7 +609,8 @@ class StatusComponent {
   }
   
   initHelis(){
-    this.http.post('/api/airplanes/firebaseDate',{collection:"flights",date:this.date}).then(res=>{
+    this.dateString=new Date(this.date).toLocaleDateString();
+    this.http.post('/api/airplanes/firebaseDate',{collection:"flights",date:this.dateString}).then(res=>{
       this.heliFirebaseFlights=res.data;
       this.syncHelis(this.heliFirebaseFlights);
       this.socket.socket.removeAllListeners('firebaseFlights');
