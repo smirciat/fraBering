@@ -627,7 +627,7 @@ class StatusComponent {
     if (!firebaseFlights) firebaseFlights=this.heliFirebaseFlights;
     if (!firebaseFlights) return;
     let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H","MD500"];
-    this.heliFlights.forEach(flight=>{
+    if (this.heliFlights) this.heliFlights.forEach(flight=>{
       let index=firebaseFlights.map(e=>e._id).indexOf(flight._id);
       if (index>-1) firebaseFlights[index].extend=flight.extend;
     });
