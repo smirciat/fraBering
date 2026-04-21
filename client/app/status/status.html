@@ -34,7 +34,7 @@
               {{status.getFlightNum(flight)}}
             </p>
           </div>
-          <div style="padding-left:0.5em;">
+          <div style="padding-left:0.3em;">
             <p style="margin:0px; border:none;">
               <span style="float:left;margin-right:5px;">
                  &nbsp{{flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot||"") + '/ ' + 
@@ -120,16 +120,16 @@
           <!-- Route Updates -->
           <section class="chat-updates">
             <div class="chat-updates-header">
-              <span ng-click="flight.extend=!flight.extend"><strong>Route Updates</strong>&nbsp<i ng-class="status.upOrDown(flight.extend)"></i></span>
-              <span>Location/Plan</span>
-              <span>Next Update: 
+              <span ng-click="flight.extend=!flight.extend"><strong>Flight Plan</strong>&nbsp<i ng-class="status.upOrDown(flight.extend)"></i></span>
+              <span  ng-if="flight.extend">Location/Plan</span>
+              <span  ng-if="flight.extend">Next Update: 
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.nextUpdate" ng-model-options="{ updateOn: 'blur' }"
                       ng-change="status.updateFirebase('nextUpdate',flight)" placeholder="00:00"></textarea>
               </span>
             </div>
             <div ng-if="flight.extend">
               <div class="chat-update-row">
-                <label>Time</label>
+                <span><strong>Time</strong></span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time1" ng-model-options="{ updateOn: 'blur' }"
                         ng-change="status.updateFirebase('time1',flight)" placeholder="00:00"></textarea>
                 <span>/</span>
@@ -141,7 +141,7 @@
               </div>
         
               <div class="chat-update-row">
-                <label>Time</label>
+                <span><strong>Time</strong></span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time2" ng-model-options="{ updateOn: 'blur' }"
                         ng-change="status.updateFirebase('time2',flight)" placeholder="00:00"></textarea>
                 <span>/</span>
@@ -153,7 +153,7 @@
               </div>
               
               <div class="chat-update-row">
-                <label>Time</label>
+                <span><strong>Time</strong></span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time3" ng-model-options="{ updateOn: 'blur' }"
                         ng-change="status.updateFirebase('time3',flight)" placeholder="00:00"></textarea>
                 <span>/</span>
@@ -163,13 +163,25 @@
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next3" ng-model-options="{ updateOn: 'blur' }"
                         ng-change="status.updateFirebase('next3',flight)" placeholder="00:00"></textarea>
               </div>
+              <div class="chat-update-row" style="padding:0 3em 0 3em;background-color:lightgray;">
+                <span><strong>Depart</strong></span>
+                <span>{{flight.fltPlan.dep}}&nbsp/&nbsp{{flight.fltPlan.depTime}}</span>
+              </div>
+              <div class="chat-update-row" style="padding:0 3em 0 3em;background-color:lightgray;">
+                <span><strong>Arrive</strong></span>
+                <span>{{flight.fltPlan.arr}}&nbsp/&nbsp{{flight.fltPlan.arrTime}}</span>
+              </div>
+              <div ng-repeat="element in flight.fltPlanElements" class="chat-update-row" style="padding:0 3em 0 3em;background-color:lightgray;">
+                <span><strong>{{element.label}}</strong></span>
+                <span>{{element.value}}</span>
+              </div>
             </div>
           </section>
       
         </div>
       </div>
        <!--<div class="light-border">
-         <div style="padding-left:0.5em;">
+         <div style="padding-left:0.3em;">
           <p style="margin:0px; border:none;">
             <strong>{{' ' + flight.acftNumber + ', ' + flight.pilot}}</strong>
             <strong ng-if="flight.coPilot">{{'/ ' + flight.coPilot+', '}}</strong>
@@ -426,7 +438,7 @@
             {{status.getFlightNum(flight)}}
           </p>
         </div>
-        <div style="padding-left:0.5em;">
+        <div style="padding-left:0.3em;">
           <p style="margin:0px; border:none; display:inline-block;">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + 
                (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong>{{flight.flightStatus}}</strong></p>
                
@@ -450,7 +462,7 @@
             {{status.getFlightNum(flight)}}
           </p>
         </div>
-        <div style="padding-left:0.5em;">
+        <div style="padding-left:0.3em;">
           <p style="margin:0px; border:none; display:inline-block;font-weight:bold">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + 
                (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong ng-style="status.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong></p>
                
@@ -462,14 +474,14 @@
             </p>
           </div>
         </div>  
-        <div style="padding-left:0.5em;" ng-if="flight.pfr.legArray[0].fuel&&flight.pfr.legArray[0].fuel>99">
+        <div style="padding-left:0.3em;" ng-if="flight.pfr.legArray[0].fuel&&flight.pfr.legArray[0].fuel>99">
           <p>Fuel Request:</p>
           <p style="font-weight:bold">{{status.fuelRequest(flight)}}</p>
         </div>
-        <div style="padding-left:0.5em;" ng-if="!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100">
+        <div style="padding-left:0.3em;" ng-if="!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100">
           <p>NOT READY</p>
         </div>
-        <div style="padding-left:0.5em;">
+        <div style="padding-left:0.3em;">
           <p>
             <input type="checkbox" ng-model="flight.fueled" ng-click="status.getFuel(flight)" style="accent-color:green" ng-disabled="!flight.pfr">
             &nbspFueler&nbsp<input style="width:30px" type="text" ng-model="flight.fueledBy" ng-blur="status.getFuel(flight,'initials')" ng-disabled="!flight.pfr">/{{flight.fueledTimestamp||''}}
@@ -481,7 +493,7 @@
             &nbspGallons Uplifted&nbsp<input style="width:30px" type="text" ng-model="flight.gallonsUplifted" ng-blur="status.getFuel(flight,'gallons')" ng-disabled="!flight.pfr">
           </p>-->
         </div>
-        <div style="padding-left:0.5em;">
+        <div style="padding-left:0.3em;">
           <p>Load Available</p>
           <p style="font-weight:bold">{{status.laCalc(flight)}}</p>
         </div>

@@ -631,7 +631,29 @@ class StatusComponent {
       return helis.indexOf(flight.acftType)>-1&&flight.acftNumber
         &&flight.acftNumber.substring(0,1).toUpperCase()==="N"
         &&this.date.toLocaleDateString()===new Date(flight.dateString).toLocaleDateString();
+    }).sort((a,b)=>{
+      if (!a.fltPlan||!a.fltPlan.depTime) return 1;
+      if (!b.fltPlan||!b.fltPlan.depTime) return -1;
+      if (a.fltPlan.depTime.length===3) a.fltPlan.depTime='0'+a.fltPlan.depTime;
+      if (b.fltPlan.depTime.length===3) b.fltPlan.depTime='0'+b.fltPlan.depTime;
+      const arr1=a.fltPlan.depTime.split(':');
+      if (arr1.length>1&&a.fltPlan.depTime.length===4) a.fltPlan.depTime='0'+a.fltPlan.depTime;
+      const arr2=b.fltPlan.depTime.split(':');
+      if (arr2.length>1&&b.fltPlan.depTime.length===4) b.fltPlan.depTime='0'+b.fltPlan.depTime;
+      return a.fltPlan.depTime-b.fltPlan.depTime;
     });
+    this.heliFlights.forEach(flight=>{
+      flight.fltPlanElements=[];
+      let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray'];
+      if (flight.fltPlan&&this.isPlainObject(flight.fltPlan)) for (const [key, value] of Object.entries(flight.fltPlan)) {
+        if (excludedKeys.indexOf(key)>-1) continue;
+        if (value) flight.fltPlanElements.push({label:key,value:value.toString()});
+      }
+    });
+  }
+  
+  isPlainObject(val) {
+    return !!val && typeof val === 'object' && !Array.isArray(val);
   }
   
   consoleLog(text){

@@ -582,3 +582,7 @@ div.airport-pink h1{
 .chat-update-row label {
   width: 3em;
 }
+
+.chat-update-row > :last-child {
+  margin-left: auto;
+}
