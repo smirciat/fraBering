@@ -647,9 +647,18 @@ class StatusComponent {
       let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray'];
       if (flight.fltPlan&&this.isPlainObject(flight.fltPlan)) for (const [key, value] of Object.entries(flight.fltPlan)) {
         if (excludedKeys.indexOf(key)>-1) continue;
-        if (value) flight.fltPlanElements.push({label:key,value:value.toString()});
+        if (value) flight.fltPlanElements.push({label:this.camelToTitle(key),value:value.toString()});
       }
     });
+  }
+  
+  camelToTitle(str) {
+    return str
+      // 1. Insert a space before all caps
+      .replace(/([A-Z])/g, ' $1')
+      // 2. Capitalize the first letter
+      .replace(/^./, (match) => match.toUpperCase())
+      .trim();
   }
   
   isPlainObject(val) {
