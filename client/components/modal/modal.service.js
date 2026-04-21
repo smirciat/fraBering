@@ -619,6 +619,34 @@ angular.module('workspaceApp')
             });
           };
         } ,
+        text: function(cb) {
+          cb = cb || angular.noop;
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                messages = args.shift(),
+              quickModal = openModal({
+              modal: {
+                messages:messages,
+                textModal:true,
+                title: 'Incoming Spidertrackes Text Messages',
+                buttons: [ {//this is where you define you buttons and their appearances
+                  classes: 'btn-primary',
+                  text: 'Confirm',
+                  click: function(event) {
+                    
+                    quickModal.close(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+
+            quickModal.result.then(function(event) {
+              cb.apply(event); //this is where all callback is actually called
+            }).catch(err=>{
+              console.log(err);
+            });
+          };
+        } ,
         runway: function(cb) {
           cb = cb || angular.noop;
           return function() {

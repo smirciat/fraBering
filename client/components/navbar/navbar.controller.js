@@ -13,8 +13,10 @@ class NavbarController {
   isCollapsed = true;
   //end-non-standard
 
-  constructor(Auth,$interval,$http,$scope,$timeout,$window) {
+  constructor(Auth,$interval,$http,$scope,$timeout,$window,Modal,socket) {
     this.Auth=Auth;
+    this.Modal=Modal;
+    this.socket=socket;
     this.isLoggedIn = Auth.isLoggedIn;
     this.isAdmin = Auth.isAdmin;
     this.hasRole = Auth.hasRole;
@@ -69,6 +71,10 @@ class NavbarController {
                {v:'BUCKLAND',c:'PABL'},
                {v:'DEERING',c:'PADE'}
     ];
+    this.textModal=this.Modal.confirm.text(response=>{});
+    $scope.$on('$destroy', function() {
+      this.socket.unsyncUpdates('sm');
+    });
   }
   
   $onInit() {
@@ -106,9 +112,7 @@ class NavbarController {
         this.interval.cancel(this.myInterval);
       }
     },1000);
-    //this.scope.$watch('status.toggleAssigned',(newVal,oldVal)=>{
-      //this.isToggleAssigned=newVal;
-    //});
+    this.initTextMessages();
   }
   
   stoppedFunction(){
@@ -551,6 +555,30 @@ class NavbarController {
   
   refresh(){
     this.scope.status.resetFlights();
+  }
+  
+  buttonClass(){
+    let unread=false;
+    if (this.textMessages) this.textMessages.forEach(message=>{
+      if (!message.read) unread=true;
+    });
+    if (unread) return 'button-flashing';
+    return 'btn btn-success';
+  }
+  
+  initTextMessages(){
+    this.socket.unsyncUpdates('sm');
+    this.http.get('/api/sms').then(res=>{
+      this.textMessages=res.data;
+      console.log(this.textMessages);
+      this.socket.syncUpdates('sm', this.textMessages,(event,item,array)=>{
+        
+      });
+    });
+  }
+  
+  showTextMessages(){
+    this.textModal(this.textMessages);
   }
 }
 

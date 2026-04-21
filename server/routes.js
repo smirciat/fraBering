@@ -31,7 +31,7 @@ export default function(app) {
   app.use('/api/airportRequirements', require('./api/airportRequirement'));
   app.use('/api/monitors', require('./api/monitor'));
   app.use('/api/airplanes', require('./api/airplane'));
-  app.use(lusca.csrf({angular:true}));
+  //app.use(lusca.csrf({angular:true}));
   app.get('/fileserver', function(req, res){
     if (req.query) res.sendFile("./fileserver/" + req.query.filename, {root: __dirname});
     else res.status(500);

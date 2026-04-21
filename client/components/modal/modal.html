@@ -7,7 +7,9 @@
   <div ng-if="modal.metarModal">
     <div ng-repeat="metar in modal.airport.metars"><p style="font-weight:bold">{{metar}}</p></div>
   </div>
-  
+  <div ng-if="modal.textModal">
+    <div ng-repeat="message in modal.text.messages"><p style="font-weight:bold">{{message.body}}</p></div>
+  </div>
   <div ng-if="modal.weatherModal">
     <p>Previous Timestamp: {{modal.getTimestamp()}}</p>
     <p>Previous Signature: {{modal.manualObs.previousSignature}}</p>

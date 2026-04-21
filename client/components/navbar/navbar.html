@@ -68,9 +68,14 @@
             <button ng-if="nav.fileExists" class="btn btn-default" ng-click="nav.uploadCSV()">Upload CSV</button>
           </div>
         </li>
-        <li ng-if="nav.Auth.isUser()" style="padding-top:7px;padding-left:2em;">
+        <li ng-if="nav.Auth.isUser()&&nav.base.base!=='HEL'" style="padding-top:7px;padding-left:2em;">
           <button class="btn" ng-class="nav.filterButton(nav.isFilter)" ng-click="nav.changeIsFilter()" style="font-weight:bold">
             {{nav.buttonMessage(nav.isFilter)}}
+          </button>
+        </li>
+        <li ng-if="nav.Auth.isUser()&&nav.base.base==='HEL'" style="padding-top:7px;padding-left:2em;">
+          <button ng-class="nav.buttonClass()" ng-click="nav.showTextMessages()" style="font-weight:bold">
+            Show Text Messages
           </button>
         </li>
       </ul>
