@@ -399,7 +399,8 @@
           <span class="span-modal" ng-if="modal.flight.equipment.name==='Caravan'">
             (Does Not Include TKS)
           </span>
-          <span class="span-modal" ng-class="modal.checkOWE()" style="float:right; padding-right:5px;font-weight:bold;">{{modal.flight.pfr.legArray[0].operatingWeightEmpty}}</span>
+          <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">{{modal.flight.pfr.legArray[0].operatingWeightEmpty}}</span>
+          <!--<span class="span-modal" ng-class="modal.checkOWE()" style="float:right; padding-right:5px;font-weight:bold;">{{modal.flight.pfr.legArray[0].operatingWeightEmpty}}</span>-->
         </div>
       </div>
       <div class="orange-line white" ng-repeat="item in modal.summaryInfo track by $index" ng-hide="(modal.flight.equipment.name==='Caravan'&&item.title==='MaxZFW')||(modal.flight.equipment.name!=='Caravan'&&item.title==='TKS (From iPad)')" ng-style="{'font-weight' : item.title==='T/O Fuel' ? 'bold' : '100'}">
