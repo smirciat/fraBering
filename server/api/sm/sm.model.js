@@ -13,6 +13,9 @@ export default function(sequelize, DataTypes) {
     body: DataTypes.STRING,
     sent: DataTypes.DATE,
     mediaUrl: DataTypes.STRING,
+    read: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false},
     autoSMS: {
       type: DataTypes.BOOLEAN,
       defaultValue: false}

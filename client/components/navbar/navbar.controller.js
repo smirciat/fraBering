@@ -71,7 +71,11 @@ class NavbarController {
                {v:'BUCKLAND',c:'PABL'},
                {v:'DEERING',c:'PADE'}
     ];
-    this.textModal=this.Modal.confirm.text(response=>{});
+    this.textModal=this.Modal.confirm.text(response=>{
+      response.forEach(message=>{
+        if (message.changed) this.http.patch('/api/sms/'+message._id,{read:message.read}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
+      });
+    });
     $scope.$on('$destroy', function() {
       this.socket.unsyncUpdates('sm');
     });
@@ -569,7 +573,9 @@ class NavbarController {
   initTextMessages(){
     this.socket.unsyncUpdates('sm');
     this.http.get('/api/sms').then(res=>{
-      this.textMessages=res.data;
+      this.textMessages=res.data.sort((a,b)=>{
+        return new Date(b.sent) - new Date(a.sent);
+      });
       console.log(this.textMessages);
       this.socket.syncUpdates('sm', this.textMessages,(event,item,array)=>{
         
