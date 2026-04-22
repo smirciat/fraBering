@@ -625,10 +625,8 @@ angular.module('workspaceApp')
             var args = Array.prototype.slice.call(arguments),
               messages = args.shift(),
               updateChanged=function(message){
-                message.changed=true;
                 let i=messages.map(e=>e._id).indexOf(message._id);
                 if (i>-1) messages[i].changed=true;
-                console.log(messages)
               },
               quickModal = openModal({
               modal: {
@@ -639,12 +637,11 @@ angular.module('workspaceApp')
                 },
                 updateChanged:updateChanged,
                 title: 'Incoming Spidertrackes Text Messages',
-                html: '<p> <strong>Click Message After Reading to Confirm</strong> </p>',
+                html: '<p> <strong>Check Message After Reading to Confirm</strong> </p>',
                 buttons: [ {//this is where you define you buttons and their appearances
                   classes: 'btn-primary',
                   text: 'Confirm',
                   click: function(event) {
-                    
                     quickModal.close(event);
                   }
                 }]

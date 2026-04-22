@@ -88,33 +88,29 @@
                   <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.ocSign" ng-model-options="{ updateOn: 'blur' }"
                       ng-change="status.updateFirebase('ocSign',flight,true)" placeholder="Int/Time"></textarea>
                 </span>
-                <span class="chat-fuel">Fuel: {{flight.legArray[0].fuel}}&nbspLA:</span>
+                <span class="chat-fuel">Fuel: {{flight.fltPlan.fuel}}hrs&nbspLA:</span>
               </div>
       
               <div class="chat-sub-row">
                 <span>{{flight.fltPlan.depTime}} - {{flight.fltPlan.arrTime}}</span>
                 <span>{{flight.fltPlan.dep}} - {{flight.fltPlan.arr}}</span>
                 <span>ETE {{flight.fltPlan.timeEnroute||'00'}} hrs</span>
-                <span><strong>Remarks:</strong>{{flight.missionDetails}}</span>
+                <span>AFF: ✔ OFF@
+                  <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.affCheck" ng-model-options="{ updateOn: 'blur' }"
+                          ng-change="status.updateFirebase('affCheck',flight,true)" placeholder="Int/Time"></textarea>
+                </span>
               </div>
+              
             </div>
           </header>
       
           <!-- Status Row -->
-          <section class="chat-status-row">
-            <div>OFF at 
-              <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.offAt" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('offAt',flight)" placeholder="00:00"></textarea>
-            </div>
-            <div>5min AFF track check ✔ 
-              <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.affCheck" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('affCheck',flight,true)" placeholder="Int/Time"></textarea>
-            </div>
-            <div>ETA: <strong>{{flight.fltPlan.arrTime}}</strong></div>
-            <div>ON at 
+          <section class="chat-sub-row">
+            <span><strong>Remarks:</strong>{{flight.missionDetails}}</span>
+            <span>ON@
               <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.onAt" ng-model-options="{ updateOn: 'blur' }"
                       ng-change="status.updateFirebase('onAt',flight)" placeholder="00:00"></textarea>
-            </div>
+            </span>
           </section>
       
           <!-- Route Updates -->
@@ -162,6 +158,12 @@
                 <span>/</span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next3" ng-model-options="{ updateOn: 'blur' }"
                         ng-change="status.updateFirebase('next3',flight)" placeholder="00:00"></textarea>
+              </div>
+              <div class="chat-update-row" style="padding:0 3em 0 3em;background-color:lightgray;">
+                <span><strong>Flight Data</strong></span>
+                <span>{{flight.dateString}}&nbsp/&nbsp{{flight.fltPlan.flightRules}}&nbsp/&nbsp{{flight.fltPlan.flightID}}
+                    &nbsp/&nbsp{{flight.fltPlan.acftType}}&nbsp/&nbsp{{flight.fltPlan.tas}}kts&nbsp/&nbsp{{flight.fltPlan.color}}
+                    &nbsp/&nbsp{{flight.fltPlan.altitude}}</span>
               </div>
               <div class="chat-update-row" style="padding:0 3em 0 3em;background-color:lightgray;">
                 <span><strong>Depart</strong></span>

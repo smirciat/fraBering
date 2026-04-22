@@ -522,7 +522,7 @@ div.airport-pink h1{
 }
 
 .chat-top-row,
-.schat-ub-row {
+.chat-sub-row {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
@@ -584,6 +584,10 @@ div.airport-pink h1{
 }
 
 .chat-update-row > :last-child {
+  margin-left: auto;
+}
+
+.chat-sub-row > :last-child {
   margin-left: auto;
 }
 

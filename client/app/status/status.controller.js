@@ -648,7 +648,7 @@ class StatusComponent {
     });
     this.heliFlights.forEach(flight=>{
       flight.fltPlanElements=[];
-      let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray'];
+      let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray','altitude','flightRules','flightID','acftType','color','tas'];
       if (flight.fltPlan&&this.isPlainObject(flight.fltPlan)) for (const [key, value] of Object.entries(flight.fltPlan)) {
         if (excludedKeys.indexOf(key)>-1) continue;
         if (value) flight.fltPlanElements.push({label:this.camelToTitle(key),value:value.toString()});
