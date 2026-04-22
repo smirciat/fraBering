@@ -576,9 +576,10 @@ class NavbarController {
       this.textMessages=res.data.sort((a,b)=>{
         return new Date(b.sent) - new Date(a.sent);
       });
-      console.log(this.textMessages);
       this.socket.syncUpdates('sm', this.textMessages,(event,item,array)=>{
-        
+        this.textMessages=array.sort((a,b)=>{
+          return new Date(b.sent) - new Date(a.sent);
+        });
       });
     });
   }
