@@ -30,7 +30,7 @@
 
   display: grid;
   grid:
-    ". . . ."
+    ". . . . ."
     / 2fr 3fr 1fr 1fr 1fr;
   gap: 8px;
 }
@@ -40,7 +40,7 @@
 
   display: grid;
   grid:
-    ". . . ."
+    ". . . . ."
     / 2fr 3fr 1fr 1fr 1fr;
   gap: 8px;
 }
@@ -589,6 +589,14 @@ div.airport-pink h1{
 
 .chat-sub-row > :last-child {
   margin-left: auto;
+}
+
+.chat-row{width: 100%;
+  display: grid;
+  grid:
+    ". ."
+    / 4fr 1fr;
+  gap: 8px;
 }
 
 .button-flashing {

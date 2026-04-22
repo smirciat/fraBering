@@ -105,9 +105,9 @@
           </header>
       
           <!-- Status Row -->
-          <section class="chat-sub-row">
+          <section class="chat-row">
             <span><strong>Remarks:</strong>{{flight.missionDetails}}</span>
-            <span>ON@
+            <span style="margin-left: auto;">ON@
               <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.onAt" ng-model-options="{ updateOn: 'blur' }"
                       ng-change="status.updateFirebase('onAt',flight)" placeholder="00:00"></textarea>
             </span>
