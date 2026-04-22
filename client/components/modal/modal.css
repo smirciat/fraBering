@@ -1,3 +1,6 @@
+:root{
+  --modal-dialog-width:50%;
+}
 .modal-primary .modal-header,
 .modal-info .modal-header,
 .modal-success .modal-header,
@@ -20,6 +23,9 @@
 }
 .modal-danger .modal-header {
   background: #d9534f;
+}
+.modal-dialog{
+  min-width: var(--modal-dialog-width);
 }
 .modal-contaminent-layout{
   width: 100%;

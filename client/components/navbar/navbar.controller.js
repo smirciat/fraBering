@@ -92,6 +92,7 @@ class NavbarController {
     if (window.localStorage.getItem('baseIndex')!==null&&window.localStorage.getItem('baseIndex')!=='undefined') this.base=this.bases[window.localStorage.getItem('baseIndex')];
     else this.base=this.bases[0];
     window.base=this.base;
+    this.updateBase();
     window.dateString=this.dateString;
     if (window.stoppedInterval) this.interval.cancel(window.stoppedInterval);
     window.stoppedInterval=this.interval(()=>{
@@ -120,7 +121,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='58';
+    let version='59';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -189,6 +190,12 @@ class NavbarController {
     let index=this.bases.map(e => e.base).indexOf(this.base.base);
     if (index>-1) window.localStorage.setItem('baseIndex',index);
     window.base=this.base;
+    if (index===3) {
+      document.documentElement.style.setProperty('--modal-dialog-width', '75%');
+    }
+    else {
+      document.documentElement.style.setProperty('--modal-dialog-width', '50%');
+    }
   }
   
   convertToAirport(string){
