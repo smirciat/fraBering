@@ -9,21 +9,15 @@ import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
 import localEnv from './config/local.env.js';
-import {setupSocket} from './api/airplane/airplane.controller.js';
-import {setBearer,getFlightLogs} from './api/todaysFlight/todaysFlight.controller.js';
+import {tf,setBearer,getFlightLogs} from './api/todaysFlight/todaysFlight.controller.js';
 import {setRosterDay} from './api/calendar/calendar.controller.js';
-import {observe,observePilots,setPreviousPfrs} from './api/airplane/airplane.controller.js';
-import {syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
+import {setupSocket,observe,observePilots,setPreviousPfrs,firebaseInterval} from './api/airplane/airplane.controller.js';
+import {metars,tafs,syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
 
 //import http from 'http';
 import https from 'https';
 const schedule = require('node-schedule');
-const baseUrl = 'https://localhost:' + config.port;
-const axios = require("axios");
 const helmet = require("helmet");
-const agent = new https.Agent({
-    rejectUnauthorized: false
-});
 var privateKey  = fs.readFileSync(localEnv.KEY, 'utf8');
 var certificate = fs.readFileSync(localEnv.CERT, 'utf8');
 var credentials = {key: privateKey, cert: certificate};
@@ -71,39 +65,24 @@ require('./config/express').default(app);
 require('./routes').default(app);
 setupSocket(socketio);
 
-let callbackFunction=()=>{
-  getFlightLogs();
-  setTimeout(()=>{
-    axios.post(baseUrl + '/api/todaysFlights/tf',{dateString:new Date().toLocaleDateString()}, { httpsAgent: agent })
-        .then((response)=>{
-          console.log('interval going');
-        })
-        .catch(err=>{
-          let e=err;
-          if (err&&err.response) e=err.response.data;
-          console.log(e);
-        });
-  },100);
+let callbackFunction=async ()=>{
+  await getFlightLogs();
+  console.time('TF Function');
+  console.log(await tf());
+  console.timeEnd('TF Function');
 };
 
 let metarFunction=async ()=>{
   await syncPireps();
-  axios.post(baseUrl + '/api/airportRequirements/metars',{}, { httpsAgent: agent })
-        .then((response)=>{
-          console.log('metar interval going at ' +new Date().toLocaleString());
-        })
-        .catch(err=>{
-          if (err.response) console.log(err.response.data);
-          else console.log(err);
-        });
+  console.time('Metar Function');
+  console.log(await metars());
+  console.timeEnd('Metar Function');
 };
 
-let tafFunction=()=>{
-  axios.post(baseUrl + '/api/airportRequirements/tafs',{}, { httpsAgent: agent })
-        .then((response)=>{
-          console.log('taf interval going at ' +new Date().toLocaleString());
-        })
-        .catch(err=>{console.log(err)});
+let tafFunction=async ()=>{
+  console.time('TAF Function');
+  console.log(await tafs());
+  console.timeEnd('TAF Function');
 };
 
 let observerFunction=async ()=>{
@@ -113,13 +92,9 @@ let observerFunction=async ()=>{
 };
 
 let firebaseFunction=async ()=>{
-  return axios.post(baseUrl + '/api/airplanes/firebaseInterval',{}, { httpsAgent: agent })
-        .then((response)=>{
-          console.log('firebase interval going at ' +new Date().toLocaleString());
-          console.log('All Pfrs Length:')
-          console.log(response.data.length);
-        })
-        .catch(err=>{console.log(err)});
+  console.time('Firebase Interval');
+  console.log(await firebaseInterval());
+  console.timeEnd('Firebase Interval');
 };
 
 let updateRoster=async (date)=>{
@@ -138,9 +113,8 @@ function startServer() {
     schedule.scheduleJob('30 0 * * *',observerFunction);
     metarFunction();
     tafFunction();
-    firebaseFunction().then(()=>{
-      callbackFunction();
-    });
+    await firebaseFunction();
+    callbackFunction();
     setInterval(firebaseFunction,60*60*1000);
     setInterval(callbackFunction,1*60*1000); 
     setInterval(metarFunction,3*60*1001);  

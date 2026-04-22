@@ -821,11 +821,13 @@ export async function tf(req,res) {
           .catch(handleErrorMultiple(res));
       });
     }
-    res.status(200).json('success');
+    if (res) return res.status(200).json('success');
+    return 'TF Function success @'+ new Date().toLocaleString();
   }
   catch(err){
     console.log(err);
-    res.status(404).json("Failure");
+    if (res) return res.status(404).json("Failure");
+    return 'TF Function FAIL @'+ new Date().toLocaleString();
   }
 }
 

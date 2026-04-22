@@ -551,7 +551,8 @@ export async function firebaseInterval(req,res){
     console.log(err);
   }
   finally{
-    res.status(status).json(allPfrs);
+    if (res) return res.status(status).json(allPfrs);
+    return 'allPfrs Length is: ' + allPfrs.length;
   }
 }
 

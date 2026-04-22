@@ -251,12 +251,13 @@ export async function tafs(req,res) {
       //});
     }
     console.log('TAFs updated ');
-    res.status(200).json('Tafs updated');
+    if (res) return res.status(200).json('Tafs updated');
+    return 'Tafs updated';
   }
   catch(err){
     console.log(err);
-//    res.status(200).json('failure to update tafs');
-    res.status(404).json('Failed update tafs for allAirports array');
+    if (res) return res.status(404).json('Failed update tafs for allAirports array');
+    return 'Failed update tafs for allAirports array';
   }
 }
 
@@ -264,10 +265,6 @@ export async function metars(req,res) {
   let allAirports=[];
   try {
     const hour=new Date().getHours();
-    if (false){//(hour<6||hour>18) {
-      console.log('no metar fetching at night');
-      return res.status(201).json('No Metars at night');
-    }
     //initialize airport list from database table if it is empty
     if (true){//(allAirports.length===0||count>=24) {
       count=0;
@@ -305,8 +302,8 @@ export async function metars(req,res) {
         //adjacent metar if WBB or OBU
         if (airport.threeLetter==='OBU') {
           try {
-            let res=await getMetarSynoptic('PAGH');
-            airport.metarObj={adjacentMetar:res.metar};
+            let resp=await getMetarSynoptic('PAGH');
+            airport.metarObj={adjacentMetar:resp.metar};
           }
           catch(err) {
             console.log(err);
@@ -314,8 +311,8 @@ export async function metars(req,res) {
         }
         if (airport.threeLetter==='WBB') {
           try {
-            let res=await getMetarSynoptic('PAMK');
-            airport.metarObj={adjacentMetar:res.metar};
+            let resp=await getMetarSynoptic('PAMK');
+            airport.metarObj={adjacentMetar:resp.metar};
           }
           catch(err) {
             console.log(err);
@@ -358,11 +355,13 @@ export async function metars(req,res) {
       //});
     }
     console.log('Metars updated for array of length ' + allAirports.length);
-    res.status(200).json('allAirports array populated with ' + allAirports.length + ' elements');
+    if (res) return res.status(200).json('allAirports array populated with ' + allAirports.length + ' elements');
+    return 'allAirports array populated with ' + allAirports.length + ' elements';
   }
   catch(err){
     console.log(err);
-    res.status(404).json('Failed update metars for allAirports array');
+    if (res) return res.status(404).json('Failed update metars for allAirports array');
+    return 'Failed update metars for allAirports array';
   }
 } 
 
