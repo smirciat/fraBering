@@ -1243,6 +1243,7 @@ class StatusComponent {
       this.sortedPilots=[];
       this.wholeRoster=res.data;
       let basePilotRoster=res.data.filter(pilot=>{
+        if (pilot.employee_full_name==="Sam Kendall") return false;
         if (pilot.location_name) {
           pilot.position=pilot.location_name.split(' ')[1];
           pilot.location=pilot.location_name.split(' ')[0];
