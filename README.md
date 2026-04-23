@@ -23,15 +23,15 @@ This project was generated with the [Angular Full-Stack Generator](https://githu
 ### Developing
 
 1. Run `npm install` to install server dependencies.
-  --ensure package-lock.json file is present
-  --use node 4 for first run through, may need to insall python ~2.7 to make it work
-  --use node 6 and run `npm install` again
-  --finally, use node 10 or 12 (12 preferred) and run `npm install`
+  a. nsure package-lock.json file is present
+  b. use node 4 for first run through, may need to insall python ~2.7 to make it work
+  c. use node 6 and run `npm install` again
+  d. finally, use node 10 or 12 (12 preferred) and run `npm install`
 
 2. Run `bower install` to install front-end dependencies.
-  --some bower components may not automatically install.  They will need to be added manually after viewing the console  
+  a. some bower components may not automatically install.  They will need to be added manually after viewing the console  
       errors that appear
-  --will need local versions of development.js, local.env.js, and firebase.json files to get server running without errors
+  b. will need local versions of development.js, local.env.js, and firebase.json files to get server running without errors
 
 3. Run `grunt serve` to start the development server. It should automatically open the client in your browser when ready.
 
