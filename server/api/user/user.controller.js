@@ -115,7 +115,10 @@ export function adminChangeRole(req, res, next) {
           .then(() => {
             res.status(204).end();
           })
-          .catch(validationError(res));
+          .catch(err=>{
+            console.log(err);
+            (validationError(res));
+          });
       } else {
         return res.status(403).end();
       }

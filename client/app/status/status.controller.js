@@ -678,7 +678,7 @@ class StatusComponent {
           flight.localETA=`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       }
       flight.localStatus='Planned';
-      if (flight.offAt) flight.localStatus='Enroute';
+      if (flight.offAt) flight.localStatus='En Route';
       if (flight.onAt) flight.localStatus='Completed';
       //fltPlan Elements
       flight.fltPlanElements=[];
@@ -692,7 +692,7 @@ class StatusComponent {
   
   fltStatus(status){
     if (status==='Completed') return 'font-purple';
-    if (status==='Enroute') return 'font-green';
+    if (status==='En Route') return 'font-green';
     return 'font-black';
   }
   
@@ -1479,7 +1479,7 @@ class StatusComponent {
       if (index>-1) {
         this.heliFlights[index][fieldName]=field;
         this.heliFlights[index].localStatus="Planned";
-        if (this.heliFlights[index].offAt) this.heliFlights[index].localStatus="Enroute";
+        if (this.heliFlights[index].offAt) this.heliFlights[index].localStatus="En Route";
         if (this.heliFlights[index].onAt) this.heliFlights[index].localStatus="Completed";
       }
       if (this.heliFlights[0]&&new Date(this.heliFlights[0].dateString).toLocaleDateString()!==new Date().toLocaleDateString()) this.syncHelis(this.heliFlights);

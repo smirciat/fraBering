@@ -8,7 +8,8 @@ import compose from 'composable-middleware';
 import {User} from'../sqldb';
 
 var validateJwt = expressJwt({
-  secret: config.secrets.session
+  secret: config.secrets.session,
+  algorithms: ['HS256', 'RS256']
 });
 
 /**
