@@ -21,14 +21,14 @@ var events = {
 // Register the event emitter to the model events
 for (var e in events) {
   var event = events[e];
-  AirportRequirement.hook(e, emitEvent(event));
+  AirportRequirement.addHook(e, emitEvent(event));
 }
 
 function emitEvent(event) {
-  return function(doc, options, done) {
+  return async function(doc, options) {
     AirportRequirementEvents.emit(event + ':' + doc._id, doc);
     AirportRequirementEvents.emit(event, doc);
-    done(null);
+    //done(null);
   }
 }
 

@@ -39,7 +39,9 @@ module.exports = function(sequelize, DataTypes) {
     salt: DataTypes.STRING,
     job: DataTypes.STRING
 
-  }, {
+  }
+
+  , {
 
     /**
      * Virtual Getters
@@ -80,36 +82,36 @@ module.exports = function(sequelize, DataTypes) {
           });
         });
       },
-      beforeCreate: function(user, fields, fn) {
-        user.updatePassword(fn);
+      beforeCreate: async function(user, fields, fn) {
+        let resp=await user.updatePassword(fn,user.password,user.salt);
+        this.password=resp.password;
+        this.salt=resp.salt;
+        return resp;
       },
-      beforeUpdate: function(user, fields, fn) {
+      beforeUpdate: async function(user, fields, fn) {
         if (user.changed('password')) {
-          return user.updatePassword(fn);
+          let resp= await user.updatePassword(fn,user.password,user.salt);
+          this.password=resp.password;
+          this.salt=resp.salt;
+          return resp;
         }
         fn();
       }
     },
 
-    /**
-     * Instance Methods
-     */
-    instanceMethods: {
-      /**
-       * Authenticate - check if the passwords are the same
-       *
-       * @param {String} password
-       * @param {Function} callback
-       * @return {Boolean}
-       * @api public
-       */
-      authenticate: function(password, callback) {
+  }); 
+
+  User.prototype.authenticate= async function(password,salt, callback) {
+    console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
         if (!callback) {
-          return this.password === this.encryptPassword(password);
+          console.log('!!!!!!!!!!!!!!!!!!!!!!!')
+          console.log(this.password)
+          
+          return this.password === await User.prototype.encryptPassword(password,salt);
         }
 
         var _this = this;
-        this.encryptPassword(password, function(err, pwdGen) {
+        User.prototype.encryptPassword(password,salt, function(err, pwdGen) {
           if (err) {
             callback(err);
           }
@@ -121,17 +123,11 @@ module.exports = function(sequelize, DataTypes) {
             callback(null, false);
           }
         });
-      },
+      };
 
-      /**
-       * Make salt
-       *
-       * @param {Number} byteSize Optional salt byte size, default to 16
-       * @param {Function} callback
-       * @return {String}
-       * @api public
-       */
-      makeSalt: function(byteSize, callback) {
+
+
+  User.prototype.makeSalt= async function(byteSize, callback) {
         var defaultByteSize = 16;
 
         if (typeof arguments[0] === 'function') {
@@ -147,27 +143,26 @@ module.exports = function(sequelize, DataTypes) {
         }
 
         if (!callback) {
-          return crypto.randomBytes(byteSize).toString('base64');
+          return new Promise((resolve,reject)=>{
+            crypto.randomBytes(byteSize).toString('base64');
+            resolve();
+          });
         }
 
-        return crypto.randomBytes(byteSize, function(err, salt) {
-          if (err) {
-            callback(err);
-          }
-          return callback(null, salt.toString('base64'));
-        });
-      },
+        return new Promise((resolve,reject)=>{
+          crypto.randomBytes(byteSize, async function(err, salt) {
+            if (err) {
+              callback(err);
+            }
+            let resp=await callback(null, salt.toString('base64'));
+            resolve(resp);
+            return resp;
+          });
+      });
+  };
 
-      /**
-       * Encrypt password
-       *
-       * @param {String} password
-       * @param {Function} callback
-       * @return {String}
-       * @api public
-       */
-      encryptPassword: function(password, callback) {
-        if (!password || !this.salt) {
+  User.prototype.encryptPassword=async function(password,Salt, callback) {
+        if (!password || !Salt) {
           if (!callback) {
             return null;
           }
@@ -176,57 +171,59 @@ module.exports = function(sequelize, DataTypes) {
 
         var defaultIterations = 10000;
         var defaultKeyLength = 64;
-        var salt = new Buffer(this.salt, 'base64');
+        var salt = new Buffer(Salt, 'base64');
 
         if (!callback) {
-          return crypto.pbkdf2Sync(password, salt, defaultIterations, defaultKeyLength,null)
+          let res= new Promise((resolve,reject)=>{
+            crypto.pbkdf2Sync(password, salt, defaultIterations, defaultKeyLength,null)
                        .toString('base64');
+            resolve();
+          });
+          return res;
         }
 
-        return crypto.pbkdf2(password, salt, defaultIterations, defaultKeyLength,null,
-          function(err, key) {
-            if (err) {
-              callback(err);
-            }
-            return callback(null, key.toString('base64'));
-          });
-      },
+        return new Promise((resolve,reject)=>{
+          crypto.pbkdf2(password, salt, defaultIterations, defaultKeyLength,null,
+            async function(err, key) {
+              if (err) {
+                callback(err);
+              }
+              let resp=await callback(null, key.toString('base64'));
+              console.log('!!!!!!!!!!!!!!!!!!!!')
+              console.log(resp)
+              resolve(resp);
+              return resp;
+            });
+        });
+      };
 
-      /**
-       * Update password field
-       *
-       * @param {Function} fn
-       * @return {String}
-       * @api public
-       */
-      updatePassword: function(fn) {
+  User.prototype.updatePassword= async function(fn,password,salt) {
+        var _this = this;
+        let response;
         // Handle new/update passwords
-        if (this.password) {
+        if (password) {
           if (!validatePresenceOf(this.password)) {
-            fn(new Error('Invalid password'));
+            if (fn) fn(new Error('Invalid password'));
           }
-
           // Make salt with a callback
-          var _this = this;
-          this.makeSalt(function(saltErr, salt) {
+          await User.prototype.makeSalt(async function(saltErr, salt) {
             if (saltErr) {
               fn(saltErr);
             }
             _this.salt = salt;
-            _this.encryptPassword(_this.password, function(encryptErr, hashedPassword) {
+            await User.prototype.encryptPassword(password,salt,async function(encryptErr, hashedPassword) {
               if (encryptErr) {
-                fn(encryptErr);
+                if (fn) fn(encryptErr);
               }
               _this.password = hashedPassword;
-              fn(null);
+              if (fn) fn(null);
             });
           });
+          return _this;
         } else {
-          fn(null);
+          if (fn) fn(null);
         }
-      }
-    }
-  });
-
+      };
+  
   return User;
 };

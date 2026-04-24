@@ -21,14 +21,14 @@ var events = {
 // Register the event emitter to the model events
 for (var e in events) {
   var event = events[e];
-  Reservation.hook(e, emitEvent(event));
+  Reservation.addHook(e, emitEvent(event));
 }
 
 function emitEvent(event) {
-  return function(doc, options, done) {
+  return async function(doc, options) {
     ReservationEvents.emit(event + ':' + doc._id, doc);
     ReservationEvents.emit(event, doc);
-    done(null);
+    //done(null);
   }
 }
 

@@ -21,14 +21,14 @@ var events = {
 // Register the event emitter to the model events
 for (var e in events) {
   var event = events[e];
-  Pfr.hook(e, emitEvent(event));
+  Pfr.addHook(e, emitEvent(event));
 }
 
 function emitEvent(event) {
-  return function(doc, options, done) {
+  return async function(doc, options) {
     PfrEvents.emit(event + ':' + doc._id, doc);
     PfrEvents.emit(event, doc);
-    done(null);
+    //done(null);
   }
 }
 

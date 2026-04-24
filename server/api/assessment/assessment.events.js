@@ -21,14 +21,14 @@ var events = {
 // Register the event emitter to the model events
 for (var e in events) {
   var event = events[e];
-  Assessment.hook(e, emitEvent(event));
+  Assessment.addHook(e, emitEvent(event));
 }
 
 function emitEvent(event) {
-  return function(doc, options, done) {
+  return async function(doc, options) {
     AssessmentEvents.emit(event + ':' + doc._id, doc);
     AssessmentEvents.emit(event, doc);
-    done(null);
+    //done(null);
   }
 }
 

@@ -2,7 +2,7 @@ import passport from 'passport';
 import {Strategy as LocalStrategy} from 'passport-local';
 
 function localAuthenticate(User, email, password, done) {
-  User.find({
+  User.findOne({
     where: {
       email: email.toLowerCase()
     }
@@ -13,7 +13,7 @@ function localAuthenticate(User, email, password, done) {
           message: 'This email is not registered.'
         });
       }
-      user.authenticate(password, function(authError, authenticated) {
+      user.authenticate(password,user.salt, function(authError, authenticated) {
         if (authError) {
           return done(authError);
         }

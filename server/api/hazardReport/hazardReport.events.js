@@ -21,14 +21,14 @@ var events = {
 // Register the event emitter to the model events
 for (var e in events) {
   var event = events[e];
-  HazardReport.hook(e, emitEvent(event));
+  HazardReport.addHook(e, emitEvent(event));
 }
 
 function emitEvent(event) {
-  return function(doc, options, done) {
+  return async function(doc, options) {
     HazardReportEvents.emit(event + ':' + doc._id, doc);
     HazardReportEvents.emit(event, doc);
-    done(null);
+    //one(null);
   }
 }
 

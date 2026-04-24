@@ -21,14 +21,14 @@ var events = {
 // Register the event emitter to the model events
 for (var e in events) {
   var event = events[e];
-  Manifest.hook(e, emitEvent(event));
+  Manifest.addHook(e, emitEvent(event));
 }
 
 function emitEvent(event) {
-  return function(doc, options, done) {
+  return async function(doc, options) {
     ManifestEvents.emit(event + ':' + doc._id, doc);
     ManifestEvents.emit(event, doc);
-    done(null);
+    //done(null);
   }
 }
 

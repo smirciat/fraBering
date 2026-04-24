@@ -21,14 +21,14 @@ var events = {
 // Register the event emitter to the model events
 for (var e in events) {
   var event = events[e];
-  TodaysFlight.hook(e, emitEvent(event));
+  TodaysFlight.addHook(e, emitEvent(event));
 }
 
 function emitEvent(event) {
-  return function(doc, options, done) {
+  return async function(doc, options) {
     TodaysFlightEvents.emit(event + ':' + doc._id, doc);
     TodaysFlightEvents.emit(event, doc);
-    done(null);
+    //done(null);
   }
 }
 

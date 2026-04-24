@@ -25,7 +25,7 @@ function respondWithResult(res, statusCode) {
 function saveUpdates(updates) {
   return function(entity) {
     if(entity) {
-      return entity.updateAttributes(updates)
+      return entity.update(updates)
         .then(updated => {
           return updated;
         });
@@ -70,7 +70,7 @@ export function index(req, res) {
 
 // Gets a single Pilot from the DB
 export function show(req, res) {
-  return Pilot.find({
+  return Pilot.findOne({
     where: {
       _id: req.params.id
     }
@@ -93,7 +93,7 @@ export function update(req, res) {
     delete req.body._id;
   }
   
-  return Pilot.find({
+  return Pilot.findOne({
     where: {
       _id: req.params.id
     }
@@ -106,7 +106,7 @@ export function update(req, res) {
 
 // Deletes a Pilot from the DB
 export function destroy(req, res) {
-  return Pilot.find({
+  return Pilot.findOne({
     where: {
       _id: req.params.id
     }

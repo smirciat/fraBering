@@ -68,7 +68,7 @@ function respondWithResult(res, statusCode) {
 function saveUpdates(updates) {
   return function(entity) {
     if(entity) {
-      return entity.updateAttributes(updates)
+      return entity.update(updates)
         .then(updated => {
           return updated;
         });
@@ -173,7 +173,7 @@ export function dayFlightsMobile(req, res) {
 
 // Gets a single TodaysFlight from the DB
 export function show(req, res) {
-  return TodaysFlight.find({
+  return TodaysFlight.findOne({
     where: {
       _id: req.params.id
     }
@@ -185,7 +185,7 @@ export function show(req, res) {
 
 export function showMobile(req, res) {
   if (!req.body||req.body.token!==MOBILE_TOKEN) return res.status(401).json('Mismatched Token');
-  return TodaysFlight.find({
+  return TodaysFlight.findOne({
     where: {
       _id: req.body.id
     }
@@ -234,7 +234,7 @@ export function update(req, res) {
   if (req.body._id) {
     delete req.body._id;
   }
-  return TodaysFlight.find({
+  return TodaysFlight.findOne({
     where: {
       _id: req.params.id
     }
@@ -253,7 +253,7 @@ export function updateMobile(req, res) {
   if (req.body.flight._id) {
     delete req.body.flight._id;
   }
-  return TodaysFlight.find({
+  return TodaysFlight.findOne({
     where: {
       _id: id
     }
@@ -266,7 +266,7 @@ export function updateMobile(req, res) {
 
 // Deletes a TodaysFlight from the DB
 export function destroy(req, res) {
-  return TodaysFlight.find({
+  return TodaysFlight.findOne({
     where: {
       _id: req.params.id
     }
@@ -644,7 +644,7 @@ export async function tf(req,res) {
           console.log('Deletion Reprieve for flight ' + matchedFA[x].flightNum + ' ' + matchedFA[x].date );
         }
         else {
-          let entity=await TodaysFlight.find({where: {_id:matchedFA[x]._id}});
+          let entity=await TodaysFlight.findOne({where: {_id:matchedFA[x]._id}});
           await entity.destroy();
           console.log('destroyed duplicate flight ' + matchedFA[x].flightNum + ' ' + matchedFA[x].date );
         }
@@ -813,7 +813,7 @@ export async function tf(req,res) {
         delete flight.gallonsUplifted;
         
         
-        TodaysFlight.find({
+        TodaysFlight.findOne({
           where: {
             _id: u
           }

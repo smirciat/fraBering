@@ -21,14 +21,14 @@ var events = {
 // Register the event emitter to the model events
 for (var e in events) {
   var event = events[e];
-  Notification.hook(e, emitEvent(event));
+  Notification.addHook(e, emitEvent(event));
 }
 
 function emitEvent(event) {
-  return function(doc, options, done) {
+  return async function(doc, options) {
     NotificationEvents.emit(event + ':' + doc._id, doc);
     NotificationEvents.emit(event, doc);
-    done(null);
+    //done(null);
   }
 }
 

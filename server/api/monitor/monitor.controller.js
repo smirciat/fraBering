@@ -37,7 +37,7 @@ function respondWithResult(res, statusCode) {
 function saveUpdates(updates) {
   return function(entity) {
     if(entity) {
-      return entity.updateAttributes(updates)
+      return entity.update(updates)
         .then(updated => {
           return updated;
         });
@@ -82,7 +82,7 @@ export function index(req, res) {
 
 // Gets a single Monitor from the DB
 export function show(req, res) {
-  return Monitor.find({
+  return Monitor.findOne({
     where: {
       _id: req.params.id
     }
@@ -146,7 +146,7 @@ export function update(req, res) {
   if (req.body._id) {
     delete req.body._id;
   }
-  return Monitor.find({
+  return Monitor.findOne({
     where: {
       _id: req.params.id
     }
@@ -159,7 +159,7 @@ export function update(req, res) {
 
 // Deletes a Monitor from the DB
 export function destroy(req, res) {
-  return Monitor.find({
+  return Monitor.findOne({
     where: {
       _id: req.params.id
     }

@@ -21,14 +21,14 @@ var events = {
 // Register the event emitter to the model events
 for (var e in events) {
   var event = events[e];
-  Calendar.hook(e, emitEvent(event));
+  Calendar.addHook(e, emitEvent(event));
 }
 
 function emitEvent(event) {
-  return function(doc, options, done) {
+  return async function(doc, options) {
     CalendarEvents.emit(event + ':' + doc._id, doc);
     CalendarEvents.emit(event, doc);
-    done(null);
+    //done(null);
   }
 }
 

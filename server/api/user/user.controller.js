@@ -6,6 +6,7 @@ import config from '../../config/environment';
 import jwt from 'jsonwebtoken';
 
 function validationError(res, statusCode) {
+  console.log(res.data)
   statusCode = statusCode || 422;
   return function(err) {
     return res.status(statusCode).json(err);
@@ -43,6 +44,7 @@ export function index(req, res) {
  * Creates a new user
  */
 export function create(req, res, next) {
+  console.log(req.body)
   var newUser = User.build(req.body);
   newUser.setDataValue('provider', 'local');
   newUser.setDataValue('role', 'guest');
@@ -53,7 +55,11 @@ export function create(req, res, next) {
       });
       res.json({ token });
     })
-    .catch(validationError(res));
+    .catch(err=>{
+      console.log(err)
+      validationError(res)
+      
+    });
 }
 
 /**
@@ -62,7 +68,7 @@ export function create(req, res, next) {
 export function show(req, res, next) {
   var userId = req.params.id;
 
-  return User.find({
+  return User.findOne({
     where: {
       _id: userId
     }
@@ -81,18 +87,21 @@ export function show(req, res, next) {
  * restriction: 'admin'
  */
 export function destroy(req, res) {
-  return User.destroy({ _id: req.params.id })
+  return User.destroy({where:{ _id: req.params.id }})
     .then(function() {
       res.status(204).end();
     })
-    .catch(handleError(res));
+    .catch(err=>{
+      console.log(err);
+      handleError(res);
+    });
 }
 
 export function adminChangeRole(req, res, next) {
   var userId = req.body.user;
   var newRole = req.body.role;
 
-  User.find({
+  User.findOne({
     where: {
       _id: userId
     }
@@ -118,14 +127,15 @@ export function changePassword(req, res, next) {
   var userId = req.user._id;
   var oldPass = String(req.body.oldPassword);
   var newPass = String(req.body.newPassword);
-
-  return User.find({
+  return User.findOne({
     where: {
       _id: userId
     }
   })
     .then(user => {
-      if (user.authenticate(oldPass)) {
+      console.log('********************')
+      console.log(user.authenticate(oldPass,user.salt))
+      if (user.authenticate(oldPass,user.salt)) {
         user.password = newPass;
         return user.save()
           .then(() => {
@@ -144,7 +154,7 @@ export function changePassword(req, res, next) {
 export function me(req, res, next) {
   var userId = req.user._id;
 
-  return User.find({
+  return User.findOne({
     where: {
       _id: userId
     },

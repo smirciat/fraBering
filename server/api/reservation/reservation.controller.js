@@ -25,7 +25,7 @@ function respondWithResult(res, statusCode) {
 function saveUpdates(updates) {
   return function(entity) {
     if(entity) {
-      return entity.updateAttributes(updates)
+      return entity.update(updates)
         .then(updated => {
           return updated;
         });
@@ -91,7 +91,7 @@ export function oneFlight(req, res) {
 
 // Gets a single Reservation from the DB
 export function show(req, res) {
-  return Reservation.find({
+  return Reservation.findOne({
     where: {
       _id: req.params.id
     }
@@ -113,7 +113,7 @@ export function update(req, res) {
   if (req.body._id) {
     delete req.body._id;
   }
-  return Reservation.find({
+  return Reservation.findOne({
     where: {
       _id: req.params.id
     }
@@ -126,7 +126,7 @@ export function update(req, res) {
 
 // Deletes a Reservation from the DB
 export function destroy(req, res) {
-  return Reservation.find({
+  return Reservation.findOne({
     where: {
       _id: req.params.id
     }

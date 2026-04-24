@@ -14,23 +14,23 @@ var db = {
 };
 
 // Insert models below
-db.Sm = db.sequelize.import('../api/sm/sm.model');
-db.Signature = db.sequelize.import('../api/signature/signature.model');
-db.Snapshot = db.sequelize.import('../api/snapshot/snapshot.model');
-db.TodaysFlight = db.sequelize.import('../api/todaysFlight/todaysFlight.model');
-db.Calendar = db.sequelize.import('../api/calendar/calendar.model');
-db.Airplane = db.sequelize.import('../api/airplane/airplane.model');
-db.Monitor = db.sequelize.import('../api/monitor/monitor.model');
-db.Timesheet = db.sequelize.import('../api/timesheet/timesheet.model');
-db.Manifest = db.sequelize.import('../api/manifest/manifest.model');
-db.Pfr = db.sequelize.import('../api/pfr/pfr.model');
-db.Reservation = db.sequelize.import('../api/reservation/reservation.model');
-db.AirportRequirement = db.sequelize.import('../api/airportRequirement/airportRequirement.model');
-db.Notification = db.sequelize.import('../api/notification/notification.model');
-db.HazardReport = db.sequelize.import('../api/hazardReport/hazardReport.model');
-db.Flight = db.sequelize.import('../api/flight/flight.model');
-db.Pilot = db.sequelize.import('../api/pilot/pilot.model');
-db.Assessment = db.sequelize.import('../api/assessment/assessment.model');
-db.User = db.sequelize.import('../api/user/user.model');
+db.Sm = require('../api/sm/sm.model').default(db.sequelize, Sequelize.DataTypes);
+db.Signature = require('../api/signature/signature.model').default(db.sequelize, Sequelize.DataTypes);
+db.Snapshot = require('../api/snapshot/snapshot.model').default(db.sequelize, Sequelize.DataTypes);
+db.TodaysFlight = require('../api/todaysFlight/todaysFlight.model').default(db.sequelize, Sequelize.DataTypes);
+db.Calendar = require('../api/calendar/calendar.model').default(db.sequelize, Sequelize.DataTypes);
+db.Airplane = require('../api/airplane/airplane.model').default(db.sequelize, Sequelize.DataTypes);
+db.Monitor = require('../api/monitor/monitor.model').default(db.sequelize, Sequelize.DataTypes);
+db.Timesheet = require('../api/timesheet/timesheet.model').default(db.sequelize, Sequelize.DataTypes);
+db.Manifest = require('../api/manifest/manifest.model').default(db.sequelize, Sequelize.DataTypes);
+db.Pfr = require('../api/pfr/pfr.model').default(db.sequelize, Sequelize.DataTypes);
+db.Reservation = require('../api/reservation/reservation.model').default(db.sequelize, Sequelize.DataTypes);
+db.AirportRequirement = require('../api/airportRequirement/airportRequirement.model').default(db.sequelize, Sequelize.DataTypes);
+db.Notification = require('../api/notification/notification.model').default(db.sequelize, Sequelize.DataTypes);
+db.HazardReport = require('../api/hazardReport/hazardReport.model').default(db.sequelize, Sequelize.DataTypes);
+db.Flight = require('../api/flight/flight.model').default(db.sequelize, Sequelize.DataTypes);
+db.Pilot = require('../api/pilot/pilot.model').default(db.sequelize, Sequelize.DataTypes);
+db.Assessment = require('../api/assessment/assessment.model').default(db.sequelize, Sequelize.DataTypes);
+db.User = require('../api/user/user.model')(db.sequelize, Sequelize.DataTypes);
 
 module.exports = db;

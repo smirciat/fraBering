@@ -42,7 +42,7 @@ function handleEntityNotFound(res) {
 
 function saveUpdates(updates) {
   return function(entity) {
-    return entity.updateAttributes(updates)
+    return entity.update(updates)
       .then(updated => {
         return updated;
       });
@@ -128,7 +128,7 @@ export function update(req, res) {
   if (req.body._id) {
     delete req.body._id;
   }
-  Timesheet.find({
+  Timesheet.findOne({
     where: {
       _id: req.params.id
     }
@@ -155,7 +155,7 @@ export function sba(req,res) {
 
 // Deletes a Timesheet from the DB
 export function destroy(req, res) {
-  Timesheet.find({
+  Timesheet.findOne({
     where: {
       _id: req.params.id
     }
