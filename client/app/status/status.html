@@ -86,6 +86,10 @@
               <div class="chat-top-row">
                 <span>{{flight.acftType}}, {{flight.pilot}}, <strong class="chat-status" 
                     ng-class="status.fltStatus(flight.localStatus)">{{flight.localStatus}}</strong></span>
+                <span>
+                  <i ng-if="flight.ocSign" class="fa fa-solid fa-thumbs-up fa-autosize"></i>
+                  <!--<i class="fa fa-solid fa-rocket fa-autosize"></i>-->
+                </span>
                 <span class="chat-meta">
                   OC ✔ 
                   <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.ocSign" ng-model-options="{ updateOn: 'blur' }"
@@ -98,10 +102,10 @@
                 <span>{{flight.fltPlan.depTime}} - {{flight.fltPlan.arrTime}}</span>
                 <span>{{flight.fltPlan.dep}} - {{flight.fltPlan.arr}}</span>
                 <span>ETE {{flight.fltPlan.timeEnroute||'00'}} hrs</span>
-                <span>ETA {{flight.localETA||'00'}}</span>
-                <span>AFF: ✔ OFF@
-                  <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.offAt" ng-model-options="{ updateOn: 'blur' }"
-                       ng-change="status.updateFirebase('offAt',flight)" placeholder="Time"></textarea>
+                <span class="font-green" ng-if="flight.offAt&&!flight.onAt"><strong>ETA {{flight.localETA||'00'}}</strong></span>
+                <span style="margin-left:auto">AFF: ✔ OFF@
+                  <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.offAt" 
+                       ng-model-options="{ updateOn: 'blur' }" ng-change="status.updateFirebase('offAt',flight)" placeholder="00:00"></textarea>
                 </span>
               </div>
               

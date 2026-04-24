@@ -591,10 +591,6 @@ div.airport-pink h1{
   margin-left: auto;
 }
 
-.chat-sub-row > :last-child {
-  margin-left: auto;
-}
-
 .chat-row{width: 100%;
   display: grid;
   grid:

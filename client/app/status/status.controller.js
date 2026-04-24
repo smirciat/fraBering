@@ -650,8 +650,8 @@ class StatusComponent {
       //flight Status
       let hours,enroute,h,m;
       let arr=[];
-      if (flight.fltPlan&&flight.fltPlan.timeEnroute&&flight.fltPlan.depTime) {
-        let dtime=flight.offAt||flight.fltPlan.depTime;
+      if (flight.fltPlan&&flight.offAt&&flight.fltPlan.timeEnroute) {
+        let dtime=flight.offAt;
           if (dtime.length===3) dtime=dtime.slice(0, 1) + ':' + dtime.slice(1);
           if (dtime.length===4) dtime=dtime.slice(0, 2) + ':' + dtime.slice(2);
           arr=dtime.split(/[:+]/);
@@ -1475,14 +1475,14 @@ class StatusComponent {
     minObj[fieldName]=field;
     this.http.post('/api/airplanes/updateFirebase',{collection:'flights',doc:minObj}).then(res=>{
       console.log(res.data);
+      let index=this.heliFlights.map(e=>e._id).indexOf(obj._id);
+      if (index>-1) {
+        this.heliFlights[index][fieldName]=field;
+        this.heliFlights[index].localStatus="Planned";
+        if (this.heliFlights[index].offAt) this.heliFlights[index].localStatus="Enroute";
+        if (this.heliFlights[index].onAt) this.heliFlights[index].localStatus="Completed";
+      }
       this.syncHelis();
-      //let index=this.heliFlights.map(e=>e._id).indexOf(obj._id);
-      //if (index>-1) {
-      //  this.heliFlights[index][fieldName]=field;
-      //  this.heliFlights[index].localStatus="Planned";
-      //  if (this.heliFlights[index].offAt) this.heliFlights[index].localStatus="Enroute";
-      //  if (this.heliFlights[index].onAt) this.heliFlights[index].localStatus="Completed";
-      //}
     }).catch(err=>{console.log(err)});
   }
   
