@@ -89,7 +89,7 @@
                 <span class="chat-meta">
                   OC ✔ 
                   <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.ocSign" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('ocSign',flight,true)" placeholder="Int/Time"></textarea>
+                      ng-change="status.updateFirebase('ocSign',flight,true)" placeholder="Int/Time" ng-disabled="!status.Auth.isSuperAdmin()"></textarea>
                 </span>
                 <span class="chat-fuel">Fuel: {{flight.fltPlan.fuel}}hrs&nbspLA:</span>
               </div>
@@ -113,7 +113,7 @@
             <span><strong>Remarks:</strong>{{flight.missionDetails}}</span>
             <span style="margin-left: auto;">ON@
               <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.onAt" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('onAt',flight)" placeholder="00:00"></textarea>
+                      ng-change="status.updateFirebase('onAt',flight)" placeholder="00:00" ng-disabled="!flight.offAt"></textarea>
             </span>
           </section>
       
