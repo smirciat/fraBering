@@ -1482,7 +1482,7 @@ class StatusComponent {
         if (this.heliFlights[index].offAt) this.heliFlights[index].localStatus="Enroute";
         if (this.heliFlights[index].onAt) this.heliFlights[index].localStatus="Completed";
       }
-      this.syncHelis();
+      if (this.heliFlights[0]&&new Date(this.heliFlights[0].dateString).toLocaleDateString()!==new Date().toLocaleDateString()) this.syncHelis(this.heliFlights);
     }).catch(err=>{console.log(err)});
   }
   

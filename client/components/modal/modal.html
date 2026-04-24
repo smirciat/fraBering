@@ -16,6 +16,7 @@
   <div ng-if="modal.weatherModal">
     <p>Previous Timestamp: {{modal.getTimestamp()}}</p>
     <p>Previous Signature: {{modal.manualObs.previousSignature}}</p>
+    
     <div class="modal-timestamp-layout" style="align-items: center;" ng-hide="modal.manualObs.webcam||modal.manualObs.webcamIFR">
       <div>
         <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.visibility"></div>
@@ -39,6 +40,7 @@
         <div style="height:44px"><label>&nbsp Official Weather Source?</label></div>
       </div>
     </div>
+    <div><p><strong>Uncheck any 'WebCam' boxes to input a manual observation</strong></p></div>
     <div class="modal-timestamp-layout" style="align-items: center;">
       <div>
         <div style="height:44px;padding-top:10px">
