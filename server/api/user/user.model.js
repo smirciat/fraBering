@@ -102,11 +102,7 @@ module.exports = function(sequelize, DataTypes) {
   }); 
 
   User.prototype.authenticate= async function(password,salt, callback) {
-    console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
         if (!callback) {
-          console.log('!!!!!!!!!!!!!!!!!!!!!!!')
-          console.log(this.password)
-          
           return this.password === await User.prototype.encryptPassword(password,salt);
         }
 
@@ -189,8 +185,6 @@ module.exports = function(sequelize, DataTypes) {
                 callback(err);
               }
               let resp=await callback(null, key.toString('base64'));
-              console.log('!!!!!!!!!!!!!!!!!!!!')
-              console.log(resp)
               resolve(resp);
               return resp;
             });
@@ -199,7 +193,6 @@ module.exports = function(sequelize, DataTypes) {
 
   User.prototype.updatePassword= async function(fn,password,salt) {
         var _this = this;
-        let response;
         // Handle new/update passwords
         if (password) {
           if (!validatePresenceOf(this.password)) {

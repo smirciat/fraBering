@@ -44,7 +44,8 @@ export function index(req, res) {
  * Creates a new user
  */
 export function create(req, res, next) {
-  console.log(req.body)
+  if (!req.body.email) return validationError(res);
+  req.body.email=req.body.email.toLowerCase();
   var newUser = User.build(req.body);
   newUser.setDataValue('provider', 'local');
   newUser.setDataValue('role', 'guest');
@@ -133,8 +134,6 @@ export function changePassword(req, res, next) {
     }
   })
     .then(user => {
-      console.log('********************')
-      console.log(user.authenticate(oldPass,user.salt))
       if (user.authenticate(oldPass,user.salt)) {
         user.password = newPass;
         return user.save()
