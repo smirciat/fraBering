@@ -110,6 +110,7 @@ export function adminChangeRole(req, res, next) {
     .then(user => {
       if (true) {
         user.role = newRole;
+        console.log(user);
         return user.save()
           .then(() => {
             res.status(204).end();

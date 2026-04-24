@@ -95,7 +95,7 @@ module.exports = function(sequelize, DataTypes) {
           this.salt=resp.salt;
           return resp;
         }
-        fn();
+        if (fn) fn();
       }
     },
 
