@@ -86,14 +86,14 @@
               <div class="chat-top-row">
                 <span>{{flight.acftType}}, {{flight.pilot}}, <strong class="chat-status" 
                     ng-class="status.fltStatus(flight.localStatus)">{{flight.localStatus}}</strong></span>
-                <span>
-                  <i ng-if="flight.ocSign" class="fa fa-solid fa-thumbs-up fa-autosize"></i>
-                  <!--<i class="fa fa-solid fa-rocket fa-autosize"></i>-->
-                </span>
                 <span class="chat-meta">
                   OC ✔ 
                   <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.ocSign" ng-model-options="{ updateOn: 'blur' }"
                       ng-change="status.updateFirebase('ocSign',flight,true)" placeholder="Int/Time" ng-disabled="!status.Auth.isSuperAdmin()"></textarea>
+                </span>
+                <span style="margin-left:auto;">
+                  <i ng-if="flight.ocSign" class="fa fa-solid fa-thumbs-up fa-autosize"></i>
+                  <!--<i class="fa fa-solid fa-rocket fa-autosize"></i>-->
                 </span>
                 <span class="chat-fuel">Fuel: {{flight.fltPlan.fuel}}hrs&nbspLA:</span>
               </div>
