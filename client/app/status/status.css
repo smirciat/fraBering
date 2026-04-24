@@ -335,6 +335,10 @@ div.airport-pink h1{
   color:purple;
 }
 
+.font-black{
+  color:black;
+}
+
 .fuel-red{
   background-color:pink;
 }
@@ -534,7 +538,7 @@ div.airport-pink h1{
 }
 
 .chat-status {
-  color: green;
+  
 }
 
 .chat-fuel {

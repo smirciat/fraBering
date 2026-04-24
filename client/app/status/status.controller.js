@@ -647,6 +647,40 @@ class StatusComponent {
       return a.fltPlan.depTime-b.fltPlan.depTime;
     });
     this.heliFlights.forEach(flight=>{
+      //flight Status
+      let hours,enroute,h,m;
+      let arr=[];
+      if (flight.fltPlan&&flight.fltPlan.timeEnroute&&flight.fltPlan.depTime) {
+        let dtime=flight.offAt||flight.fltPlan.depTime;
+          if (dtime.length===3) dtime=dtime.slice(0, 1) + ':' + dtime.slice(1);
+          if (dtime.length===4) dtime=dtime.slice(0, 2) + ':' + dtime.slice(2);
+          arr=dtime.split(/[:+]/);
+          if (arr.length<=1) {
+            hours=flight.fltPlan.depTime.substring(0,2);
+            if (1*hours>23) hours=hours.substring(1,2);
+          }
+          else hours=1*arr[0]+1*arr[1]/60;
+          if (!isNaN(hours)) {
+            arr=flight.fltPlan.timeEnroute.split(/[:+]/);
+            if (arr.length<=1) {
+              if (1*flight.fltPlan.timeEnroute>24&&flight.fltPlan.timeEnroute.length>2) {
+                enroute=flight.fltPlan.timeEnroute.substring(0,2);
+                if (1*enroute>23) enroute=flight.fltPlan.timeEnroute.substring(1,2);
+              }
+              else enroute=arr[0];
+              if (1*enroute>12) enroute=enroute/10;
+              hours=1*hours+1*enroute;
+            }
+            else hours=1*hours+1*arr[0]+1*arr[1]/60;
+          }
+          h = Math.floor(hours);
+          m = Math.round((hours - h) * 60);
+          flight.localETA=`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      }
+      flight.localStatus='Planned';
+      if (flight.offAt) flight.localStatus='Enroute';
+      if (flight.onAt) flight.localStatus='Completed';
+      //fltPlan Elements
       flight.fltPlanElements=[];
       let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray','altitude','flightRules','flightID','acftType','color','tas'];
       if (flight.fltPlan&&this.isPlainObject(flight.fltPlan)) for (const [key, value] of Object.entries(flight.fltPlan)) {
@@ -654,6 +688,12 @@ class StatusComponent {
         if (value) flight.fltPlanElements.push({label:this.camelToTitle(key),value:value.toString()});
       }
     });
+  }
+  
+  fltStatus(status){
+    if (status==='Completed') return 'font-purple';
+    if (status==='Enroute') return 'font-green';
+    return 'font-black';
   }
   
   camelToTitle(str) {
@@ -1435,8 +1475,14 @@ class StatusComponent {
     minObj[fieldName]=field;
     this.http.post('/api/airplanes/updateFirebase',{collection:'flights',doc:minObj}).then(res=>{
       console.log(res.data);
-      let index=this.heliFlights.map(e=>e._id).indexOf(obj._id);
-      if (index>-1) this.heliFlights[index][fieldName]=field;
+      this.syncHelis();
+      //let index=this.heliFlights.map(e=>e._id).indexOf(obj._id);
+      //if (index>-1) {
+      //  this.heliFlights[index][fieldName]=field;
+      //  this.heliFlights[index].localStatus="Planned";
+      //  if (this.heliFlights[index].offAt) this.heliFlights[index].localStatus="Enroute";
+      //  if (this.heliFlights[index].onAt) this.heliFlights[index].localStatus="Completed";
+      //}
     }).catch(err=>{console.log(err)});
   }
   
