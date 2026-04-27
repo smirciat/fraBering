@@ -182,6 +182,7 @@ angular.module('workspaceApp')
                 user = args.shift(),
                 userLastname = args.shift(),
                 recentFlights = args.shift(),
+                startFuel=flight.pfr.legArray[0].startFuel||flight.pfr.legArray[0].fuel,
                 reasons=['No Reason','BA Employee','BA Pilot','Non-Company Handler','Other Airline Pilot','FAA','DOD'],
                 alternates=['None','PAOM','PAOT','PAUN','PABE','PAGA','PAFA','PANC'],
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
@@ -282,9 +283,9 @@ angular.module('workspaceApp')
                             {title:'FO lbs',val:'fo'}
                             ],
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
-                            {title:'T/O Fuel',val:flight.pfr.legArray[0].fuel},
+                            {title:'T/O Fuel',val:flight.pfr.legArray[0].startFuel||flight.pfr.legArray[0].fuel},
                             {title:'TKS (From iPad)',val:tksCalc().lbs,gals:tksCalc().gals},
-                            {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-tksCalc().lbs)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-flight.pfr.legArray[0].fuel-tksCalc().lbs)},
+                            {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-tksCalc().lbs)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-tksCalc().lbs)},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
                             {title:'TOW',val:Math.round(flight.pfr.legArray[0].tow)}
                             ],

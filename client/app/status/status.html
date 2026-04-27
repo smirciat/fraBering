@@ -90,6 +90,7 @@
                   OC ✔ 
                   <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.ocSign" ng-model-options="{ updateOn: 'blur' }"
                       ng-change="status.updateFirebase('ocSign',flight,true)" placeholder="Int/Time" ng-disabled="!status.Auth.isSuperAdmin()"></textarea>
+                  <button class="btn btn-success" ng-style="status.getInputWidth()" style="padding-top:0px;">Save</button>
                 </span>
                 <span style="margin-left:auto;">
                   <i ng-if="flight.ocSign" class="fa fa-solid fa-thumbs-up fa-autosize"></i>

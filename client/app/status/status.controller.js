@@ -1474,6 +1474,7 @@ class StatusComponent {
     if (arr.length===1&&arr[0]&&timestamp) field=arr[0] + '/' + new Date().toLocaleTimeString();
     minObj[fieldName]=field;
     this.http.post('/api/airplanes/updateFirebase',{collection:'flights',doc:minObj}).then(res=>{
+      this.quickModal("Flight Plan Signature and/or Time has Been Recorded","Success!",false);
       console.log(res.data);
       let index=this.heliFlights.map(e=>e._id).indexOf(obj._id);
       if (index>-1) {
@@ -1483,7 +1484,10 @@ class StatusComponent {
         if (this.heliFlights[index].onAt) this.heliFlights[index].localStatus="Completed";
       }
       if (this.heliFlights[0]&&new Date(this.heliFlights[0].dateString).toLocaleDateString()!==new Date().toLocaleDateString()) this.syncHelis(this.heliFlights);
-    }).catch(err=>{console.log(err)});
+    }).catch(err=>{
+      console.log(err);
+      this.quickModal("Flight Plan Signature and/or Time has Failed For Some Strange Reason! Thanks Obama.","Failure!",true);
+    });
   }
   
   fuelClass(flight){

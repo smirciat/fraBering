@@ -23,10 +23,12 @@ This project was generated with the [Angular Full-Stack Generator](https://githu
 ### Developing
 
 Run `npm install` to install server dependencies.
-  1. ensure package-lock.json file is present
-  2. use node 4 for first run through, may need to insall python ~2.7 to make it work
-  3. use node 6 and run `npm install` again
-  4. finally, use node 10 or 12 (12 preferred) and run `npm install`
+  1. Ensure package-lock.json file is present.
+  2. Temporarily remove line from package.json under scripts>preinstall.  This is related to npx.
+  3. Use node 4 for first run through, may need to insall python ~2.7 and run `npm config set python ~/.pyenv/versions/2.7.18/bin/python` to make it work.
+  4. Use node 6 and run `npm install` again.
+  5. Restore previously deleted line from package.json.
+  6. Finally, use node 12 and run `npm install`.
 
 Run `bower install` to install front-end dependencies.
   1. some bower components may not automatically install.  They will need to be added manually after viewing the console  
