@@ -492,7 +492,10 @@ angular.module('workspaceApp')
                   classes: 'btn-warning',
                   text: 'Remove Release',
                   click: function(event) {
-                    if (user.role==='admin'||user.role==='superadmin') {
+                    if (flight.pilotAgree&&(flight.ocRelease||flight.dispatchRelease)){
+                      alert('Cannot remove a release after flight has taken off');
+                    }
+                    else if (user.role==='admin'||user.role==='superadmin') {
                       flight.dispatchRelease=null;
                       flight.ocRelease=null;
                       flight.pilotAgree=null;
@@ -632,6 +635,7 @@ angular.module('workspaceApp')
               quickModal = openModal({
               modal: {
                 messages:messages,
+                dismissable:true,
                 textModal:true,
                 createMessage:function(message){
                   return new Date(message.sent).toLocaleString()+  '\n     ' + message.body;

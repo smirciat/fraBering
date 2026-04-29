@@ -522,7 +522,7 @@ class StatusComponent {
   }
   
   updateKnownIce(flight){
-    if (!flight||!flight._id) return;
+    if (!flight||!flight._id||(flight.pilotAgree&&flight.ocRelease||(flight.dispatchRelease))) return;
     let f={knownIce:flight.knownIce};
     this.http.patch('/api/todaysFlights/'+flight._id,f).then(res=>{
       console.log(res.data);
@@ -534,15 +534,16 @@ class StatusComponent {
     console.log(flights);
     switch (selection) {
       case 'No Selection':
-        return;
         break;
       case 'Clear All':
         flights.forEach(flight=>{
+          if ((flight.pilotAgree&&flight.ocRelease||(flight.dispatchRelease))) return;
           flight.knownIce=false;
         });
         break;
       case 'All Routes FIKI':
         flights.forEach(flight=>{
+          if ((flight.pilotAgree&&flight.ocRelease||(flight.dispatchRelease))) return;
           flight.knownIce=true;
         });
         break;
@@ -553,6 +554,7 @@ class StatusComponent {
           return this.northWest.some(element => threeLetters.includes(element));
         });
         flights.forEach(flight=>{
+          if ((flight.pilotAgree&&flight.ocRelease||(flight.dispatchRelease))) return;
           flight.knownIce=true;
         });
         break;
@@ -563,6 +565,7 @@ class StatusComponent {
           return this.southWest.some(element => threeLetters.includes(element));
         });
         flights.forEach(flight=>{
+          if ((flight.pilotAgree&&flight.ocRelease||(flight.dispatchRelease))) return;
           flight.knownIce=true;
         });
         break;
@@ -573,6 +576,7 @@ class StatusComponent {
           return this.northEast.some(element => threeLetters.includes(element));
         });
         flights.forEach(flight=>{
+          if ((flight.pilotAgree&&flight.ocRelease||(flight.dispatchRelease))) return;
           flight.knownIce=true;
         });
         break;
@@ -583,11 +587,11 @@ class StatusComponent {
           return this.southEast.some(element => threeLetters.includes(element));
         });
         flights.forEach(flight=>{
+          if ((flight.pilotAgree&&flight.ocRelease||(flight.dispatchRelease))) return;
           flight.knownIce=true;
         });
         break;
       default:
-        return;
         break;
     }
     flights.forEach(flight=>{
