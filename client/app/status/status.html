@@ -419,7 +419,7 @@
           <div>
             <span style="float:right">
               <input class="form-control" style="width:42px; height:42px; margin:10px; padding:10px;" type="checkbox" 
-                ng-model="flight.knownIce" ng-change="status.updateKnownIce(flight)">
+                ng-model="flight.knownIce" ng-change="status.updateKnownIce(flight)" ng-disabled="flight.pilotAgree&&(flight.ocRelease||flight.dispatchRelease)">
             </span>
           </div>  
         </td>
