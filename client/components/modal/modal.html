@@ -76,41 +76,42 @@
   </div>
   
   <div ng-if="modal.airportModal">
-    <div class="airport-modal" ng-class="modal.metarObj.color">
-      <p style="margin:0px;padding:5px">Airport Overall</p>
-      <p style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{modal.metarObj['Raw-Report']}}">{{modal.metarObj.airport.threeLetter}}</p>
+    <div class="airport-modal" ng-class="modal.metarObj.color" style="display: flex; justify-content: center; align-items: center;">
+      <span style="margin:0px;padding:5px">Airport Overall:</span>
+      <span style="margin:0px;padding:5px" tooltip-placement="bottom" uib-tooltip="{{modal.metarObj['Raw-Report']}}">{{modal.metarObj.airport.threeLetter}}</span>
     </div>
     <div class="airport-modal" ng-class="modal.metarObj.visibilityColor">
-      <p style="margin:0px;padding:5px">Visibility</p>
-      <p style="margin:0px;padding:5px">{{modal.metarObj.Visibility}}</p>
+      <span style="margin:0px;padding:5px">Visibility:</span>
+      <span style="margin:0px;padding:5px">{{modal.metarObj.Visibility}}</span>
     </div>
     <div class="airport-modal" ng-class="modal.metarObj.ceilingColor">
-      <p style="margin:0px;padding:5px">Ceiling</p>
-      <p style="margin:0px;padding:5px">{{modal.metarObj.Ceiling}}</p>
+      <span style="margin:0px;padding:5px">Ceiling:</span>
+      <span style="margin:0px;padding:5px">{{modal.metarObj.Ceiling}}</span>
     </div>
     <div class="airport-modal" ng-class="modal.metarObj.windColor">
-      <p style="margin:0px;padding:5px">Wind Gust/XWind</p>
-      <p style="margin:0px;padding:5px">{{modal.metarObj['Wind-Gust']+' / '+modal.metarObj.xwind}}</p>
+      <span style="margin:0px;padding:5px">Wind Gust/XWind:</span>
+      <span style="margin:0px;padding:5px">{{modal.metarObj['Wind-Gust']+' / '+modal.metarObj.xwind}}</span>
     </div>
     <div class="airport-modal" ng-class="modal.metarObj.runwayColor">
-      <p style="margin:0px;padding:5px">Runway Score</p>
-      <p style="margin:0px;padding:5px">{{modal.metarObj.airport.runwayScore+' / '+modal.metarObj.airport.openClosed}}</p>
+      <span style="margin:0px;padding:5px">Runway Score:</span>
+      <span style="margin:0px;padding:5px">{{modal.metarObj.airport.runwayScore+' / '+modal.metarObj.airport.openClosed}}</span>
     </div>
     <div class="airport-modal" ng-class="modal.metarObj.freezingColor">
-      <p style="margin:0px;padding:5px">Freezing Precip</p>
-      <p style="margin:0px;padding:5px">{{modal.metarObj.Freezing}}</p>
+      <span style="margin:0px;padding:5px">Freezing Precip:</span>
+      <span style="margin:0px;padding:5px">{{modal.metarObj.Freezing}}</span>
     </div>
     <div class="airport-modal" ng-class="modal.metarObj.altimeterColor">
-      <p style="margin:0px;padding:5px">Altimeter</p>
-      <p style="margin:0px;padding:5px">{{modal.metarObj.altimeter}}</p>
+      <span style="margin:0px;padding:5px">Altimeter:</span>
+      <span style="margin:0px;padding:5px">{{modal.metarObj.altimeter}}</span>
     </div>
     <div>
-      <label>Check Below if You Want to Enter a Manual Observation</label>
+      <label ng-click="modal.trendExpand=!modal.trendExpand">Click to View/Hide Metar Trend</label>
+    </div>
+    <div ng-repeat="metar in modal.metarObj.metars" ng-if="modal.trendExpand"><p style="font-weight:bold">{{metar}}</p></div>
+    <br> 
+    <div>
+      <label ng-click="modal.obsExpand=!modal.obsExpand">Check if You Want to Enter a Manual Observation</label>
       <input class="form-control" type="checkbox" ng-model="modal.manualOpen" ng-change="modal.console('manualOpen',modal.manualOpen)">
-    </div>
-    <div>
-      <label>Check Below if You Want to See the Metar Trend</label>
-      <input class="form-control" type="checkbox" ng-model="modal.requestMetarList" ng-change="modal.console('requestMetarList',modal.requestMetarList)">
     </div>
   </div>
   <p ng-if="modal.text" ng-bind="modal.text"></p>

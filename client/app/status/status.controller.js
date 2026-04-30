@@ -1770,7 +1770,11 @@ class StatusComponent {
             //call airportModal
             airport.requestMetarList=undefined;
             airport.manualOpen=undefined;
-            this.airportModal(airport);
+            this.http.post('/api/airportRequirements/grabMetars',{airport:airport.airport.icao}).then(res=>{
+              airport.metars=res.data.metars;
+              console.log(airport)
+              this.airportModal(airport);
+            });
             break;
         default:
             console.log("you have a strange mouse");

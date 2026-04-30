@@ -139,6 +139,7 @@ angular.module('workspaceApp')
           return function() {
             var args = Array.prototype.slice.call(arguments),
                 airport = args.shift(),
+                trendExpand=false,
                 manualOpen=false,
                 quickModal;
 
@@ -148,6 +149,7 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 airportModal:true,
+                trendExpand:trendExpand,
                 metarObj:airport,
                 manualOpen:manualOpen,
                 console:function(key,val){
