@@ -13,7 +13,7 @@ module.exports = {
           '0.0.0.0',
 
   // Server port
-  port:   58785 || process.env.OPENSHIFT_NODEJS_PORT ||
+  port:   58779 || process.env.OPENSHIFT_NODEJS_PORT ||
           process.env.PORT ||
           8080,
 
