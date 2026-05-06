@@ -630,7 +630,7 @@ class StatusComponent {
   syncHelis(firebaseFlights){
     if (!firebaseFlights) firebaseFlights=this.heliFirebaseFlights;
     if (!firebaseFlights) return;
-    let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H","MD500"];
+    let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H",'Huey',"MD500"];
     if (this.heliFlights) this.heliFlights.forEach(flight=>{
       let index=firebaseFlights.map(e=>e._id).indexOf(flight._id);
       if (index>-1) firebaseFlights[index].extend=flight.extend;
@@ -1418,7 +1418,7 @@ class StatusComponent {
     if (!this.base) return;
     let aircraftTypes=['King Air','Beech 1900', 'Caravan','Courier','Casa'];
     if (this.base.base==="HEL") {
-      aircraftTypes=['R44','MD500','AStar','UH-1H'];
+      aircraftTypes=['R44','MD500','AStar','UH-1H','Huey'];
     }
     if (!this.allAircraft||!this.recentFlights) return;
     let baseTest;
