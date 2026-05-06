@@ -19,7 +19,7 @@ var all = {
   root: path.normalize(__dirname + '/../../..'),
 
   // Server port
-  port: 58785,
+  port: 58779,
 
   // Server IP
   ip: '0.0.0.0',

@@ -15,12 +15,12 @@ import {setupSocket,observe,observePilots,setPreviousPfrs,firebaseInterval} from
 import {metars,tafs,syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
 
 //import http from 'http';
-import https from 'https';
+import http from 'http';
 const schedule = require('node-schedule');
 const helmet = require("helmet");
-var privateKey  = fs.readFileSync(localEnv.KEY, 'utf8');
-var certificate = fs.readFileSync(localEnv.CERT, 'utf8');
-var credentials = {key: privateKey, cert: certificate};
+//var privateKey  = fs.readFileSync(localEnv.KEY, 'utf8');
+//var certificate = fs.readFileSync(localEnv.CERT, 'utf8');
+//var credentials = {key: privateKey, cert: certificate};
 // Populate databases with sample data
 if (config.seedDB) { require('./config/seed'); }
 
@@ -54,8 +54,8 @@ app.use(
     frameguard: false, 
   })
 );
-//var server = http.createServer(app);
-var server = https.createServer(credentials,app);
+var server = http.createServer(app);
+//var server = https.createServer(credentials,app);
 var socketio = require('socket.io')(server, {
   serveClient: config.env !== 'production',
   path: '/socket.io-client'
