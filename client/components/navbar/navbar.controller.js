@@ -121,7 +121,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='72';
+    let version='73';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -578,13 +578,21 @@ class NavbarController {
   }
   
   initTextMessages(){
+    const now = new Date();
+    const sevenDaysAgo = new Date().setDate(now.getDate() - 7);
     this.socket.unsyncUpdates('sm');
     this.http.get('/api/sms').then(res=>{
-      this.textMessages=res.data.sort((a,b)=>{
+      this.textMessages=res.data.filter(message=>{
+        return new Date(message.sent) >= sevenDaysAgo;
+      });
+      this.textMessages=this.textMessages.sort((a,b)=>{
         return new Date(b.sent) - new Date(a.sent);
       });
       this.socket.syncUpdates('sm', this.textMessages,(event,item,array)=>{
-        this.textMessages=array.sort((a,b)=>{
+      this.textMessages=array.filter(message=>{
+        return new Date(message.sent) >= sevenDaysAgo;
+      });
+        this.textMessages=this.textMessages.sort((a,b)=>{
           return new Date(b.sent) - new Date(a.sent);
         });
       });

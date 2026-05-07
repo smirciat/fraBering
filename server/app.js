@@ -14,7 +14,7 @@ import {setRosterDay} from './api/calendar/calendar.controller.js';
 import {setupSocket,observe,observePilots,setPreviousPfrs,firebaseInterval} from './api/airplane/airplane.controller.js';
 import {metars,tafs,syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
 
-//import http from 'http';
+//import https from 'https';
 import http from 'http';
 const schedule = require('node-schedule');
 const helmet = require("helmet");
