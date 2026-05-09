@@ -8,14 +8,10 @@ import fs from 'fs';
 // =================================
 module.exports = {
   // Server IP
-  ip:     '0.0.0.0'|| process.env.OPENSHIFT_NODEJS_IP ||
-          process.env.IP ||
-          '0.0.0.0',
+  ip:  '127.0.0.1',
 
   // Server port
-  port:   58779 || process.env.OPENSHIFT_NODEJS_PORT ||
-          process.env.PORT ||
-          8080,
+  port:   58779,
 
   sequelize: {
     uri:  localEnv.SEQUELIZE_URI ||

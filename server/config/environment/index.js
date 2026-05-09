@@ -22,7 +22,7 @@ var all = {
   port: 58779,
 
   // Server IP
-  ip: '0.0.0.0',
+  ip: '127.0.0.1',//'0.0.0.0',
 
   // Should we populate the DB with sample data?
   seedDB: false,
