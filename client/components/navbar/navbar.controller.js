@@ -72,6 +72,7 @@ class NavbarController {
                {v:'DEERING',c:'PADE'}
     ];
     this.textModal=this.Modal.confirm.text(response=>{
+      console.log(response)
       response.forEach(message=>{
         if (message.changed) this.http.patch('/api/sms/'+message._id,{read:message.read}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
       });
@@ -600,7 +601,9 @@ class NavbarController {
   }
   
   showTextMessages(){
-    this.textModal(this.textMessages);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 5);
+    this.textModal(this.textMessages.filter(item=>{return new Date(item.sent) >= sevenDaysAgo;}));
   }
 }
 

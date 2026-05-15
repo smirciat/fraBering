@@ -637,7 +637,7 @@ angular.module('workspaceApp')
               quickModal = openModal({
               modal: {
                 messages:messages,
-                dismissable:true,
+                dismissable:false,
                 textModal:true,
                 createMessage:function(message){
                   return new Date(message.sent).toLocaleString()+  '\n     ' + message.body;
@@ -647,7 +647,7 @@ angular.module('workspaceApp')
                 html: '<p> <strong>Check Message After Reading to Confirm</strong> </p>',
                 buttons: [ {//this is where you define you buttons and their appearances
                   classes: 'btn-primary',
-                  text: 'Confirm',
+                  text: 'Close Window',
                   click: function(event) {
                     quickModal.close(event);
                   }

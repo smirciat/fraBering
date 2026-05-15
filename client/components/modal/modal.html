@@ -5,6 +5,9 @@
 </div>
 <div class="modal-body wheat" ng-class="modal.highMinsClass()">
   <div ng-if="modal.html" ng-bind-html="modal.html"></div>
+  <div class="modal-footer" ng-if="modal.textModal">
+    <button ng-repeat="button in modal.buttons" ng-class="button.classes" ng-click="button.click($event)" ng-bind="button.text" class="btn"></button>
+  </div>
   <div ng-if="modal.metarModal">
     <div ng-repeat="metar in modal.airport.metars"><p style="font-weight:bold">{{metar}}</p></div>
   </div>
