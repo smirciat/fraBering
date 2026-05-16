@@ -1199,6 +1199,8 @@ export async function getFlightLogs(req,res){
 
 export async function getManifests(req,res){
   let date=new Date();
+  let range=3;
+  if (req&&req.body&&req.body.range) range=req.body.range;
   if (req&&req.body&&req.body.date) date=new Date(req.body.date);
   if (req&&!req.body&&!req.headers&&!isNaN(new Date(req))&&new Date(req).toString!=='Invalid Date') date=new Date(req);
   let day = date.getDate();
@@ -1207,7 +1209,7 @@ export async function getManifests(req,res){
   date.setHours(23, 0, 0, 0);
   day = date.getDate();
   let startDate=date.toISOString();
-  day=day+3;
+  day=day+range;
   date.setDate(day);
   date.setHours(1, 0, 0, 0);
   let endDate=date.toISOString();

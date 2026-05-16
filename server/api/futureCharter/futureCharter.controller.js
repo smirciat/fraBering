@@ -121,31 +121,15 @@ export function destroy(req, res) {
 export async function charterInterval(){
   console.log('Updating Future Charters');
   futureCharters=[];
-  const today = new Date();
-  try {await oneDay(today)}
-  catch(err){console.log(err)}
-  for (let i = 0; i < 90; i++) {
-    const nextDate = new Date(today);
-    nextDate.setDate(today.getDate() + i);
-    try {await oneDay(nextDate)}
-    catch(err){console.log(err)}
+  const date = new Date();
+  const result=await getManifests({body:{date:date,range:91}});
+  const manifests=result.flights;
+  for (const manifest of manifests) {
+    if (manifest.type!=='Charter'||!manifest.flightLegs||manifest.flightLegs.length<1) continue;
+    let flight={date:date,dateString:date.toLocaleDateString(),flightId:manifest.flightLegs[0].id.toString(),aircraft:manifest.flightLegs[0].registration,flight:manifest};
+    futureCharters.push(flight);
   }
   console.log('Future Charters Length is: '+futureCharters.length);
-}
-
-//search all the flights of a specific day and find its charters.  
-async function oneDay(date){
-  try{
-    //get manifests from takeflite
-    const result=await getManifests({body:{date:date}});
-    const manifests=result.flights;
-    for (const manifest of manifests) {
-      if (manifest.type!=='Charter'||!manifest.flightLegs||manifest.flightLegs.length<1) continue;
-      let flight={date:date,dateString:date.toLocaleDateString(),flightId:manifest.flightLegs[0].id.toString(),aircraft:manifest.flightLegs[0].registration,flight:manifest};
-      futureCharters.push(flight);
-    }
-  }
-  catch(err){return console.log(err)}
 }
 
 export function grab(req,res){
