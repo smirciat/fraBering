@@ -124,26 +124,46 @@ export async function charterInterval(){
   const today = new Date();
   try {await oneDay(today)}
   catch(err){console.log(err)}
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 95; i=i+6) {
     const nextDate = new Date(today);
     nextDate.setDate(today.getDate() + i);
+    //console.log('Charter Date is ' + nextDate.toLocaleDateString());
     try {await oneDay(nextDate)}
     catch(err){console.log(err)}
   }
+  futureCharters=futureCharters.filter((seenIds => obj => 
+      seenIds.has(obj.flightId) ? false : seenIds.add(obj.flightId)
+    )(new Set()));
   console.log('Future Charters Length is: '+futureCharters.length);
 }
 
 //search all the flights of a specific day and find its charters.  
 async function oneDay(date){
   try{
+    let range=5;
     //get manifests from takeflite
-    const result=await getManifests({body:{date:date}});
+    const result=await getManifests({body:{date:date,range:range}});//max 7 day range, use body.range:7
+    if (!result.flights) {
+      console.log('getManifests failed on ' + date.toLocaleDateString() + ' with a range of ' + range);
+      return;
+    }
     const manifests=result.flights;
     for (const manifest of manifests) {
       if (manifest.type!=='Charter'||!manifest.flightLegs||manifest.flightLegs.length<1) continue;
-      let flight={date:date,dateString:date.toLocaleDateString(),flightId:manifest.flightLegs[0].id.toString(),aircraft:manifest.flightLegs[0].registration,flight:manifest};
-      futureCharters.push(flight);
+      manifest.date=new Date(manifest.departureDate);
+      manifest.departureTime=new Date(manifest.flightLegs[0].departureTime);
+      manifest.dateString=manifest.date.toLocaleDateString();
+      manifest.aircraft=manifest.flightLegs[0].registration;
+      manifest.flightId=manifest.flightLegs[0].id;
+      //route?
+      manifest.route=[];
+      manifest.flightLegs.forEach(leg=>{
+        manifest.route.push(leg.origin.name);
+      });
+      manifest.route.push(manifest.flightLegs[manifest.flightLegs.length-1].destination.name);
+      futureCharters.push(manifest);
     }
+    
   }
   catch(err){return console.log(err)}
 }

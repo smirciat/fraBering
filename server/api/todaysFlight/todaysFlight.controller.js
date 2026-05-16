@@ -1200,7 +1200,7 @@ export async function getFlightLogs(req,res){
 export async function getManifests(req,res){
   let date=new Date();
   let range=3;
-  if (req&&req.body&&req.body.range) range=req.body.range;
+  if (req&&req.body&&req.body.range) range=req.body.range+2;
   if (req&&req.body&&req.body.date) date=new Date(req.body.date);
   if (req&&!req.body&&!req.headers&&!isNaN(new Date(req))&&new Date(req).toString!=='Invalid Date') date=new Date(req);
   let day = date.getDate();
@@ -1223,6 +1223,7 @@ export async function getManifests(req,res){
     }
   };
   try {
+    //console.log(new Date(startDate).toLocaleString()+ ' - '+new Date(endDate).toLocaleString())
     let response=await axios(config);
     //console.log(response.data);
     if (res) res.status(200).json(response.data);
@@ -1230,7 +1231,7 @@ export async function getManifests(req,res){
   }
   catch(err){
     if (!err.response) err.response={data:err};
-    console.log(err.response.data);
+    console.log(err.response.data||err);
     setBearer();
     let secondResponse;
     if (err&&err.response&&err.response.data&&err.response.data.statusCode===401) {
