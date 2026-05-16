@@ -388,7 +388,7 @@
       
   </div>
 </section>
-<section ng-if="status.view==='next'&&status.Auth.isAdmin()" style="background-color:#ffffcc; padding-left:10px;">
+<section ng-if="status.view==='next'&&status.Auth.isAdmin()" <section style="background-color:#ffffcc;margin:0;padding:20px 5% 20px 5%;width:100%;">
   <h3>FIKI View</h3>
   <div style="display:inline-block;">
     <h5 style="display:inline-block; margin-right:20px;">Bulk Edit FIKI --></h5>
@@ -445,7 +445,7 @@
     </tbody>
   </table>
 </section>
-<section style="background-color:#ffffcc;margin:auto;width:75%;" ng-if="status.view==='load'&&status.Auth.isUser()">
+<section style="background-color:#ffffcc;margin:0;padding:20px 10% 20px 10%;width:100%;" ng-if="status.view==='load'&&status.Auth.isUser()">
   <h3>Loads Available View</h3>
   <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'">
     <div ng-show="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
@@ -469,7 +469,7 @@
     </div>  
   </div>
 </section>
-<section style="background-color:#ffffcc;margin:auto;width:90%;" ng-if="status.view==='fuel'&&status.Auth.isUser()">
+<section style="background-color:#ffffcc;margin:0;padding:20px 5% 20px 5%;width:100%;" ng-if="status.view==='fuel'&&status.Auth.isUser()">
   <h3>Fuel View</h3>
   <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" ng-class="status.fuelFlightColor(flight)">
     <div ng-show="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
@@ -519,7 +519,7 @@
     </div>  
   </div>
 </section>
-<section style="background-color:#ffffcc;margin:auto;width:90%;" ng-if="status.view==='charters'&&status.Auth.isUser()">
+<section style="background-color:#ffffcc;margin:0;padding:20px 5% 20px 5%;width:100%;" ng-if="status.view==='charters'&&status.Auth.isUser()">
   <h3>Future Charters View</h3>
   <hr>
   <h4>Select One Aircraft Type or All</h4>
@@ -539,7 +539,7 @@
       <th style="color:white;font-weight:bold">Flight ID</th>
       <th style="color:white;font-weight:bold">Route</th>
     </tr></thead>
-    <tbody>
+    <tbody style="font-weight:bold">
       <tr ng-repeat="flight in status.filteredCharters track by $index">
         <td>{{flight.acftType}}</td>
         <td>{{flight.aircraft}}</td>
