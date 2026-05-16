@@ -140,6 +140,7 @@ class StatusComponent {
     this.scrollInterval=this.interval(()=>{
       this.scroll();
       this.renewFirebase();
+      this.timeout(()=>{this.makeFutureCharters()},20*1000);
     },60*60*1000);
     
     this.renewFirebase();
@@ -309,6 +310,9 @@ class StatusComponent {
     this.scope.$watch('nav.view',(newVal,oldVal)=>{
       if (!newVal) return;
       this.view=newVal;
+      if (newVal==='charters'){
+        this.makeFutureCharters();
+      }
     });
     this.scope.$watch('nav.isFilter',(newVal,oldVal)=>{
       this.isFilter=newVal;
@@ -375,6 +379,31 @@ class StatusComponent {
       })
       .catch(err=>{console.log(err)});
     });
+  }
+  
+  makeFutureCharters(){
+    this.http.post('/api/futureCharters/grab').then(res=>{
+      this.acftSet=new Set([]);
+      this.allAircraft.forEach(aircraft=>{
+        this.acftSet.add(aircraft.acftType);
+      });
+      this.acftArray=[...this.acftSet];
+      this.acftArray.unshift('All');
+      res.data.forEach(flight=>{
+        if (!this.allAircraft) return;
+        let index=this.allAircraft.map(e=>e._id).indexOf(flight.aircraft);
+        if (index>-1) flight.acftType=this.allAircraft[index].acftType;
+      });
+      this.futureCharters=res.data;
+      this.charterFilter="All";
+      this.setFutureCharters(res.data);
+    });
+  }
+  
+  setFutureCharters(charters){
+    charters=charters||this.futureCharters||[];
+    if (this.charterFilter==="All") this.filteredCharters=JSON.parse(JSON.stringify(charters));
+    else this.filteredCharters=charters.filter(flight=>flight.acftType===this.charterFilter);
   }
   
   nonPilot(nonPilot){

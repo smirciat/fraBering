@@ -519,4 +519,36 @@
     </div>  
   </div>
 </section>
+<section style="background-color:#ffffcc;margin:auto;width:90%;" ng-if="status.view==='charters'&&status.Auth.isUser()">
+  <h3>Future Charters View</h3>
+  <hr>
+  <h4>Select One Aircraft Type or All</h4>
+  <ui-select ng-style="status.getWidth(12,'em')" style="line-height:28px;height:28px" ng-model="status.charterFilter" theme="selectize" ng-change="status.setFutureCharters()">
+    <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
+    <ui-select-choices repeat="choice in status.acftArray" >
+      <div ng-bind-html="choice | highlight: $select.search"></div>
+    </ui-select-choices>
+  </ui-select>
+  <hr>
+  <table class="table table-bordered table-striped">
+    <thead><tr style="background-color:black;">
+      <th style="color:white;font-weight:bold">Type</th>
+      <th style="color:white;font-weight:bold">Aircraft</th>
+      <th style="color:white;font-weight:bold">Date</th>
+      <th style="color:white;font-weight:bold">Depart Time</th>
+      <th style="color:white;font-weight:bold">Flight ID</th>
+      <th style="color:white;font-weight:bold">Route</th>
+    </tr></thead>
+    <tbody>
+      <tr ng-repeat="flight in status.filteredCharters track by $index">
+        <td>{{flight.acftType}}</td>
+        <td>{{flight.aircraft}}</td>
+        <td>{{flight.dateString}}</td>
+        <td>{{flight.time}}</td>
+        <td>{{flight.flightId}}</td>
+        <td>{{flight.route.toString()}}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
 

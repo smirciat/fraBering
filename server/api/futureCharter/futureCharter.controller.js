@@ -134,6 +134,7 @@ export async function charterInterval(){
   futureCharters=futureCharters.filter((seenIds => obj => 
       seenIds.has(obj.flightId) ? false : seenIds.add(obj.flightId)
     )(new Set()));
+  futureCharters.sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
   console.log('Future Charters Length is: '+futureCharters.length);
 }
 
@@ -142,7 +143,7 @@ async function oneDay(date){
   try{
     let range=5;
     //get manifests from takeflite
-    const result=await getManifests({body:{date:date,range:range}});//max 7 day range, use body.range:7
+    const result=await getManifests({body:{date:date,range:range}});//max 7 day range, use body.range:5
     if (!result.flights) {
       console.log('getManifests failed on ' + date.toLocaleDateString() + ' with a range of ' + range);
       return;
@@ -152,6 +153,7 @@ async function oneDay(date){
       if (manifest.type!=='Charter'||!manifest.flightLegs||manifest.flightLegs.length<1) continue;
       manifest.date=new Date(manifest.departureDate);
       manifest.departureTime=new Date(manifest.flightLegs[0].departureTime);
+      manifest.time=manifest.departureTime.toLocaleTimeString();
       manifest.dateString=manifest.date.toLocaleDateString();
       manifest.aircraft=manifest.flightLegs[0].registration;
       manifest.flightId=manifest.flightLegs[0].id;

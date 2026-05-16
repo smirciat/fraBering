@@ -27,7 +27,7 @@ class NavbarController {
     this.window=$window;
     this.timeout=$timeout;
     this.view="board";
-    this.views=["board","next","load","fuel"];
+    this.views=["board","next","charters","load","fuel"];
     this.bases=[{base:"OME",four:"PAOM"},{base:"OTZ",four:"PAOT"},{base:"UNK",four:"PAUN"},{base:"HEL",four:"HELI"}];
     //this.base=this.bases[0];
     //window.base=this.base;
