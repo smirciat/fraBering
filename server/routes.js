@@ -24,6 +24,7 @@ export default function(app) {
   app.use('/api/todaysFlights/mobile', require('./api/todaysFlight/indexMobile'));
   //
   // Insert routes below
+  app.use('/api/futureCharters', require('./api/futureCharter'));
   app.use('/api/sms', require('./api/sm'));
   app.use('/api/signatures', require('./api/signature'));
   app.use('/api/snapshots', require('./api/snapshot'));

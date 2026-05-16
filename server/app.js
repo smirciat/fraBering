@@ -9,6 +9,7 @@ import fs from 'fs';
 import sqldb from './sqldb';
 import config from './config/environment';
 import localEnv from './config/local.env.js';
+import {charterInterval} from './api/futureCharter/futureCharter.controller.js';
 import {tf,setBearer,getFlightLogs} from './api/todaysFlight/todaysFlight.controller.js';
 import {setRosterDay} from './api/calendar/calendar.controller.js';
 import {setupSocket,observe,observePilots,setPreviousPfrs,firebaseInterval} from './api/airplane/airplane.controller.js';
@@ -115,10 +116,12 @@ function startServer() {
     tafFunction();
     await firebaseFunction();
     callbackFunction();
+    setInterval(charterInterval,60*60*1100);
     setInterval(firebaseFunction,60*60*1000);
     setInterval(callbackFunction,1*60*1000); 
     setInterval(metarFunction,3*60*1001);  
     setTimeout(()=>{setInterval(tafFunction,(5*60*1000))},2*60*1000);  
+    setTimeout(charterInterval,3*60*1000);  
   });
 }
 
