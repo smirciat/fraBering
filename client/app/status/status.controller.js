@@ -310,6 +310,7 @@ class StatusComponent {
     this.scope.$watch('nav.view',(newVal,oldVal)=>{
       if (!newVal) return;
       this.view=newVal;
+      console.log(newVal)
       if (newVal==='charters'){
         this.makeFutureCharters();
       }
