@@ -30,8 +30,10 @@
 	        <strong>{{user.name}}</strong><br>
 	        <span class="text-muted">Email: {{user.email}} Id: {{user._id}} Type: {{user.provider}} Role: {{user.role}}</span>
 	    </div>
+	      <a ng-click="admin.reset(user)" class="trash">
+            <span class="fa fa-key fa-2x" uib-tooltip="Reset User Password to Default"></span></a>
         <a ng-click="admin.delete(user)" uib-tooltip="Delete" class="trash"><span class="fa fa-trash fa-fw fa-2x"></span></a>
-        <a ng-click="admin.changeRole(user)" uib-tooltip="Change Role" class="trash"><span class="fa fa-pen fa-fw fa-2x"></span></a>
+        <a ng-click="admin.changeRole(user)" uib-tooltip="Change Role"><span class="fa fa-pen fa-fw fa-2x"></span></a>
     </li>
   </ul>
 </div>

@@ -3,7 +3,29 @@
 import {User} from '../../sqldb';
 import passport from 'passport';
 import config from '../../config/environment';
+import localEnv from '../../config/local.env.js';
 import jwt from 'jsonwebtoken';
+
+function respondWithResult(res, statusCode) {
+  statusCode = statusCode || 200;
+  return function(entity) {
+    if (entity) {
+      return res.status(statusCode).json(entity);
+    }
+    return null;
+  };
+}
+
+function saveUpdates(updates) {
+  return function(entity) {
+    if(entity) {
+      return entity.update(updates)
+        .then(updated => {
+          return updated;
+        });
+    }
+  };
+}
 
 function validationError(res, statusCode) {
   console.log(res.data)
@@ -11,6 +33,16 @@ function validationError(res, statusCode) {
   return function(err) {
     return res.status(statusCode).json(err);
   }
+}
+
+function handleEntityNotFound(res) {
+  return function(entity) {
+    if (!entity) {
+      res.status(404).end();
+      return null;
+    }
+    return entity;
+  };
 }
 
 function handleError(res, statusCode) {
@@ -184,4 +216,46 @@ export function me(req, res, next) {
  */
 export function authCallback(req, res, next) {
   res.redirect('/');
+}
+
+export function query(req,res){
+  if (!req.body||!req.body.email) return res.status(400).json('Bad Request');
+  return User.findOne({
+    where: {
+      email:req.body.email
+    },
+    attributes: [
+      '_id',
+      'name',
+      'email',
+      'role',
+      'provider',
+      'job',
+      'forcePasswordChange'
+    ]
+  })
+    .then(handleEntityNotFound(res))
+    .then(respondWithResult(res))
+    .catch(handleError(res));
+}
+
+// Resets Password to default for a User
+export function reset(req, res) {
+  let id=0;
+  if (req.body._id) {
+    id=req.body._id;
+    delete req.body._id;
+  }
+  req.body.password=localEnv.DEFAULT_PASSWORD;
+  req.body.salt=localEnv.DEFAULT_SALT;
+  req.body.forcePasswordChange=true;
+  return User.findOne({
+    where: {
+      _id: id
+    }
+  })
+    .then(handleEntityNotFound(res))
+    .then(saveUpdates(req.body))
+    .then(respondWithResult(res))
+    .catch(handleError(res));
 }

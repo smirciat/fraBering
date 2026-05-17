@@ -9,6 +9,8 @@ var router = new Router();
 router.get('/', auth.hasRole('admin'), controller.index);
 router.delete('/:id', auth.hasRole('admin'), controller.destroy);
 router.get('/me', auth.isAuthenticated(), controller.me);
+router.post('/query', auth.hasRole('admin'), controller.query);
+router.post('/reset', auth.hasRole('admin'), controller.reset);
 router.put('/:id/changerole', auth.hasRole('admin'), controller.adminChangeRole);
 router.put('/:id/password', auth.isAuthenticated(), controller.changePassword);
 router.get('/:id', auth.isAuthenticated(), controller.show);

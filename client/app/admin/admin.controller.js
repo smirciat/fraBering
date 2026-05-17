@@ -3,12 +3,13 @@
 (function() {
 
 class AdminController {
-  constructor($scope,User,$mdDialog,Auth,appConfig,$timeout) {
+  constructor($scope,User,$mdDialog,Auth,appConfig,$timeout,$http) {
     // Use the User $resource to fetch all users
     var self=this;
     self.users = User.query();
     self.mdDialog = $mdDialog;
     self.Auth=Auth;
+    this.http=$http;
     self.roles = appConfig.userRoles.slice(0);
     self.role={};
     self.role.selected = "user";
@@ -19,10 +20,14 @@ class AdminController {
 
   newSort() {
     var self=this;
-    self.users=self.users.sort(function(a,b){
+    self.users=self.users.sort((a,b)=>{
       if (self.sort.selected==="_id") return a[self.sort.selected]-b[self.sort.selected];
       else return a[self.sort.selected].localeCompare( b[self.sort.selected]);
     });
+  }
+  
+  reset(user){
+   this.http.post('/api/users/reset',user).then(res=>{alert('Password Reset to Default')}).catch(err=>{console.log(err)});
   }
   
   delete(user) {
