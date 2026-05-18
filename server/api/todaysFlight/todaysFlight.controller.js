@@ -513,6 +513,7 @@ export async function tf(req,res) {
     
     for (let [flightIndex, flight] of flights.entries()){
       if (!flight) return;
+      let aircraft=flight.aircraft;
       //update weather per destination via airportObjs
       flight.airportObjs=[];
       for (const element of flight.airports) {
@@ -539,7 +540,7 @@ export async function tf(req,res) {
           }
           airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
           airport.metarObj.aircraft=flight.aircraft;
-          airport.metarObj.color=overallRiskClass(airport.metarObj);
+          airport.metarObj.color=overallRiskClass(airport.metarObj,aircraft);
           airport.metarObj.usingManual=false;
           if (airport.metarObj.color===' airport-blue'||airport.metarObj.color===' airport-purple') {
             if (airport.manualObs&&airport.manualTimestamp&&isLessThanOneHourAgo(new Date(airport.manualTimestamp))){
@@ -562,7 +563,7 @@ export async function tf(req,res) {
               airport.metarObj.usingManual=true;
               airport.metarObj.manualObs-airport.manualObs;
               airport.metarObj.manualTimestamp-airport.manualTimestamp;
-              airport.metarObj.color=overallRiskClass(airport.metarObj);
+              airport.metarObj.color=overallRiskClass(airport.metarObj,aircraft);
               if (airport.manualObs.webcam) airport.metarObj['Raw-Report']="WebCam Observation, VFR Only";
               if (airport.manualObs.webcamIFR) airport.metarObj['Raw-Report']="Official WebCam Observation";
               if (!airport.metarObj.isOfficial&&airport.metarObj.usingManual) airport.metarObj.color=airport.metarObj.color+" unofficial";
@@ -589,13 +590,13 @@ export async function tf(req,res) {
           if (airport.metarObj&&airport.metarObj['Raw-Report']) {
             airport.metarObj.airport=JSON.parse(JSON.stringify(airport));
             airport.metarObj.aircraft=flight.aircraft;
-            airport.metarObj.color=overallRiskClass(airport.metarObj);
+            airport.metarObj.color=overallRiskClass(airport.metarObj,aircraft);
             if (alakanuk) console.log(airport.metarObj);
           }  
           else {
             airport.metarObj={airport:JSON.parse(JSON.stringify(airport))};
             airport.metarObj.aircraft=flight.aircraft;
-            airport.metarObj.color=overallRiskClass(airport.metarObj);
+            airport.metarObj.color=overallRiskClass(airport.metarObj,aircraft);
           }
         }
         
@@ -603,7 +604,7 @@ export async function tf(req,res) {
         
       }
       if (flight.airportObjs) {
-        flight.color=flightRiskClass(JSON.parse(JSON.stringify(flight.airportObjs)));
+        flight.color=flightRiskClass(JSON.parse(JSON.stringify(flight.airportObjs)),aircraft);
         //if (flight.ocRelease) flight.color+=' oc';
       }
       else console.log('No airportObjs?');
@@ -831,7 +832,7 @@ export async function tf(req,res) {
   }
 }
 
-function overallRiskClass(metarObj){
+function overallRiskClass(metarObj,aircraft){
   let airport=metarObj.airport;
     let returnString="";
     //if (!metarObj) metarObj={};
@@ -868,7 +869,7 @@ function overallRiskClass(metarObj){
       color='airport-pink';
     }
     //wind
-    tempColor=returnWindColor(undefined,metarObj['Wind-Gust'],metarObj['Wind-Direction'],airport);//this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
+    tempColor=returnWindColor(aircraft,metarObj['Wind-Gust'],metarObj['Wind-Direction'],airport);//this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
     metarObj.windColor=tempColor;
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //Visibility
@@ -1014,7 +1015,7 @@ function overallRiskClass(metarObj){
     return "airport-green";
   }
 
-function flightRiskClass(airportObjs){
+function flightRiskClass(airportObjs,aircraft){
   let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
   let color=colors[0];
   let night=false;
@@ -1022,7 +1023,7 @@ function flightRiskClass(airportObjs){
   if (!airportObjs) return color;
   for (let i=0;i<airportObjs.length;i++) {
   //airportObjs.forEach(metarObj=>{
-    let myClass=overallRiskClass(airportObjs[i]);
+    let myClass=overallRiskClass(airportObjs[i],aircraft);
     
     let arr=myClass.split(' ');
     arr.forEach(a=>{
