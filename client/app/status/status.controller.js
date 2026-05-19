@@ -185,14 +185,6 @@ class StatusComponent {
     });
     this.flightModalCallback=(flight)=>{
       this.spinner=true;
-      //if (flight.security){
-        //patch pfr with pfr.remark1
-        //this.http.post('/api/airplanes/updateFirebaseNew',{collection:'flights',doc:{_id:flight.pfr._id,remarks1:flight.security}}).then(res=>{
-          //console.log(res.data)
-        //}).catch(err=>{
-          //console.log(err);
-        //});
-      //}
       flight.newlyReleased=false;
       if ((flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree&&!flight.colorLock) {
         flight.colorLock=flight.color;
