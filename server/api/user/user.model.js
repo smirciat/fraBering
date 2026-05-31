@@ -90,6 +90,7 @@ module.exports = function(sequelize, DataTypes) {
       },
       beforeUpdate: async function(user, fields, fn) {
         if (user.changed('password')) {
+          console.log(user)
           let resp= await user.updatePassword(fn,user.password,user.salt);
           this.password=resp.password;
           this.salt=resp.salt;
