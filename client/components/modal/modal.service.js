@@ -287,7 +287,7 @@ angular.module('workspaceApp')
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
                             {title:'T/O Fuel',val:flight.pfr.legArray[0].startFuel||flight.pfr.legArray[0].fuel},
                             {title:'TKS (From iPad)',val:tksCalc().lbs,gals:tksCalc().gals},
-                            {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-tksCalc().lbs)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-tksCalc().lbs)},
+                            {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-flight.pfr.legArray[0].tksWeight)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-flight.pfr.legArray[0].tksWeight)},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
                             {title:'TOW',val:Math.round(flight.pfr.legArray[0].tow)}
                             ],
