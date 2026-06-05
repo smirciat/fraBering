@@ -74,6 +74,14 @@
             {{nav.buttonMessage(nav.isFilter)}}
           </button>
         </li>
+        <li ng-show="nav.Auth.isSuperAdmin()" style="padding-top:7px;padding-left:2em;">
+          <ui-select style="width:10em;" ng-model="nav.aircraft" theme="selectize" ng-disabled="disabled" ng-change="nav.updateAircraft()">
+              <ui-select-match placeholder="Choose...">{{$select.selected._id}}</ui-select-match>
+              <ui-select-choices repeat="aircraft in nav.allAircraft" >
+                <div ng-bind-html="aircraft._id | highlight: $select.search"></div>
+              </ui-select-choices>
+          </ui-select>
+        </li>
         <li ng-if="nav.Auth.isUser()&&nav.base.base==='HEL'" style="padding-top:7px;padding-left:2em;">
           <button ng-class="nav.buttonClass()" ng-click="nav.showTextMessages()" style="font-weight:bold">
             Show Text Messages

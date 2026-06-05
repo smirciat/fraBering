@@ -94,6 +94,11 @@ class NavbarController {
     else this.base=this.bases[0];
     window.base=this.base;
     this.updateBase();
+    this.http.post('/api/airplanes/firebaseGrab').then(res=>{
+      this.allAircraft=res.data.aircraft.filter(a=>a._id.substring(0,1)==="N");
+      this.allAircraft.unshift({_id:'All'});
+      this.aircraft=this.allAircraft[0];
+    });
     window.dateString=this.dateString;
     if (window.stoppedInterval) this.interval.cancel(window.stoppedInterval);
     window.stoppedInterval=this.interval(()=>{
@@ -122,7 +127,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='79';
+    let version='80';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);

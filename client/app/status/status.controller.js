@@ -299,10 +299,18 @@ class StatusComponent {
     //this.scope.$watch('nav.isToggleAssigned',(newVal,oldVal)=>{
     //  this.toggleAssigned=newVal;
     //});
+    this.scope.$watch('nav.aircraft',(newVal,oldVal)=>{
+      if (!newVal) return;
+      this.aircraft=newVal;
+      window.aircraft=newVal;
+      if (!oldVal) return;
+      if (this.aircraft._id!=='All') this.scope.nav.isFilter=false;
+      //update flight filter
+      this.timeout(()=>{this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights,true)},500);
+    });
     this.scope.$watch('nav.view',(newVal,oldVal)=>{
       if (!newVal) return;
       this.view=newVal;
-      console.log(newVal)
       if (newVal==='charters'){
         this.makeFutureCharters();
       }
@@ -459,7 +467,12 @@ class StatusComponent {
     return str;
   }
   
-  filterTodaysFlights(array){
+  filterTodaysFlights(array,aircraftFilter){
+    if (this.aircraft&&this.aircraft._id!=='All') {
+      
+      return array.filter(flight=>flight.aircraft===this.aircraft._id && flight.date===this.dateString );
+    }
+    else {
       if (!this.dateString||!array) return array;
       if (this.isFilter){
         let user=this.user.name.toLowerCase();
@@ -541,6 +554,7 @@ class StatusComponent {
       //},0);
       
       return array;// array.sort((a,b)=>{return a.departTimes[0].localeCompare(b.departTimes[0])});
+    }
   }
   
   updateKnownIce(flight){
@@ -1444,13 +1458,6 @@ class StatusComponent {
     }
     if (!this.allAircraft||!this.recentFlights) return;
     let baseTest;
-    //this.allAircraft.forEach(aircraft=>{
-    //  aircraft.assigned=false;
-    //  if (!this.allTodaysFlights) return;
-    //  let tf=angular.copy(this.allTodaysFlights.filter(f=>{return f.active==='true'}));
-    //  let aircraftIndex=tf.map(e=>e.aircraft).indexOf(aircraft._id);
-    //  if (aircraftIndex>-1) aircraft.assigned=true;
-    //});
     this.displayedAircraft=this.allAircraft.filter(a=>{
       if (a._id&&a._id.substring(0,1).toUpperCase()!=="N") return false;
       a.acftType=a.acftType.trim();
@@ -1618,37 +1625,42 @@ class StatusComponent {
   }
   
   todaysFlightDisplayFilter(flight) {
-    let date=window.dateString;
-    if (this&&this.assessment) {
-      date=new Date().toLocaleDateString();
+    if (window.aircraft&&window.aircraft._id!=='All') {
+      return true;
     }
-    let old=false;
-    if (window.toggle){
-      let arr=flight.departTimes[0].split(':');
-      if (arr.length===3) {
-        let flightDate=new Date(date).setHours(arr[0],arr[1],arr[2]);
-        if (new Date()>flightDate&&date===new Date().toLocaleDateString()) old=true;
+    else {
+      let date=window.dateString;
+      if (this&&this.assessment) {
+        date=new Date().toLocaleDateString();
       }
-    }
-    let inBase;
-    if (window.base&&window.base.base==='HEL') inBase=false;
-    else if (window.base&&window.base.base==='OTZ')  {
-      for (let i=0;i<flight.airports.length;i++){
-        if (flight.airports[i]==='Kotzebue') inBase=true;
+      let old=false;
+      if (window.toggle){
+        let arr=flight.departTimes[0].split(':');
+        if (arr.length===3) {
+          let flightDate=new Date(date).setHours(arr[0],arr[1],arr[2]);
+          if (new Date()>flightDate&&date===new Date().toLocaleDateString()) old=true;
+        }
       }
-    }
-    else if (window.base&&window.base.base==='UNK')  {
-      for (let i=0;i<flight.airports.length;i++){
-        if (flight.airports[i]==='Unalakleet') inBase=true;
+      let inBase;
+      if (window.base&&window.base.base==='HEL') inBase=false;
+      else if (window.base&&window.base.base==='OTZ')  {
+        for (let i=0;i<flight.airports.length;i++){
+          if (flight.airports[i]==='Kotzebue') inBase=true;
+        }
       }
-    }
-    else if (flight.airports&&flight.airports.length>0) {
-      for (let i=0;i<flight.airports.length;i++){
-        if (flight.airports[i]==='Nome') inBase=true;
+      else if (window.base&&window.base.base==='UNK')  {
+        for (let i=0;i<flight.airports.length;i++){
+          if (flight.airports[i]==='Unalakleet') inBase=true;
+        }
       }
-      //inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
+      else if (flight.airports&&flight.airports.length>0) {
+        for (let i=0;i<flight.airports.length;i++){
+          if (flight.airports[i]==='Nome') inBase=true;
+        }
+        //inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
+      }
+      return (flight.date===date)&&inBase&&flight.active==='true'&&!old&&flight.aircraft&&flight.aircraft.substring(0,1)==="N";
     }
-    return (flight.date===date)&&inBase&&flight.active==='true'&&!old&&flight.aircraft&&flight.aircraft.substring(0,1)==="N";
   }
   
   activeClass(active){
@@ -1730,7 +1742,7 @@ class StatusComponent {
       //console.log(this.recentFlights.filter(a=>{return a.acftNumber==='N408BA'}));
     //});
     //this.http.post('/api/airplanes/firebase',{collection:'pilots'}).then(res=>{
-      this.todaysFlights=this.filterTodaysFlights(this.todaysFlights);
+      this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights);
       this.allPilots=res.data.pilots;
       window.allPilots=res.data.pilots;
       this.setPilotList();
