@@ -42,7 +42,7 @@
                  <strong ng-style="status.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong>
               </span>
               <span style="float:right;margin-left:5px;margin-right:5px;">
-                <span ng-class="status.fuelClass(flight)"><strong>Fuel:&nbsp{{flight.pfr.legArray[0].fuel-flight.pfr.legArray[0].taxiFuel}}&nbsp</strong></span>
+                <span ng-class="status.fuelClass(flight)"><strong>Fuel:&nbsp{{flight.pfr.legArray[0].fuel}}&nbsp</strong></span>
                 <span><strong>LA:&nbsp{{status.laCalc(flight)}}</strong></span>
               </span>
               <span style="float:right;margin-left:5px;">   
@@ -89,7 +89,7 @@
                 <span class="chat-meta">
                   OC ✔ 
                   <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.ocSign" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('ocSign',flight,true)" placeholder="Int/Time" ng-disabled="!status.Auth.isSuperAdmin()"></textarea>
+                      ng-change="status.updateFirebase('ocSign',flight,true)" placeholder="Int/Time" ng-disabled="!status.Auth.isAdmin()"></textarea>
                   <button class="btn btn-success" ng-style="status.getInputWidth()" style="padding-top:0px;">Save</button>
                 </span>
                 <span style="margin-left:auto;">
