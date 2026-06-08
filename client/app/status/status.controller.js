@@ -915,7 +915,10 @@ class StatusComponent {
         flight.stopFuel=null;
         flight.gallonsUplifted=null;
       }
-      else flight.fueledTimestamp=new Date().toLocaleTimeString('en-US', { timeStyle: 'short' });
+      else {
+        flight.fueledBy=this.user.name;
+        flight.fueledTimestamp=new Date().toLocaleTimeString('en-US', { timeStyle: 'short' });
+      }
       this.http.patch('/api/todaysFlights/'+flight._id,{fueled:flight.fueled,fueledBy:flight.fueledBy,fueledTimestamp:flight.fueledTimestamp,truck:flight.truck,startFuel:flight.startFuel,stopFuel:flight.stopFuel,gallonsUplifted:flight.gallonsUplifted}).then(res=>{console.log(res.data)});
     },0);
   }
@@ -934,16 +937,28 @@ class StatusComponent {
     let response='';
     if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"||flight.equipment.name==="Casa"){
       let fob=flight.fuelPreviouslyOnboard||flight.autoOnboard;
-      let main=(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1-fob*1)/2;
-      let gallons=Math.floor(main/6.7);
+      let main=(flight.pfr.legArray[0].fuel*1-fob*1)/2;
+      let aux=0;
+      if (flight.pfr.legArray[0].fuel*1>flight.equipment.maxMain*2){
+        aux=(flight.pfr.legArray[0].fuel*1-flight.equipment.maxMain*2-fob*1)/2;
+        main=flight.equipment.maxMain;
+      }
+      
+      let gallons=Math.round(main/6.7);
+      if (aux>flight.equipment.maxAux) return 'Main + Aux request exceeds capacity';
       if (gallons<0) response+=', DOUBLE CHECK FUEL REQUEST';
-      else if (flight.pfr&&flight.pfr.fuelRequestString) response += ' ' + flight.pfr.fuelRequestString;
-      else response +=" ADD " + Math.floor(main/6.7) + " GALLONS/side";
+      else {
+        if (flight.pfr&&flight.pfr.fuelRequestString) response += ' ' + flight.pfr.fuelRequestString;
+        else {
+          response +="\n ADD " + Math.round(main/6.7) + " GAL/side Mains";
+          if (aux>0) response +="\n " + Math.round(aux/6.7) + " GAL/side Aux";
+        }
+      }
     }
     else if (flight.pfr&&flight.pfr.fuelRequestString) response += ' ' + flight.pfr.fuelRequestString;
     else {
       response+=" FILL TO: ";//+(flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1) + " LBS";
-      response += Math.floor((flight.pfr.legArray[0].fuel*1+flight.equipment.taxiFuel*1)/2) + " LBS/side";
+      response += Math.round((flight.pfr.legArray[0].fuel*1)/2) + " LBS/side";
     }
     return response;
   }

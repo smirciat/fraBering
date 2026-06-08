@@ -379,15 +379,15 @@
           <div class="white">
             <div class="inner-modal">
               <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">Fill To: POUNDS</span>
-              <span class="span-modal" style="font-weight:bold">{{(modal.flight.pfr.legArray[0].fuel+modal.flight.equipment.taxiFuel)/2}}&nbsp;lbs/side</span>
-              <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.flight.pfr.legArray[0].fuel+modal.flight.equipment.taxiFuel}}&nbsp;lbs total</span>
+              <span class="span-modal" style="font-weight:bold">{{modal.startFuel/2}}&nbsp;lbs/side</span>
+              <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.startFuel}}&nbsp;lbs total</span>
             </div>
           </div>
           <div class="white">
             <div class="inner-modal">
               <span class="span-modal" style="float:left; padding-left:5px;font-weight:bold">ADD: GALLONS</span>
-              <span class="span-modal" style="font-weight:bold">{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main||0}}&nbsp;gal/side</span>
-              <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.getRequest(modal.flight.fuelTotalTaxi,modal.flight.fuelPreviouslyOnboard).main*2||0}}&nbsp;gal total</span>
+              <span class="span-modal" style="font-weight:bold">{{modal.getRequest(modal.flight.pfr.legArray[0].fuel,modal.flight.fuelPreviouslyOnboard).main||0}}&nbsp;gal/side</span>
+              <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold">{{modal.getRequest(modal.flight.pfr.legArray[0].fuel,modal.flight.fuelPreviouslyOnboard).main*2||0}}&nbsp;gal total</span>
             </div>
           </div>
         </div>

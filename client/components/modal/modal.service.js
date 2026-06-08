@@ -285,7 +285,7 @@ angular.module('workspaceApp')
                             {title:'FO lbs',val:'fo'}
                             ],
                 summaryInfo:[{title:'MaxZFW',val:flight.equipment.ZFW},
-                            {title:'T/O Fuel',val:flight.pfr.legArray[0].startFuel||flight.pfr.legArray[0].fuel},
+                            {title:'Takeoff Fuel',val:startFuel},
                             {title:'TKS (From iPad)',val:tksCalc().lbs,gals:tksCalc().gals},
                             {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-flight.pfr.legArray[0].tksWeight)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-flight.pfr.legArray[0].tksWeight)},
                             {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
@@ -307,6 +307,7 @@ angular.module('workspaceApp')
                 jumpseatDisp:flight.jumpseaterObject.reason,
                 tksCalc:tksCalc,
                 checkPirep:checkPirep,
+                startFuel:startFuel,
                 fuelCalc:function(){
                   if (!flight.pfr.legArray[0].fuel) return 0;
                   return (flight.pfr.legArray[0].fuel/flight.equipment.fuelBurn).toFixed(1);
