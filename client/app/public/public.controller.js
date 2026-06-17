@@ -10,9 +10,9 @@ class PublicComponent {
     this.timeout=$timeout;
     this.socket=socket;
     this.shouldInvert=true;
-    this.date=new Date().toLocaleDateString();
+    this.date=new Date().toLocaleDateString('en-US',{timeZone:'America/Anchorage'});
     this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short',timeZone:'America/Anchorage'});
-    this.dateString=new Date().toLocaleDateString('en-US', { weekday: 'long', year:'numeric',month:'long',day:'numeric' }).toUpperCase();
+    this.dateString=new Date().toLocaleDateString('en-US', { weekday: 'long', year:'numeric',month:'long',day:'numeric',timeZone:'America/Anchorage' }).toUpperCase();
     this.flights=[];
     this.base="Nome";
     this.bases=["Nome","Kotzebue","Unalakleet"];
@@ -41,7 +41,9 @@ class PublicComponent {
   }
   
   filterFlights(flights){
+    this.date=new Date().toLocaleDateString('en-US',{timeZone:'America/Anchorage'});
     this.allFlights=flights.filter(flight=>{
+      if (flight.date!==this.date) return false;
       if (!flight.flightNum) return false;
       let f=flight.flightNum.toString();
       let char=f.substring(0,1);
