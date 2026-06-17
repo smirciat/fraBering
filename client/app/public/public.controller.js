@@ -27,7 +27,8 @@ class PublicComponent {
     if (temp) this.base=temp;
     this.width=document.documentElement.clientWidth;
     console.log(this.width)
-    this.http.post('/api/todaysFlights/dayFlights',{dateString:this.date}).then(res=>{
+    console.log(this.date)
+    this.http.post('/api/todaysFlights/dayFlights',{dateString:'6/17/2026'}).then(res=>{
       //this.allFlights=res.data;
       this.filterFlights(res.data);
       this.sort();
@@ -59,12 +60,8 @@ class PublicComponent {
       flight.airports.forEach(a=>{
         if (a===this.base) match=true;
       });
-      return match&&flight.active==="true"&&flight.date===new Date().toLocaleDateString();
+      return match&&flight.active==="true";
     });
-    
-    //return flights.sort((a,b)=>{
-    //  return a.
-    //});
   }
   
   arrayToString(array){
