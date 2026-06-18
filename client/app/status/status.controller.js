@@ -1126,7 +1126,7 @@ class StatusComponent {
   }
   
   altClass(airport){
-    if (airport.icao==="PAGA") return 'airport-orange';
+    //if (airport.icao==="PAGA") return 'airport-orange';
     let ceiling=10000;
     if (!airport.metarObj||!airport.metarObj.TAF) return 'airport-blue';
     let index=this.findTAFIndex(airport.metarObj.TAF);
