@@ -477,6 +477,7 @@ export async function tf(req,res) {
           flight.tfliteDepart=tempArr[0].takeOff.split('T')[1].substring(0,5);
           //tfliteArrive is tfliteDepart plus estimated elapsed time for flight from departTimes
           flight.tfliteArrive=createETA(flight);
+          if (flight.flightStatus==="En Route") console.log('***********************************'+flight.tfliteArrive)
         }
         
       }

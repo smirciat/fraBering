@@ -41,7 +41,7 @@
                    (flight.coPilotObject.displayName||flight.coPilot||"")}}&nbsp
                  <strong ng-style="status.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong>
                  <strong ng-style="status.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)" 
-                    ng-if="flight.flightStatus==='Enroute'">, ETA: {{flight.tfliteArrive}}</strong>
+                    ng-if="flight.flightStatus==='En Route'">, ETA: {{flight.tfliteArrive}}</strong>
               </span>
               <span style="float:right;margin-left:5px;margin-right:5px;">
                 <span ng-class="status.fuelClass(flight)"><strong>Fuel:&nbsp{{flight.pfr.legArray[0].fuel}}&nbsp</strong></span>
