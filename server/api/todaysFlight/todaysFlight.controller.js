@@ -422,6 +422,7 @@ export async function tf(req,res) {
         flight.flightStatus=null;
         flight.aircraft=null;
         flight.tfliteDepart=null;
+        flight.tfliteArrive=null;
         flight.active=true;
         flight.date=new Date(flight.departureDate).toLocaleDateString();
         flight.flightNum=flight.flightNumber;
@@ -472,7 +473,11 @@ export async function tf(req,res) {
           if (logTime) logTime=logTime.substring(0,8);
           return log.registration===flight.aircraft&&logDate===flight.date&&logTime===flight.departTimes[0]&&log.takeOff;
         });
-        if (tempArr.length>0&&tempArr[0].takeOff.split('T').length>1) flight.tfliteDepart=tempArr[0].takeOff.split('T')[1].substring(0,5);
+        if (tempArr.length>0&&tempArr[0].takeOff.split('T').length>1) {
+          flight.tfliteDepart=tempArr[0].takeOff.split('T')[1].substring(0,5);
+          //tfliteArrive is tfliteDepart plus estimated elapsed time for flight from departTimes
+          flight.tfliteArrive=createETA(flight);
+        }
         
       }
       flights=manifests;
@@ -720,6 +725,7 @@ export async function tf(req,res) {
         }
         todaysFlights[index].flightStatus=flight.flightStatus;
         todaysFlights[index].tfliteDepart=flight.tfliteDepart;
+        todaysFlights[index].tfliteArrive=flight.tfliteArrive;
         
         if (todaysFlights[index].date!==flight.date) {
           todaysFlights[index].date=flight.date;
@@ -1043,6 +1049,39 @@ function isLessThanOneHourAgo(date) {
   oneHourAgo.setHours(oneHourAgo.getHours() - 1);
   oneHourAgo.setMinutes(oneHourAgo.getMinutes() - 10);
   return date > oneHourAgo;
+}
+
+function createETA(flight){
+    const startTime=flight.departTimes[0];
+    const endTime=flight.departTimes[flight.departTimes.length-1];
+    const targetTime=flight.tfliteDepart;
+    // Helper function to convert "hh:mm" string to total minutes
+    const toMinutes = (timeStr) => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return (hours * 60) + minutes;
+    };
+
+    // Helper function to convert total minutes back to "hh:mm" string
+    const toHHMM = (totalMinutes) => {
+        // Use Math.floor to handle potential negative time differences gracefully
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        
+        // Pad with leading zeros to maintain "hh:mm" format
+        const paddedHours = String(hours).padStart(2, '0');
+        const paddedMinutes = String(minutes).padStart(2, '0');
+        
+        return `${paddedHours}:${paddedMinutes}`;
+    };
+
+    // 1. Calculate the difference between the first two times
+    const diffMinutes = toMinutes(endTime) - toMinutes(startTime);
+
+    // 2. Add that difference to the target time
+    const finalMinutes = toMinutes(targetTime) + diffMinutes;
+
+    // 3. Return formatted result
+    return toHHMM(finalMinutes);
 }
 
 async function airportNameToMetar(airport){

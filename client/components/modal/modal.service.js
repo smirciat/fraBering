@@ -277,7 +277,7 @@ angular.module('workspaceApp')
                             {title:'Est Flight Time',val:flight.block},
                             {title:'Flight ID',val:'BRG'+flight.flightNum},
                             {title:'Operation',val:flight.operation},
-                            {title:'Rule',val:'VFR/IFR'},
+                            {title:'Rule',val:'VFR/IFR. Altitude per GOM 06.19'},
                             {title:'Route',val:flight.airports.toString()}
                             ],
                 bewInfo:[{title:'Equipment Lbs',val:'equipment'},

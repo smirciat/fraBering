@@ -77,7 +77,7 @@ class NavbarController {
         if (message.changed) this.http.patch('/api/sms/'+message._id,{read:message.read}).then(res=>{console.log(res.data)}).catch(err=>{console.log(err)});
       });
     });
-    $scope.$on('$destroy', function() {
+    $scope.$on('$destroy', ()=> {
       this.socket.unsyncUpdates('sm');
     });
   }
@@ -127,7 +127,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='86';
+    let version='87';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);

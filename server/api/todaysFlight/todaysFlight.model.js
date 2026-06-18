@@ -69,6 +69,7 @@ export default function(sequelize, DataTypes) {
     flightLegs:DataTypes.JSONB,
     miscObject:DataTypes.JSONB,
     tfliteDepart:DataTypes.STRING,
+    tfliteArrive:DataTypes.STRING,
     nonRevFlight:DataTypes.BOOLEAN,
     fueled:DataTypes.BOOLEAN,
     fueledBy:DataTypes.STRING,
