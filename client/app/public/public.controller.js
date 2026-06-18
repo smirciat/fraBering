@@ -28,10 +28,14 @@ class PublicComponent {
     this.width=document.documentElement.clientWidth;
     console.log(this.width)
     console.log(this.date)
+    this.timeout(()=>{this.init()},500);
+  }
+  
+  init(){
     this.http.post('/api/todaysFlights/dayFlights',{dateString:'6/17/2026'}).then(res=>{
       //this.allFlights=res.data;
       this.filterFlights(res.data);
-      this.sort();
+      this.timeout(()=>{this.sort();},500);
       this.socket.unsyncUpdates('todaysFlight');
       this.socket.syncUpdates('todaysFlight', this.allFlights,(event,item,array)=>{
         //this.allFlights=array;
