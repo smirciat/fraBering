@@ -32,15 +32,15 @@ class PublicComponent {
   }
   
   init(){
-    this.http.post('/api/todaysFlights/dayFlights',{dateString:'6/17/2026'}).then(res=>{
+    this.http.post('/api/todaysFlights/dayFlights',{dateString:this.date}).then(res=>{
       //this.allFlights=res.data;
       this.filterFlights(res.data);
-      this.timeout(()=>{this.sort();},500);
+      //this.timeout(()=>{this.sort();},500);
       this.socket.unsyncUpdates('todaysFlight');
       this.socket.syncUpdates('todaysFlight', this.allFlights,(event,item,array)=>{
         //this.allFlights=array;
         this.filterFlights(array);
-        if (item.runScroll) this.sort();
+        //if (item.runScroll) this.sort();
       });
     });
   }
@@ -55,6 +55,7 @@ class PublicComponent {
       if (!Number.isInteger(char*1)) return false;
       return f.length===3&&(char*1)%2===0;
     });
+    this.sort();
   }
   
   sort(){
