@@ -26,9 +26,7 @@ class PublicComponent {
     let temp=window.localStorage.getItem('myBase');
     if (temp) this.base=temp;
     this.width=document.documentElement.clientWidth;
-    console.log(this.width)
-    console.log(this.date)
-    this.timeout(()=>{this.init()},500);
+    this.timeout(()=>{this.init()},0);
   }
   
   init(){
