@@ -6,13 +6,14 @@
     var safeCb = Util.safeCb;
     var currentUser = {};
     var userRoles = appConfig.userRoles || [];
+    
 
     if (($cookies.get('token')||window.localStorage.getItem('token')) && $location.path() !== '/logout') {
       currentUser = User.get();
     }
 
     var Auth = {
-
+      initialized : false,
       /**
        * Authenticate user and save token
        *
@@ -114,6 +115,7 @@
         }).$promise;
       },
       getCurrentUser(callback) {
+        Auth.initialized = true;
         if (arguments.length === 0) {
           return currentUser;
         }

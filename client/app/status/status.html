@@ -448,7 +448,7 @@
     </tbody>
   </table>
 </section>
-<section style="background-color:#ffffcc;margin:0;padding:20px 10% 20px 10%;width:100%;" ng-if="status.view==='load'&&status.Auth.isUser()">
+<section style="background-color:#ffffcc;margin:0;padding:20px 10% 20px 10%;width:100%;" ng-if="status.view==='notload'&&status.Auth.isUser()">
   <h3>Loads Available View</h3>
   <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'">
     <div ng-show="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
@@ -472,8 +472,8 @@
     </div>  
   </div>
 </section>
-<section style="background-color:#ffffcc;margin:0;padding:20px 5% 20px 5%;width:100%;" ng-if="status.view==='fuel'&&status.Auth.isUser()">
-  <h3>Fuel View</h3>
+<section style="background-color:#ffffcc;margin:0;padding:20px 5% 20px 5%;width:100%;" ng-if="(status.view==='load'||status.view==='fuel')&&status.Auth.isUser()">
+  <h3>Fuel/Load View</h3>
   <div ng-repeat="flight in status.todaysFlights | filter:status.todaysFlightDisplayFilter | orderBy:'departTimes[0]'" ng-class="status.fuelFlightColor(flight)">
     <div ng-show="flight.active==='true'" class="light-border" ng-class="status.activeClass(flight.active)">
       <div class="grid-parent-fuel">
@@ -531,6 +531,15 @@
         </div>
       </div>
     </div>  
+    <div ng-if="status.view==='load'">
+      <!--loads directive-->
+      <h5 ng-click="flight.showLoadPlanner=!flight.showLoadPlanner">
+        <span ng-if="!flight.showLoadPlanner">Show Load Sheet +</span>
+        <span ng-if="flight.showLoadPlanner">Hide Load Sheet -</span>
+      </h5>
+      <loads flight="flight" ng-if="flight.showLoadPlanner"></loads>
+      <br>
+    </div>
   </div>
 </section>
 <section style="background-color:#ffffcc;margin:0;padding:20px 5% 20px 5%;width:100%;" ng-if="status.view==='charters'&&status.Auth.isUser()">

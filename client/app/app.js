@@ -5,7 +5,7 @@ angular.module('workspaceApp', ['workspaceApp.auth', 'workspaceApp.admin', 'work
     'validation.match','angularMoment','AngularPrint','ui.grid','ui.grid.edit', 'ui.grid.cellNav','ui.grid.selection','ui.grid.exporter'
   ])
   .config(function($urlRouterProvider, $locationProvider, $compileProvider) {
-    $urlRouterProvider.otherwise('/');
+    $urlRouterProvider.otherwise('/login');
 
     $locationProvider.html5Mode(true);
     

@@ -1336,6 +1336,7 @@ class StatusComponent {
       this.coPilotList=[];
       this.ocList=[];
       this.sortedPilots=[];
+      if (!res||!res.data) return;
       this.wholeRoster=res.data;
       let basePilotRoster=res.data.filter(pilot=>{
         if (pilot.employee_full_name==="Sam Kendall") return false;

@@ -35,20 +35,47 @@ app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
-        // Allow framing only from the same origin
-        //frameAncestors: ["'self'","/'"], 
-
-        // Alternatively, allow framing from specific domains:
-        frameAncestors: ['https://www.beringair.com','https://www.iframe-generator.com'],
-
-        // Or, disallow all framing:
-        // frameAncestors: ["'none'"], 
-
-        // You can also include other CSP directives here
+        frameAncestors: [
+          'https://www.beringair.com',
+          'https://www.iframe-generator.com',
+          'https://smircich.ddns.net:58785'
+        ],
+    
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-eval'","https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.3/pako.min.js","https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.0.0/FileSaver.min.js","https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"], 
-        // ...
-      },
+    
+        scriptSrc: [
+          "'self'",
+          "'unsafe-eval'",
+          "'unsafe-inline'",
+          "https://cdnjs.cloudflare.com"
+        ],
+    
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          'https:'
+        ],
+    
+        imgSrc: [
+          "'self'",
+          'data:',
+          'blob:'
+        ],
+    
+        fontSrc: [
+          "'self'",
+          'https:',
+          'data:'
+        ],
+    
+        connectSrc: [
+          "'self'",
+          'ws:',
+          'wss:'
+        ],
+    
+        objectSrc: ["'none'"]
+      }
     },
     // It's often recommended to disable frameguard when using frame-ancestors
     // as frame-ancestors offers more granular control.

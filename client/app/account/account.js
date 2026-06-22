@@ -32,8 +32,19 @@ angular.module('workspaceApp')
         authenticate: true
       });
   })
-  .run(function($rootScope) {
+  .run(function($rootScope,Auth) {
+    let authBootstrapped = false;
     $rootScope.$on('$stateChangeStart', function(event, next, nextParams, current) {
+      // allow first transition to complete bootstrap
+      if (!authBootstrapped) {
+        authBootstrapped = true;
+        return;
+      }
+    
+      if (!Auth.initialized) {
+        event.preventDefault();
+        return;
+      }
       if (next.name === 'logout' && current && current.name && !current.authenticate) {
         next.referrer = current.name;
       }

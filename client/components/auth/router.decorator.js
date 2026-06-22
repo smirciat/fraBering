@@ -5,7 +5,18 @@
   angular.module('workspaceApp.auth')
     .run(function($rootScope, $state, Auth) {
       // Redirect to login if route requires auth and the user is not logged in, or doesn't have required role
+      let authBootstrapped = false;
       $rootScope.$on('$stateChangeStart', function(event, next) {
+        // allow first transition to complete bootstrap
+        if (!authBootstrapped) {
+          authBootstrapped = true;
+          return;
+        }
+      
+        if (!Auth.initialized) {
+          event.preventDefault();
+          return;
+        }
         if (!next.authenticate) {
           return;
         }
