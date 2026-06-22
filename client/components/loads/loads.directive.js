@@ -5,7 +5,7 @@ angular.module('workspaceApp')
 
   return {
 
-    templateUrl: 'components/loads/files/sheet002.htm',
+    templateUrl: 'components/loads/sheet002.htm',
       scope: {
         flight: '=' 
       },
