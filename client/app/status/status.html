@@ -89,11 +89,12 @@
               <div class="chat-top-row">
                 <span>{{flight.acftType}}, {{flight.pilot}}, <strong class="chat-status" 
                     ng-class="status.fltStatus(flight.localStatus)">{{flight.localStatus}}</strong></span>
-                <span class="chat-meta">
-                  OC ✔ 
-                  <textarea class="chat-input" ng-style="status.getInputWidth('init')" ng-model="flight.ocSign" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('ocSign',flight,true)" placeholder="Int/Time" ng-disabled="!status.Auth.isAdmin()"></textarea>
-                  <button class="btn btn-success" ng-style="status.getInputWidth()" style="padding-top:0px;">Save</button>
+                <span class="points-row">
+                  OC  
+                  <input style="transform: scale(1.5);margin:3px;padding:0" type="checkbox" ng-disabled="!status.Auth.isAdmin()"
+                    ng-model="flight.ocCheck" ng-change="status.updateFirebase('ocSign',flight,false)">
+                  <span>{{flight.ocSign}}</span>
+                  <!--<button class="btn btn-success" ng-style="status.getInputWidth()" style="padding-top:0px;">Save</button>-->
                 </span>
                 <span style="margin-left:auto;">
                   <i ng-if="flight.ocSign" class="fa fa-solid fa-thumbs-up fa-autosize"></i>
@@ -194,20 +195,7 @@
       
         </div>
       </div>
-       <!--<div class="light-border">
-         <div style="padding-left:0.3em;">
-          <p style="margin:0px; border:none;">
-            <strong>{{' ' + flight.acftNumber + ', ' + flight.pilot}}</strong>
-            <strong ng-if="flight.coPilot">{{'/ ' + flight.coPilot+', '}}</strong>
-          </p>
-          <p>
-            <strong> 
-              {{flight.custCompany + ' ' + flight.missionDetails}}
-            </strong>
-          </p>
-          <br style="clear:both">
-         </div>
-       </div>-->
+       
      </div>
    </div>
    <div class="alts">

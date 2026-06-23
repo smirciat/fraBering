@@ -1516,9 +1516,23 @@ class StatusComponent {
     else return [];
   }
   
+  createSignature(){
+    if (!this.user||!this.user.name) return undefined;
+    const arr=this.user.name.split(' ');
+    let initials=arr[0].substring(0,1).toUpperCase();
+    if (arr.length>1) initials+=arr[1].substring(0,1).toUpperCase();
+    return initials + '/ ' + new Date().toLocaleTimeString();
+  }
+  
   updateFirebase(fieldName,obj,timestamp){
-    let field=obj[fieldName];
+    if (!obj) return alert('No Object!  This really shouldn`t happen, if it persists after refresh, there is something wrong with the code');
     let minObj={_id:obj._id};
+    let field=obj[fieldName];
+    if (fieldName==='ocSign') {
+      if (!field) field=this.createSignature();
+      minObj.ocCheck=obj.ocCheck;
+    }
+    
     let arr=field.split('/');
     if (arr.length===1&&arr[0]&&timestamp) field=arr[0] + '/' + new Date().toLocaleTimeString();
     minObj[fieldName]=field;
