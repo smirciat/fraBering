@@ -24,7 +24,6 @@ export default function(app) {
   app.use('/api/todaysFlights/mobile', require('./api/todaysFlight/indexMobile'));
   //
   // Insert routes below
-  app.use('/api/heliFlights', require('./api/heliFlight'));
   app.use('/api/futureCharters', require('./api/futureCharter'));
   app.use('/api/sms', require('./api/sm'));
   app.use('/api/signatures', require('./api/signature'));

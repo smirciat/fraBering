@@ -666,101 +666,68 @@ class StatusComponent {
   syncHelis(firebaseFlights){
     if (!firebaseFlights) firebaseFlights=this.heliFirebaseFlights;
     if (!firebaseFlights) return;
-    this.heliReleases=this.heliReleases||[];
-    this.http.post('/api/heliFlights/query',{dateString:this.dateString}).then(res=>{
-      //search for unsaved data in this.heliReleases
-      console.log(res.data)
-      let newReleases=res.data;
-      newReleases.forEach(release=>{
-        const index=this.heliReleases.map(e=>e.firebaseId).indexOf(release.firebaseId);
-        if (index===-1) this.heliReleases.push(release);
-      });
-      console.log(this.heliReleases)
-      let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H",'Huey',"MD500"];
-      if (this.heliFlights) this.heliFlights.forEach(flight=>{
-        let index=firebaseFlights.map(e=>e._id).indexOf(flight._id);
-        if (index>-1) firebaseFlights[index].extend=flight.extend;
-      });
-      this.heliFlights=firebaseFlights.filter(flight=>{
-        return helis.indexOf(flight.acftType)>-1&&flight.acftNumber
-          &&flight.acftNumber.substring(0,1).toUpperCase()==="N"
-          &&this.date.toLocaleDateString()===new Date(flight.dateString).toLocaleDateString();
-      }).sort((a,b)=>{
-        if (!a.fltPlan||!a.fltPlan.depTime) return 1;
-        if (!b.fltPlan||!b.fltPlan.depTime) return -1;
-        if (a.fltPlan.depTime.length===3) a.fltPlan.depTime='0'+a.fltPlan.depTime;
-        if (b.fltPlan.depTime.length===3) b.fltPlan.depTime='0'+b.fltPlan.depTime;
-        const arr1=a.fltPlan.depTime.split(':');
-        if (arr1.length>1&&a.fltPlan.depTime.length===4) a.fltPlan.depTime='0'+a.fltPlan.depTime;
-        const arr2=b.fltPlan.depTime.split(':');
-        if (arr2.length>1&&b.fltPlan.depTime.length===4) b.fltPlan.depTime='0'+b.fltPlan.depTime;
-        return a.fltPlan.depTime-b.fltPlan.depTime;
-      });
-      this.heliFlights.forEach(flight=>{
-        //see if we need to add heliRelease object
-        let i=this.heliReleases.map(e=>e.firebaseId).indexOf(flight._id);
-        let releaseObj={firebaseId:flight._id,dateString:this.dateString,acftNumber:flight.acftNumber};
-        if (i>-1) {
-          //assign fields of heliRelease onto flight
-          let releaseObj = JSON.parse(JSON.stringify(this.heliReleases[i]));
-          releaseObj.pgId=releaseObj._id;
-          delete releaseObj._id;
-          Object.assign(flight, releaseObj);
-        }
-        else {
-          //create new heliRelease
-          this.heliReleases.push(releaseObj);
-          this.http.post('/api/heliFlights',releaseObj);
-        }
-        
-        //flight Status
-        flight.localETA=this.localETA(flight);
-        flight.localStatus='Planned';
-        if (flight.offAt) flight.localStatus='En Route';
-        if (flight.onAt) flight.localStatus='Completed';
-        //fltPlan Elements
-        flight.fltPlanElements=[];
-        let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray','altitude','flightRules','flightID','acftType','color','tas'];
-        if (flight.fltPlan&&this.isPlainObject(flight.fltPlan)) for (const [key, value] of Object.entries(flight.fltPlan)) {
-          if (excludedKeys.indexOf(key)>-1) continue;
-          if (value) flight.fltPlanElements.push({label:this.camelToTitle(key),value:value.toString()});
-        }
-      });
+    let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H",'Huey',"MD500"];
+    if (this.heliFlights) this.heliFlights.forEach(flight=>{
+      let index=firebaseFlights.map(e=>e._id).indexOf(flight._id);
+      if (index>-1) firebaseFlights[index].extend=flight.extend;
     });
-  }
-  
-  localETA(flight){
-    let hours,enroute,h,m;
-    let arr=[];
-    if (flight.fltPlan&&flight.offAt&&flight.fltPlan.timeEnroute) {
-      let dtime=flight.offAt;
-      if (dtime.length===3) dtime=dtime.slice(0, 1) + ':' + dtime.slice(1);
-      if (dtime.length===4) dtime=dtime.slice(0, 2) + ':' + dtime.slice(2);
-      arr=dtime.split(/[:+]/);
-      if (arr.length<=1) {
-        hours=flight.fltPlan.depTime.substring(0,2);
-        if (1*hours>23) hours=hours.substring(1,2);
-      }
-      else hours=1*arr[0]+1*arr[1]/60;
-      if (!isNaN(hours)) {
-        arr=flight.fltPlan.timeEnroute.split(/[:+]/);
-        if (arr.length<=1) {
-          if (1*flight.fltPlan.timeEnroute>24&&flight.fltPlan.timeEnroute.length>2) {
-            enroute=flight.fltPlan.timeEnroute.substring(0,2);
-            if (1*enroute>23) enroute=flight.fltPlan.timeEnroute.substring(1,2);
+    this.heliFlights=firebaseFlights.filter(flight=>{
+      return helis.indexOf(flight.acftType)>-1&&flight.acftNumber
+        &&flight.acftNumber.substring(0,1).toUpperCase()==="N"
+        &&this.date.toLocaleDateString()===new Date(flight.dateString).toLocaleDateString();
+    }).sort((a,b)=>{
+      if (!a.fltPlan||!a.fltPlan.depTime) return 1;
+      if (!b.fltPlan||!b.fltPlan.depTime) return -1;
+      if (a.fltPlan.depTime.length===3) a.fltPlan.depTime='0'+a.fltPlan.depTime;
+      if (b.fltPlan.depTime.length===3) b.fltPlan.depTime='0'+b.fltPlan.depTime;
+      const arr1=a.fltPlan.depTime.split(':');
+      if (arr1.length>1&&a.fltPlan.depTime.length===4) a.fltPlan.depTime='0'+a.fltPlan.depTime;
+      const arr2=b.fltPlan.depTime.split(':');
+      if (arr2.length>1&&b.fltPlan.depTime.length===4) b.fltPlan.depTime='0'+b.fltPlan.depTime;
+      return a.fltPlan.depTime-b.fltPlan.depTime;
+    });
+    this.heliFlights.forEach(flight=>{
+      //flight Status
+      let hours,enroute,h,m;
+      let arr=[];
+      if (flight.fltPlan&&flight.offAt&&flight.fltPlan.timeEnroute) {
+        let dtime=flight.offAt;
+          if (dtime.length===3) dtime=dtime.slice(0, 1) + ':' + dtime.slice(1);
+          if (dtime.length===4) dtime=dtime.slice(0, 2) + ':' + dtime.slice(2);
+          arr=dtime.split(/[:+]/);
+          if (arr.length<=1) {
+            hours=flight.fltPlan.depTime.substring(0,2);
+            if (1*hours>23) hours=hours.substring(1,2);
           }
-          else enroute=arr[0];
-          if (1*enroute>12) enroute=enroute/10;
-          hours=1*hours+1*enroute;
-        }
-        else hours=1*hours+1*arr[0]+1*arr[1]/60;
+          else hours=1*arr[0]+1*arr[1]/60;
+          if (!isNaN(hours)) {
+            arr=flight.fltPlan.timeEnroute.split(/[:+]/);
+            if (arr.length<=1) {
+              if (1*flight.fltPlan.timeEnroute>24&&flight.fltPlan.timeEnroute.length>2) {
+                enroute=flight.fltPlan.timeEnroute.substring(0,2);
+                if (1*enroute>23) enroute=flight.fltPlan.timeEnroute.substring(1,2);
+              }
+              else enroute=arr[0];
+              if (1*enroute>12) enroute=enroute/10;
+              hours=1*hours+1*enroute;
+            }
+            else hours=1*hours+1*arr[0]+1*arr[1]/60;
+          }
+          h = Math.floor(hours);
+          m = Math.round((hours - h) * 60);
+          flight.localETA=`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       }
-      h = Math.floor(hours);
-      m = Math.round((hours - h) * 60);
-      flight.localETA=`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-      return flight.localETA;
-    }
-    return;
+      flight.localStatus='Planned';
+      if (flight.offAt) flight.localStatus='En Route';
+      if (flight.onAt) flight.localStatus='Completed';
+      //fltPlan Elements
+      flight.fltPlanElements=[];
+      let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray','altitude','flightRules','flightID','acftType','color','tas'];
+      if (flight.fltPlan&&this.isPlainObject(flight.fltPlan)) for (const [key, value] of Object.entries(flight.fltPlan)) {
+        if (excludedKeys.indexOf(key)>-1) continue;
+        if (value) flight.fltPlanElements.push({label:this.camelToTitle(key),value:value.toString()});
+      }
+    });
   }
   
   fltStatus(status){
@@ -1557,20 +1524,24 @@ class StatusComponent {
     return initials + '/ ' + new Date().toLocaleTimeString();
   }
   
-  updateHeli(obj,fieldName,timestamp){
+  updateFirebase(fieldName,obj,timestamp){
     if (!obj) return alert('No Object!  This really shouldn`t happen, if it persists after refresh, there is something wrong with the code');
-    if (fieldName==='ocSign'&&obj.ocCheck) obj.ocSign=this.createSignature();
-    else if (obj[fieldName]){
-      let arr=obj[fieldName].split('/');
-      if (arr.length===1&&arr[0]&&timestamp) obj[fieldName]=arr[0] + '/' + new Date().toLocaleTimeString();
+    let minObj={_id:obj._id};
+    let field=obj[fieldName];
+    if (fieldName==='ocSign') {
+      if (!field) field=this.createSignature();
+      minObj.ocCheck=obj.ocCheck;
     }
-    //make this todaysFlights api instead of firebase
-    //this.http.post('/api/airplanes/updateFirebase',{collection:'flights',doc:minObj}).then(res=>{
-    this.http.patch('/api/heliFlights/'+obj.pgId,obj).then(res=>{
+    
+    let arr=field.split('/');
+    if (arr.length===1&&arr[0]&&timestamp) field=arr[0] + '/' + new Date().toLocaleTimeString();
+    minObj[fieldName]=field;
+    this.http.post('/api/airplanes/updateFirebase',{collection:'flights',doc:minObj}).then(res=>{
       this.quickModal("Flight Plan Signature and/or Time has Been Recorded","Success!",false);
+      console.log(res.data);
       let index=this.heliFlights.map(e=>e._id).indexOf(obj._id);
       if (index>-1) {
-        this.heliFlights[index][fieldName]=obj[fieldName];
+        this.heliFlights[index][fieldName]=field;
         this.heliFlights[index].localStatus="Planned";
         if (this.heliFlights[index].offAt) this.heliFlights[index].localStatus="En Route";
         if (this.heliFlights[index].onAt) this.heliFlights[index].localStatus="Completed";
