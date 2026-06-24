@@ -17,6 +17,7 @@ function onConnect(socket) {
   });
 
   // Insert sockets below
+  require('../api/heliFlight/heliFlight.socket').register(socket);
   require('../api/futureCharter/futureCharter.socket').register(socket);
   require('../api/sm/sm.socket').register(socket);
   require('../api/signature/signature.socket').register(socket);

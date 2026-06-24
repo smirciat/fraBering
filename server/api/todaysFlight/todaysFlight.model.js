@@ -77,6 +77,9 @@ export default function(sequelize, DataTypes) {
     truck:DataTypes.STRING,
     startFuel:DataTypes.STRING,
     stopFuel:DataTypes.STRING,
-    gallonsUplifted:DataTypes.STRING
+    gallonsUplifted:DataTypes.STRING,
+    
+    
+    
   });
 }

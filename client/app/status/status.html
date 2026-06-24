@@ -92,9 +92,9 @@
                 <span class="points-row">
                   OC  
                   <input style="transform: scale(1.5);margin:3px;padding:0" type="checkbox" ng-disabled="!status.Auth.isAdmin()"
-                    ng-model="flight.ocCheck" ng-change="status.updateFirebase('ocSign',flight,false)">
+                    ng-model="flight.ocCheck" ng-change="status.updateHeli(flight,'ocSign',false)">
                   <span>{{flight.ocSign}}</span>
-                  <!--<button class="btn btn-success" ng-style="status.getInputWidth()" style="padding-top:0px;">Save</button>-->
+                  <button class="btn btn-success" ng-style="status.getInputWidth()" ng-click="status.updateHeli(flight)" style="padding-top:0px;">Save</button>
                 </span>
                 <span style="margin-left:auto;">
                   <i ng-if="flight.ocSign" class="fa fa-solid fa-thumbs-up fa-autosize"></i>
@@ -110,7 +110,7 @@
                 <span class="font-green" ng-if="flight.offAt&&!flight.onAt"><strong>ETA {{flight.localETA||'00'}}</strong></span>
                 <span style="margin-left:auto">AFF: ✔ OFF@
                   <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.offAt" 
-                       ng-model-options="{ updateOn: 'blur' }" ng-change="status.updateFirebase('offAt',flight)" placeholder="00:00"></textarea>
+                       ng-model-options="{ updateOn: 'blur' }" placeholder="00:00" ng-blur="status.localETA(flight)"></textarea>
                 </span>
               </div>
               
@@ -122,7 +122,7 @@
             <span><strong>Remarks:</strong>{{flight.missionDetails}}</span>
             <span style="margin-left: auto;">ON@
               <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.onAt" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('onAt',flight)" placeholder="00:00" ng-disabled="!flight.offAt"></textarea>
+                      placeholder="00:00" ng-disabled="!flight.offAt"></textarea>
             </span>
           </section>
       
@@ -133,44 +133,44 @@
               <span  ng-if="flight.extend">Location/Plan</span>
               <span  ng-if="flight.extend">Next Update: 
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.nextUpdate" ng-model-options="{ updateOn: 'blur' }"
-                      ng-change="status.updateFirebase('nextUpdate',flight)" placeholder="00:00"></textarea>
+                      placeholder="00:00"></textarea>
               </span>
             </div>
             <div ng-if="flight.extend">
               <div class="chat-update-row">
                 <span><strong>Time</strong></span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time1" ng-model-options="{ updateOn: 'blur' }"
-                        ng-change="status.updateFirebase('time1',flight)" placeholder="00:00"></textarea>
+                        placeholder="00:00"></textarea>
                 <span>/</span>
                 <textarea class="chat-input" ng-style="status.getInputWidth('wide')" ng-model="flight.location1" ng-model-options="{ updateOn: 'blur' }"
-                        ng-change="status.updateFirebase('location1',flight)" placeholder="Location/Route Update"></textarea>
+                         placeholder="Location/Route Update"></textarea>
                 <span>/</span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next1" ng-model-options="{ updateOn: 'blur' }"
-                        ng-change="status.updateFirebase('next1',flight)" placeholder="00:00"></textarea>
+                        placeholder="00:00"></textarea>
               </div>
         
               <div class="chat-update-row">
                 <span><strong>Time</strong></span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time2" ng-model-options="{ updateOn: 'blur' }"
-                        ng-change="status.updateFirebase('time2',flight)" placeholder="00:00"></textarea>
+                         placeholder="00:00"></textarea>
                 <span>/</span>
                 <textarea class="chat-input" ng-style="status.getInputWidth('wide')" ng-model="flight.location2" ng-model-options="{ updateOn: 'blur' }"
-                        ng-change="status.updateFirebase('location2',flight)" placeholder="Location/Route Update"></textarea>
+                         placeholder="Location/Route Update"></textarea>
                 <span>/</span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next2" ng-model-options="{ updateOn: 'blur' }"
-                        ng-change="status.updateFirebase('next2',flight)" placeholder="00:00"></textarea>
+                        placeholder="00:00"></textarea>
               </div>
               
               <div class="chat-update-row">
                 <span><strong>Time</strong></span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.time3" ng-model-options="{ updateOn: 'blur' }"
-                        ng-change="status.updateFirebase('time3',flight)" placeholder="00:00"></textarea>
+                        placeholder="00:00"></textarea>
                 <span>/</span>
                 <textarea class="chat-input" ng-style="status.getInputWidth('wide')" ng-model="flight.location3" ng-model-options="{ updateOn: 'blur' }"
-                        ng-change="status.updateFirebase('location3',flight)" placeholder="Location/Route Update"></textarea>
+                         placeholder="Location/Route Update"></textarea>
                 <span>/</span>
                 <textarea class="chat-input" ng-style="status.getInputWidth()" ng-model="flight.next3" ng-model-options="{ updateOn: 'blur' }"
-                        ng-change="status.updateFirebase('next3',flight)" placeholder="00:00"></textarea>
+                         placeholder="00:00"></textarea>
               </div>
               <div class="chat-update-row" style="padding:0 3em 0 3em;background-color:lightgray;">
                 <span><strong>Flight Data</strong></span>

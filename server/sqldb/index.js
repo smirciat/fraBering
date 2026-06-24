@@ -14,6 +14,7 @@ var db = {
 };
 
 // Insert models below
+db.HeliFlight = require('../api/heliFlight/heliFlight.model').default(db.sequelize, Sequelize.DataTypes);
 db.FutureCharter = require('../api/futureCharter/futureCharter.model').default(db.sequelize, Sequelize.DataTypes);
 db.Sm = require('../api/sm/sm.model').default(db.sequelize, Sequelize.DataTypes);
 db.Signature = require('../api/signature/signature.model').default(db.sequelize, Sequelize.DataTypes);
