@@ -264,6 +264,41 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
   }
 }
 
+export async function getCollectionDateWithSub(collectionName,limit,date) {
+  try {
+    const collectionRef = firebase_db.collection(collectionName);
+    const querySnapshot = await collectionRef.where('dateString','==',formatDate(date)).limit(limit).get();
+
+    const results = await Promise.all(
+      querySnapshot.docs.map(async (doc) => {
+        const data = doc.data();
+    
+        // Get the release subcollection
+        const releaseSnapshot = await doc.ref.collection('release').get();
+    
+        const release = releaseSnapshot.docs.map(releaseDoc => (
+          Object.assign(
+            { _id: releaseDoc.id },
+            releaseDoc.data()
+          )
+        ));
+    
+        return Object.assign(
+          {
+            _id: doc.id,
+            release: release
+          },
+          data
+        );
+      })
+    );
+    
+    return results;
+  } catch (error) {
+    console.error('Error getting collection:', error);
+  }
+}
+
 export async function getCollectionDate(collectionName,limit,date) {
   try {
     const collectionRef = firebase_db.collection(collectionName);
@@ -372,8 +407,32 @@ export function observe() {
   try {
     if (unsub) unsub();//clear any previous observer
     const fbQuery = firebase_db.collection('flights').where('dateString','==',dateString);
-    unsub=fbQuery.onSnapshot(querySnapshot=>{
-      allFlights=collectionToArray(querySnapshot);
+    unsub=fbQuery.onSnapshot(async querySnapshot=>{
+      const results = await Promise.all(
+        querySnapshot.docs.map(async (doc) => {
+          const data = doc.data();
+      
+          // Get the release subcollection
+          const releaseSnapshot = await doc.ref.collection('release').get();
+      
+          const release = releaseSnapshot.docs.map(releaseDoc => (
+            Object.assign(
+              { _id: releaseDoc.id },
+              releaseDoc.data()
+            )
+          ));
+      
+          return Object.assign(
+            {
+              _id: doc.id,
+              release: release
+            },
+            data
+          );
+        })
+      );
+      
+      allFlights=results;
       firebaseFlights=fSort(allFlights,dateString);
       //emit socket message with updated firebaseFLights
       try {
@@ -454,6 +513,23 @@ function formatDate(date) {
   return `${mm}/${dd}/${yy}`;
 }
 
+export async function firebaseHeliRelease(req,res){
+  console.log(req.body)
+  if (!req.body.flight||!req.body.flight._id) return res.status(500).json('need flight!');
+  const id=req.body.flight._id;
+  delete req.body.flight._id;
+  try {
+    const response=await updateDocumentSub('flights', id, req.body.flight);
+    if (response) return res.status(200).json('Updated Firebase Sub-Collection');
+    else return res.status(500).json('Firebase Update Failed');
+  }
+  catch(err){
+    console.log(err);
+    return res.status(500).json('Firebase Update Failed');
+  }
+  
+}
+
 export async function firebaseMin(flight){
   if (!flight) return 'need flight!';
   let minFlight={};
@@ -497,8 +573,8 @@ export async function firebaseDate(req,res){
   let collection=req.body.collection;
   let limit=req.body.limit||150;
   let date=new Date(req.body.date);
-  const result=await getCollectionDate(collection,limit,date);
-  let array=collectionToArray(result);
+  const result=await getCollectionDateWithSub(collection,limit,date);
+  let array=result;//collectionToArray(result);
   if (res) return res.status(200).json(array);
   return array;
 }

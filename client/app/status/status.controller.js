@@ -651,6 +651,7 @@ class StatusComponent {
   initHelis(){
     this.dateString=new Date(this.date).toLocaleDateString();
     this.http.post('/api/airplanes/firebaseDate',{collection:"flights",date:this.dateString}).then(res=>{
+      console.log(res.data)
       this.heliFirebaseFlights=res.data;
       this.syncHelis(this.heliFirebaseFlights);
       this.socket.socket.removeAllListeners('firebaseFlights');
@@ -687,11 +688,13 @@ class StatusComponent {
       return a.fltPlan.depTime-b.fltPlan.depTime;
     });
     this.heliFlights.forEach(flight=>{
+      if (!flight.release) flight.release=[{}];
+      if (!Array.isArray(flight.release)||flight.release.length===0) flight.release=[{}];
       //flight Status
       let hours,enroute,h,m;
       let arr=[];
-      if (flight.fltPlan&&flight.offAt&&flight.fltPlan.timeEnroute) {
-        let dtime=flight.offAt;
+      if (flight.fltPlan&&flight.release&&flight.release[0]&&flight.release[0].offAt&&flight.fltPlan.timeEnroute) {
+        let dtime=flight.release[0].offAt;
           if (dtime.length===3) dtime=dtime.slice(0, 1) + ':' + dtime.slice(1);
           if (dtime.length===4) dtime=dtime.slice(0, 2) + ':' + dtime.slice(2);
           arr=dtime.split(/[:+]/);
@@ -701,6 +704,10 @@ class StatusComponent {
           }
           else hours=1*arr[0]+1*arr[1]/60;
           if (!isNaN(hours)) {
+            flight.fltPlan.timeEnroute = flight.fltPlan.timeEnroute.replace(/[a-z]/gi, "");
+            if (/^\d{3,4}$/.test(flight.fltPlan.timeEnroute)) {
+              flight.fltPlan.timeEnroute=flight.fltPlan.timeEnroute.replace(/(\d{2})$/, ':$1');
+            }
             arr=flight.fltPlan.timeEnroute.split(/[:+]/);
             if (arr.length<=1) {
               if (1*flight.fltPlan.timeEnroute>24&&flight.fltPlan.timeEnroute.length>2) {
@@ -708,13 +715,14 @@ class StatusComponent {
                 if (1*enroute>23) enroute=flight.fltPlan.timeEnroute.substring(1,2);
               }
               else enroute=arr[0];
-              if (1*enroute>12) enroute=enroute/10;
+              if (1*enroute>16) enroute=enroute/10;
               hours=1*hours+1*enroute;
             }
             else hours=1*hours+1*arr[0]+1*arr[1]/60;
           }
           h = Math.floor(hours);
           m = Math.round((hours - h) * 60);
+          h=h%24;
           flight.localETA=`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       }
       flight.localStatus='Planned';
@@ -824,6 +832,7 @@ class StatusComponent {
         }
         //if (airportIndex>=airports.length-1) this.todaysFlights=this.filterTodaysFlights(this.todaysFlights);
       });
+      if (!this.scope.nav) return;
       if (this.scope.nav.base.four==="PAOM") {
         this.airports=airports.filter(e=>{
           return (e.threeLetter&&e.threeLetter!==""&&(e.baseGroup===window.base.four||e.baseGroup==="PAUN"))
@@ -1525,18 +1534,22 @@ class StatusComponent {
   }
   
   updateFirebase(fieldName,obj,timestamp){
+    console.log(obj)
     if (!obj) return alert('No Object!  This really shouldn`t happen, if it persists after refresh, there is something wrong with the code');
     let minObj={_id:obj._id};
-    let field=obj[fieldName];
+    let field=obj.release[0][fieldName];
     if (fieldName==='ocSign') {
-      if (!field) field=this.createSignature();
-      minObj.ocCheck=obj.ocCheck;
+      if (!field) {
+        field=this.createSignature();
+        obj.release[0].ocSign=field;
+      }
+      minObj.ocCheck=obj.release[0].ocCheck;
     }
     
     let arr=field.split('/');
     if (arr.length===1&&arr[0]&&timestamp) field=arr[0] + '/' + new Date().toLocaleTimeString();
     minObj[fieldName]=field;
-    this.http.post('/api/airplanes/updateFirebase',{collection:'flights',doc:minObj}).then(res=>{
+    this.http.post('/api/airplanes/updateFirebaseHeli',{flight:minObj}).then(res=>{
       this.quickModal("Flight Plan Signature and/or Time has Been Recorded","Success!",false);
       console.log(res.data);
       let index=this.heliFlights.map(e=>e._id).indexOf(obj._id);
