@@ -1754,7 +1754,8 @@ class StatusComponent {
     let mgtow=flight.pfr.legArray[0].mgtow*1;
     let owe=flight.pfr.legArray[0].operatingWeightEmpty*1;
     let fuel=flight.pfr.legArray[0].fuel*1;
-    let taxiFuel = flight.pfr.legArray[0].taxiFuel*1;
+    let taxiFuel=0;
+    taxiFuel = flight.pfr.legArray[0].taxiFuel*1||taxiFuel;
     let tks=0;
     if (flight.pfr.legArray[0].tksGallons){
       tks=flight.pfr.legArray[0].tksGallons;
