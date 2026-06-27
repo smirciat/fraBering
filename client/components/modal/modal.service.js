@@ -184,7 +184,8 @@ angular.module('workspaceApp')
                 user = args.shift(),
                 userLastname = args.shift(),
                 recentFlights = args.shift(),
-                startFuel=flight.pfr.legArray[0].fuel-flight.pfr.legArray[0].taxiFuel,//flight.pfr.legArray[0].startFuel||
+                taxiFuel=flight.pfr.legArray[0].taxiFuel||0,
+                startFuel=flight.pfr.legArray[0].fuel-taxiFuel,//flight.pfr.legArray[0].startFuel||
                 reasons=['No Reason','BA Employee','BA Pilot','Non-Company Handler','Other Airline Pilot','FAA','DOD'],
                 alternates=['None','PAOM','PAOT','PAUN','PABE','PAGA','PAFA','PANC'],
                 colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'],
