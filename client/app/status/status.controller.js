@@ -726,8 +726,8 @@ class StatusComponent {
           flight.localETA=`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       }
       flight.localStatus='Planned';
-      if (flight.offAt) flight.localStatus='En Route';
-      if (flight.onAt) flight.localStatus='Completed';
+      if (flight.release[0].offAt) flight.localStatus='En Route';
+      if (flight.release[0].onAt) flight.localStatus='Completed';
       //fltPlan Elements
       flight.fltPlanElements=[];
       let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray','altitude','flightRules','flightID','acftType','color','tas'];
