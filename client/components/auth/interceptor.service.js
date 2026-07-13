@@ -16,8 +16,8 @@
 
       // Intercept 401s and redirect you to login
       responseError(response) {
-        console.log(response.config.url)
-        if (response.config.url.includes('Flight and Load Planner_files')) {
+        console.log(response);
+        if (response.config&&response.config.url.includes('Flight and Load Planner_files')) {
           return $q.reject(response);
         }
         console.log('AUTH FAIL:', response.status, response.config.url);

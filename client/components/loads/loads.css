@@ -4,3 +4,24 @@
     font-size: 11px;
     text-align:center;
 }
+.shorter-ui-select {
+  display: block;        /* Ensures the margin is respected correctly */
+  margin-top: 8px;      /* Adjust this pixel value to nudge it down */
+}
+/* Select2 Theme */
+.shorter-ui-select .select2-choice {
+  font-size:11px;
+  height: 18px !important;
+  line-height: 16px !important;
+}
+.shorter-ui-select .select2-arrow {
+  height: 16px !important;
+}
+
+/* Selectize Theme */
+.shorter-ui-select .selectize-input {
+  font-size:11px;
+  height: 18px !important;
+  min-height: 18px !important;
+  padding: 1px 8px !important;
+}

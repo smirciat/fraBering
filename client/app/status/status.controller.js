@@ -48,6 +48,7 @@ class StatusComponent {
             'PAKK','PFSH','PAMK','WBB','PADG','PAPO','PALU','PAVL','PAWN','PFNO','PAIK','PASK','PAFM','PAGH','PAOB','PABL','PADE'];
     this.captainPlusMinus="+";
     this.copilotPlusMinus="+";
+    this.showLoadSheet=[];
     $scope.$on('$destroy', function() {
         socket.socket.removeAllListeners('firebaseFlights');
         socket.unsyncUpdates('todaysFlight');
@@ -1927,6 +1928,7 @@ class StatusComponent {
           console.log(res.data)
           this.allTodaysFlights=res.data;
           this.todaysFlights=this.filterTodaysFlights(res.data);
+          this.loadFlights=JSON.parse(JSON.stringify(this.todaysFlights));
           this.scroll();
           this.timeout(()=>{
             this.spinner=false;
@@ -1949,9 +1951,68 @@ class StatusComponent {
               console.log(item);
               this.timeout(()=>{this.spinner=false;},0);
             }
+            let i=-1;
+            //update loadFLights more selectively so as not to disturb the loads directive.  
+            //Created make sure it belongs in todaysFlights, and need to match sort order of todaysFlights
+            if (item.date===this.dateString&&event==="created") {
+              i=this.todaysFlights.map(e=>e._id).indexOf(item._id);
+              if (i>-1) {
+                this.showLoadSheet.splice(i,0,false);
+                this.loadFlights.splice(i,0,item);
+              }
+              //else we don't want it!
+            } 
+            //, updated find it and update it.
+            if (event==='updated'){
+              i=this.loadFlights.map(e=>e._id).indexOf(item._id);
+              if (i>-1) {
+                if (item.active) {
+                  this.deepMerge(this.loadFlights[i],item);
+                }
+                else{
+                  //delete it
+                  this.showLoadSheet.splice(i,1);
+                  this.loadFlights.splice(i,1);
+                }
+              }
+              //else we don't want it!
+            }
           });
         });
       },this.timeoutVal);
+  }
+  
+  isObject(item) {
+    return item && typeof item === 'object' && !Array.isArray(item);
+  }
+  
+  deepMerge(target, source) {
+    // mutates target
+    let output = target;
+  
+    if (this.isObject(target) && this.isObject(source)) {
+      Object.keys(source).forEach(key => {
+        if (this.isObject(source[key])) {
+          if (!(key in target)) {
+            // If the key doesn't exist in target, copy the whole source object
+            Object.assign(output, { [key]: source[key] });
+          } else {
+            // If it exists in both, recursively merge them
+            output[key] = this.deepMerge(target[key], source[key]);
+          }
+        } else {
+          // Primitive values from source overwrite target
+          Object.assign(output, { [key]: source[key] });
+        }
+      });
+    }
+  
+    return output;
+  }
+  
+  is408(aircraft){
+    let list=['N408BA','N409BA','N701BA','N703BA'];
+    return list.indexOf(aircraft)>-1;
   }
 }
 

@@ -62,6 +62,7 @@ export default function(sequelize, DataTypes) {
     equipment:DataTypes.JSONB,
     bew:DataTypes.JSONB,
     alternate:DataTypes.STRING,
+    loadsObject:DataTypes.JSONB,
     pilotObject:DataTypes.JSONB,
     coPilotObject:DataTypes.JSONB,
     jumpseaterObject:DataTypes.JSONB,
