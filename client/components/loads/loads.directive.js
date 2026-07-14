@@ -121,12 +121,14 @@ angular.module('workspaceApp')
       if (scope.flight.fuelPreviouslyOnboard) scope.load.fob=scope.load.fob||scope.flight.fuelPreviouslyOnboard*1;
       if (scope.flight.airportObjs&&scope.flight.airportObjs[0]&&scope.flight.airportObjs[0].airport&&scope.flight.airportObjs[0].airport.threeLetter) scope.load.departure=scope.load.departure||scope.flight.airportObjs[0].airport.threeLetter;
       if (scope.flight.airportObjs&&scope.flight.airportObjs[1]&&scope.flight.airportObjs[1].airport&&scope.flight.airportObjs[1].airport.threeLetter) scope.load.destination=scope.load.destination||scope.flight.airportObjs[1].airport.threeLetter;
+      scope.load.date=scope.flight.date;
       scope.load.flightNum=scope.load.flightNum||scope.flight.flightNum;
       scope.load.captainInches=142.2;
       scope.load.firstOfficerInches=142.2;
       scope.load.mgtowDeparture=19000;
       scope.load.mgtowDestination=19000;
       scope.load.land=18600;
+      
       
       
       function setHtml(){
