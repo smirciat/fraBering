@@ -190,8 +190,7 @@ angular.module('workspaceApp')
       
       function calculateDataFields(){
         scope.dirty=true;
-        scope.load.fob=scope.load.fob*1||0;
-        scope.load.requestGallons=Math.round(10*(scope.load.startFuel*1-scope.load.fob)/6.7)/10;
+        
         let i=-1;
         //calculate zone loads
         scope.load.totalLoadNose=scope.load.pallet1;
@@ -253,6 +252,9 @@ angular.module('workspaceApp')
         }
         scope.load.takeoffFuel=Math.round(scope.load.fuelPlan.fuel);
         scope.load.startFuel=Math.round(scope.load.fuelPlan.fuel + firstLegTaxi);
+        scope.load.fob=scope.load.fob*1||0;
+        if (scope.load.startFuel<scope.load.fob) scope.load.requestGallons=0;
+        else scope.load.requestGallons=Math.round(10*(scope.load.startFuel*1-scope.load.fob)/6.7)/10;
         if (burnRate) {
           scope.load.fuelHours=timeFormat(scope.load.fuelPlan.fuel/burnRate);
         }
