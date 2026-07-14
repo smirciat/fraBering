@@ -190,7 +190,7 @@ angular.module('workspaceApp')
       
       function calculateDataFields(){
         scope.dirty=true;
-        scope.load.fob=scope.load.fob||0;
+        scope.load.fob=scope.load.fob*1||0;
         scope.load.requestGallons=Math.round(10*(scope.load.startFuel*1-scope.load.fob)/6.7)/10;
         let i=-1;
         //calculate zone loads
