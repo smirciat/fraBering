@@ -2011,7 +2011,12 @@ class StatusComponent {
   }
   
   is408(aircraft){
-    let list=['N408BA','N409BA','N701BA','N703BA'];
+    const list=['N408BA','N409BA','N701BA','N703BA'];
+    return list.indexOf(aircraft)>-1;
+  }
+  
+  isCasa(aircraft){
+    const list=['N349TA','N422CA'];
     return list.indexOf(aircraft)>-1;
   }
 }
