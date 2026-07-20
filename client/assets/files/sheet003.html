@@ -1,0 +1,726 @@
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="Stylesheet" href=" assets/files/stylesheet.css">
+<style>
+.loads-sheet-wrap table { border-collapse: collapse; table-layout: fixed; width: 526pt; }
+.loads-sheet-wrap td { vertical-align: top; }
+.loads-sheet-wrap td.load-chart-cell { position: relative; overflow: visible; }
+.loads-sheet-wrap td.load-pallet-brace-cell { position: relative; overflow: visible; }
+.loads-sheet-wrap .load-pallet-brace { position: absolute; left: 40px; top: 1px; z-index: 28; }
+.loads-sheet-wrap .load-chart-overlay {
+  position: absolute;
+  z-index: 32;
+  left: 17px;
+  top: 1px;
+  width: 269px;
+  height: 246px;
+  overflow: visible;
+  pointer-events: none;
+}
+.loads-sheet-wrap .load-chart-overlay img {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.loads-sheet-wrap .load-cg-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #008080;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #004646;
+  z-index: 2;
+  pointer-events: none;
+}
+.loads-sheet-wrap td.load-atis-box {
+  border-top: 1pt solid windowtext;
+  border-right: 1pt solid windowtext;
+  border-left: 1pt solid windowtext;
+  border-bottom: 1pt solid windowtext;
+  vertical-align: top;
+  font-size: 8pt;
+  padding: 2px;
+}
+.loads-sheet-wrap td.load-atis-pad {
+  border-top: 1pt solid windowtext;
+  border-right: 1pt solid windowtext;
+  border-bottom: 1pt solid windowtext;
+  min-height: 32px;
+}
+</style>
+</head>
+<body class="xl271 loads-sheet-wrap">
+<table border="0" cellpadding="0" cellspacing="0" width="702" style="border-collapse:collapse;table-layout:fixed;width:526pt">
+<colgroup>
+  <col width="12"><col width="133"><col width="56"><col width="61"><col width="58">
+  <col width="60"><col width="78"><col width="47"><col width="66"><col width="65"><col width="66">
+</colgroup>
+<tbody>
+<tr height="9" style="height:7.05pt">
+  <td height="9" class="xl271" style="height:7.05pt"></td>
+  <td class="xl271"></td><td class="xl271"></td><td class="xl271"></td><td class="xl271"></td>
+  <td class="xl271"></td><td class="xl271"></td><td class="xl271"></td><td class="xl271"></td>
+  <td class="xl271"></td><td class="xl271"></td>
+</tr>
+<tr height="28" style="height:20.65pt">
+  <td height="28" class="xl271" style="height:20.65pt"></td>
+  <td class="xl272">BERING AIR</td>
+  <td colspan="5" height="28" width="313" style="height:20.65pt;width:236pt" align="left" valign="top">
+    <span style="mso-ignore:vglayout;position:absolute;z-index:23;margin-left:176px;margin-top:2px;width:379px;height:64px">
+      <span style="position:absolute;z-index:25;margin-left:0;margin-top:42px;width:60px;height:22px">
+        <span data-field="tailNumber" data-type="data"></span>
+      </span>
+      <span style="position:absolute;z-index:27;margin-left:60px;margin-top:41px;width:171px;height:23px">
+        <span data-field="fuelPlan" data-type="dropdown"></span>
+      </span>
+      <img width="379" height="64" src=" assets/files/image030.png" alt="C212 aircraft">
+    </span>
+    <span style="mso-ignore:vglayout2">
+      <table cellpadding="0" cellspacing="0"><tr>
+        <td colspan="5" height="28" class="xl915" width="313" style="height:20.65pt;width:236pt">C212 LOAD SHEET</td>
+      </tr></table>
+    </span>
+  </td>
+  <td colspan="2" class="xl917">Instructions</td>
+  <td class="xl273">&nbsp;</td>
+  <td class="xl274">&nbsp;</td>
+</tr>
+<tr height="15" style="height:11.25pt">
+  <td height="15" class="xl281" style="height:11.25pt"></td>
+  <td class="xl275">Date</td>
+  <td class="xl276">Flight #</td>
+  <td class="xl276">Departure</td>
+  <td class="xl277">Destination</td>
+  <td class="xl277">Tail</td>
+  <td colspan="2" class="xl918">Fuel Plan</td>
+  <td class="xl278">&nbsp;</td>
+  <td class="xl279">&nbsp;</td>
+  <td class="xl280">&nbsp;</td>
+</tr>
+<tr height="22" style="height:16.5pt">
+  <td height="22" class="xl271" style="height:16.5pt"></td>
+  <td data-field="date" data-type="data" class="xl282"></td>
+  <td data-field="flightNum" data-type="data" class="xl283"></td>
+  <td data-field="departure" data-type="input" class="xl685"></td>
+  <td data-field="destination" data-type="input" class="xl685"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl284">&nbsp;</td>
+  <td class="xl285">&nbsp;</td>
+  <td class="xl286">&nbsp;</td>
+  <td class="xl287">&nbsp;</td>
+</tr>
+<tr height="19" style="height:14.25pt">
+  <td height="19" class="xl271" style="height:14.25pt"></td>
+  <td class="xl288">AIRCRAFT</td>
+  <td class="xl289">Pounds</td>
+  <td class="xl289">Inches</td>
+  <td class="xl289">Index</td>
+  <td class="xl289">WB Date</td>
+  <td colspan="2" class="xl919">FUEL</td>
+  <td class="xl290">WEIGHT</td>
+  <td class="xl291">Plan</td>
+  <td class="xl292">Limit</td>
+</tr>
+<tr height="19" style="height:14.25pt">
+  <td height="19" class="xl271" style="height:14.25pt"></td>
+  <td data-field="aircraft" data-type="data" class="xl293"></td>
+  <td data-field="aircraftAsWeighed" data-type="data" class="xl294"></td>
+  <td data-field="aircraftInches" data-type="data" class="xl295"></td>
+  <td data-field="aircraftIndex" data-type="data" class="xl296"></td>
+  <td data-field="wbDate" data-type="data" class="xl155"></td>
+  <td class="xl707">HOURS</td>
+  <td data-field="fuelHours" data-type="data" class="xl708"></td>
+  <td class="xl271">RAMP</td>
+  <td data-field="rampWeight" data-type="data" class="xl297"></td>
+  <td data-field="rampLimit" data-type="data" class="xl298"></td>
+</tr>
+<tr height="19" style="height:14.25pt">
+  <td height="19" class="xl271" style="height:14.25pt"></td>
+  <td class="xl299">Captain</td>
+  <td data-field="captainWeight" data-type="input" class="xl300"></td>
+  <td data-field="captainInches" data-type="data" class="xl295"></td>
+  <td data-field="captainIndex" data-type="data" class="xl295"></td>
+  <td class="xl301"></td>
+  <td class="xl710">START</td>
+  <td data-field="startFuel" data-type="data" class="xl709"></td>
+  <td class="xl271">MGTOW</td>
+  <td data-field="mgtow" data-type="data" class="xl297"></td>
+  <td data-field="mgtowLimit" data-type="data" class="xl298"></td>
+</tr>
+<tr height="19" style="height:14.25pt">
+  <td height="19" class="xl271" style="height:14.25pt"></td>
+  <td class="xl299">First Officer</td>
+  <td data-field="firstOfficerWeight" data-type="input" class="xl300"></td>
+  <td data-field="firstOfficerInches" data-type="data" class="xl295"></td>
+  <td data-field="firstOfficerIndex" data-type="data" class="xl295"></td>
+  <td class="xl301"></td>
+  <td class="xl710">Takeoff</td>
+  <td data-field="takeoffFuel" data-type="data" class="xl709"></td>
+  <td class="xl271">LMGTOW</td>
+  <td data-field="lmgtow" data-type="data" class="xl297"></td>
+  <td data-field="lmgtowLimit" data-type="data" class="xl298"></td>
+</tr>
+<tr height="19" style="height:14.25pt">
+  <td height="19" class="xl271" style="height:14.25pt"></td>
+  <td class="xl299">Jumpseat</td>
+  <td data-field="jumpseatWeight" data-type="input" class="xl300"></td>
+  <td data-field="jumpseatInches" data-type="data" class="xl295"></td>
+  <td data-field="jumpseatIndex" data-type="data" class="xl295"></td>
+  <td class="xl271"></td>
+  <td class="xl705">Flt BO Leg 1</td>
+  <td data-field="burnOff1" data-type="data" class="xl709"></td>
+  <td class="xl271">LAND</td>
+  <td data-field="landingWeight" data-type="data" class="xl297"></td>
+  <td data-field="maxLandingWeight" data-type="data" class="xl298"></td>
+</tr>
+<tr height="19" style="height:14.25pt">
+  <td height="19" class="xl271" style="height:14.25pt"></td>
+  <td class="xl302">CASA Box</td>
+  <td data-field="casaBoxWeight" data-type="input" class="xl300"></td>
+  <td data-field="casaBoxInches" data-type="data" class="xl295"></td>
+  <td data-field="casaBoxIndex" data-type="data" class="xl295"></td>
+  <td class="xl271"></td>
+  <td class="xl719">Remain Leg 1</td>
+  <td data-field="fuelRemain1" data-type="data" class="xl711"></td>
+  <td class="xl271">ZFW</td>
+  <td data-field="zfw" data-type="data" class="xl297"></td>
+  <td data-field="zfwLimit" data-type="data" class="xl298"></td>
+</tr>
+<tr height="21" style="height:15.75pt">
+  <td height="21" class="xl271" style="height:15.75pt"></td>
+  <td class="xl299">O.W.E.</td>
+  <td data-field="owe" data-type="data" class="xl303"></td>
+  <td class="xl164">Distance</td>
+  <td class="xl165">Flight Time</td>
+  <td class="xl166">Cruise PPH</td>
+  <td colspan="2" class="xl921">Performance Limited</td>
+  <td class="xl304">MGTOW</td>
+  <td data-field="departure" data-type="data" class="xl305"></td>
+  <td data-field="mgtowDeparture" data-type="input" class="xl306"></td>
+</tr>
+<tr height="21" style="height:15.75pt">
+  <td height="21" class="xl271" style="height:15.75pt"></td>
+  <td class="xl299">O.W.</td>
+  <td data-field="ow" data-type="data" class="xl303"></td>
+  <td data-field="distance" data-type="data" class="xl167"></td>
+  <td data-field="flightTime" data-type="data" class="xl168"></td>
+  <td data-field="cruisePPH" data-type="data" class="xl169"></td>
+  <td colspan="2" class="xl923">Performance Limited</td>
+  <td class="xl307">LAND</td>
+  <td data-field="destination" data-type="data" class="xl308"></td>
+  <td data-field="land" data-type="input" class="xl309"></td>
+</tr>
+<tr height="21" style="height:15.75pt">
+  <td height="21" class="xl271" style="height:15.75pt"></td>
+  <td class="xl310">Load Available</td>
+  <td data-field="loadAvailable" data-type="data" class="xl311"></td>
+  <td colspan="3" class="xl925">Load Limited by LMGTOW</td>
+  <td colspan="2" class="xl927">Performance Limited</td>
+  <td class="xl312">MGTOW</td>
+  <td data-field="destination" data-type="data" class="xl313"></td>
+  <td data-field="mgtowDestination" data-type="input" class="xl314"></td>
+</tr>
+<tr height="21" style="height:15.75pt">
+  <td height="21" class="xl271" style="height:15.75pt"></td>
+  <td class="xl310">Load Remaining</td>
+  <td data-field="loadRemaining" data-type="data" class="xl315"></td>
+  <td colspan="3" class="xl925">Verify Fuel &amp; Performance</td>
+  <td class="load-chart-cell" align="left" valign="top">
+    <span class="load-chart-overlay">
+      <img width="269" height="246" src=" assets/files/image032.png" alt="Weight and CG Envelope">
+      <span class="load-cg-dot" ng-show="cgDotVisible" ng-style="{left: cgDotLeft + 'px', top: cgDotTop + 'px'}"></span>
+    </span>
+    <span style="mso-ignore:vglayout2">
+      <table cellpadding="0" cellspacing="0"><tr>
+        <td height="21" class="xl271" width="78" style="height:15.75pt;width:59pt"></td>
+      </tr></table>
+    </span>
+  </td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="19" style="height:14.45pt">
+  <td height="19" class="xl271" style="height:14.45pt"></td>
+  <td class="xl317">Total Load</td>
+  <td data-field="totalLoad" data-type="data" class="xl318"></td>
+  <td class="xl319">0</td>
+  <td class="xl320">minimum for</td>
+  <td data-field="destination" data-type="data" class="xl321"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="19" style="height:14.45pt">
+  <td height="19" class="xl271" style="height:14.45pt"></td>
+  <td rowspan="7" class="xl302" width="133" style="width:100pt">
+    <span style="mso-ignore:vglayout">
+      <table cellpadding="0" cellspacing="0">
+        <tr><td width="9" height="4"></td></tr>
+        <tr><td></td><td><img width="119" height="111" src=" assets/files/image034.jpg" alt="C212 cargo zone diagram"></td><td width="5"></td></tr>
+        <tr><td height="6"></td></tr>
+      </table>
+    </span>
+  </td>
+  <td colspan="4" class="xl929">MAIN CARGO NOTES</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="19" style="height:14.45pt">
+  <td height="19" class="xl271" style="height:14.45pt"></td>
+  <td colspan="4" class="xl322">Max static load on a floor panel 440lb, 28.4lb/sq.in.</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="19" style="height:14.45pt">
+  <td height="19" class="xl271" style="height:14.45pt"></td>
+  <td colspan="3" class="xl322">Max static load on a 0.8-in. circle 300lb.</td>
+  <td class="xl324">&nbsp;</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="16" style="height:12pt">
+  <td height="16" class="xl271" style="height:12pt"></td>
+  <td colspan="3" class="xl325">Max static linear load 470lb/ft.</td>
+  <td class="xl324">&nbsp;</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="16" style="height:12pt">
+  <td height="16" class="xl271" style="height:12pt"></td>
+  <td colspan="3" class="xl325">Max static load density 120lb/sq.ft.</td>
+  <td class="xl324">&nbsp;</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="16" style="height:12pt">
+  <td height="16" class="xl271" style="height:12pt"></td>
+  <td colspan="4" class="xl322">Max single wheel load 772lb (max inflation 35psi.)</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="16" style="height:12pt">
+  <td height="16" class="xl271" style="height:12pt"></td>
+  <td colspan="3" class="xl327">Loads may be spread across zones.</td>
+  <td class="xl329">&nbsp;</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="16" style="height:12pt">
+  <td height="16" class="xl271" style="height:12pt"></td>
+  <td class="xl302">&nbsp;</td>
+  <td class="xl330">Load Lbs</td>
+  <td class="xl331">Inches</td>
+  <td class="xl331">Index</td>
+  <td class="xl332">Rec Load</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl333">&nbsp;</td>
+  <td class="xl334">ZONE I</td>
+  <td data-field="zone1Inches" data-type="data" class="xl335"></td>
+  <td data-field="zone1Index" data-type="data" class="xl335"></td>
+  <td class="xl336">467</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">I</td>
+  <td data-field="pallet1" data-type="input" class="xl338"></td>
+  <td class="load-pallet-brace-cell" align="left" valign="top">
+    <img class="load-pallet-brace" width="20" height="35" src=" assets/files/image036.png" alt="">
+    <span class="xl326">pallet</span>
+  </td>
+  <td class="xl339">TOTAL</td>
+  <td data-field="totalLoadZone1" data-type="data" class="xl340"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl341">&nbsp;</td>
+  <td class="xl342">&nbsp;</td>
+  <td class="xl326">pallet</td>
+  <td colspan="2" class="xl901">Zone I limit 1665lbs.</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl333">&nbsp;</td>
+  <td class="xl334">ZONE II</td>
+  <td data-field="zone2Inches" data-type="data" class="xl335"></td>
+  <td data-field="zone2Index" data-type="data" class="xl335"></td>
+  <td class="xl336">934</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">II</td>
+  <td data-field="pallet2" data-type="input" class="xl338"></td>
+  <td class="load-pallet-brace-cell" align="left" valign="top">
+    <img class="load-pallet-brace" width="22" height="36" src=" assets/files/image038.png" alt="">
+    <span class="xl326">pallet</span>
+  </td>
+  <td class="xl339">TOTAL</td>
+  <td data-field="totalLoadZone2" data-type="data" class="xl340"></td>
+  <td rowspan="2" class="xl913">FLT REPORT</td>
+  <td class="xl343">O.W.E.</td>
+  <td class="xl343">FUEL</td>
+  <td class="xl343">MGTOW</td>
+  <td class="xl344">C.G.</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">&nbsp;</td>
+  <td data-field="pallet3" data-type="input" class="xl345"></td>
+  <td class="xl326">pallet</td>
+  <td colspan="2" class="xl901">Zone II limit 1103lbs.</td>
+  <td data-field="owe" data-type="data" class="xl346"></td>
+  <td data-field="takeoffFuel" data-type="data" class="xl346"></td>
+  <td data-field="lmgtowLimit" data-type="data" class="xl346"></td>
+  <td data-field="cg" data-type="data" class="xl347"></td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl333">&nbsp;</td>
+  <td class="xl334">ZONE III</td>
+  <td data-field="zone3Inches" data-type="data" class="xl335"></td>
+  <td data-field="zone3Index" data-type="data" class="xl335"></td>
+  <td class="xl336">1103</td>
+  <td colspan="2" class="xl907">TAKEOFF DATA</td>
+  <td class="xl348">CG Limits</td>
+  <td class="xl349">-22.2</td>
+  <td class="xl350">-6.7</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">&nbsp;</td>
+  <td data-field="pallet4" data-type="input" class="xl338"></td>
+  <td class="load-pallet-brace-cell" align="left" valign="top">
+    <img class="load-pallet-brace" width="19" height="72" src=" assets/files/image040.png" alt="">
+    <span class="xl326">pallet</span>
+  </td>
+  <td class="xl339">TOTAL</td>
+  <td data-field="totalLoadZone3" data-type="data" class="xl340"></td>
+  <td class="xl351">Abnormals?</td>
+  <td class="xl352">TOW</td>
+  <td colspan="2" class="xl909">V1 / VR / V2 / VENR</td>
+  <td class="xl353">TO DIST</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">III</td>
+  <td data-field="pallet5" data-type="input" class="xl345"></td>
+  <td class="xl326">pallet</td>
+  <td colspan="2" class="xl901">Zone III limit 1733lbs.</td>
+  <td class="xl354">FLAP 25</td>
+  <td class="xl355">12.0</td>
+  <td colspan="2" class="xl910">88 / 88 / 93 / 103</td>
+  <td class="xl356">1900</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">&nbsp;</td>
+  <td data-field="pallet6" data-type="input" class="xl345"></td>
+  <td class="xl326">pallet</td>
+  <td colspan="2" class="xl905">Load as far FWD possible</td>
+  <td class="xl357">FLIGHT ID</td>
+  <td class="xl358">BRG</td>
+  <td data-field="flightNum" data-type="data" class="xl359"></td>
+  <td colspan="2" class="xl911">FPL - IFR/VFR/RTE/ALT</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl341">&nbsp;</td>
+  <td class="xl345">&nbsp;</td>
+  <td class="xl326">pallet</td>
+  <td class="xl360"></td>
+  <td class="xl361">&nbsp;</td>
+  <td class="xl362">TAKEOFF WX:</td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl333">&nbsp;</td>
+  <td class="xl334">ZONE IV</td>
+  <td data-field="zone4Inches" data-type="data" class="xl335"></td>
+  <td data-field="zone4Index" data-type="data" class="xl335"></td>
+  <td class="xl336">1103</td>
+  <td rowspan="2" class="xl903 load-atis-box">ATIS</td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">&nbsp;</td>
+  <td data-field="pallet7" data-type="input" class="xl338"></td>
+  <td class="load-pallet-brace-cell" align="left" valign="top">
+    <img class="load-pallet-brace" width="20" height="70" src=" assets/files/image042.png" alt="">
+    <span class="xl326">pallet</span>
+  </td>
+  <td class="xl339">TOTAL</td>
+  <td data-field="totalLoadZone4" data-type="data" class="xl340"></td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">IV</td>
+  <td data-field="pallet8" data-type="input" class="xl338">&nbsp;</td>
+  <td class="xl326">pallet</td>
+  <td colspan="2" class="xl901">Zone IV limit 1687lbs.</td>
+  <td class="xl302">&nbsp;</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">&nbsp;</td>
+  <td data-field="pallet9" data-type="input" class="xl338">&nbsp;</td>
+  <td class="xl326">pallet</td>
+  <td colspan="2" class="xl905">Load as far FWD possible</td>
+  <td class="xl293">&nbsp;</td>
+  <td class="xl328">&nbsp;</td>
+  <td class="xl328">&nbsp;</td>
+  <td class="xl328">&nbsp;</td>
+  <td class="xl329">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl341">&nbsp;</td>
+  <td class="xl345">&nbsp;</td>
+  <td class="xl326">pallet</td>
+  <td class="xl360"></td>
+  <td class="xl360"></td>
+  <td class="xl364">CLEAERED TO:</td>
+  <td class="xl365">&nbsp;</td>
+  <td class="xl366">VIA:</td>
+  <td class="xl367">&nbsp;</td>
+  <td class="xl368">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl333">&nbsp;</td>
+  <td class="xl334">ZONE V</td>
+  <td data-field="zone5Inches" data-type="data" class="xl335"></td>
+  <td data-field="zone5Index" data-type="data" class="xl335"></td>
+  <td class="xl336">1367</td>
+  <td class="xl302">&nbsp;</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl337">V</td>
+  <td data-field="pallet10" data-type="input" class="xl338"></td>
+  <td class="load-pallet-brace-cell" align="left" valign="top">
+    <img class="load-pallet-brace" width="19" height="35" src=" assets/files/image044.png" alt="">
+    <span class="xl326">pallet</span>
+  </td>
+  <td class="xl339">TOTAL</td>
+  <td data-field="totalLoadZone5" data-type="data" class="xl369"></td>
+  <td class="xl370">CLIMB:</td>
+  <td class="xl371">&nbsp;</td>
+  <td class="xl372">&nbsp;</td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl341">&nbsp;</td>
+  <td data-field="pallet11" data-type="input" class="xl345"></td>
+  <td class="xl326">pallet</td>
+  <td colspan="2" class="xl901">Zone V limit 1367lbs.</td>
+  <td class="xl370">SQUAWK:</td>
+  <td class="xl371">&nbsp;</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl373">&nbsp;</td>
+  <td class="xl334">ZONE A</td>
+  <td data-field="zoneAInches" data-type="data" class="xl335"></td>
+  <td data-field="zoneAIndex" data-type="data" class="xl335"></td>
+  <td class="xl336">882</td>
+  <td class="xl374">FREQ:</td>
+  <td class="xl375">133.3</td>
+  <td class="xl376">DVFR:</td>
+  <td colspan="2" class="xl377">12___________</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl373">
+    <img width="118" height="18" src=" assets/files/image046.jpg" alt="Bering Air">
+  </td>
+  <td data-field="pallet12" data-type="input" class="xl345"></td>
+  <td class="load-pallet-brace-cell" align="left" valign="top">
+    <img class="load-pallet-brace" width="19" height="34" src=" assets/files/image048.png" alt="">
+    <span class="xl326">pallet</span>
+  </td>
+  <td class="xl339">TOTAL</td>
+  <td data-field="totalLoadZoneA" data-type="data" class="xl340"></td>
+  <td colspan="2" class="xl907">LANDING DATA</td>
+  <td class="xl348">CG Limits</td>
+  <td class="xl349">-21.7</td>
+  <td class="xl350">-6.5</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl373">&nbsp;</td>
+  <td data-field="pallet13" data-type="input" class="xl345"></td>
+  <td class="xl326">pallet</td>
+  <td colspan="2" class="xl901">Zone A limit 882lbs.</td>
+  <td class="xl351">Abnormals?</td>
+  <td class="xl352">LW</td>
+  <td colspan="2" class="xl892">VAPP / VREF</td>
+  <td class="xl379">LAND DIST</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl380">FUEL HAUL Max gal</td>
+  <td class="xl381">JET gal</td>
+  <td data-field="fuelHaulInches" data-type="data" class="xl382"></td>
+  <td data-field="fuelHaulIndex" data-type="data" class="xl383"></td>
+  <td class="xl384">4671</td>
+  <td class="xl354">FLAP FULL</td>
+  <td class="xl385">11.8</td>
+  <td colspan="2" class="xl893">120 / 85</td>
+  <td class="xl356">1800</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td data-field="fuelHaulGallons" data-type="input" class="xl386"></td>
+  <td class="xl387">&nbsp;</td>
+  <td class="xl388">Gallons</td>
+  <td class="xl389">TOTAL LBS</td>
+  <td data-field="fuelHaulPounds" data-type="data" class="xl390"></td>
+  <td class="xl391">LANDING WX:</td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl267">REQUEST</td>
+  <td data-field="requestGallons" data-type="data" class="xl851"></td>
+  <td class="xl267">Gallons</td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td colspan="5" class="xl894">BATT Ops: Tank weight included in calc. Max 750gal. Minimum 525gal or Empty.</td>
+  <td rowspan="2" class="xl897 load-atis-box">ATIS</td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td colspan="5" class="xl894">Tank pos: FWD182 / CENTER260 / AFT339. Ref GOM 11.17 &amp; BATT Ops manual</td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="load-atis-pad"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="18" style="height:13.5pt">
+  <td height="18" class="xl271" style="height:13.5pt"></td>
+  <td class="xl392">TOTAL FUEL lbs</td>
+  <td class="xl393">FOB lbs</td>
+  <td colspan="2" class="xl899">SINGLE POINT GAL</td>
+  <td data-field="singlePointGal" data-type="data" class="xl394"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="20" style="height:15pt">
+  <td height="20" class="xl271" style="height:15pt"></td>
+  <td data-field="startFuel" data-type="data" class="xl395"></td>
+  <td data-field="fob" data-type="input" class="xl396"></td>
+  <td colspan="2" class="xl890">EACH OUTBOARD GAL</td>
+  <td data-field="eachOutboardGal" data-type="data" class="xl397"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl271"></td>
+  <td class="xl316">&nbsp;</td>
+</tr>
+<tr height="20" style="height:15pt">
+  <td height="20" class="xl271" style="height:15pt"></td>
+  <td class="xl270">© BERING AIR 2026</td>
+  <td colspan="7">FWD182 / CENTER260 / AFT339. Ref GOM</td>
+  <td colspan="2" class="xl839">Revised 7/09/26</td>
+</tr>
+</tbody>
+</table>
+</body></html>
