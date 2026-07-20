@@ -1,0 +1,33 @@
+---
+description: Core project context for the Bering Air operations app
+alwaysApply: true
+---
+
+# fraBering project overview
+
+Angular Full-Stack (generator v3.8) aviation operations app for Bering Air.
+
+## Stack
+
+- Client: AngularJS 1.x, ui-router, ui-grid, Socket.io client, Grunt build
+- Server: Express 4, Sequelize 6, PostgreSQL/SQLite, Socket.io, Firebase Admin
+- Runtime: Node ^12.22.12 — do not bump Node or major deps without approval
+
+## Conventions
+
+- Server API modules live under `server/api/<name>/`: `index.js` (routes), `*.controller.js`, `*.model.js`
+- Routes use `auth.isAuthenticated()` or `auth.hasRole('admin')` from `server/auth/auth.service.js`
+- Client modules: `client/app/<feature>/` with `*.js`, `*.controller.js`, `*.html`
+- Shared config (flights, pilots, equipment) is in `server/config/environment/shared.js`
+
+## Build & test
+
+- Dev: `grunt serve`
+- Prod build: `grunt build` then `npm start` from `dist/`
+- Tests: `npm test`
+
+## Do not
+
+- Upgrade Angular, Express, Sequelize, or Node major versions unprompted
+- Replace Grunt/Bower with modern tooling unless explicitly requested
+- Change CSP / Helmet settings in `server/app.js` without security review

@@ -12,7 +12,7 @@ import localEnv from './config/local.env.js';
 import {charterInterval} from './api/futureCharter/futureCharter.controller.js';
 import {tf,setBearer,getFlightLogs} from './api/todaysFlight/todaysFlight.controller.js';
 import {setRosterDay} from './api/calendar/calendar.controller.js';
-import {setupSocket,observe,observePilots,setPreviousPfrs,firebaseInterval} from './api/airplane/airplane.controller.js';
+import {setupSocket,observe,observePilots,setPreviousPfrs,firebaseInterval, quickGrab} from './api/airplane/airplane.controller.js';
 import {metars,tafs,syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
 
 //import https from 'https';
@@ -142,6 +142,7 @@ function startServer() {
     metarFunction();
     tafFunction();
     await firebaseFunction();
+    //fs.writeFileSync("output.json", JSON.stringify(quickGrab().pilots));
     callbackFunction();
     setInterval(charterInterval,60*60*1100);
     setInterval(firebaseFunction,60*60*1000);

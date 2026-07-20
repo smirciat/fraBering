@@ -91,5 +91,13 @@
             <a class="btn btn-primary" download="result.csv" ng-href="{{ audit.url }}" ng-if="audit.complete3">Download CSV File</a>
           </p>
         </div>
+        <div>
+          <p>
+            <button class="btn btn-default" ng-click="audit.createCSVSecurity()">Create CSV File (TSA Security Audits)</button>
+          </p>
+          <p>
+            <a class="btn btn-primary" download="tsa-security-audit.csv" ng-href="{{ audit.url }}" ng-if="audit.complete4">Download CSV File</a>
+          </p>
+        </div>
     </div>
 </div>

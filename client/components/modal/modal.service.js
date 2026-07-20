@@ -381,6 +381,11 @@ angular.module('workspaceApp')
                   if (!flight.pilotAgree) {
                     flight.pilotAgree=user.name;
                     flight.releaseTimestamp=new Date();
+                    if (!flight.crewId) flight.crewId='checked';
+                    flight.cockpitInspection='secure';
+                    flight.cabinInspection='secure';
+                    flight.cargoInspection='secure';
+                    flight.wheelWellInspection='secure';
                   }
                 },
                 acceptSig:function(pilotAgree){flight.pilotAgree=pilotAgree},

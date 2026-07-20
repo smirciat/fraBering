@@ -1,0 +1,36 @@
+---
+description: Guardrails for minimal, safe edits to a production operations app
+alwaysApply: true
+---
+
+# Safe change policy
+
+This app runs live flight operations. Default to conservative edits.
+
+## Scope
+
+- Fix only what the user asked for; no drive-by refactors
+- Do not rename modules, routes, or global Angular module names
+- Do not delete scheduled jobs or Socket.io handlers without understanding impact
+- Do not run destructive git commands (`reset --hard`, `clean -fd`, force push)
+
+## Database
+
+- No `DROP`, `TRUNCATE`, or `sequelize.sync({ force: true })`
+- Do not change Sequelize model schemas without a migration plan
+- SQLite `dev.sqlite` is local only; production uses PostgreSQL
+
+## Auth & roles
+
+- Preserve existing role checks (`guest`, `user`, `admin`, `superadmin`)
+- New endpoints must use `auth.isAuthenticated()` or `auth.hasRole(...)` consistently with sibling routes
+- Do not weaken or bypass JWT validation
+
+## Dependencies
+
+- Do not add new npm/bower packages unless necessary
+- Match existing code style: `'use strict'`, Babel imports on server, AngularJS DI arrays where used
+
+## Commits
+
+- Only commit when the user explicitly asks

@@ -1,0 +1,29 @@
+---
+description: Files and secrets that must not be exposed or casually modified
+alwaysApply: true
+---
+
+# Protected files and secrets
+
+## Never commit, paste, or overwrite
+
+- `server/config/local.env.js` — API keys, DB URI, Twilio, Gmail, tokens
+- `server/config/environment/development.js` — local DB config
+- `server/firebase.json` — Firebase credentials
+- `.env`, `docker.env`
+- `*.sqlite` database files
+- `server/fileserver/*` — uploaded runtime files
+
+## Edit only with explicit user approval
+
+- `server/app.js` — scheduled jobs, Helmet CSP, server bootstrap
+- `server/config/environment/shared.js` — flight schedules, pilot names, equipment limits
+- `server/config/environment/production.js` — production settings
+- `server/auth/**` — JWT/Passport auth flow
+- `server/config/express.js`, `server/config/socketio.js`
+
+## Safe patterns
+
+- Add new env vars to `local.env.sample.js` and document them; do not put real values in tracked files
+- When config is needed, tell the user which local file to update instead of writing secrets
+- Prefer reading `*.sample.js` templates over live config files

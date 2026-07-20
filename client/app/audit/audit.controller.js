@@ -147,6 +147,9 @@ class AuditComponent {
   
   upDate(param){
     this.complete=false;
+    this.complete2=false;
+    this.complete3=false;
+    this.complete4=false;
     this.startDateStringFormatted=this.startDate.toLocaleDateString();
     this.startDate.setHours(10);
     this.endDateStringFormatted=this.endDate.toLocaleDateString();
@@ -172,6 +175,7 @@ class AuditComponent {
     this.complete=false;
     this.complete2=false;
     this.complete3=false;
+    this.complete4=false;
     this.spinner=true;
     this.csv="";
     let keys=[];
@@ -329,6 +333,7 @@ class AuditComponent {
     this.complete=false;
     this.complete2=false;
     this.complete3=false;
+    this.complete4=false;
     this.spinner=true;
     let date=new Date(this.startDate);
     let date1=new Date(this.endDate);
@@ -374,6 +379,7 @@ class AuditComponent {
     this.complete=false;
     this.complete2=false;
     this.complete3=false;
+    this.complete4=false;
     this.spinner=true;
     return this.http.post('/api/airplanes/firebaseQuery',this.pfrQuery).then(res=>{
       this.csv="PILOT,DATE,FLIGHTNUM,AIRCRAFT,AIRCRAFT TYPE,OWE,FUEL,LOAD AVAILABLE,MGTOW,CG,OW,TOW\r\n";
@@ -395,6 +401,45 @@ class AuditComponent {
       this.url = (window.URL || window.webkitURL).createObjectURL( blob );
     });
     
+  }
+
+  createCSVSecurity(){
+    this.customAudit=false;
+    this.complete=false;
+    this.complete2=false;
+    this.complete3=false;
+    this.complete4=false;
+    this.spinner=true;
+    let date=new Date(this.startDate);
+    let date1=new Date(this.endDate);
+    return this.http.post('/api/todaysFlights/flightRange',{startDate:date,endDate:date1}).then(res=>{
+      this.csv="DATE,TAIL #,TYPE,DISPATCHER,OC,PILOT,CREW ID,COCKPIT,CABIN,CARGO,WHEEL WELL\r\n";
+      let flights=res.data;
+      if (this.pilot) flights=flights.filter(p=>{return p.pilot===this.pilot.displayName});
+      flights.sort((a,b)=>{
+        if (!a.dateObject&&!a.date) return 1;
+        if (!b.dateObject&&!b.date) return -1;
+        return new Date(a.dateObject||a.date)-new Date(b.dateObject||b.date)||(a.aircraft||'').localeCompare(b.aircraft||'');
+      });
+      for(const flight of flights){
+        if (!flight.pilotAgree) continue;
+        let aircraftType='';
+        if (flight.equipment&&flight.equipment.short) aircraftType=flight.equipment.short;
+        else if (flight.pfr&&flight.pfr.acftType) aircraftType=flight.pfr.acftType;
+        let csvValue=function(val){
+          if (val===undefined||val===null) return '';
+          return String(val).replaceAll(',','-');
+        };
+        this.csv+=csvValue(flight.date)+','+csvValue(flight.aircraft)+','+csvValue(aircraftType)+','+
+          csvValue(flight.dispatchRelease)+','+csvValue(flight.ocRelease)+','+csvValue(flight.pilotAgree)+','+
+          csvValue(flight.crewId)+','+csvValue(flight.cockpitInspection)+','+csvValue(flight.cabinInspection)+','+
+          csvValue(flight.cargoInspection)+','+csvValue(flight.wheelWellInspection)+'\r\n';
+      }
+      this.spinner=false;
+      this.complete4=true;
+      let blob = new Blob([ this.csv ], { type : 'text/plain' });
+      this.url = (window.URL || window.webkitURL).createObjectURL( blob );
+    });
   }
 }
 

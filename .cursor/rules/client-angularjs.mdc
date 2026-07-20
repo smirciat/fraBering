@@ -1,0 +1,37 @@
+---
+description: AngularJS 1.x client conventions
+globs: client/**/*
+alwaysApply: false
+---
+
+# Client (AngularJS) conventions
+
+## Module layout
+
+Features live in `client/app/<feature>/`:
+
+- `<feature>.js` — module definition and ui-router states
+- `<feature>.controller.js` — controller logic
+- `<feature>.html` — template
+- `<feature>.controller.spec.js` — unit tests (Karma)
+
+Shared components: `client/components/<name>/` (directives, services).
+
+Root module: `workspaceApp` in `client/app/app.js`.
+
+## Patterns
+
+- Use existing services (`client/components/auth/`, `metar.service.js`, etc.) before creating new ones
+- ui-router states should match existing `$stateProvider` patterns in sibling modules
+- Socket.io: use `btford.socket-io` as elsewhere in the app
+- CSS colocated in feature or component folders
+
+## Build
+
+Client is assembled by Grunt (`Gruntfile.js`). New scripts must be wired through Grunt injector/dom-munger — do not assume ES modules or webpack.
+
+## Do not
+
+- Migrate to Angular 2+ or introduce React/Vue
+- Change `$locationProvider.html5Mode` or default route without cause
+- Modify `client/bower_components/` directly

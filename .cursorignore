@@ -1,0 +1,23 @@
+# Secrets and local environment (never index or suggest edits)
+.env
+docker.env
+server/config/local.env.js
+server/config/environment/development.js
+server/firebase.json
+
+# Dependencies and build output
+node_modules/
+client/bower_components/
+dist/
+.tmp/
+coverage/
+
+# Database files
+*.sqlite
+
+# Uploaded / runtime file storage
+server/fileserver/*
+!server/fileserver/.gitkeep
+
+# Large or generated data dumps
+output.json

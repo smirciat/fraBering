@@ -1,0 +1,42 @@
+---
+description: Express/Sequelize API conventions for server code
+globs: server/**/*
+alwaysApply: false
+---
+
+# Server API conventions
+
+## Module structure
+
+Each API under `server/api/<name>/`:
+
+```
+index.js           # Express Router, auth guards, route wiring
+*.controller.js    # Request handlers
+*.model.js         # Sequelize model (if applicable)
+*.integration.js   # Supertest integration tests
+*.socket.js        # Socket.io handlers (optional)
+```
+
+## Route pattern
+
+```javascript
+router.get('/', auth.hasRole('admin'), controller.index);
+router.get('/me', auth.isAuthenticated(), controller.me);
+```
+
+Match auth level of nearby routes in the same module.
+
+## Controllers
+
+- Use Sequelize promises (`.then/.catch`) consistent with existing code in the file
+- Return appropriate HTTP status codes; use `res.status(401).end()` for auth failures
+- Register new routers in `server/routes.js`
+
+## Background jobs
+
+Scheduled work lives in `server/app.js` and some controllers (METAR, TAF, roster, Firebase). Do not add new intervals or change timing without user approval.
+
+## Real-time
+
+Socket.io setup: `server/config/socketio.js`. JWT for sockets uses `socketio-jwt`. Follow existing event naming in `*.socket.js` / `*.events.js` files.

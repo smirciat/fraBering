@@ -813,6 +813,11 @@ export async function tf(req,res) {
         delete flight.ocReleaseTimestamp;
         delete flight.dispatchReleaseTimestamp;
         delete flight.knownIce;
+        delete flight.crewId;
+        delete flight.cockpitInspection;
+        delete flight.cabinInspection;
+        delete flight.cargoInspection;
+        delete flight.wheelWellInspection;
         delete flight.fueled;
         delete flight.fueledBy;
         delete flight.fueledTimestamp;

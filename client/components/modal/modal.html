@@ -436,6 +436,14 @@
       </div>
       <div class="orange-line white">
         <div class="inner-modal">
+          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">CREW ID</span>
+          <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">
+            <input style="width:400px; height:27px; text-align: center;" type="text" ng-model="modal.flight.crewId" ng-disabled="modal.allDisabled()||modal.flight.pilotAgree" placeholder="checked">
+          </span>
+        </div>
+      </div>
+      <div class="orange-line white">
+        <div class="inner-modal">
           <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">{{modal.flight.pilotObject.displayName||modal.flight.pilot}}</span>
           <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">
             <input style="width:400px; height:27px; text-align: center;" type="text" ng-model="modal.flight.pilotComment" ng-disabled="modal.allDisabled()">
@@ -685,7 +693,7 @@
         <td><p style="padding-top:5px; margin-top:7px;">{{modal.formatTimestamp(modal.flight.ocReleaseTimestamp)}}</p></td>     
       </tr>
     </table>
-    <p>My crew is fit to fly, I have reviewed all pertinent information, and can operate this flight safely:</p>
+    <p>My crew is fit to fly, I have reviewed all pertinent information, and can operate this flight safely.   The Aircraft Security Search has been completed and no prohibited items, suspicious objects, or evidence of unauthorized access was found</p>
     <table class="table table-borderless">
       <tr>
         <td><p style="padding-top:5px; margin-top:7px; ">CAPTAIN</p></td>

@@ -38,7 +38,7 @@ class StatusComponent {
     this.northEast=['ORV','IAN','WLK','OBU','ABL','SHG','WMO','GLV','ELI','KKA','SKK','UNK'];
     this.southEast=['UNK','SKK','SMK','WBB','BKC','DRG'];
     this.bulkFIKIChoices=['No Selection','Clear All','All Routes FIKI','Northwest','SouthWest','NorthEast-East', 'SouthEast-South'];
-    this.updateKeys=['pilotAgree','releaseTimestamp','ocRelease','ocReleaseTimestamp','dispatchRelease','dispatchReleaseTimestamp','knownIce'];
+    this.updateKeys=['pilotAgree','releaseTimestamp','ocRelease','ocReleaseTimestamp','dispatchRelease','dispatchReleaseTimestamp','knownIce','crewId','cockpitInspection','cabinInspection','cargoInspection','wheelWellInspection'];
     this.B190Configs=['Mx','Cargo','Primary 9','9','13','15','17','19','Low Hours','Medivac','Silver Sky'];
     this.B190Equipments=[0,0,134,134,137,97,57,57.5,0,0,0];
     this.BE20Configs=['Mx','9','Primary','Secondary','Single','Tandem','Aft Tandem','Low Hours','Silver Sky'];
@@ -192,6 +192,13 @@ class StatusComponent {
         flight.newlyReleased=true;
       }
       if (flight.pilotAgree&&flight.pilotAgree!==""&&!flight.releaseTimestamp) flight.releaseTimestamp=new Date();
+      if (flight.pilotAgree&&flight.pilotAgree!=="") {
+        if (!flight.crewId) flight.crewId='checked';
+        if (!flight.cockpitInspection) flight.cockpitInspection='secure';
+        if (!flight.cabinInspection) flight.cabinInspection='secure';
+        if (!flight.cargoInspection) flight.cargoInspection='secure';
+        if (!flight.wheelWellInspection) flight.wheelWellInspection='secure';
+      }
       if (flight.ocRelease&&flight.ocRelease!==""&&!flight.ocReleaseTimestamp) flight.ocReleaseTimestamp=new Date();
       if (flight.dispatchRelease&&flight.dispatchRelease!==""&&!flight.dispatchReleaseTimestamp) flight.dispatchReleaseTimestamp=new Date();
       flight.runScroll=true;

@@ -17,3 +17,4 @@ docker.env
 script.sh
 *.sqlite
 package.dist.json
+Screen*.png
