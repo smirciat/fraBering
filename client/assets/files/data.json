@@ -196,6 +196,27 @@
             "longAircraft": "N703BA    E.E.W."
           }
         ],
+
+    "basic212":[
+          {
+            "Aircraft": "422",
+            "Weight": "10342.00",
+            "Long Arm": "235.80",
+            "Lon Mom": "-11.02",
+            "Date": "07-27-25",
+            "Reweigh Due": "07-31-28",
+            "longAircraft": "N422CA    E.E.W."
+          },
+          {
+            "Aircraft": "349",
+            "Weight": "10108.00",
+            "Long Arm": "233.71",
+            "Lon Mom": "-12.88",
+            "Date": "08-25-25",
+            "Reweigh Due": "08-31-28",
+            "longAircraft": "N349TA    E.E.W."
+          }
+        ],
     
     "aircraft":[
           {

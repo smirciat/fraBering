@@ -12,7 +12,7 @@ class StatusComponent {
     this.timeout=$timeout;
     this.socket=socket;
     this.metar=metar;
-    this.$location=$location;
+    this.location=$location;
     this.anchorScroll=$anchorScroll;
     this.moment=moment;
     this.Auth=Auth;

@@ -17,6 +17,26 @@
 </style>
 
 
+<style>
+.loads-sheet-wrap td.load-chart-cell { position: relative; overflow: visible; }
+.loads-sheet-wrap .load-chart-overlay {
+  position: absolute;
+  z-index: 32;
+  left: 36px;
+  top: 1px;
+  width: 258px;
+  height: 245px;
+  overflow: visible;
+  pointer-events: none;
+}
+.loads-sheet-wrap .load-chart-overlay img {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+</style>
+
+
 </head>
 
 <body link="#467886" vlink="#96607D" class="xl128">
@@ -262,9 +282,12 @@ Description automatically generated" v:shapes="Picture_x0020_2"></td>
   <td class="xl189" style="border-top:none">Inches</td>
   <td class="xl189" style="border-top:none">Index</td>
   <td class="xl190" style="border-top:none">Rec Load </td>
-  <td align="left" valign="top"><!--[if !vml]--><span style="mso-ignore:vglayout;
-  position:absolute;z-index:32;margin-left:36px;margin-top:1px;width:258px;
-  height:245px"><img width="258" height="245" src=" assets/files/image011.png" v:shapes="Chart_x0020_17"></span><span style="mso-ignore:vglayout2">
+  <td class="load-chart-cell" align="left" valign="top">
+    <span class="load-chart-overlay">
+      <img width="258" height="245" src=" assets/files/image011.png" alt="Weight and CG Envelope">
+      <span class="load-cg-dot" ng-show="cgDotVisible" ng-style="{left: cgDotLeft + 'px', top: cgDotTop + 'px'}"></span>
+    </span>
+    <span style="mso-ignore:vglayout2">
   <table cellpadding="0" cellspacing="0">
    <tbody><tr>
     <td height="19" class="xl128" width="78" style="height:14.25pt;width:59pt"></td>

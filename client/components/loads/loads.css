@@ -4,6 +4,42 @@
     font-size: 11px;
     text-align:center;
 }
+td.load-chart-cell {
+  position: relative;
+  overflow: visible;
+}
+.load-chart-overlay {
+  position: absolute;
+  z-index: 32;
+  left: 17px;
+  top: 1px;
+  width: 269px;
+  height: 246px;
+  overflow: visible;
+  pointer-events: none;
+}
+.load-chart-overlay img {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.load-cg-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #008080;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #004646;
+  z-index: 2;
+  pointer-events: none;
+}
+.load-sheet-unsupported {
+  margin: 8px 0;
+  color: #a94442;
+}
 .shorter-ui-select {
   display: block;        /* Ensures the margin is respected correctly */
   margin-top: 8px;      /* Adjust this pixel value to nudge it down */

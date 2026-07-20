@@ -2,253 +2,463 @@
 
 angular.module('workspaceApp')
   .directive('loads', function($compile, $http, $timeout) {
-  
-  return {
 
-    templateUrl: 'assets/files/sheet002.html',
-      scope: {
-        flight: '=',
-        save: '&'
+  var LOAD_SHEET_CONFIGS = {
+    C408: {
+      templateUrl: 'assets/files/sheet002.html',
+      basicDataKey: 'basic408',
+      indexDatum: 297,
+      indexDivisor: 15000,
+      captainInches: 142.2,
+      firstOfficerInches: 142.2,
+      fuelInches: 297.5,
+      fuelHaulInches: 288,
+      rampLimit: 19070,
+      mgtowLimit: 19000,
+      lmgtowLimit: 18819,
+      maxLandingWeight: 18600,
+      zfwLimit: 17900,
+      defaultMgtow: 19000,
+      defaultLand: 18600,
+      fuelHaulOffset: 263,
+      cgChart: {
+        cgMultiplier: 15000,
+        plotLeft: 64,
+        plotTop: 61,
+        plotWidth: 154,
+        plotHeight: 156,
+        cgMin: -22,
+        cgMax: -2,
+        weightMin: 11000,
+        weightMax: 17000
       },
-    link: function(scope, element, attrs) {
-      scope.dirty=false;
-      $http.get('assets/files/data.json').then(res=>{
-        scope.jsonData=res.data;
-        scope.load.fuelPlan=scope.load.fuelPlan||
-          {
-              "label": "ROUND TRIP NO ALT",
-              "fuel": "1329"
-          };
-        setHtml();
-      }).catch(err=>{
-        console.log(err);
-      });
-      
-      console.log(scope.flight);//two way binding comfirmed working
-      scope.load = JSON.parse(JSON.stringify(scope.flight.loadsObject||{}));//
-      //initialize input models
-      scope.load.tailNumber=scope.load.tailNumber||scope.flight.aircraft.replace(/\D/g, "");
-      if (scope.flight.pfr&&scope.flight.pfr.pilotData&&scope.flight.pfr.pilotData.weight) scope.load.captainWeight=scope.load.captainWeight||scope.flight.pfr.pilotData.weight*1;
-      if (scope.flight.pfr&&scope.flight.pfr.coPilotData&&scope.flight.pfr.coPilotData.weight) scope.load.firstOfficerWeight=scope.load.firstOfficerWeight||scope.flight.pfr.coPilotData.weight*1;
-      if (scope.flight.fuelPreviouslyOnboard) scope.load.fob=scope.load.fob||scope.flight.fuelPreviouslyOnboard*1;
-      if (scope.flight.airportObjs&&scope.flight.airportObjs[0]&&scope.flight.airportObjs[0].airport&&scope.flight.airportObjs[0].airport.threeLetter) scope.load.departure=scope.load.departure||scope.flight.airportObjs[0].airport.threeLetter;
-      if (scope.flight.airportObjs&&scope.flight.airportObjs[1]&&scope.flight.airportObjs[1].airport&&scope.flight.airportObjs[1].airport.threeLetter) scope.load.destination=scope.load.destination||scope.flight.airportObjs[1].airport.threeLetter;
-      scope.load.date=scope.flight.date;
-      scope.load.flightNum=scope.load.flightNum||scope.flight.flightNum;
-      scope.load.captainInches=142.2;
-      scope.load.firstOfficerInches=142.2;
-      scope.load.mgtowDeparture=19000;
-      scope.load.mgtowDestination=19000;
-      scope.load.land=18600;
-      
-      
-      
-      function setHtml(){
-        //find all 'data-field' elements and update their innerHtml   
-        
-        angular.forEach(
-          element[0].querySelectorAll('[data-field]'),
-          function(td) {
-            const field = td.getAttribute('data-field');
-            const type = td.getAttribute('data-type');
-            let inputType="number";
-            if (type === 'input') {
-              scope.load[field]=scope.load[field]||0;
-              if (field==='departure'||field==='destination') inputType="text";
-              td.innerHTML =
-                '<input type="'+inputType+'" ng-blur="save()"' +
-                'class="load-input" ng-model-options="{updateOn:\'blur\'}" ' +
-                'ng-model="load.' + field + '">' ;
-            }
-            if (type === 'dropdown') {
-              td.innerHTML =
-                "<ui-select style='line-height:14px;height:14px' ng-model='load."+field+"' theme='selectize' class='shorter-ui-select' on-select='save()'> "+
-                  "<ui-select-match style='line-height:14px;height:14px' placeholder='None'>{{$select.selected.label}}</ui-select-match> "+
-                  "<ui-select-choices repeat='choice in "+JSON.stringify(scope.jsonData.choices)+"' > "+
-                    "<div ng-bind-html='choice.label | highlight: $select.search'></div> "+
-                  "</ui-select-choices> "+
-                "</ui-select>";
-            }
-            if (type === 'data'||!type) {
-              if (field==="cg"||(field.length>=5&&field.slice(-5)==="Index")){
-                td.innerHTML =
-                  '{{load.'+field+' | number : 1}}';
-              }
-              else {
-                td.innerHTML =
-                  '{{load.'+field+'}}';
-              }
-            }
-            $compile(td)(scope);
+      zones: [
+        {totalKey: 'totalLoadNose', pallets: ['pallet1'], inchesKey: 'noseInches', indexKey: 'noseIndex', inches: 68.2},
+        {totalKey: 'totalLoadZone1', pallets: ['pallet2', 'pallet3', 'pallet4', 'pallet5'], inchesKey: 'zone1Inches', indexKey: 'zone1Index', inches: 210.5},
+        {totalKey: 'totalLoadZone2', pallets: ['pallet6', 'pallet7', 'pallet8', 'pallet9'], inchesKey: 'zone2Inches', indexKey: 'zone2Index', inches: 280.9},
+        {totalKey: 'totalLoadZone3', pallets: ['pallet10', 'pallet11', 'pallet12', 'pallet13'], inchesKey: 'zone3Inches', indexKey: 'zone3Index', inches: 351.7},
+        {totalKey: 'totalLoadZone4', pallets: ['pallet14', 'pallet15', 'pallet16', 'pallet17'], inchesKey: 'zone4Inches', indexKey: 'zone4Index', inches: 422},
+        {totalKey: 'totalLoadAft', pallets: ['pallet18'], inchesKey: 'aftInches', indexKey: 'aftIndex', inches: 466.7}
+      ],
+      watchKeys: [
+        'load.captainWeight', 'load.firstOfficerWeight', 'load.fuelPlan',
+        'load.fob', 'load.fuelHaulGallons', 'load.land', 'load.mgtowDeparture',
+        'load.mgtowDestination', 'load.pallet1', 'load.pallet10', 'load.pallet11',
+        'load.pallet12', 'load.pallet13', 'load.pallet14', 'load.pallet15',
+        'load.pallet16', 'load.pallet17', 'load.pallet18', 'load.pallet2',
+        'load.pallet3', 'load.pallet4', 'load.pallet5', 'load.pallet6',
+        'load.pallet7', 'load.pallet8', 'load.pallet9', 'jsonData',
+        'load.departure', 'load.destination'
+      ]
+    },
+    C212: {
+      templateUrl: 'assets/files/sheet003.html',
+      basicDataKey: 'basic212',
+      indexDatum: 246.456,
+      indexDivisor: 10000,
+      captainInches: 80.7,
+      firstOfficerInches: 80.7,
+      jumpseatInches: 92.5,
+      casaBoxInches: 119.3,
+      fuelInches: 229,
+      fuelHaulInches: 260,
+      rampLimit: 17086,
+      mgtowLimit: 16976,
+      lmgtowLimit: 16711,
+      maxLandingWeight: 16424,
+      zfwLimit: 15653,
+      defaultMgtow: 16976,
+      defaultLand: 16424,
+      fuelHaulOffset: 0,
+      fuelChartReferenceLbs: 1398,
+      fuelChartReferenceCg: -2.3,
+      cgChart: {
+        plotLeft: 123,
+        plotTop: 44,
+        plotWidth: 69,
+        plotHeight: 240,
+        cgMin: -22,
+        cgMax: -2,
+        weightMin: 10000,
+        weightMax: 14000
+      },
+      zones: [
+        {totalKey: 'totalLoadZone1', pallets: ['pallet1'], inchesKey: 'zone1Inches', indexKey: 'zone1Index', inches: 182.7},
+        {totalKey: 'totalLoadZone2', pallets: ['pallet2', 'pallet3'], inchesKey: 'zone2Inches', indexKey: 'zone2Index', inches: 218.0},
+        {totalKey: 'totalLoadZone3', pallets: ['pallet4', 'pallet5', 'pallet6'], inchesKey: 'zone3Inches', indexKey: 'zone3Index', inches: 256.1},
+        {totalKey: 'totalLoadZone4', pallets: ['pallet7', 'pallet8', 'pallet9'], inchesKey: 'zone4Inches', indexKey: 'zone4Index', inches: 301.8},
+        {totalKey: 'totalLoadZone5', pallets: ['pallet10', 'pallet11'], inchesKey: 'zone5Inches', indexKey: 'zone5Index', inches: 340.8},
+        {totalKey: 'totalLoadZoneA', pallets: ['pallet12', 'pallet13'], inchesKey: 'zoneAInches', indexKey: 'zoneAIndex', inches: 392.9}
+      ],
+      watchKeys: [
+        'load.captainWeight', 'load.firstOfficerWeight', 'load.jumpseatWeight',
+        'load.casaBoxWeight', 'load.fuelPlan', 'load.fob', 'load.fuelHaulGallons',
+        'load.land', 'load.mgtowDeparture', 'load.mgtowDestination',
+        'load.pallet1', 'load.pallet2', 'load.pallet3', 'load.pallet4', 'load.pallet5',
+        'load.pallet6', 'load.pallet7', 'load.pallet8', 'load.pallet9', 'load.pallet10',
+        'load.pallet11', 'load.pallet12', 'load.pallet13', 'jsonData',
+        'load.departure', 'load.destination'
+      ]
+    }
+  };
+
+  function getLoadSheetType(flight) {
+    if (!flight || !flight.equipment) return 'C408';
+    var shortType = flight.equipment.short;
+    var name = flight.equipment.name;
+    if (shortType === 'C212' || name === 'Casa') return 'C212';
+    if (shortType === 'C408' || name === 'Sky Courier') return 'C408';
+    return null;
+  }
+
+  function calculateIndex(load, inches, config) {
+    return (inches - config.indexDatum) * load / config.indexDivisor;
+  }
+
+  function timeFormat(decimalHours) {
+    decimalHours = decimalHours * 1;
+    var hours = Math.floor(decimalHours);
+    var minutes = Math.round((decimalHours - hours) * 60);
+    var formattedMinutes = minutes.toString().padStart(2, '0');
+    return hours + '+' + formattedMinutes;
+  }
+
+  function sumPallets(load, palletKeys) {
+    return palletKeys.reduce(function(total, key) {
+      return total + (load[key] * 1 || 0);
+    }, 0);
+  }
+
+  function sumLoadIndexes(load, config) {
+    var total = load.aircraftIndex * 1 || 0;
+    total += load.captainIndex * 1 || 0;
+    total += load.firstOfficerIndex * 1 || 0;
+    if (config.jumpseatInches) total += load.jumpseatIndex * 1 || 0;
+    if (config.casaBoxInches) total += load.casaBoxIndex * 1 || 0;
+    config.zones.forEach(function(zone) {
+      total += load[zone.indexKey] * 1 || 0;
+    });
+    total += load.fuelIndex * 1 || 0;
+    total += load.fuelHaulIndex * 1 || 0;
+    return total;
+  }
+
+  function sumCgIndexes(load, config) {
+    var total = load.aircraftIndex * 1 || 0;
+    total += load.captainIndex * 1 || 0;
+    total += load.firstOfficerIndex * 1 || 0;
+    if (config.jumpseatInches) total += load.jumpseatIndex * 1 || 0;
+    if (config.casaBoxInches) total += load.casaBoxIndex * 1 || 0;
+    config.zones.forEach(function(zone) {
+      total += load[zone.indexKey] * 1 || 0;
+    });
+    return total;
+  }
+
+  function calculateChartCg(load, config) {
+    var cg = sumCgIndexes(load, config);
+    if (config.fuelChartReferenceLbs && load.takeoffFuel) {
+      cg += config.fuelChartReferenceCg * (load.takeoffFuel / config.fuelChartReferenceLbs);
+    }
+    if (load.fuelHaulPounds && load.fuelHaulPounds > 0 && config.fuelChartReferenceLbs) {
+      cg += config.fuelChartReferenceCg * (load.fuelHaulPounds / config.fuelChartReferenceLbs);
+    }
+    return cg;
+  }
+
+  function updateCgDotPosition(scope, load, chart) {
+    if (!chart || !load) return;
+    var cg = load.cg * 1;
+    var weight = load.mgtow * 1;
+    if (!weight || isNaN(weight)) {
+      weight = (load.ow * 1 || 0) + (load.totalLoad * 1 || 0);
+    }
+    if (!weight || isNaN(weight)) {
+      scope.cgDotVisible = false;
+      return;
+    }
+    if (chart.cgMultiplier) {
+      cg = cg * chart.cgMultiplier / weight;
+    }
+    var cgRange = chart.cgMax - chart.cgMin;
+    var weightRange = chart.weightMax - chart.weightMin;
+    if (!cgRange || !weightRange) {
+      scope.cgDotVisible = false;
+      return;
+    }
+    var cgPct = (cg - chart.cgMin) / cgRange;
+    var weightPct = (weight - chart.weightMin) / weightRange;
+    cgPct = Math.max(0, Math.min(1, cgPct));
+    weightPct = Math.max(0, Math.min(1, weightPct));
+    scope.cgDotLeft = Math.round(chart.plotLeft + chart.plotWidth * cgPct);
+    scope.cgDotTop = Math.round(chart.plotTop + chart.plotHeight * (1 - weightPct));
+    scope.cgDotVisible = true;
+  }
+
+  function calculateDataFields(scope, config) {
+    scope.dirty = true;
+    var load = scope.load;
+    var i;
+
+    config.zones.forEach(function(zone) {
+      load[zone.totalKey] = sumPallets(load, zone.pallets);
+      load[zone.inchesKey] = zone.inches;
+      load[zone.indexKey] = calculateIndex(load[zone.totalKey], zone.inches, config);
+    });
+
+    if (!scope.jsonData) return;
+
+    var distance, ete, fuelRequired, cruiseSpeed, burnRate, extra, legTaxi, firstLegTaxi;
+    var minTO, fuelHour, fuel55, fltBO, climbDistance, climbSpeed, climbBurn;
+
+    i = scope.jsonData.distanceNM.map(function(e) { return e.Airport; }).indexOf(load.departure);
+    if (i > -1) {
+      distance = 1 * (scope.jsonData.distanceNM[i][load.destination]);
+      i = scope.jsonData.aircraft.map(function(e) { return e.ID; }).indexOf(scope.flight.aircraft);
+      if (i > -1) {
+        cruiseSpeed = 1 * scope.jsonData.aircraft[i]['Cruise_Speed'];
+        climbDistance = 1 * scope.jsonData.aircraft[i].Dist;
+        burnRate = 1 * scope.jsonData.aircraft[i]['Burn Rate'];
+        extra = (1 * (scope.jsonData.aircraft[i]['No Alt Res'] || 67)) -
+          (1 * (scope.jsonData.aircraft[i]['Low Burn Cruise'] || 0));
+        legTaxi = 1 * scope.jsonData.aircraft[i]['Taxi Fuel burn'];
+        firstLegTaxi = 1 * scope.jsonData.aircraft[i]['Taxi Fuel'];
+        minTO = 1 * scope.jsonData.aircraft[i]['Min TO'];
+        fuelHour = 1 * scope.jsonData.aircraft[i]['Low Burn Cruise'];
+        fuel55 = 1 * scope.jsonData.aircraft[i].Fuel_55min;
+        climbSpeed = 1 * scope.jsonData.aircraft[i]['Climb_Speed'];
+        climbBurn = 1 * scope.jsonData.aircraft[i]['Clb Burn'];
+
+        ete = (distance - climbDistance) / cruiseSpeed + climbDistance / climbSpeed;
+        fltBO = burnRate * (ete - 0.15) + climbBurn;
+
+        if (load.fuelPlan.label === 'ROUND TRIP NO ALT') {
+          fuelRequired = fltBO * 2 + extra + fuelHour + legTaxi;
+        }
+        if (load.fuelPlan.label === 'ROUND TRIP W/ ALT') {
+          fuelRequired = fltBO * 2 + extra + fuelHour + legTaxi + fuel55;
+        }
+        if (load.fuelPlan.label === 'one way no alt') {
+          fuelRequired = fltBO + extra + fuelHour;
+        }
+        if (load.fuelPlan.label === 'one way w/ alt') {
+          fuelRequired = fltBO + extra + fuelHour + fuel55;
+        }
+        if (!fuelRequired) fuelRequired = 1 * load.fuelPlan.fuel;
+        if (fuelRequired < minTO) fuelRequired = minTO;
+        load.fuelPlan.fuel = fuelRequired;
+      }
+    }
+
+    var basicData = scope.jsonData[config.basicDataKey] || [];
+    i = basicData.map(function(e) { return e.Aircraft; }).indexOf(load.tailNumber);
+    if (i > -1) {
+      load.aircraft = basicData[i].longAircraft;
+      load.aircraftAsWeighed = basicData[i].Weight * 1;
+      load.aircraftInches = basicData[i]['Long Arm'] * 1;
+      load.aircraftIndex = calculateIndex(load.aircraftAsWeighed, load.aircraftInches, config);
+      load.wbDate = basicData[i].Date;
+    }
+
+    load.takeoffFuel = Math.round(load.fuelPlan.fuel);
+    load.startFuel = Math.round(load.fuelPlan.fuel + (firstLegTaxi || 0));
+    load.fob = load.fob * 1 || 0;
+    if (load.startFuel < load.fob) load.requestGallons = 0;
+    else load.requestGallons = Math.round(10 * (load.startFuel * 1 - load.fob) / 6.7) / 10;
+
+    if (config.sheetType === 'C212') {
+      var startFuelLbs = load.startFuel * 1 || 0;
+      var fobLbs = load.fob * 1 || 0;
+      var singlePointBase = startFuelLbs > 2479 ? 2479 : startFuelLbs;
+      load.singlePointGal = Math.round(10 * (singlePointBase - fobLbs) / 6.7) / 10;
+      load.eachOutboardGal = startFuelLbs <= 2479
+        ? 0
+        : Math.round(10 * (startFuelLbs - 2479) / (6.7 * 2)) / 10;
+    }
+
+    if (burnRate) load.fuelHours = timeFormat(load.fuelPlan.fuel / burnRate);
+    if (fltBO) {
+      load.burnOff1 = Math.round(fltBO);
+      load.fuelRemain1 = Math.round(load.fuelPlan.fuel - fltBO);
+    }
+    if (distance) load.distance = distance;
+    if (ete) load.flightTime = timeFormat(ete);
+    if (burnRate) load.cruisePPH = burnRate;
+
+    load.captainInches = config.captainInches;
+    load.firstOfficerInches = config.firstOfficerInches;
+    load.captainIndex = calculateIndex(load.captainWeight, config.captainInches, config);
+    load.firstOfficerIndex = calculateIndex(load.firstOfficerWeight, config.firstOfficerInches, config);
+
+    if (config.jumpseatInches) {
+      load.jumpseatInches = config.jumpseatInches;
+      load.jumpseatIndex = calculateIndex(load.jumpseatWeight, config.jumpseatInches, config);
+    }
+    if (config.casaBoxInches) {
+      load.casaBoxInches = config.casaBoxInches;
+      load.casaBoxIndex = calculateIndex(load.casaBoxWeight, config.casaBoxInches, config);
+    }
+
+    load.owe = (load.aircraftAsWeighed * 1 || 0) + (load.captainWeight * 1 || 0) + (load.firstOfficerWeight * 1 || 0);
+    if (config.sheetType === 'C212') {
+      load.owe += (load.jumpseatWeight * 1 || 0) + (load.casaBoxWeight * 1 || 0);
+    }
+
+    load.ow = load.owe + load.takeoffFuel;
+    load.rampLimit = config.rampLimit;
+    load.mgtowLimit = config.mgtowLimit;
+    load.lmgtowLimit = config.lmgtowLimit;
+    load.maxLandingWeight = config.maxLandingWeight;
+    load.zfwLimit = config.zfwLimit;
+
+    load.totalLoad = config.zones.reduce(function(total, zone) {
+      return total + (load[zone.totalKey] * 1 || 0);
+    }, 0);
+
+    load.mgtow = load.ow + load.totalLoad;
+    load.lmgtow = load.mgtow;
+    load.rampWeight = load.mgtow + 70;
+    load.landingWeight = load.mgtow - Math.round(fltBO || 0);
+    load.zfw = load.owe + load.totalLoad;
+    load.loadAvailable = load.mgtowLimit - load.ow;
+    load.loadRemaining = load.loadAvailable - load.totalLoad;
+
+    if (load.fuelHaulGallons && load.fuelHaulGallons > 0) {
+      load.fuelHaulPounds = load.fuelHaulGallons * 6.7 + config.fuelHaulOffset;
+    } else load.fuelHaulPounds = 0;
+
+    load.fuelInches = config.fuelInches;
+    load.fuelIndex = calculateIndex(load.takeoffFuel, config.fuelInches, config);
+    load.fuelHaulInches = config.fuelHaulInches;
+    load.fuelHaulIndex = calculateIndex(load.fuelHaulPounds, config.fuelHaulInches, config);
+
+    if (config.fuelChartReferenceLbs) {
+      load.cg = calculateChartCg(load, config);
+    } else {
+      load.cg = sumLoadIndexes(load, config);
+    }
+
+    if (config.cgChart) updateCgDotPosition(scope, load, config.cgChart);
+
+    scope.dirty = false;
+  }
+
+  function setHtml(scope, element) {
+    angular.forEach(
+      element[0].querySelectorAll('[data-field]'),
+      function(td) {
+        var field = td.getAttribute('data-field');
+        var type = td.getAttribute('data-type');
+        var inputType = 'number';
+        if (type === 'input') {
+          scope.load[field] = scope.load[field] || 0;
+          if (field === 'departure' || field === 'destination') inputType = 'text';
+          td.innerHTML =
+            '<input type="' + inputType + '" ng-blur="save()"' +
+            ' class="load-input" ng-model-options="{updateOn:\'blur\'}" ' +
+            'ng-model="load.' + field + '">';
+        }
+        if (type === 'dropdown') {
+          td.innerHTML =
+            "<ui-select style='line-height:14px;height:14px' ng-model='load." + field + "' theme='selectize' class='shorter-ui-select' on-select='save()'> " +
+              "<ui-select-match style='line-height:14px;height:14px' placeholder='None'>{{$select.selected.label}}</ui-select-match> " +
+              "<ui-select-choices repeat='choice in " + JSON.stringify(scope.jsonData.choices) + "' > " +
+                "<div ng-bind-html='choice.label | highlight: $select.search'></div> " +
+              "</ui-select-choices> " +
+            "</ui-select>";
+        }
+        if (type === 'data' || !type) {
+          if (field === 'cg' || (field.length >= 5 && field.slice(-5) === 'Index')) {
+            td.innerHTML = '{{load.' + field + ' | number : 1}}';
+          } else if (field === 'singlePointGal' || field === 'eachOutboardGal') {
+            td.innerHTML = '{{load.' + field + ' | number : 1}}';
+          } else {
+            td.innerHTML = '{{load.' + field + '}}';
           }
-        );
-      }
-      
-      function calculateIndex(load,inches){
-        return (inches-297)*load/15000;
-      }
-      
-      function timeFormat(decimalHours){
-        decimalHours=decimalHours*1;
-        const hours = Math.floor(decimalHours);
-    
-        // 2. Multiply the remaining decimal by 60 and round to nearest minute
-        const minutes = Math.round((decimalHours - hours) * 60);
-        
-        // 3. Ensure minutes have a leading zero if they are less than 10
-        const formattedMinutes = minutes.toString().padStart(2, '0');
-        
-        // 4. Return the formatted string
-        return `${hours}\+${formattedMinutes}`;
-      }
-      
-      function calculateDataFields(){
-        scope.dirty=true;
-        
-        let i=-1;
-        //calculate zone loads
-        scope.load.totalLoadNose=scope.load.pallet1;
-        scope.load.totalLoadZone1=scope.load.pallet2+scope.load.pallet3+scope.load.pallet4+scope.load.pallet5;
-        scope.load.totalLoadZone2=scope.load.pallet6+scope.load.pallet7+scope.load.pallet8+scope.load.pallet9;
-        scope.load.totalLoadZone3=scope.load.pallet10+scope.load.pallet11+scope.load.pallet12+scope.load.pallet13;
-        scope.load.totalLoadZone4=scope.load.pallet14+scope.load.pallet15+scope.load.pallet16+scope.load.pallet17;
-        scope.load.totalLoadAft=scope.load.pallet18;
-        if (!scope.jsonData) return;
-        //calculate distance
-        let distance, ete, fuelRequired, cruiseSpeed, burnRate, extra, legTaxi, firstLegTaxi, minTO, fuelHour, fuel55, fltBO, climbDistance, climbBurnRate, climbSpeed, climbBurn;
-        i=scope.jsonData.distanceNM.map(e=>e.Airport).indexOf(scope.load.departure);
-        if (i>-1) {
-          distance=1*(scope.jsonData.distanceNM[i][scope.load.destination]);
-        
-          i=scope.jsonData.aircraft.map(e=>e.ID).indexOf(scope.flight.aircraft);
-          if (i>-1) {
-            //data parameters lookup
-            cruiseSpeed=1*(scope.jsonData.aircraft[i].Cruise_Speed);
-            climbDistance=1*(scope.jsonData.aircraft[i]['Dist']);
-            burnRate=1*(scope.jsonData.aircraft[i]['Burn Rate']);
-            extra=1*(67);
-            legTaxi=1*(scope.jsonData.aircraft[i]['Taxi Fuel burn']);
-            firstLegTaxi=1*(scope.jsonData.aircraft[i]['Taxi Fuel']);
-            minTO=1*(scope.jsonData.aircraft[i]['Min TO']);
-            fuelHour=1*(scope.jsonData.aircraft[i]['Low Burn Cruise']);
-            fuel55=1*(scope.jsonData.aircraft[i]['Fuel_55min']);
-            climbBurnRate=1*(scope.jsonData.aircraft[i]['Burn Rate']);
-            climbSpeed=1*(scope.jsonData.aircraft[i]['Climb_Speed']);
-            climbBurn=1*(scope.jsonData.aircraft[i]['Clb Burn']);
-            //calc ete in hours
-            ete=(distance-climbDistance)/cruiseSpeed + climbDistance/climbSpeed;
-            fltBO=burnRate*(ete - .15) + climbBurn;
-            if (scope.load.fuelPlan.label==="ROUND TRIP NO ALT") {
-              fuelRequired=fltBO*2 + extra + fuelHour + legTaxi;
-            }
-            if (scope.load.fuelPlan.label==="ROUND TRIP W/ ALT") {
-              fuelRequired=fltBO*2 + extra  + fuelHour + legTaxi + fuel55;
-            }
-            if (scope.load.fuelPlan.label==="one way no alt") {
-              fuelRequired=fltBO + extra + fuelHour;
-            }
-            if (scope.load.fuelPlan.label==="one way w/ alt") {
-              fuelRequired=fltBO + extra + fuelHour + fuel55;
-            }
-            if (!fuelRequired) fuelRequired=1*(scope.load.fuelPlan.fuel);
-            if (fuelRequired<minTO) fuelRequired=minTO;
-            scope.load.fuelPlan.fuel=fuelRequired;
-          }
         }
-        //basic408
-        i=scope.jsonData.basic408.map(e=>e.Aircraft).indexOf(scope.load.tailNumber);
-        if (i>-1){
-          scope.load.aircraft = scope.jsonData.basic408[i].longAircraft;
-          scope.load.aircraftAsWeighed = scope.jsonData.basic408[i].Weight*1;
-          scope.load.aircraftInches = scope.jsonData.basic408[i]['Long Arm']*1;
-          scope.load.aircraftIndex = scope.jsonData.basic408[i]['Lon Mom']*1;
-          scope.load.wbDate = scope.jsonData.basic408[i].Date;
-        }
-        scope.load.takeoffFuel=Math.round(scope.load.fuelPlan.fuel);
-        scope.load.startFuel=Math.round(scope.load.fuelPlan.fuel + firstLegTaxi);
-        scope.load.fob=scope.load.fob*1||0;
-        if (scope.load.startFuel<scope.load.fob) scope.load.requestGallons=0;
-        else scope.load.requestGallons=Math.round(10*(scope.load.startFuel*1-scope.load.fob)/6.7)/10;
-        if (burnRate) {
-          scope.load.fuelHours=timeFormat(scope.load.fuelPlan.fuel/burnRate);
-        }
-        scope.load.burnOff1=Math.round(fltBO);
-        scope.load.fuelRemain1=Math.round(scope.load.fuelPlan.fuel-fltBO);
-        scope.load.owe=scope.load.aircraftAsWeighed+scope.load.captainWeight+scope.load.firstOfficerWeight;
-        scope.load.ow=scope.load.owe+scope.load.takeoffFuel;
-        scope.load.rampLimit=19070;
-        scope.load.mgtowLimit=19000;
-        scope.load.lmgtowLimit=18819;
-        scope.load.maxLandingWeight=18600;
-        scope.load.zfwLimit=17900;
-        scope.load.totalLoad=scope.load.totalLoadNose+scope.load.totalLoadZone1+scope.load.totalLoadZone2+scope.load.totalLoadZone3+scope.load.totalLoadZone4+scope.load.totalLoadAft;
-        scope.load.mgtow=scope.load.ow+scope.load.totalLoad;
-        scope.load.lmgtow=scope.load.mgtow;
-        scope.load.rampWeight=scope.load.mgtow+70;
-        scope.load.landingWeight=scope.load.mgtow-Math.round(fltBO);
-        scope.load.zfw=scope.load.owe+scope.load.totalLoad;
-        
-        //index and inches for load areas
-        scope.load.captainIndex=calculateIndex(scope.load.captainWeight,scope.load.captainInches);
-        scope.load.firstOfficerIndex=calculateIndex(scope.load.firstOfficerWeight,scope.load.firstOfficerInches);
-        scope.load.noseInches=68.2;
-        scope.load.noseIndex=calculateIndex(scope.load.totalLoadNose,scope.load.noseInches);
-        scope.load.zone1Inches=210.5;
-        scope.load.zone1Index=calculateIndex(scope.load.totalLoadZone1,scope.load.zone1Inches);
-        scope.load.zone2Inches=280.9;
-        scope.load.zone2Index=calculateIndex(scope.load.totalLoadZone2,scope.load.zone2Inches);
-        scope.load.zone3Inches=351.7;
-        scope.load.zone3Index=calculateIndex(scope.load.totalLoadZone3,scope.load.zone3Inches);
-        scope.load.zone4Inches=422;
-        scope.load.zone4Index=calculateIndex(scope.load.totalLoadZone4,scope.load.zone4Inches);
-        scope.load.aftInches=466.7;
-        scope.load.aftIndex=calculateIndex(scope.load.totalLoadAft,scope.load.aftInches);
-        if (scope.load.fuelHaulGallons&&scope.load.fuelHaulGallons>0) scope.load.fuelHaulPounds=scope.load.fuelHaulGallons*6.7+263;
-        else scope.load.fuelHaulPounds=0;
-        scope.load.fuelHaulInches=288;
-        scope.load.fuelHaulIndex=calculateIndex(scope.load.fuelHaulPounds,scope.load.fuelHaulInches);
-        scope.load.fuelInches=297.5;
-        scope.load.fuelIndex=calculateIndex(scope.load.takeoffFuel,scope.load.fuelInches);
-        //calculate cg by adding up all the index parameters
-        scope.load.cg=0;
-        for (const key of Object.keys(scope.load)) {
-          if (key.length>=5&&key.slice(-5)==="Index") {
-            scope.load.cg+=scope.load[key];
-          }
-        }
-        
-        scope.dirty=false;
+        $compile(td)(scope);
       }
-      
-      scope.$watchGroup([
-          'load.captainWeight',     'load.firstOfficerWeight',  'load.fuelPlan',
-          'load.fob',                   'load.fuelHaulGallons',
-          'load.land',                  'load.mgtowDeparture',
-          'load.mgtowDestination',      'load.pallet1',
-          'load.pallet10',              'load.pallet11',
-          'load.pallet12',              'load.pallet13',
-          'load.pallet14',              'load.pallet15',
-          'load.pallet16',              'load.pallet17',
-          'load.pallet18',              'load.pallet2',
-          'load.pallet3',               'load.pallet4',
-          'load.pallet5',               'load.pallet6',
-          'load.pallet7',               'load.pallet8',
-          'load.pallet9',               'jsonData',
-          'load.departure', 'load.destination'
-      ],function(newValues,oldValues){
-        scope.dirty=true;
-        calculateDataFields();
-      });
-    
-      scope.save =  ()=>{
-        $timeout(()=>{
-          if (scope.dirty) return $timeout(()=>{scope.save()},200);
-          $http.patch('/api/todaysFlights/'+scope.flight._id,{loadsObject:scope.load})
-            .then(res=>{
-              console.log('Successful Save');
-            });
-        },0);
+    );
+  }
+
+  function initLoadSheet(scope, element, config) {
+    scope.load = JSON.parse(JSON.stringify(scope.flight.loadsObject || {}));
+    scope.load.tailNumber = scope.load.tailNumber || scope.flight.aircraft.replace(/\D/g, '');
+    if (scope.flight.pfr && scope.flight.pfr.pilotData && scope.flight.pfr.pilotData.weight) {
+      scope.load.captainWeight = scope.load.captainWeight || scope.flight.pfr.pilotData.weight * 1;
+    }
+    if (scope.flight.pfr && scope.flight.pfr.coPilotData && scope.flight.pfr.coPilotData.weight) {
+      scope.load.firstOfficerWeight = scope.load.firstOfficerWeight || scope.flight.pfr.coPilotData.weight * 1;
+    }
+    if (scope.flight.fuelPreviouslyOnboard) scope.load.fob = scope.load.fob || scope.flight.fuelPreviouslyOnboard * 1;
+    if (scope.flight.airportObjs && scope.flight.airportObjs[0] && scope.flight.airportObjs[0].airport && scope.flight.airportObjs[0].airport.threeLetter) {
+      scope.load.departure = scope.load.departure || scope.flight.airportObjs[0].airport.threeLetter;
+    }
+    if (scope.flight.airportObjs && scope.flight.airportObjs[1] && scope.flight.airportObjs[1].airport && scope.flight.airportObjs[1].airport.threeLetter) {
+      scope.load.destination = scope.load.destination || scope.flight.airportObjs[1].airport.threeLetter;
+    }
+    scope.load.date = scope.flight.date;
+    scope.load.flightNum = scope.load.flightNum || scope.flight.flightNum;
+    scope.load.mgtowDeparture = scope.load.mgtowDeparture || config.defaultMgtow;
+    scope.load.mgtowDestination = scope.load.mgtowDestination || config.defaultMgtow;
+    scope.load.land = scope.load.land || config.defaultLand;
+
+    scope.dirty = false;
+    scope.loadSheetType = config.sheetType;
+
+    $http.get('assets/files/data.json').then(function(res) {
+      scope.jsonData = res.data;
+      scope.load.fuelPlan = scope.load.fuelPlan || {
+        label: 'ROUND TRIP NO ALT',
+        fuel: config.sheetType === 'C212' ? '1173' : '1329'
       };
+      setHtml(scope, element);
+      calculateDataFields(scope, config);
+    }).catch(function(err) {
+      console.log(err);
+    });
+
+    scope.$watchGroup(config.watchKeys, function() {
+      scope.dirty = true;
+      calculateDataFields(scope, config);
+    });
+
+    scope.save = function() {
+      $timeout(function() {
+        if (scope.dirty) return $timeout(function() { scope.save(); }, 200);
+        $http.patch('/api/todaysFlights/' + scope.flight._id, {loadsObject: scope.load})
+          .then(function() {
+            console.log('Successful Save');
+          });
+      }, 0);
+    };
+  }
+
+  return {
+    scope: {
+      flight: '=',
+      save: '&'
+    },
+    link: function(scope, element) {
+      element.addClass('loads-sheet-wrap');
+      scope.cgDotVisible = false;
+      var sheetType = getLoadSheetType(scope.flight);
+      if (!sheetType || !LOAD_SHEET_CONFIGS[sheetType]) {
+        element.html('<p class="load-sheet-unsupported">Load sheet is not available for this aircraft type.</p>');
+        return;
+      }
+
+      var config = angular.copy(LOAD_SHEET_CONFIGS[sheetType]);
+      config.sheetType = sheetType;
+
+      $http.get(config.templateUrl).then(function(res) {
+        element.html(res.data);
+        $compile(element.contents())(scope);
+        initLoadSheet(scope, element, config);
+      }).catch(function(err) {
+        console.log(err);
+        element.html('<p class="load-sheet-unsupported">Unable to load sheet template.</p>');
+      });
     }
   };
 });

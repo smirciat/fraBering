@@ -519,7 +519,7 @@
         </div>
       </div>
     </div>  
-    <div ng-if="status.view==='load'&&status.is408(flight.aircraft)">
+    <div ng-if="status.view==='load'&&(status.is408(flight.aircraft)||status.isCasa(flight.aircraft))">
       <!--loads directive-->
       <h5 ng-click="flight.showLoadSheet=!flight.showLoadSheet">
         <span ng-if="!flight.showLoadSheet">Show Load Sheet +</span>
