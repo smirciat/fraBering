@@ -1,12 +1,98 @@
+.loads-directive.loads-sheet-wrap {
+  display: block;
+  width: 526pt;
+  max-width: 100%;
+  padding-right: 1pt;
+  box-sizing: content-box;
+  overflow-x: clip;
+}
+
+.loads-sheet-wrap table.loads-sheet-main {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 526pt;
+  max-width: 100%;
+  border-right: 1pt solid windowtext;
+}
+
+.loads-sheet-wrap table.loads-sheet-main > tbody > tr > td:last-child {
+  border-right: 1pt solid windowtext;
+}
+
+.loads-sheet-wrap td.load-chart-cell {
+  position: relative;
+  overflow: visible;
+}
+
+.loads-sheet-wrap td.load-pallet-brace-cell {
+  position: relative;
+  overflow: visible;
+}
+
+.loads-sheet-wrap .load-pallet-brace {
+  position: absolute;
+  left: 40px;
+  top: 1px;
+  z-index: 28;
+}
+
+.loads-sheet-wrap td.load-atis-box {
+  border-top: 1pt solid windowtext;
+  border-right: 1pt solid windowtext;
+  border-left: 1pt solid windowtext;
+  border-bottom: 1pt solid windowtext;
+  vertical-align: top;
+  font-size: 8pt;
+  padding: 2px;
+}
+
+.loads-sheet-wrap td.load-atis-pad {
+  border-top: 1pt solid windowtext;
+  border-right: 1pt solid windowtext;
+  border-bottom: 1pt solid windowtext;
+  min-height: 32px;
+}
+
+.loads-sheet-wrap .loads-sheet-header-banner {
+  position: relative;
+}
+
+.loads-sheet-wrap .loads-sheet-header-row table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+.loads-sheet-wrap .loads-sheet-header-row table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loads-sheet-wrap .loads-sheet-header-row .shorter-ui-select .selectize-input {
+  font-size: 9px !important;
+  padding: 0 2px !important;
+}
+
+.loads-sheet-wrap td[data-field] {
+  overflow: hidden;
+}
+
+.loads-sheet-wrap td[data-field] .load-input,
+.loads-sheet-wrap td[data-field] .selectize-input {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .load-input {
     width: 100%;
     min-width: 0;
     font-size: 11px;
     text-align:center;
-}
-td.load-chart-cell {
-  position: relative;
-  overflow: visible;
+    line-height: 1.2;
+    padding: 0;
+    box-sizing: border-box;
 }
 .load-chart-overlay {
   position: absolute;
@@ -41,8 +127,8 @@ td.load-chart-cell {
   color: #a94442;
 }
 .shorter-ui-select {
-  display: block;        /* Ensures the margin is respected correctly */
-  margin-top: 8px;      /* Adjust this pixel value to nudge it down */
+  display: block;
+  margin-top: 0;
 }
 /* Select2 Theme */
 .shorter-ui-select .select2-choice {
@@ -59,5 +145,75 @@ td.load-chart-cell {
   font-size:11px;
   height: 18px !important;
   min-height: 18px !important;
-  padding: 1px 8px !important;
+  padding: 0 4px !important;
+  line-height: 16px !important;
+}
+
+.loads-print-toolbar {
+  width: 526pt;
+  max-width: 100%;
+  margin: 0 0 8px;
+  text-align: right;
+}
+
+@media print {
+  .loads-print-toolbar {
+    display: none !important;
+  }
+
+  .loads-sheet-wrap,
+  .loads-sheet-wrap * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .loads-sheet-wrap .load-input {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .loads-sheet-wrap input[type=number]::-webkit-inner-spin-button,
+  .loads-sheet-wrap input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .loads-sheet-wrap .shorter-ui-select {
+    margin-top: 0 !important;
+  }
+
+  .loads-sheet-wrap .selectize-input {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    min-height: auto !important;
+    height: auto !important;
+    line-height: inherit !important;
+    font-size: inherit !important;
+  }
+
+  .loads-sheet-wrap .selectize-control.single .selectize-input:after {
+    display: none !important;
+  }
+
+  .loads-sheet-wrap .select2-choice {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    height: auto !important;
+    line-height: inherit !important;
+  }
+
+  .loads-sheet-wrap .select2-arrow {
+    display: none !important;
+  }
 }

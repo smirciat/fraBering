@@ -343,6 +343,26 @@ angular.module('workspaceApp')
     scope.dirty = false;
   }
 
+  function ensureLoadsStylesheet() {
+    if (document.querySelector('link[data-loads-stylesheet]')) return;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'assets/files/stylesheet.css';
+    link.setAttribute('data-loads-stylesheet', 'true');
+    document.head.appendChild(link);
+  }
+
+  function markLoadSheetStructure(element) {
+    var mainTable = element[0].querySelector('table');
+    if (!mainTable) return;
+    mainTable.classList.add('loads-sheet-main');
+    var headerRow = mainTable.querySelector('tbody > tr:nth-child(2)');
+    if (!headerRow) return;
+    headerRow.classList.add('loads-sheet-header-row');
+    var bannerCell = headerRow.querySelector('td[colspan="5"]');
+    if (bannerCell) bannerCell.classList.add('loads-sheet-header-banner');
+  }
+
   function setHtml(scope, element) {
     angular.forEach(
       element[0].querySelectorAll('[data-field]'),
@@ -432,6 +452,140 @@ angular.module('workspaceApp')
           });
       }, 0);
     };
+
+    scope.printLoadSheet = function() {
+      var inputs = element[0].querySelectorAll('.load-input');
+      angular.forEach(inputs, function(input) {
+        input.blur();
+      });
+      $timeout(function() {
+        if (scope.dirty) return $timeout(scope.printLoadSheet, 200);
+
+        var clone = element[0].cloneNode(true);
+        var toolbarEl = clone.querySelector('.loads-print-toolbar');
+        if (toolbarEl) toolbarEl.parentNode.removeChild(toolbarEl);
+
+        var originalInputs = element[0].querySelectorAll('input.load-input');
+        var cloneInputs = clone.querySelectorAll('input.load-input');
+        for (var i = 0; i < originalInputs.length; i++) {
+          cloneInputs[i].setAttribute('value', originalInputs[i].value);
+        }
+
+        var originalSelects = element[0].querySelectorAll('.shorter-ui-select');
+        var cloneSelects = clone.querySelectorAll('.shorter-ui-select');
+        for (var j = 0; j < originalSelects.length; j++) {
+          var selectInput = originalSelects[j].querySelector('.selectize-input');
+          var selectedText = selectInput ? selectInput.textContent.trim() : '';
+          var textNode = document.createElement('span');
+          textNode.className = 'loads-print-field-text';
+          textNode.textContent = selectedText;
+          cloneSelects[j].parentNode.replaceChild(textNode, cloneSelects[j]);
+        }
+
+        var sheetHtml = clone.innerHTML.replace(/@page\s*\{[^}]*\}/gi, '');
+        var pageMarginCss = '1in';
+        var printableWidthIn = 6.5;
+        var printableHeightIn = 9;
+        if (config.sheetType === 'C408') {
+          pageMarginCss = '1in 0.85in 1in 0.85in';
+          printableWidthIn = 6.8;
+        }
+        var printBodyClass = 'loads-print-' + config.sheetType.toLowerCase();
+
+        var iframe = document.createElement('iframe');
+        iframe.setAttribute(
+          'style',
+          'position:absolute;left:-10000px;top:0;width:8.5in;height:11in;border:0;visibility:hidden'
+        );
+        document.body.appendChild(iframe);
+        var printWindow = iframe.contentWindow;
+        var doc = printWindow.document;
+
+        doc.open();
+        doc.write(
+          '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<link rel="stylesheet" href="assets/files/stylesheet.css">' +
+          '<link rel="stylesheet" href="components/loads/loads.css">' +
+          '<style>' +
+          'html, body { margin: 0; padding: 0; overflow: hidden; }' +
+          'body { width: ' + printableWidthIn + 'in; height: ' + printableHeightIn + 'in; }' +
+          '.loads-print-scale { width: 526pt; padding-right: 1pt; box-sizing: content-box; overflow-x: clip; overflow-y: hidden; }' +
+          '.loads-print-scale table.loads-sheet-main { border-right: 1pt solid windowtext; }' +
+          '.loads-print-scale table.loads-sheet-main > tbody > tr > td:last-child { border-right: 1pt solid windowtext; }' +
+          '.loads-print-compact table.loads-sheet-main > tbody > tr { height: auto !important; }' +
+          '.loads-print-compact table.loads-sheet-main td { line-height: 1.05 !important; padding-top: 0 !important; padding-bottom: 0 !important; }' +
+          '.loads-print-compact table.loads-sheet-main .load-chart-overlay { transform: scale(0.94); transform-origin: top left; }' +
+          '</style>' +
+          '<style>@page { size: letter portrait; margin: ' + pageMarginCss + '; }</style>' +
+          '</head><body class="' + printBodyClass + '">' +
+          '<div class="loads-sheet-wrap loads-print-scale">' + sheetHtml + '</div>' +
+          '</body></html>'
+        );
+        doc.close();
+
+        var removeIframe = function() {
+          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        };
+
+        var applyZoomAndPrint = function() {
+          var wrap = doc.querySelector('.loads-print-scale');
+          var body = doc.body;
+          if (!wrap || !wrap.offsetWidth || !wrap.offsetHeight) {
+            return $timeout(applyZoomAndPrint, 100);
+          }
+
+          if (config.sheetType === 'C408') {
+            body.classList.add('loads-print-compact');
+            void wrap.offsetHeight;
+          }
+
+          var printableWidthPx = printableWidthIn * 96;
+          var printableHeightPx = printableHeightIn * 96;
+          var widthScale = printableWidthPx / wrap.offsetWidth;
+          var heightNeeded = wrap.offsetHeight * widthScale;
+
+          if (heightNeeded > printableHeightPx) {
+            body.classList.add('loads-print-compact');
+            heightNeeded = wrap.offsetHeight * widthScale;
+          }
+
+          var printScale = heightNeeded <= printableHeightPx
+            ? widthScale
+            : (printableHeightPx / wrap.offsetHeight) * 0.995;
+          wrap.style.zoom = printScale.toFixed(4);
+
+          printWindow.onafterprint = removeIframe;
+          printWindow.focus();
+          printWindow.print();
+          $timeout(removeIframe, 2000);
+        };
+
+        var styleLinks = doc.querySelectorAll('link[rel="stylesheet"]');
+        var stylesPending = styleLinks.length;
+        var stylesReady = false;
+        var startPrint = function() {
+          if (stylesReady) return;
+          stylesReady = true;
+          $timeout(applyZoomAndPrint, 50);
+        };
+
+        if (!stylesPending) {
+          $timeout(startPrint, 100);
+        } else {
+          angular.forEach(styleLinks, function(link) {
+            link.addEventListener('load', function() {
+              stylesPending--;
+              if (stylesPending <= 0) startPrint();
+            });
+            link.addEventListener('error', function() {
+              stylesPending--;
+              if (stylesPending <= 0) startPrint();
+            });
+          });
+          $timeout(startPrint, 800);
+        }
+      }, 100);
+    };
   }
 
   return {
@@ -440,7 +594,8 @@ angular.module('workspaceApp')
       save: '&'
     },
     link: function(scope, element) {
-      element.addClass('loads-sheet-wrap');
+      ensureLoadsStylesheet();
+      element.addClass('loads-directive loads-sheet-wrap');
       scope.cgDotVisible = false;
       var sheetType = getLoadSheetType(scope.flight);
       if (!sheetType || !LOAD_SHEET_CONFIGS[sheetType]) {
@@ -452,7 +607,17 @@ angular.module('workspaceApp')
       config.sheetType = sheetType;
 
       $http.get(config.templateUrl).then(function(res) {
-        element.html(res.data);
+        var toolbar = angular.element(
+          '<div class="loads-print-toolbar">' +
+            '<button type="button" class="btn btn-default btn-sm loads-print-btn" ng-click="printLoadSheet()">' +
+              '<i class="fa fa-print" aria-hidden="true"></i> Print Load Sheet' +
+            '</button>' +
+          '</div>'
+        );
+        element.append(toolbar);
+        var temp = angular.element('<div>').html(res.data);
+        element.append(temp.contents());
+        markLoadSheetStructure(element);
         $compile(element.contents())(scope);
         initLoadSheet(scope, element, config);
       }).catch(function(err) {
