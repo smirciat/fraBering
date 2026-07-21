@@ -92,12 +92,12 @@
                 <span class="points-row">
                   OC  
                   <input style="transform: scale(1.5);margin:3px;padding:0" type="checkbox" ng-disabled="!status.Auth.isAdmin()"
-                    ng-model="flight.release[0].ocCheck" ng-change="status.updateFirebase('ocSign',flight,false)">
-                  <span>{{flight.release[0].ocSign}}</span>
+                    ng-model="flight.release[0].ocCheck" ng-change="status.updateFirebase('ocRelease',flight,false)">
+                  <span>{{flight.release[0].ocRelease}}</span>
                   <button class="btn btn-success" ng-style="status.getInputWidth()" style="padding-top:0px;">Save</button>
                 </span>
                 <span style="margin-left:auto;">
-                  <i ng-if="flight.release[0].ocSign" class="fa fa-solid fa-thumbs-up fa-autosize"></i>
+                  <i ng-if="flight.release[0].ocRelease" class="fa fa-solid fa-thumbs-up fa-autosize"></i>
                   <!--<i class="fa fa-solid fa-rocket fa-autosize"></i>-->
                 </span>
                 <span class="chat-fuel">Fuel: {{flight.fltPlan.fuel}}hrs&nbspLA:</span>

@@ -734,6 +734,7 @@ class StatusComponent {
           flight.localETA=`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       }
       flight.localStatus='Planned';
+      if (!flight.release[0].ocRelease) flight.release[0].ocRelease=flight.release[0].ocSign;
       if (flight.release[0].offAt) flight.localStatus='En Route';
       if (flight.release[0].onAt) flight.localStatus='Completed';
       //fltPlan Elements
@@ -1546,10 +1547,10 @@ class StatusComponent {
     if (!obj) return alert('No Object!  This really shouldn`t happen, if it persists after refresh, there is something wrong with the code');
     let minObj={_id:obj._id};
     let field=obj.release[0][fieldName];
-    if (fieldName==='ocSign') {
+    if (fieldName==='ocRelease') {
       if (!field) {
         field=this.createSignature();
-        obj.release[0].ocSign=field;
+        obj.release[0].ocRelease=field;
       }
       minObj.ocCheck=obj.release[0].ocCheck;
     }
