@@ -33,8 +33,6 @@ class StatusComponent {
     this.longPressTimer;
     this.longPressDuration = 500;
     this.view='board';
-    this.baseRunwayOverrideActive=false;
-    this.baseRunwayOverrideBaseFour=null;
     this.baseRunwayOverrideBusy=false;
     this.northWest=['PHO','KVL','WTK','RDG','TNC','WAA','SHH','TLA','KTS'];
     this.southWest=['GAM','SVA'];
@@ -361,7 +359,6 @@ class StatusComponent {
     });
     
     this.http.get('/api/airportRequirements').then(res=>{
-      window.localStorage.removeItem('baseRunwayOverride');
       this.masterAirports=res.data;
       this.airports=this.setBase(res.data);
       this.socket.unsyncUpdates('airportRequirement');
@@ -373,6 +370,7 @@ class StatusComponent {
             console.log('updating airportRequirements at: '+new Date().toLocaleString());
             this.airports=this.setBase(array);
             this.masterAirports=array;
+            this.refreshFlightAirportColors();
           }
         },0);
       });
@@ -650,8 +648,35 @@ class StatusComponent {
     });
   }
 
+  getBaseHubAirport(){
+    if (!this.masterAirports||!this.base||this.base.four==='HELI') return null;
+    return this.masterAirports.find(e=>e.icao===this.base.four);
+  }
+
   isBaseRunwayOverrideForCurrentBase(){
-    return this.baseRunwayOverrideActive&&this.base&&this.baseRunwayOverrideBaseFour===this.base.four;
+    let hub=this.getBaseHubAirport();
+    return !!(hub&&hub.closed);
+  }
+
+  buildBaseRunwayUpdates(openClosed,bulkClosed){
+    let hubIcao=this.base.four;
+    let airports=this.getBaseAirportsForOverride();
+    let updates=[];
+    airports.forEach(airport=>{
+      airport.openClosed=openClosed;
+      let data={openClosed};
+      if (airport.icao===hubIcao) {
+        airport.closed=bulkClosed;
+        data.closed=bulkClosed;
+      }
+      updates.push({id:airport._id,data});
+    });
+    let hub=this.masterAirports.find(e=>e.icao===hubIcao);
+    if (hub&&!updates.some(u=>u.id===hub._id)) {
+      hub.closed=bulkClosed;
+      updates.push({id:hub._id,data:{closed:bulkClosed}});
+    }
+    return updates;
   }
 
   getBaseAirportsForOverride(){
@@ -722,22 +747,12 @@ class StatusComponent {
       this.quickModal('Select the Nome, Kotzebue, or Unalakleet base before closing runways.','Base Required',true);
       return;
     }
-    if (this.baseRunwayOverrideActive&&this.baseRunwayOverrideBaseFour!==this.base.four) {
-      this.quickModal('Restore runway conditions on the other base before applying a closure here.','Override Active',true);
-      return;
-    }
     let airports=this.getBaseAirportsForOverride();
     if (!airports.length) {
       this.quickModal('No airports found for the selected base.','No Airports',true);
       return;
     }
-    let updates=[];
-    airports.forEach(airport=>{
-      airport.openClosed='Closed';
-      updates.push({id:airport._id, data:{openClosed:'Closed'}});
-    });
-    this.baseRunwayOverrideBaseFour=this.base.four;
-    this.baseRunwayOverrideActive=true;
+    let updates=this.buildBaseRunwayUpdates('Closed',true);
     this.baseRunwayOverrideBusy=true;
     this.airports=this.setBase(this.masterAirports);
     this.refreshFlightAirportColors();
@@ -753,13 +768,7 @@ class StatusComponent {
   restoreBaseRunwayOverride(){
     let airports=this.getBaseAirportsForOverride();
     if (!airports.length) return;
-    let updates=[];
-    airports.forEach(airport=>{
-      airport.openClosed='Open';
-      updates.push({id:airport._id, data:{openClosed:'Open'}});
-    });
-    this.baseRunwayOverrideActive=false;
-    this.baseRunwayOverrideBaseFour=null;
+    let updates=this.buildBaseRunwayUpdates('Open',false);
     this.baseRunwayOverrideBusy=true;
     this.airports=this.setBase(this.masterAirports);
     this.refreshFlightAirportColors();

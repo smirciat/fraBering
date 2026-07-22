@@ -55,6 +55,7 @@ export default function(sequelize, DataTypes) {
     currentTaf: DataTypes.STRING,
     currentTafObject: DataTypes.JSONB,
     nonPilot:DataTypes.BOOLEAN,
+    // Hub airports (PAOM, PAOT, PAUN): bulk base runway closure active when true
     closed:DataTypes.BOOLEAN,
     depth:DataTypes.STRING,
     contaminent:DataTypes.STRING,
