@@ -93,7 +93,8 @@ module.exports = function(grunt) {
         files: [
           '{.tmp,<%= yeoman.client %>}/{app,components}/**/*.{css,html}',
           '{.tmp,<%= yeoman.client %>}/{app,components}/**/!(*.spec|*.mock).js',
-          '<%= yeoman.client %>/assets/images/{,*//*}*.{png,jpg,jpeg,gif,webp,svg}'
+          '<%= yeoman.client %>/assets/images/{,*//*}*.{png,jpg,jpeg,gif,webp,svg,json,css,xml,html}',
+          '<%= yeoman.client %>/assets/files/{,*//*}*.{png,jpg,jpeg,gif,webp,svg,json,css,xml,html}'
         ],
         options: {
           livereload: false
@@ -242,7 +243,7 @@ module.exports = function(grunt) {
       dist: {
         src: [
           '<%= yeoman.dist %>/<%= yeoman.client %>/!(bower_components){,*/}*.{js,css}',
-          '<%= yeoman.dist %>/<%= yeoman.client %>/assets/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
+          '<%= yeoman.dist %>/<%= yeoman.client %>/assets/images/{,*//*}*.{png,jpg,jpeg,gif,webp,svg}'
         ]
       }
     },
@@ -374,6 +375,11 @@ module.exports = function(grunt) {
             'assets/fonts/**/*',
             'index.html'
           ]
+        }, {
+          expand: true,
+          cwd: '<%= yeoman.client %>/assets/files',
+          dest: '<%= yeoman.dist %>/<%= yeoman.client %>/assets/files',
+          src: ['**/*.{png,jpg,jpeg,gif,svg,json,css,xml,html,htm}']
         }, {
           expand: true,
           cwd: '.tmp/images',

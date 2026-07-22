@@ -1549,6 +1549,7 @@ class StatusComponent {
     let field=obj.release[0][fieldName];
     if (fieldName==='ocRelease') {
       if (!field) {
+        obj.release[0].ocReleaseTimestamp=new Date();
         field=this.createSignature();
         obj.release[0].ocRelease=field;
       }
