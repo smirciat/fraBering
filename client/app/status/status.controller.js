@@ -33,6 +33,9 @@ class StatusComponent {
     this.longPressTimer;
     this.longPressDuration = 500;
     this.view='board';
+    this.baseRunwayOverrideActive=false;
+    this.baseRunwayOverrideBaseFour=null;
+    this.baseRunwayOverrideBusy=false;
     this.northWest=['PHO','KVL','WTK','RDG','TNC','WAA','SHH','TLA','KTS'];
     this.southWest=['GAM','SVA'];
     this.northEast=['ORV','IAN','WLK','OBU','ABL','SHG','WMO','GLV','ELI','KKA','SKK','UNK'];
@@ -358,6 +361,7 @@ class StatusComponent {
     });
     
     this.http.get('/api/airportRequirements').then(res=>{
+      window.localStorage.removeItem('baseRunwayOverride');
       this.masterAirports=res.data;
       this.airports=this.setBase(res.data);
       this.socket.unsyncUpdates('airportRequirement');
@@ -643,6 +647,128 @@ class StatusComponent {
       this.http.patch('/api/todaysFlights/'+flight._id,f).then(res=>{
         console.log(res.data);
       });
+    });
+  }
+
+  isBaseRunwayOverrideForCurrentBase(){
+    return this.baseRunwayOverrideActive&&this.base&&this.baseRunwayOverrideBaseFour===this.base.four;
+  }
+
+  getBaseAirportsForOverride(){
+    if (!this.masterAirports||!this.base) return [];
+    let baseFour=this.base.four;
+    if (baseFour==='HELI') {
+      return this.masterAirports.filter(e=>{
+        return e.threeLetter&&e.threeLetter!==''&&e.baseGroup&&e.baseGroup!=='None';
+      });
+    }
+    return this.masterAirports.filter(e=>{
+      if (!e.threeLetter||e.threeLetter==='') return false;
+      if (baseFour==='PAOM') return e.baseGroup==='PAOM'||e.baseGroup==='PAUN';
+      return e.baseGroup===baseFour;
+    });
+  }
+
+  refreshFlightAirportColors(){
+    if (!this.todaysFlights||!this.masterAirports) return;
+    this.todaysFlights.forEach(flight=>{
+      if (!flight.airports) return;
+      let airportObjs=[];
+      flight.airports.forEach((a,listIndex)=>{
+        let i=this.masterAirports.map(e=>e.name).indexOf(a);
+        if (i>-1) {
+          let night=false;
+          if (flight.departTimes.length>listIndex&&this.masterAirports[i].metarObj) {
+            night=this.isItNight(this.masterAirports[i].metarObj.airport,flight.departTimes[listIndex]);
+            if (listIndex>0&&!night&&flight.arriveTimes) {
+              night=this.isItNight(this.masterAirports[i].metarObj.airport,flight.arriveTimes[listIndex-1]);
+            }
+          }
+          if (!this.masterAirports[i].metarObj) this.masterAirports[i].metarObj={airport:{threeLetter:a}};
+          let metarObj=angular.copy(this.masterAirports[i].metarObj);
+          if (!metarObj.airport) metarObj.airport=angular.copy(this.masterAirports[i]);
+          metarObj.night=night;
+          metarObj.aircraft=flight.aircraft;
+          this.overallRiskClass(metarObj);
+          if (night) metarObj.color+=' night ';
+          airportObjs.push(metarObj);
+          if (!flight.airportObjs) flight.airportObjs=[];
+          flight.airportObjs[listIndex]=metarObj;
+        }
+        else airportObjs.push({airport:{threeLetter:a}});
+      });
+      if (!flight.colorLock) flight.color=this.flightRiskClass(airportObjs);
+    });
+  }
+
+  patchBaseRunwayAirports(updates){
+    return updates.reduce((promise,update,index)=>{
+      return promise.then(()=>{
+        let body=angular.copy(update.data);
+        if (index===updates.length-1) body.runScroll=true;
+        return this.http.patch('/api/airportRequirements/'+update.id,body);
+      });
+    }, Promise.resolve());
+  }
+
+  toggleBaseRunwayOverride(){
+    if (this.baseRunwayOverrideBusy) return;
+    if (this.isBaseRunwayOverrideForCurrentBase()) this.restoreBaseRunwayOverride();
+    else this.applyBaseRunwayOverride();
+  }
+
+  applyBaseRunwayOverride(){
+    if (!this.base||this.base.four==='HELI') {
+      this.quickModal('Select the Nome, Kotzebue, or Unalakleet base before closing runways.','Base Required',true);
+      return;
+    }
+    if (this.baseRunwayOverrideActive&&this.baseRunwayOverrideBaseFour!==this.base.four) {
+      this.quickModal('Restore runway conditions on the other base before applying a closure here.','Override Active',true);
+      return;
+    }
+    let airports=this.getBaseAirportsForOverride();
+    if (!airports.length) {
+      this.quickModal('No airports found for the selected base.','No Airports',true);
+      return;
+    }
+    let updates=[];
+    airports.forEach(airport=>{
+      airport.openClosed='Closed';
+      updates.push({id:airport._id, data:{openClosed:'Closed'}});
+    });
+    this.baseRunwayOverrideBaseFour=this.base.four;
+    this.baseRunwayOverrideActive=true;
+    this.baseRunwayOverrideBusy=true;
+    this.airports=this.setBase(this.masterAirports);
+    this.refreshFlightAirportColors();
+    this.patchBaseRunwayAirports(updates).then(()=>{
+      this.baseRunwayOverrideBusy=false;
+    }).catch(err=>{
+      console.log(err);
+      this.baseRunwayOverrideBusy=false;
+      this.quickModal('Bulk runway closure failed. Check your connection and try again.','Failed',true);
+    });
+  }
+
+  restoreBaseRunwayOverride(){
+    let airports=this.getBaseAirportsForOverride();
+    if (!airports.length) return;
+    let updates=[];
+    airports.forEach(airport=>{
+      airport.openClosed='Open';
+      updates.push({id:airport._id, data:{openClosed:'Open'}});
+    });
+    this.baseRunwayOverrideActive=false;
+    this.baseRunwayOverrideBaseFour=null;
+    this.baseRunwayOverrideBusy=true;
+    this.airports=this.setBase(this.masterAirports);
+    this.refreshFlightAirportColors();
+    this.patchBaseRunwayAirports(updates).then(()=>{
+      this.baseRunwayOverrideBusy=false;
+    }).catch(err=>{
+      console.log(err);
+      this.baseRunwayOverrideBusy=false;
+      this.quickModal('Restoring runway conditions failed. Check your connection and try again.','Failed',true);
     });
   }
   
@@ -1013,6 +1139,7 @@ class StatusComponent {
     //runway
     if (!metarObj.airport) return returnString+=' '+color;
     tempColor=this.returnColor({yellow:3,red:2},metarObj.airport.runwayScore,'above');
+    if (metarObj.airport.openClosed==='Closed') tempColor='airport-pink';
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //if (airport.name==='Gambell') console.log(airport);
     //possibly no metarObj
