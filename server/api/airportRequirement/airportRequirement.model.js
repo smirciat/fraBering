@@ -57,6 +57,7 @@ export default function(sequelize, DataTypes) {
     nonPilot:DataTypes.BOOLEAN,
     // Hub airports (PAOM, PAOT, PAUN): bulk base runway closure active when true
     closed:DataTypes.BOOLEAN,
+    bulkClosureComment:DataTypes.STRING,
     depth:DataTypes.STRING,
     contaminent:DataTypes.STRING,
     percent:DataTypes.STRING,

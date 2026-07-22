@@ -127,6 +127,7 @@ export function update(req, res) {
 function airportsForBaseClosure(baseFour, airports) {
   return airports.filter(e => {
     if (!e.threeLetter || e.threeLetter === '') return false;
+    if (e.icao === baseFour) return true;
     if (baseFour === 'PAOM') return e.baseGroup === 'PAOM' || e.baseGroup === 'PAUN';
     return e.baseGroup === baseFour;
   });
@@ -136,6 +137,7 @@ export async function baseRunwayClosure(req, res) {
   const baseFour = req.body.baseFour;
   const bulkClosed = req.body.closed === true;
   const openClosed = bulkClosed ? 'Closed' : 'Open';
+  const comment = bulkClosed && req.body.comment ? String(req.body.comment).trim() : '';
 
   if (!baseFour || ['PAOM', 'PAOT', 'PAUN'].indexOf(baseFour) === -1) {
     return res.status(400).json({message: 'Invalid baseFour'});
@@ -155,7 +157,10 @@ export async function baseRunwayClosure(req, res) {
       const entity = await AirportRequirement.findByPk(airports[i]._id);
       if (!entity) continue;
       const patch = {openClosed};
-      if (airports[i].icao === baseFour) patch.closed = bulkClosed;
+      if (airports[i].icao === baseFour) {
+        patch.closed = bulkClosed;
+        patch.bulkClosureComment = bulkClosed ? comment : '';
+      }
       if (i === airports.length - 1) patch.runScroll = true;
       await entity.update(patch);
       updated++;
@@ -165,7 +170,10 @@ export async function baseRunwayClosure(req, res) {
     if (!hubInList) {
       const hub = await AirportRequirement.findOne({where: {icao: baseFour}});
       if (hub) {
-        const hubPatch = {closed: bulkClosed};
+        const hubPatch = {
+          closed: bulkClosed,
+          bulkClosureComment: bulkClosed ? comment : ''
+        };
         if (!updated) hubPatch.runScroll = true;
         await hub.update(hubPatch);
         updated++;
@@ -300,6 +308,7 @@ export async function tafs(req,res) {
       delete tempAirport._id;
       delete tempAirport.openClosed;
       delete tempAirport.closed;
+      delete tempAirport.bulkClosureComment;
       delete tempAirport.runwayScore;
       delete tempAirport.depth;
       delete tempAirport.percent;
@@ -413,6 +422,7 @@ export async function metars(req,res) {
       delete tempAirport.comment;
       delete tempAirport.openClosed;
       delete tempAirport.closed;
+      delete tempAirport.bulkClosureComment;
       AirportRequirement.findOne({
         where: {
           _id: id

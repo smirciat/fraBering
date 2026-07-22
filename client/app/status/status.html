@@ -381,25 +381,30 @@
 </section>
 <section ng-if="status.view==='next'&&status.Auth.isAdmin()" style="background-color:#ffffcc;margin:0;padding:20px 5% 20px 5%;width:100%;">
   <h3>FIKI View</h3>
-  <div style="display:inline-block; margin-right:30px;">
-    <button class="btn"
-      ng-class="status.isBaseRunwayOverrideForCurrentBase() ? 'btn-danger' : 'btn-warning'"
-      ng-click="status.toggleBaseRunwayOverride()"
-      ng-disabled="status.baseRunwayOverrideBusy">
-      {{status.isBaseRunwayOverrideForCurrentBase() ? 'Restore Base Runway Conditions' : 'Close All Base Runways'}}
-    </button>
+  <div style="margin-bottom:16px;">
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px;">
+      <button class="btn"
+        ng-class="status.isBaseRunwayOverrideForCurrentBase() ? 'btn-danger' : 'btn-warning'"
+        ng-click="status.toggleBaseRunwayOverride()"
+        ng-disabled="status.baseRunwayOverrideBusy">
+        {{status.isBaseRunwayOverrideForCurrentBase() ? 'Restore Base Runway Conditions' : 'Close All Base Runways'}}
+      </button>
+      <label style="margin:0; font-weight:bold;">Closure reason:</label>
+      <input type="text" class="form-control" style="display:inline-block; width:28em; max-width:100%;"
+        ng-model="status.baseClosureComment"
+        ng-disabled="status.isBaseRunwayOverrideForCurrentBase()||status.baseRunwayOverrideBusy"
+        placeholder="Brief note for managers (e.g. freezing rain, plowing)">
+    </div>
   </div>
-  <div style="display:inline-block;">
+  <div style="margin-bottom:16px;">
     <h5 style="display:inline-block; margin-right:20px;">Bulk Edit FIKI --></h5>
-    <div class="comment"  style="display:inline-block;">
+    <div class="comment" style="display:inline-block;">
       <ui-select ng-style="status.getWidth(25,'em')" style="line-height:28px;height:28px" ng-model="status.positiveFiki" theme="selectize" ng-change="status.bulkFIKI(status.positiveFiki)">
         <ui-select-match style="line-height:28px;height:28px" placeholder="No Selection">&nbsp&nbsp&nbsp{{$select.selected}}&nbsp&nbsp&nbsp</ui-select-match>
         <ui-select-choices repeat="choice in status.bulkFIKIChoices" >
           <div ng-bind-html="choice | highlight: $select.search"></div>
         </ui-select-choices>
       </ui-select>
-    <!--<div class="comment"  style="align-self:center" ng-click="status.editConfiguration(airplane)">
-      <p>{{airplane.status}}</p>-->
     </div>
   </div>
   <table class="table table-hover" style="font-weight:bold;">
