@@ -727,13 +727,10 @@ class StatusComponent {
   }
 
   patchBaseRunwayAirports(updates){
-    return updates.reduce((promise,update,index)=>{
-      return promise.then(()=>{
-        let body=angular.copy(update.data);
-        if (index===updates.length-1) body.runScroll=true;
-        return this.http.patch('/api/airportRequirements/'+update.id,body);
-      });
-    }, Promise.resolve());
+    return this.http.post('/api/airportRequirements/baseRunwayClosure', {
+      baseFour:this.base.four,
+      closed:updates.closed
+    });
   }
 
   toggleBaseRunwayOverride(){
@@ -752,11 +749,11 @@ class StatusComponent {
       this.quickModal('No airports found for the selected base.','No Airports',true);
       return;
     }
-    let updates=this.buildBaseRunwayUpdates('Closed',true);
+    this.buildBaseRunwayUpdates('Closed',true);
     this.baseRunwayOverrideBusy=true;
     this.airports=this.setBase(this.masterAirports);
     this.refreshFlightAirportColors();
-    this.patchBaseRunwayAirports(updates).then(()=>{
+    this.patchBaseRunwayAirports({closed:true}).then(()=>{
       this.baseRunwayOverrideBusy=false;
     }).catch(err=>{
       console.log(err);
@@ -768,11 +765,11 @@ class StatusComponent {
   restoreBaseRunwayOverride(){
     let airports=this.getBaseAirportsForOverride();
     if (!airports.length) return;
-    let updates=this.buildBaseRunwayUpdates('Open',false);
+    this.buildBaseRunwayUpdates('Open',false);
     this.baseRunwayOverrideBusy=true;
     this.airports=this.setBase(this.masterAirports);
     this.refreshFlightAirportColors();
-    this.patchBaseRunwayAirports(updates).then(()=>{
+    this.patchBaseRunwayAirports({closed:false}).then(()=>{
       this.baseRunwayOverrideBusy=false;
     }).catch(err=>{
       console.log(err);

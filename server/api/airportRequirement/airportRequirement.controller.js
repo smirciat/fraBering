@@ -124,6 +124,62 @@ export function update(req, res) {
     .catch(handleError(res));
 }
 
+function airportsForBaseClosure(baseFour, airports) {
+  return airports.filter(e => {
+    if (!e.threeLetter || e.threeLetter === '') return false;
+    if (baseFour === 'PAOM') return e.baseGroup === 'PAOM' || e.baseGroup === 'PAUN';
+    return e.baseGroup === baseFour;
+  });
+}
+
+export async function baseRunwayClosure(req, res) {
+  const baseFour = req.body.baseFour;
+  const bulkClosed = req.body.closed === true;
+  const openClosed = bulkClosed ? 'Closed' : 'Open';
+
+  if (!baseFour || ['PAOM', 'PAOT', 'PAUN'].indexOf(baseFour) === -1) {
+    return res.status(400).json({message: 'Invalid baseFour'});
+  }
+
+  try {
+    const instance = await AirportRequirement.findAll({});
+    const allAirports = instance.map(i => i.dataValues);
+    const airports = airportsForBaseClosure(baseFour, allAirports);
+
+    if (!airports.length) {
+      return res.status(404).json({message: 'No airports found for base'});
+    }
+
+    let updated = 0;
+    for (let i = 0; i < airports.length; i++) {
+      const entity = await AirportRequirement.findByPk(airports[i]._id);
+      if (!entity) continue;
+      const patch = {openClosed};
+      if (airports[i].icao === baseFour) patch.closed = bulkClosed;
+      if (i === airports.length - 1) patch.runScroll = true;
+      await entity.update(patch);
+      updated++;
+    }
+
+    const hubInList = airports.some(a => a.icao === baseFour);
+    if (!hubInList) {
+      const hub = await AirportRequirement.findOne({where: {icao: baseFour}});
+      if (hub) {
+        const hubPatch = {closed: bulkClosed};
+        if (!updated) hubPatch.runScroll = true;
+        await hub.update(hubPatch);
+        updated++;
+      }
+    }
+
+    return res.status(200).json({updated, baseFour, closed: bulkClosed});
+  }
+  catch (err) {
+    console.log(err);
+    return res.status(500).json({message: 'Base runway closure update failed'});
+  }
+}
+
 // Deletes a AirportRequirement from the DB
 export function destroy(req, res) {
   return AirportRequirement.findOne({
@@ -242,6 +298,15 @@ export async function tafs(req,res) {
       airport.pireps = pireps(airport.threeLetter);
       let tempAirport=JSON.parse(JSON.stringify(airport));
       delete tempAirport._id;
+      delete tempAirport.openClosed;
+      delete tempAirport.closed;
+      delete tempAirport.runwayScore;
+      delete tempAirport.depth;
+      delete tempAirport.percent;
+      delete tempAirport.contaminent;
+      delete tempAirport.signature;
+      delete tempAirport.timestamp;
+      delete tempAirport.comment;
       AirportRequirement.findOne({
         where: {
           _id: airport._id
@@ -346,6 +411,8 @@ export async function metars(req,res) {
       delete tempAirport.signature;
       delete tempAirport.timestamp;
       delete tempAirport.comment;
+      delete tempAirport.openClosed;
+      delete tempAirport.closed;
       AirportRequirement.findOne({
         where: {
           _id: id

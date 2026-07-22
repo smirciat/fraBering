@@ -15,6 +15,7 @@ router.post('/grabMetars', controller.metarListGrab);
 router.post('/tafs', controller.tafs);
 router.post('/notams', controller.notams);
 router.post('/pireps', controller.getPireps);
+router.post('/baseRunwayClosure', controller.baseRunwayClosure);
 router.put('/:id', controller.update);
 router.patch('/:id', controller.update);
 router.delete('/:id', controller.destroy);
