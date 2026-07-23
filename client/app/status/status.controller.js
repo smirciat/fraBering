@@ -718,6 +718,41 @@ class StatusComponent {
     return !!(hub&&hub.closed);
   }
 
+  isLessThanOneHourAgo(date){
+    let oneHourAgo=new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours()-1);
+    oneHourAgo.setMinutes(oneHourAgo.getMinutes()-10);
+    return date>oneHourAgo;
+  }
+
+  applyManualObservationIfNeeded(metarObj,airport,aircraft){
+    if (!metarObj||!airport) return;
+    metarObj.usingManual=false;
+    metarObj.color=this.overallRiskClass(metarObj);
+    if (metarObj.color!==' airport-blue'&&metarObj.color!==' airport-purple') return;
+    if (!airport.manualObs||!airport.manualTimestamp||!this.isLessThanOneHourAgo(new Date(airport.manualTimestamp))) return;
+    if (!metarObj['Raw-Report']) {
+      let obs='UNOFFICIAL: ';
+      if (airport.manualObs.isOfficial) obs='OFFICIAL OBSERVATION: ';
+      if (airport.manualObs.windSpeed&&airport.manualObs.windDirection) obs=obs+'Wind '+airport.manualObs.windDirection+'@'+airport.manualObs.windSpeed+'kts';
+      if (airport.manualObs.visibility) obs=obs+', Visibility '+airport.manualObs.visibility;
+      if (airport.manualObs.ceiling) obs=obs+', Ceiling '+airport.manualObs.ceiling;
+      if (airport.manualObs.altimeter) obs=obs+', Altimeter '+airport.manualObs.altimeter;
+      metarObj['Raw-Report']=obs;
+    }
+    metarObj.Visibility=airport.manualObs.visibility;
+    metarObj.Ceiling=airport.manualObs.ceiling;
+    metarObj['Wind-Gust']=airport.manualObs.windSpeed;
+    metarObj['Wind-Direction']=airport.manualObs.windDirection;
+    metarObj.altimeter=airport.manualObs.altimeter;
+    metarObj.isOfficial=airport.manualObs.isOfficial;
+    metarObj.usingManual=true;
+    metarObj.color=this.overallRiskClass(metarObj);
+    if (airport.manualObs.webcam) metarObj['Raw-Report']='WebCam Observation, VFR Only';
+    if (airport.manualObs.webcamIFR) metarObj['Raw-Report']='Official WebCam Observation';
+    if (!metarObj.isOfficial&&metarObj.usingManual) metarObj.color=metarObj.color+' unofficial';
+  }
+
   refreshFlightAirportColors(){
     if (!this.todaysFlights||!this.masterAirports) return;
     this.todaysFlights.forEach(flight=>{
@@ -734,12 +769,15 @@ class StatusComponent {
             }
           }
           if (!this.masterAirports[i].metarObj) this.masterAirports[i].metarObj={airport:{threeLetter:a}};
-          let metarObj=angular.copy(this.masterAirports[i].metarObj);
-          if (!metarObj.airport) metarObj.airport=angular.copy(this.masterAirports[i]);
-          metarObj.night=night;
+          let airportRecord=angular.copy(this.masterAirports[i]);
+          let metarObj=angular.copy(airportRecord.metarObj);
+          if (!metarObj.airport) metarObj.airport=angular.copy(airportRecord);
           metarObj.aircraft=flight.aircraft;
-          this.overallRiskClass(metarObj);
-          if (night) metarObj.color+=' night ';
+          this.applyManualObservationIfNeeded(metarObj,airportRecord,flight.aircraft);
+          if (night) {
+            metarObj.night=true;
+            metarObj.color+=' night ';
+          }
           airportObjs.push(metarObj);
           if (!flight.airportObjs) flight.airportObjs=[];
           flight.airportObjs[listIndex]=metarObj;
