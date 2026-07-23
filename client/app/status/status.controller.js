@@ -725,21 +725,29 @@ class StatusComponent {
     return date>oneHourAgo;
   }
 
+  needsManualMetarFallback(color){
+    return color&&(color.indexOf('airport-blue')>-1||color.indexOf('airport-purple')>-1);
+  }
+
+  buildManualRawReport(manualObs){
+    if (!manualObs) return '';
+    if (manualObs.webcam) return 'WebCam Observation, VFR Only';
+    if (manualObs.webcamIFR) return 'Official WebCam Observation';
+    let obs='UNOFFICIAL: ';
+    if (manualObs.isOfficial) obs='OFFICIAL OBSERVATION: ';
+    if (manualObs.windSpeed&&manualObs.windDirection) obs=obs+'Wind '+manualObs.windDirection+'@'+manualObs.windSpeed+'kts';
+    if (manualObs.visibility) obs=obs+', Visibility '+manualObs.visibility;
+    if (manualObs.ceiling) obs=obs+', Ceiling '+manualObs.ceiling;
+    if (manualObs.altimeter) obs=obs+', Altimeter '+manualObs.altimeter;
+    return obs;
+  }
+
   applyManualObservationIfNeeded(metarObj,airport,aircraft){
     if (!metarObj||!airport) return;
     metarObj.usingManual=false;
     metarObj.color=this.overallRiskClass(metarObj);
-    if (metarObj.color!==' airport-blue'&&metarObj.color!==' airport-purple') return;
+    if (!this.needsManualMetarFallback(metarObj.color)) return;
     if (!airport.manualObs||!airport.manualTimestamp||!this.isLessThanOneHourAgo(new Date(airport.manualTimestamp))) return;
-    if (!metarObj['Raw-Report']) {
-      let obs='UNOFFICIAL: ';
-      if (airport.manualObs.isOfficial) obs='OFFICIAL OBSERVATION: ';
-      if (airport.manualObs.windSpeed&&airport.manualObs.windDirection) obs=obs+'Wind '+airport.manualObs.windDirection+'@'+airport.manualObs.windSpeed+'kts';
-      if (airport.manualObs.visibility) obs=obs+', Visibility '+airport.manualObs.visibility;
-      if (airport.manualObs.ceiling) obs=obs+', Ceiling '+airport.manualObs.ceiling;
-      if (airport.manualObs.altimeter) obs=obs+', Altimeter '+airport.manualObs.altimeter;
-      metarObj['Raw-Report']=obs;
-    }
     metarObj.Visibility=airport.manualObs.visibility;
     metarObj.Ceiling=airport.manualObs.ceiling;
     metarObj['Wind-Gust']=airport.manualObs.windSpeed;
@@ -747,9 +755,9 @@ class StatusComponent {
     metarObj.altimeter=airport.manualObs.altimeter;
     metarObj.isOfficial=airport.manualObs.isOfficial;
     metarObj.usingManual=true;
+    metarObj.manualObs=airport.manualObs;
+    metarObj['Raw-Report']=this.buildManualRawReport(airport.manualObs);
     metarObj.color=this.overallRiskClass(metarObj);
-    if (airport.manualObs.webcam) metarObj['Raw-Report']='WebCam Observation, VFR Only';
-    if (airport.manualObs.webcamIFR) metarObj['Raw-Report']='Official WebCam Observation';
     if (!metarObj.isOfficial&&metarObj.usingManual) metarObj.color=metarObj.color+' unofficial';
   }
 
@@ -770,10 +778,28 @@ class StatusComponent {
           }
           if (!this.masterAirports[i].metarObj) this.masterAirports[i].metarObj={airport:{threeLetter:a}};
           let airportRecord=angular.copy(this.masterAirports[i]);
-          let metarObj=angular.copy(airportRecord.metarObj);
-          if (!metarObj.airport) metarObj.airport=angular.copy(airportRecord);
+          let metarObj;
+          if (flight.airportObjs&&flight.airportObjs[listIndex]) {
+            metarObj=angular.copy(flight.airportObjs[listIndex]);
+            if (!metarObj.airport) metarObj.airport=angular.copy(airportRecord);
+            else {
+              metarObj.airport.openClosed=airportRecord.openClosed;
+              metarObj.airport.runwayScore=airportRecord.runwayScore;
+              metarObj.airport.manualObs=airportRecord.manualObs;
+              metarObj.airport.manualTimestamp=airportRecord.manualTimestamp;
+            }
+          }
+          else {
+            metarObj=angular.copy(airportRecord.metarObj||{});
+            if (!metarObj.airport) metarObj.airport=angular.copy(airportRecord);
+          }
           metarObj.aircraft=flight.aircraft;
-          this.applyManualObservationIfNeeded(metarObj,airportRecord,flight.aircraft);
+          if (metarObj.usingManual) {
+            if (!metarObj.manualObs) metarObj.manualObs=airportRecord.manualObs;
+            metarObj.color=this.overallRiskClass(metarObj);
+            if (!metarObj.isOfficial&&metarObj.usingManual) metarObj.color=metarObj.color+' unofficial';
+          }
+          else this.applyManualObservationIfNeeded(metarObj,airportRecord,flight.aircraft);
           if (night) {
             metarObj.night=true;
             metarObj.color+=' night ';
@@ -1205,6 +1231,16 @@ class StatusComponent {
     let tempColor="airport-green";
     //runway
     if (!metarObj.airport) return returnString+=' '+color;
+    if (metarObj.usingManual&&metarObj.airport.manualObs&&metarObj.airport.manualTimestamp&&this.isLessThanOneHourAgo(new Date(metarObj.airport.manualTimestamp))){
+      if (metarObj.airport.manualObs.webcam) {
+        metarObj.color=returnString+' airport-green';
+        return metarObj.color;
+      }
+      if (metarObj.airport.manualObs.webcamIFR) {
+        metarObj.color=returnString+' airport-orange';
+        return metarObj.color;
+      }
+    }
     tempColor=this.returnColor({yellow:3,red:2},metarObj.airport.runwayScore,'above');
     if (metarObj.airport.openClosed==='Closed') tempColor='airport-pink';
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
@@ -1214,26 +1250,41 @@ class StatusComponent {
       if (color!=='airport-red') {
         color='airport-blue';
       }
-      return returnString+=' '+color;
+      metarObj.color=returnString+' '+color;
+      return metarObj.color;
     }
     //icing?
     if (metarObj.Freezing) color='airport-pink';
+    //wind
+    tempColor=this.returnWindColor(metarObj.aircraft,metarObj['Wind-Gust'],metarObj['Wind-Direction'],metarObj.airport);
+    if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //Visibility
-    if (!metarObj.Visibility||!metarObj.Ceiling||!metarObj.altimeter) return returnString+' airport-purple';
-    if (metarObj.Visibility==='99'||metarObj.Ceiling=='9999'||metarObj.Visibility===99||metarObj.Ceiling==9999) return returnString+' airport-purple';
-    //visibility
-    tempColor=this.returnColor(metarObj.airport.visibilityRequirement, metarObj.Visibility,'above',metarObj.airport);
+    if (!metarObj.Visibility||metarObj.Visibility==='99'||metarObj.Visibility===99) {
+      tempColor='airport-purple';
+    }
+    else {
+      tempColor=this.returnColor(metarObj.airport.visibilityRequirement, metarObj.Visibility,'above',metarObj.airport);
+    }
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //ceiling
-    tempColor=this.returnColor(metarObj.airport.ceilingRequirement,metarObj.Ceiling,'above',metarObj.airport);
+    if (!metarObj.Ceiling||metarObj.Ceiling=='9999'||metarObj.Ceiling==9999) {
+      tempColor='airport-purple';
+    }
+    else {
+      tempColor=this.returnColor(metarObj.airport.ceilingRequirement,metarObj.Ceiling,'above',metarObj.airport);
+    }
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
-    //wind
-    tempColor=this.returnWindColor(metarObj.aircraft,metarObj['Wind-Gust'],metarObj['Wind-Direction'],metarObj.airport);//this.returnColor({yellow:30,red:35},metarObj["Wind-Gust"],'below');
-    
+    //altimeter
+    if ((!metarObj.altimeter&&(!metarObj.manualObs||!metarObj.usingManual||(metarObj.usingManual&&metarObj.manualObs.isOfficial)))) {
+      tempColor='airport-purple';
+    }
+    else if (metarObj.altimeter) {
+      tempColor='airport-green';
+    }
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //return
     metarObj.color=returnString+' '+color;
-    return returnString+' '+color;
+    return metarObj.color;
   }
   
   returnColor(limitObj,observation,direction,airport){
