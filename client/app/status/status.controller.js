@@ -742,6 +742,31 @@ class StatusComponent {
     return obs;
   }
 
+  isManualUnofficial(metarObj){
+    if (!metarObj||!metarObj.usingManual) return false;
+    let manualObs=metarObj.manualObs;
+    if (!manualObs&&metarObj.airport) manualObs=metarObj.airport.manualObs;
+    if (manualObs) {
+      if (manualObs.webcamIFR) return false;
+      if (manualObs.webcam) return true;
+      return !manualObs.isOfficial;
+    }
+    return !metarObj.isOfficial;
+  }
+
+  applyUnofficialColorSuffix(metarObj){
+    if (!metarObj||!metarObj.usingManual||!metarObj.color) return;
+    metarObj.color=metarObj.color.replace(/\s+unofficial/g,'').trim();
+    if (this.isManualUnofficial(metarObj)) metarObj.color=metarObj.color+' unofficial';
+  }
+
+  syncManualOfficialFlag(metarObj,manualObs){
+    if (!metarObj||!manualObs) return;
+    if (manualObs.webcamIFR) metarObj.isOfficial=true;
+    else if (manualObs.webcam) metarObj.isOfficial=false;
+    else metarObj.isOfficial=manualObs.isOfficial;
+  }
+
   applyManualObservationIfNeeded(metarObj,airport,aircraft){
     if (!metarObj||!airport) return;
     metarObj.usingManual=false;
@@ -753,12 +778,12 @@ class StatusComponent {
     metarObj['Wind-Gust']=airport.manualObs.windSpeed;
     metarObj['Wind-Direction']=airport.manualObs.windDirection;
     metarObj.altimeter=airport.manualObs.altimeter;
-    metarObj.isOfficial=airport.manualObs.isOfficial;
     metarObj.usingManual=true;
     metarObj.manualObs=airport.manualObs;
+    this.syncManualOfficialFlag(metarObj,airport.manualObs);
     metarObj['Raw-Report']=this.buildManualRawReport(airport.manualObs);
     metarObj.color=this.overallRiskClass(metarObj);
-    if (!metarObj.isOfficial&&metarObj.usingManual) metarObj.color=metarObj.color+' unofficial';
+    this.applyUnofficialColorSuffix(metarObj);
   }
 
   refreshFlightAirportColors(){
@@ -796,8 +821,9 @@ class StatusComponent {
           metarObj.aircraft=flight.aircraft;
           if (metarObj.usingManual) {
             if (!metarObj.manualObs) metarObj.manualObs=airportRecord.manualObs;
+            this.syncManualOfficialFlag(metarObj,metarObj.manualObs||airportRecord.manualObs);
             metarObj.color=this.overallRiskClass(metarObj);
-            if (!metarObj.isOfficial&&metarObj.usingManual) metarObj.color=metarObj.color+' unofficial';
+            this.applyUnofficialColorSuffix(metarObj);
           }
           else this.applyManualObservationIfNeeded(metarObj,airportRecord,flight.aircraft);
           if (night) {
@@ -1006,9 +1032,9 @@ class StatusComponent {
   }
   
   getUnofficial(metarObj){
-    let c=metarObj.color;
-    if (!metarObj.isOfficial&&metarObj.usingManual) return c+" unofficial";
-    return c;
+    let c=(metarObj.color||'').replace(/\s+unofficial/g,'').trim();
+    if (this.isManualUnofficial(metarObj)) return c+' unofficial';
+    return metarObj.color;
   }
   
   isItNight(airport,time){
@@ -1208,7 +1234,8 @@ class StatusComponent {
     if (!airportObjs) return color;
     for (let i=0;i<airportObjs.length;i++) {
     //airportObjs.forEach(metarObj=>{
-      let myClass=this.overallRiskClass(airportObjs[i]);
+      let myClass=airportObjs[i].color;
+      if (!myClass) myClass=this.overallRiskClass(airportObjs[i]);
       let arr=myClass.split(' ');
       arr.forEach(a=>{
         if (a==='night') night=true;
