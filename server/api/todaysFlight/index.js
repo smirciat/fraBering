@@ -2,6 +2,7 @@
 
 var express = require('express');
 var controller = require('./todaysFlight.controller');
+import * as auth from '../../auth/auth.service';
 
 var router = express.Router();
 
@@ -12,7 +13,7 @@ router.post('/stopped114', controller.returnStopped);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);
-router.post('/dayFlights', controller.dayFlights);
+router.post('/dayFlights', auth.hasRole('user'), controller.dayFlights);
 router.post('/public/dayFlights', controller.dayFlightsPublic);
 router.post('/flightRange', controller.flightRange);
 router.post('/getManifests', controller.getManifests);
