@@ -7,6 +7,29 @@ var newTodaysFlight;
 
 describe('TodaysFlight API:', function() {
 
+  describe('auth', function() {
+    it('should reject unauthenticated access to dayFlights', function(done) {
+      request(app)
+        .post('/api/todaysFlights/dayFlights')
+        .send({dateString: new Date().toLocaleDateString()})
+        .expect(401)
+        .end(done);
+    });
+
+    it('should allow unauthenticated access to public dayFlights', function(done) {
+      request(app)
+        .post('/api/todaysFlights/public/dayFlights')
+        .send({dateString: new Date().toLocaleDateString()})
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.body).to.be.instanceOf(Array);
+          done();
+        });
+    });
+  });
+
   describe('GET /api/todaysFlights', function() {
     var todaysFlights;
 

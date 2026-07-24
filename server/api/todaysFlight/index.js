@@ -6,6 +6,11 @@ import * as auth from '../../auth/auth.service';
 
 var router = express.Router();
 
+// Public departures board (whitelisted payload only)
+router.post('/public/dayFlights', controller.dayFlightsPublic);
+
+router.use(auth.hasRole('user'));
+
 router.get('/', controller.index);
 //router.get('/stopped', controller.returnFail);
 //router.post('/stopped1', controller.returnFail);
@@ -13,8 +18,7 @@ router.post('/stopped114', controller.returnStopped);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);
-router.post('/dayFlights', auth.hasRole('user'), controller.dayFlights);
-router.post('/public/dayFlights', controller.dayFlightsPublic);
+router.post('/dayFlights', controller.dayFlights);
 router.post('/flightRange', controller.flightRange);
 router.post('/getManifests', controller.getManifests);
 router.post('/getManifest', controller.getManifest);
