@@ -128,6 +128,35 @@ export function returnFail(req,res){
   res.status(401).json({stopped:staleFile});
 }
 
+function toPublicFlightRow(flight) {
+  const f = flight.dataValues || flight;
+  let arrivalOnTimeString = null;
+  if (f.pfr && f.pfr.legArray && f.pfr.legArray.length) {
+    const lastLeg = f.pfr.legArray[f.pfr.legArray.length - 1];
+    if (lastLeg && lastLeg.onTimeString) arrivalOnTimeString = lastLeg.onTimeString;
+  }
+  return {
+    date: f.date,
+    active: f.active,
+    flightNum: f.flightNum,
+    airports: f.airports,
+    departTimes: f.departTimes,
+    tfliteDepart: f.tfliteDepart,
+    flightStatus: f.flightStatus,
+    coPilot: f.coPilot || '',
+    pilotObject: {
+      firstName: (f.pilotObject && f.pilotObject.firstName) ? f.pilotObject.firstName : ''
+    },
+    coPilotObject: {
+      firstName: (f.coPilotObject && f.coPilotObject.firstName) ? f.coPilotObject.firstName : ''
+    },
+    equipment: {
+      name: (f.equipment && f.equipment.name) ? f.equipment.name : ''
+    },
+    arrivalOnTimeString
+  };
+}
+
 // Gets a list of TodaysFlights
 export function dayFlights(req, res) {
   let date=new Date(req.body.dateString).toLocaleDateString();
@@ -136,6 +165,19 @@ export function dayFlights(req, res) {
         date:date
       }
     })
+    .then(respondWithResult(res))
+    .catch(handleError(res));
+}
+
+// Public departures board — whitelisted fields only (no auth)
+export function dayFlightsPublic(req, res) {
+  let date=new Date(req.body.dateString).toLocaleDateString();
+  return TodaysFlight.findAll({
+    where: {
+      date: date
+    }
+  })
+    .then(rows => rows.map(toPublicFlightRow))
     .then(respondWithResult(res))
     .catch(handleError(res));
 }

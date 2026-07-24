@@ -3,12 +3,11 @@
 (function(){
 
 class PublicComponent {
-  constructor($http,$scope,$interval,$timeout,socket) {
+  constructor($http,$scope,$interval,$timeout) {
     this.http=$http;
     this.scope=$scope;
     this.interval=$interval;
     this.timeout=$timeout;
-    this.socket=socket;
     this.shouldInvert=true;
     this.date=new Date().toLocaleDateString('en-US',{timeZone:'America/Anchorage'});
     this.timeString=new Date().toLocaleTimeString('en-US',{timeStyle:'short',timeZone:'America/Anchorage'});
@@ -16,8 +15,8 @@ class PublicComponent {
     this.flights=[];
     this.base="Nome";
     this.bases=["Nome","Kotzebue","Unalakleet"];
-    $scope.$on('$destroy', function() {
-        socket.unsyncUpdates('todaysFlight');
+    $scope.$on('$destroy', () => {
+      if (this.flightPollCancel) this.flightPollCancel();
     });
   }
   
@@ -30,16 +29,13 @@ class PublicComponent {
   }
   
   init(){
-    this.http.post('/api/todaysFlights/dayFlights',{dateString:this.date}).then(res=>{
-      //this.allFlights=res.data;
-      this.filterFlights(res.data);
-      //this.timeout(()=>{this.sort();},500);
-      this.socket.unsyncUpdates('todaysFlight');
-      this.socket.syncUpdates('todaysFlight', this.allFlights,(event,item,array)=>{
-        //this.allFlights=array;
-        this.filterFlights(array);
-        //if (item.runScroll) this.sort();
-      });
+    this.loadFlights();
+    this.flightPollCancel=this.interval(()=>{this.loadFlights();},60*1000);
+  }
+
+  loadFlights(){
+    this.http.post('/api/todaysFlights/public/dayFlights',{dateString:this.date}).then(res=>{
+      this.filterFlights(res.data||[]);
     });
   }
   
@@ -78,8 +74,7 @@ class PublicComponent {
   
   getStatusColor(flight){
     let depart=flight.tfliteDepart;
-    let arrive;
-    if (flight.pfr) arrive=flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString;
+    let arrive=flight.arrivalOnTimeString;
     let bigSize=this.calcFontSize(30,1.5);
     if (flight.flightStatus==="Boarded") return {"color":"green","font-size":bigSize+"px"};
     if (arrive) return {"color":"purple"};
