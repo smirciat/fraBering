@@ -15,6 +15,22 @@ const axios = require("axios");
 import localEnv from '../../config/local.env.js';
 let todaysRoster=[];
 
+// Employees removed in AcroRoster but still returned by the tenant API
+const ROSTER_BLOCKLIST_LAST_NAMES = ['Ulroan'];
+
+function isBlockedRosterEmployee(record) {
+  if (!record || !record.employee_full_name) return false;
+  const parts = String(record.employee_full_name).trim().split(/\s+/);
+  if (!parts.length) return false;
+  const lastName = parts[parts.length - 1];
+  return ROSTER_BLOCKLIST_LAST_NAMES.some(blocked => blocked.toLowerCase() === lastName.toLowerCase());
+}
+
+function filterRosterImport(records) {
+  if (!records || !Array.isArray(records)) return [];
+  return records.filter(record => !isBlockedRosterEmployee(record));
+}
+
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
   return function(entity) {
@@ -169,7 +185,7 @@ export async function setRosterMonth(dateString){
   try{//type=shift restricts response to only working days, not available or requested off
     let response=await axios.get('https://fyccqqeiahhzheubvavn.supabase.co/functions/v1/tenant-api-handler?table=calendar_events&start_plain_date_time='+startDate+'&end_plain_date_time='+endDate, bodyParameters);
     //todaysRoster=response.data.data;
-    return response.data.data;
+    return filterRosterImport(response.data.data);
   }
   catch(err){
     console.log(err);
@@ -191,7 +207,7 @@ export async function setRosterDay(dateString){
   try{//type=shift restricts response to only working days, not available or requested off
     let response=await axios.get('https://fyccqqeiahhzheubvavn.supabase.co/functions/v1/tenant-api-handler?table=calendar_events&start_plain_date_time='+startDate+'&end_plain_date_time='+endDate+'&type=shift', bodyParameters);
     //todaysRoster=response.data.data;
-    return response.data.data;
+    return filterRosterImport(response.data.data);
   }
   catch(err){
     console.log(err);
