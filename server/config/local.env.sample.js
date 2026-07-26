@@ -10,7 +10,11 @@ module.exports = {
   SESSION_SECRET: 'workspace-secret',
   // Control debug level for modules using visionmedia/debug
   DEBUG: '',
+  GMAIL_ADDRESS: '',
+  GMAIL_APP_PASS: '',
   GMAIL_PASS:'',
+  // Email when a new issue is filed (Issues navbar)
+  DEVELOPER_EMAIL_ADDRESS: '',
   TWILIO_AUTH_TOKEN: '',
   TWILIO_ACCOUNT_SID: '',
   TWILIO_PHONE_NUMBER: '',

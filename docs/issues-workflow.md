@@ -60,6 +60,16 @@ Same value as `ISSUES_EXPORT_TOKEN` when running the export script.
 
 If unset, only **admin** / **superadmin** JWT can call `/api/issues/agent-summary`.
 
+### Email on new issue
+
+When someone files an issue via **POST /api/issues**, the server sends a short HTML email (same Gmail SMTP as flight-release mail) if these are set in `local.env.js`:
+
+- `GMAIL_ADDRESS` / `GMAIL_APP_PASS` — already used for flight release notifications
+- `DEVELOPER_EMAIL_ADDRESS` — your inbox for new-issue alerts
+- `DOMAIN` — used for the “Open in fraBering” link (e.g. `https://frat.beringair.com`)
+
+If `DEVELOPER_EMAIL_ADDRESS` is empty, no email is sent (issue create still succeeds). Email failures are logged only; they do not fail the API response.
+
 ## Screenshot paste (dev vs prod)
 
 Paste runs in the browser only. **`grunt serve`** uses live `client/` files; **production** serves **`dist/`** after `grunt build`. If paste works locally but not on `https://frat.beringair.com`, redeploy a fresh build first.

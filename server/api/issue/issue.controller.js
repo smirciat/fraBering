@@ -21,6 +21,7 @@ import {
   safeOriginalName
 } from './issue.storage';
 import {buildAgentSummaryMarkdown} from './issue.agentSummary';
+import {notifyNewIssue} from './issue.notify';
 
 var ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -179,9 +180,11 @@ export function create(req, res) {
     .then(function(issue) {
       var files = decodeUploadPayload(req.body);
       if (!files.length) {
+        notifyNewIssue(issue, 0);
         return issue;
       }
       return saveAttachmentsForIssue(issue._id, files).then(function() {
+        notifyNewIssue(issue, files.length);
         return issue;
       });
     })
