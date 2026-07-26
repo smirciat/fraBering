@@ -241,7 +241,7 @@
           <div class="inner-modal">
             <span class="span-modal" style="float:left; padding-left:5px;">Alternate</span>
             <span class="span-modal" style="float:right; padding-right:5px">
-              <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="modal.alternateDisp" ng-disabled="modal.allDisabled()" theme="selectize" ng-change="modal.updateParam('alternate',modal.alternateDisp)">
+              <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="modal.alternateDisp" ng-disabled="modal.allDisabled()" theme="selectize" on-select="modal.applyAlternateSelect($item)">
                   <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
                   <ui-select-choices repeat="choice in modal.alternates" >
                     <div ng-bind-html="choice | highlight: $select.search"></div>
@@ -634,7 +634,7 @@
         <div class="inner-modal">
           <span class="span-modal" style="float:left; padding-left:5px;">Alternate</span>
           <span class="span-modal" style="float:right; padding-right:5px">
-            <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="modal.alternateDisp" ng-disabled="modal.allDisabled()" theme="selectize" ng-change="modal.updateParam('alternate',modal.alternateDisp)">
+            <ui-select ng-style="modal.getWidth(15,'em')" style="line-height:28px;height:28px" ng-model="modal.alternateDisp" ng-disabled="modal.allDisabled()" theme="selectize" on-select="modal.applyAlternateSelect($item)">
                 <ui-select-match style="line-height:28px;height:28px" placeholder="None">{{$select.selected}}</ui-select-match>
                 <ui-select-choices repeat="choice in modal.alternates" >
                   <div ng-bind-html="choice | highlight: $select.search"></div>

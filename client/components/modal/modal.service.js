@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('workspaceApp')
-  .factory('Modal', function($rootScope, $uibModal, Util) {
+  .factory('Modal', function($rootScope, $uibModal, Util, $timeout) {
     /**
      * Opens a modal
      * @param  {Object} scope      - an object to be merged with modal's scope
@@ -192,7 +192,7 @@ angular.module('workspaceApp')
                 bgColors=['lightgreen','lightblue','#DAB1DA','yellow','orange','#ff0033'],
                 scores=[{score:0,descr:"Nil"},{score:1,descr:"Poor"},{score:2,descr:"Medium to Poor"},{score:3,descr:"Medium"},{score:4,descr:"Good to Medium"},{score:5,descr:"Good"},{score:6,descr:"Better than Good"}],
                 timestamp=new Date().toLocaleString(),
-                alternateDisp=flight.alternate,
+                alternateDisp=flight.alternate || 'None',
                 checkPirep=function(pirep){
                   if (!pirep) return false;
                   let flightTime,tempDate,threeHoursAgo;
@@ -333,8 +333,34 @@ angular.module('workspaceApp')
                 user:user,
                 noPfr:noPfr,
                 clearAlternate:function(){
-                  alternateDisp='None';
                   flight.alternate=null;
+                  flight.altObj=null;
+                  this.alternateDisp='None';
+                  var modalUi=this;
+                  $timeout(function(){
+                    flight.alternate=null;
+                    flight.altObj=null;
+                    modalUi.alternateDisp='None';
+                  }, 0);
+                },
+                applyAlternateSelection:function(choice){
+                  if (choice==='None'||choice==null||choice==='') {
+                    flight.alternate=null;
+                    flight.altObj=null;
+                    this.alternateDisp='None';
+                  } else {
+                    flight.alternate=choice;
+                    this.alternateDisp=choice;
+                    let i=alternateAirports.map(e=>e.icao).indexOf(choice);
+                    if (i>-1) flight.altObj=alternateAirports[i];
+                  }
+                },
+                applyAlternateSelect:function(item){
+                  var modalUi=this;
+                  modalUi.applyAlternateSelection(item);
+                  $timeout(function(){
+                    modalUi.applyAlternateSelection(item);
+                  }, 0);
                 },
                 updateParam:function(key,obj){
                   if (key==='jumpseat') {
@@ -346,13 +372,15 @@ angular.module('workspaceApp')
                     flight.pfr.remarks1=obj;
                     return;
                   }
-                  if (key==='alternate'&&obj==='None') flight.alternate=null;
-                  else {
-                    flight[key]=obj;
-                    let i=alternateAirports.map(e=>e.icao).indexOf(flight.alternate);
-                    if (i>-1) flight.altObj=alternateAirports[i];
+                  if (key==='alternate') {
+                    var modalUi=this;
+                    modalUi.applyAlternateSelection(obj);
+                    $timeout(function(){
+                      modalUi.applyAlternateSelection(obj);
+                    }, 0);
+                    return;
                   }
-                  
+                  flight[key]=obj;
                 },
                 zulu:function(index){
                   let timeString=flight.departTimes[index];
