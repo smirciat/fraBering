@@ -138,13 +138,9 @@ async function authHeaders(base) {
 
 async function fetchAttachmentBuffer(base, attachmentId, auth) {
   const headers = auth.headers;
-  const tokenQuery =
-    auth.exportToken != null
-      ? '?exportToken=' + encodeURIComponent(auth.exportToken)
-      : '';
   const urls = [
-    `${base}/api/issues/export/attachments/${attachmentId}${tokenQuery}`,
-    `${base}/api/issues/attachments/${attachmentId}${tokenQuery}`
+    `${base}/api/issues/export/attachments/${attachmentId}`,
+    `${base}/api/issues/attachments/${attachmentId}`
   ];
   let lastError;
   for (const url of urls) {
@@ -159,7 +155,8 @@ async function fetchAttachmentBuffer(base, attachmentId, auth) {
       throw error;
     }
   }
-  throw lastError || new Error('HTTP 404');
+  const safeMsg = lastError && lastError.message ? lastError.message.replace(/exportToken=\S+/g, 'exportToken=***') : 'HTTP 404';
+  throw new Error(safeMsg);
 }
 
 function parseExportBundleBody(body) {
@@ -252,17 +249,32 @@ async function main() {
     seenIds[att.attachmentId] = true;
     const dest = path.join(docsDir, att.relativePath);
     fs.mkdirSync(path.dirname(dest), {recursive: true});
+    if (att.missing) {
+      const reason =
+        att.missing === 'file_not_on_server'
+          ? 'file missing on prod under server/fileserver/issue-attachments/'
+          : 'attachment row missing in database';
+      console.warn(`Skipped attachment ${att.attachmentId} (${att.relativePath}): ${reason}`);
+      continue;
+    }
     try {
-      const buf = await fetchAttachmentBuffer(base, att.attachmentId, auth);
-      fs.writeFileSync(dest, buf);
-      saved += 1;
+      if (att.base64) {
+        fs.writeFileSync(dest, Buffer.from(att.base64, 'base64'));
+        saved += 1;
+      } else {
+        const buf = await fetchAttachmentBuffer(base, att.attachmentId, auth);
+        fs.writeFileSync(dest, buf);
+        saved += 1;
+      }
     } catch (error) {
       console.warn(
         `Skipped attachment ${att.attachmentId} (${att.relativePath}): ${error.message || error}`
       );
-      console.warn(
-        '  → Deploy server with GET /api/issues/export/attachments/:id, or confirm the file exists on prod under server/fileserver/issue-attachments/.'
-      );
+      if (!att.base64) {
+        console.warn(
+          '  → Deploy latest server (bundle embeds screenshots) or fix attachment routes on prod.'
+        );
+      }
     }
   }
 

@@ -1,7 +1,9 @@
 'use strict';
 
+import fs from 'fs';
 import {Op} from 'sequelize';
 import {Issue, IssueComment, IssueAttachment} from '../../sqldb';
+import {resolveAttachmentPath} from './issue.storage';
 
 var DEFAULT_IMAGE_BASE = 'team-backlog/attachments';
 
@@ -240,6 +242,35 @@ export function buildAgentSummaryMarkdown() {
   });
 }
 
+function enrichAttachmentManifest(markdown, attachmentManifest) {
+  if (!attachmentManifest.length) {
+    return Promise.resolve({markdown: markdown, attachments: []});
+  }
+  return Promise.all(
+    attachmentManifest.map(function(entry) {
+      return IssueAttachment.findOne({where: {_id: entry.attachmentId}}).then(function(row) {
+        var out = {
+          attachmentId: entry.attachmentId,
+          relativePath: entry.relativePath
+        };
+        if (!row) {
+          out.missing = 'not_in_database';
+          return out;
+        }
+        var filePath = resolveAttachmentPath(row);
+        if (!filePath || !fs.existsSync(filePath)) {
+          out.missing = 'file_not_on_server';
+          return out;
+        }
+        out.base64 = fs.readFileSync(filePath).toString('base64');
+        return out;
+      });
+    })
+  ).then(function(attachments) {
+    return {markdown: markdown, attachments: attachments};
+  });
+}
+
 export function buildAgentExportBundle() {
   var attachmentManifest = [];
   var options = {
@@ -249,9 +280,6 @@ export function buildAgentExportBundle() {
   return buildMarkdownFromSections(function(issue, extraMeta) {
     return formatIssueBlock(issue, extraMeta, options);
   }).then(function(markdown) {
-    return {
-      markdown: markdown,
-      attachments: attachmentManifest
-    };
+    return enrichAttachmentManifest(markdown, attachmentManifest);
   });
 }
