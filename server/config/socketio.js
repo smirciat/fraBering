@@ -32,6 +32,7 @@ function onConnect(socket) {
   require('../api/airportRequirement/airportRequirement.socket').register(socket);
   require('../api/notification/notification.socket').register(socket);
   require('../api/hazardReport/hazardReport.socket').register(socket);
+  require('../api/issue/issue.socket').register(socket);
   require('../api/flight/flight.socket').register(socket);
   require('../api/pilot/pilot.socket').register(socket);
   require('../api/assessment/assessment.socket').register(socket);

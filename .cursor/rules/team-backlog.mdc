@@ -1,0 +1,50 @@
+---
+description: Team-submitted FRA backlog approved for development
+alwaysApply: true
+---
+
+# Team backlog (fraBering issues)
+
+Before planning new work, check team-approved backlog in addition to `AGENTS.md`.
+
+## Sources (in order)
+
+1. **`docs/team-backlog.md`** — markdown export (regenerate after triage on prod).
+2. **`GET /api/issues/agent-summary`** — same content live (export token or admin auth).
+3. **`GET /api/issues/:id`** — full issue with comments and attachment URLs (logged-in user).
+
+## Regenerate export
+
+Issue data lives in the **fraBering database** (production Postgres in prod). Team files items in the app at **Issues** in the navbar.
+
+From repo root:
+
+```sh
+API_BASE_URL=https://frat.beringair.com \
+ISSUES_EXPORT_TOKEN='…' \
+node scripts/export-team-backlog/index.js
+```
+
+Local API:
+
+```sh
+ISSUES_EXPORT_TOKEN='…' node scripts/export-team-backlog/index.js --local
+```
+
+Admin login instead of token:
+
+```sh
+ISSUES_EXPORT_EMAIL=… ISSUES_EXPORT_PASSWORD=… API_BASE_URL=… node scripts/export-team-backlog/index.js
+```
+
+Commit **`docs/team-backlog.md`** after export so Cursor sees the current queue.
+
+Full workflow: **`docs/issues-workflow.md`**.
+
+## Agent rules
+
+- **Build queue:** developer-approved + `open` or `in_progress`.
+- **Ready for review:** shipped; reporter verifies — do not implement.
+- **Needs clarification:** radar only — wait for reporter comments.
+- **Done / closed:** out of scope.
+- Items without **Developer approved** are not in the build queue — triage in `/issues` first.

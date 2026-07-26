@@ -1,0 +1,133 @@
+<navbar></navbar>
+<div class="container-fluid issues-page" style="width:95%;padding-top:1em;">
+  <div class="row">
+    <div class="col-md-4">
+      <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+          <strong>Issues &amp; feedback</strong>
+          <button type="button" class="btn btn-primary btn-xs pull-right" ng-click="issues.toggleNewForm()">
+            {{issues.showNewForm ? 'Cancel' : 'New issue'}}
+          </button>
+        </div>
+        <div class="panel-body" ng-show="issues.showNewForm">
+          <form ng-submit="issues.submitNew()">
+            <div class="form-group">
+              <label>Type</label>
+              <select class="form-control" ng-model="issues.newIssue.kind" ng-options="k for k in issues.kinds"></select>
+            </div>
+            <div class="form-group">
+              <label>Title</label>
+              <input class="form-control" ng-model="issues.newIssue.title" required maxlength="200">
+            </div>
+            <div class="form-group">
+              <label>Priority</label>
+              <select class="form-control" ng-model="issues.newIssue.priority" ng-options="p for p in issues.priorities"></select>
+            </div>
+            <div class="form-group">
+              <label>Your name</label>
+              <input class="form-control" ng-model="issues.newIssue.reporterName" required>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea class="form-control" rows="4" ng-model="issues.newIssue.description"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Screenshots</label>
+              <issues-paste-area on-paste="issues.onPasteNew($event)"></issues-paste-area>
+              <ul class="issues-pending-thumbs" ng-if="issues.pendingNewFiles.length">
+                <li ng-repeat="file in issues.pendingNewFiles">
+                  <img ng-src="{{file.previewUrl}}" alt="Pasted screenshot">
+                </li>
+              </ul>
+            </div>
+            <button type="submit" class="btn btn-success" ng-disabled="issues.saving">Submit</button>
+          </form>
+        </div>
+        <ul class="list-group" style="max-height: 70vh; overflow-y: auto; margin-bottom: 0;">
+          <li class="list-group-item issue-list-item"
+              ng-repeat="issue in issues.issueList | orderBy:'-_id'"
+              ng-class="{active: issues.selected && issues.selected._id === issue._id}"
+              ng-click="issues.selectIssue(issue)">
+            <span class="label label-default status-label pull-right">{{issues.statusLabel(issue.status)}}</span>
+            <strong>#{{issue._id}} {{issue.title}}</strong>
+            <div class="issue-meta">{{issue.kind}} · {{issues.reporterName(issue)}}</div>
+          </li>
+          <li class="list-group-item" ng-if="!issues.issueList.length">No issues yet.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div class="panel panel-default" ng-if="issues.selected">
+        <div class="panel-heading">
+          <h4 class="panel-title" style="margin:0;">
+            #{{issues.selected._id}} — {{issues.selected.title}}
+          </h4>
+          <div class="issue-meta">
+            Reported by {{issues.selected.reporterName}}
+          </div>
+        </div>
+        <div class="panel-body">
+          <p style="white-space: pre-wrap;">{{issues.selected.description}}</p>
+          <div ng-if="issues.selected.attachments && issues.selected.attachments.length">
+            <h5>Screenshots</h5>
+            <ul class="issues-attachment-list">
+              <li ng-repeat="file in issues.selected.attachments">
+                <a ng-href="{{issues.attachmentUrl(file._id)}}" target="_blank" rel="noopener">
+                  <img ng-src="{{issues.attachmentUrl(file._id)}}" alt="{{file.originalName}}">
+                </a>
+                <div class="issue-meta">{{file.originalName}}</div>
+              </li>
+            </ul>
+          </div>
+          <div class="form-group" style="margin-top: 1em;">
+            <label>Add screenshot</label>
+            <issues-paste-area on-paste="issues.onPasteDetail($event)"></issues-paste-area>
+            <span class="issue-meta" ng-if="issues.uploading">Uploading screenshot…</span>
+          </div>
+          <div class="row issue-meta" ng-if="issues.isAdmin">
+            <div class="col-sm-4">
+              <label>Status</label>
+              <select class="form-control input-sm" ng-model="issues.selected.status"
+                      ng-options="s as issues.statusLabel(s) for s in issues.statuses"
+                      ng-change="issues.saveIssue()"></select>
+            </div>
+            <div class="col-sm-4">
+              <label>Priority</label>
+              <select class="form-control input-sm" ng-model="issues.selected.priority"
+                      ng-options="p for p in issues.priorities"
+                      ng-change="issues.saveIssue()"></select>
+            </div>
+            <div class="col-sm-4">
+              <label class="checkbox" style="margin-top: 24px;">
+                <input type="checkbox" ng-model="issues.selected.developerApproved" ng-change="issues.saveIssue()">
+                Developer approved
+              </label>
+            </div>
+          </div>
+          <div ng-if="!issues.isAdmin" class="issue-meta">
+            Status: <strong class="status-label">{{issues.statusLabel(issues.selected.status)}}</strong>
+            · Priority: {{issues.selected.priority}}
+          </div>
+        </div>
+        <div class="panel-footer">
+          <h5>Comments</h5>
+          <div ng-repeat="comment in issues.selected.comments" class="comment-block">
+            <div class="issue-meta"><strong>{{comment.authorName}}</strong></div>
+            <p style="white-space: pre-wrap; margin: 4px 0 0;">{{comment.body}}</p>
+          </div>
+          <p ng-if="!issues.selected.comments || !issues.selected.comments.length" class="text-muted">No comments yet.</p>
+          <form ng-submit="issues.submitComment()" style="margin-top: 1em;">
+            <div class="form-group">
+              <label>Add comment</label>
+              <textarea class="form-control" rows="3" ng-model="issues.newComment" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" ng-disabled="issues.savingComment">Post comment</button>
+          </form>
+        </div>
+      </div>
+      <div class="panel panel-default" ng-if="!issues.selected">
+        <div class="panel-body text-muted">Select an issue from the list or create a new one.</div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -44,6 +44,7 @@ export default function(app) {
   app.use('/api/reservations', require('./api/reservation'));
   app.use('/api/notifications', require('./api/notification'));
   app.use('/api/hazardReports', require('./api/hazardReport'));
+  app.use('/api/issues', require('./api/issue'));
   app.use('/api/flights', require('./api/flight'));
   app.use('/api/pilots', require('./api/pilot'));
   app.use('/api/assessments', require('./api/assessment'));

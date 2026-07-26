@@ -1,0 +1,75 @@
+.issues-page {
+  background-color: #ffffcc;
+  min-height: 100%;
+}
+
+.issues-page .panel {
+  margin-bottom: 10px;
+}
+
+.issues-page .issue-list-item {
+  cursor: pointer;
+}
+
+.issues-page .issue-list-item.active {
+  background-color: #e8f4fc;
+}
+
+.issues-page .issue-meta {
+  color: #666;
+  font-size: 12px;
+}
+
+.issues-page .comment-block {
+  border-left: 3px solid #ccc;
+  padding-left: 10px;
+  margin-bottom: 12px;
+}
+
+.issues-page .status-label {
+  text-transform: capitalize;
+}
+
+.issues-paste-zone {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  border: 2px dashed #999;
+  background: #fff;
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+  cursor: text;
+}
+
+.issues-paste-zone:focus {
+  outline: none;
+  border-color: #337ab7;
+}
+
+.issues-paste-zone::placeholder {
+  color: #777;
+}
+
+.issues-pending-thumbs,
+.issues-attachment-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+
+.issues-pending-thumbs li,
+.issues-attachment-list li {
+  display: inline-block;
+  vertical-align: top;
+  margin: 0 8px 8px 0;
+}
+
+.issues-pending-thumbs img,
+.issues-attachment-list img {
+  max-width: 200px;
+  max-height: 160px;
+  border: 1px solid #ccc;
+  background: #fff;
+}

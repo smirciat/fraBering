@@ -1,0 +1,61 @@
+# Issues workflow (fraBering)
+
+Team feedback lives in the app at **Issues** (navbar) → `/issues`.
+
+## For humans
+
+1. File a bug, feature, or question with title, description, and screenshots (paste into the screenshot box).
+2. Discuss in **comments**.
+3. An **admin** sets **status**, **priority**, and **Developer approved** when the item is ready for an agent or developer to implement.
+
+Statuses:
+
+| Status | Meaning |
+|--------|---------|
+| `open` / `in_progress` | Active work |
+| `needs_clarification` | Waiting on reporter — do not build |
+| `ready_for_review` | Shipped — reporter verifies |
+| `done` / `closed` | Finished |
+
+## For Cursor / agents
+
+Agents read **`docs/team-backlog.md` in this repo** — not prod directly.
+
+### Get prod backlog onto your dev machine (usual)
+
+Run the export **in this workspace** (your laptop). The script **downloads** markdown from prod and **writes a file here**:
+
+```sh
+cd /path/to/fraBering
+node scripts/export-team-backlog/index.js
+```
+
+- **API:** `https://frat.beringair.com` (default)
+- **Auth:** `ISSUES_EXPORT_TOKEN` from your **dev** `server/config/local.env.js` (must match **prod** `local.env.js` so the server accepts the request)
+- **Output:** `docs/team-backlog.md` in this folder
+
+You do **not** need to SSH to prod for this. Prod only needs the same token in its `local.env.js` so it can verify your export request.
+
+`--local` uses `http://localhost:9000` and your **dev** database (not team prod issues).
+
+### If you ran export on prod instead
+
+The file would be created **on the prod server’s disk** (wherever you ran the command). It would **not** appear in this dev workspace unless you copy it (`scp`, `git commit` on prod and `git pull` here, etc.). That path is awkward; prefer running export on your dev machine as above.
+
+### Regenerate (reference)
+
+1. **`docs/team-backlog.md`** — build queue, ready-for-review, needs-clarification (see `.cursor/rules/team-backlog.mdc`).
+2. **`GET /api/issues/agent-summary`** — same markdown live (requires export token or admin JWT).
+3. **`GET /api/issues/:id`** — full JSON with comments and attachment paths (authenticated user).
+
+### Server config
+
+In `server/config/local.env.js` (not committed), optionally set:
+
+```js
+ISSUES_EXPORT_TOKEN: 'long-random-string'
+```
+
+Same value as `ISSUES_EXPORT_TOKEN` when running the export script.
+
+If unset, only **admin** / **superadmin** JWT can call `/api/issues/agent-summary`.

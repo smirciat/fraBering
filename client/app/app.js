@@ -10,4 +10,17 @@ angular.module('workspaceApp', ['workspaceApp.auth', 'workspaceApp.admin', 'work
     $locationProvider.html5Mode(true);
     
     $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|tel|file|blob):/);
+  })
+  .run(function($document) {
+    $document.on('contextmenu', function(event) {
+      var el = event.target;
+      if (!el) {
+        event.preventDefault();
+        return;
+      }
+      if (angular.element(el).closest('issues-paste-area, textarea, input').length) {
+        return;
+      }
+      event.preventDefault();
+    });
   });
