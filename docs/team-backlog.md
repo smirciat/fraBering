@@ -11,17 +11,29 @@ _Developer-approved, open or in progress. Agents should implement these._
 - **Type:** bug · medium · in_progress
 - **Reporter:** Bering Air
 
+**Original report:**
+
 On the flight release modal, select or change an alternate airport.  After selection, new alternate does not display.  After Confirm and save, reopening modal displays alternate as selected.
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: New screenshot shows new detail on failed refresh after adding alternate
+
+**Latest screenshot:**
+
+![screenshot-1785091191931.png](team-backlog/attachments/issue-5-att-4-screenshot-1785091191931.png)
 
 **Comments:**
 - Bering Air: Done When:
 1. The process as described works correctly
 2. We need to test in multiple environments, iPad is where initial problem surfaced
 - Andy Smircich: New screenshot shows another failed update after select, it partially displays the alternate.  Save and reopen shows it correctly.
+- Andy Smircich: New screenshot shows new detail on failed refresh after adding alternate
 
 **Attachments:**
-- screenshot-1785087618713.png (GET /api/issues/attachments/2)
-- screenshot-1785090629494.png (GET /api/issues/attachments/3)
+- ![screenshot-1785087618713.png](team-backlog/attachments/issue-5-att-2-screenshot-1785087618713.png)
+- ![screenshot-1785090629494.png](team-backlog/attachments/issue-5-att-3-screenshot-1785090629494.png)
+- ![screenshot-1785091191931.png](team-backlog/attachments/issue-5-att-4-screenshot-1785091191931.png)
 
 ## Ready for review (shipped — reporter verify, do not build)
 

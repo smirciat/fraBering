@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Writes docs/team-backlog.md and downloads issue screenshots from GET /api/issues/agent-export.
+ * Writes docs/team-backlog.md and downloads issue screenshots when the server supports
+ * GET /api/issues/agent-summary?format=export (or /agent-export).
  *
  * **Usual workflow (dev laptop):** run this in your fraBering repo on your machine.
  * It calls **production** API and saves markdown **in this repo** (docs/team-backlog.md).
@@ -119,7 +120,7 @@ function resolveApiBase() {
 async function authHeaders(base) {
   const exportToken = process.env.ISSUES_EXPORT_TOKEN;
   if (exportToken) {
-    return {'x-issues-export-token': exportToken};
+    return {headers: {'x-issues-export-token': exportToken}, exportToken: exportToken};
   }
   const email = process.env.ISSUES_EXPORT_EMAIL;
   const password = process.env.ISSUES_EXPORT_PASSWORD;
@@ -128,20 +129,107 @@ async function authHeaders(base) {
     if (!login.token) {
       throw new Error('Login succeeded but no token returned');
     }
-    return {authorization: 'Bearer ' + login.token};
+    return {headers: {authorization: 'Bearer ' + login.token}, exportToken: null};
   }
   throw new Error(
     'Set ISSUES_EXPORT_TOKEN or ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD (admin user)'
   );
 }
 
+async function fetchAttachmentBuffer(base, attachmentId, auth) {
+  const headers = auth.headers;
+  const tokenQuery =
+    auth.exportToken != null
+      ? '?exportToken=' + encodeURIComponent(auth.exportToken)
+      : '';
+  const urls = [
+    `${base}/api/issues/export/attachments/${attachmentId}${tokenQuery}`,
+    `${base}/api/issues/attachments/${attachmentId}${tokenQuery}`
+  ];
+  let lastError;
+  for (const url of urls) {
+    try {
+      return await fetchBuffer(url, headers);
+    } catch (error) {
+      lastError = error;
+      const msg = error.message || String(error);
+      if (msg.includes('404') || msg.includes('401')) {
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError || new Error('HTTP 404');
+}
+
+function parseExportBundleBody(body) {
+  const text = body.toString('utf8').trim();
+  if (!text.length) {
+    return null;
+  }
+  if (text.charAt(0) === '{') {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.markdown === 'string') {
+        return parsed;
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+  if (text.charAt(0) === '#') {
+    return {markdown: text, attachments: [], markdownOnly: true};
+  }
+  return null;
+}
+
+async function fetchExportBundle(base, headers) {
+  const bundleUrls = [
+    `${base}/api/issues/agent-summary?format=export`,
+    `${base}/api/issues/agent-export`
+  ];
+  let markdownFallback = null;
+
+  for (const url of bundleUrls) {
+    try {
+      const body = await fetchBuffer(url, headers);
+      const bundle = parseExportBundleBody(body);
+      if (bundle) {
+        if (bundle.markdownOnly && !bundle.attachments.length) {
+          markdownFallback = bundle.markdown;
+          continue;
+        }
+        return bundle;
+      }
+    } catch (error) {
+      const msg = error.message || String(error);
+      if (msg.includes('404')) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  if (markdownFallback) {
+    console.warn(
+      'Server returned markdown only (no ?format=export bundle). Screenshots skipped. Deploy latest server issue API and re-run.'
+    );
+    return {markdown: markdownFallback, attachments: []};
+  }
+
+  console.warn(
+    'Export bundle API not available. Using markdown-only agent-summary; no screenshots. Deploy latest server issue API and re-run.'
+  );
+  const markdown = (await fetchBuffer(`${base}/api/issues/agent-summary`, headers)).toString(
+    'utf8'
+  );
+  return {markdown: markdown, attachments: []};
+}
+
 async function main() {
   const base = resolveApiBase();
-  const headers = await authHeaders(base);
-  const bundleText = (
-    await fetchBuffer(`${base}/api/issues/agent-export`, headers)
-  ).toString('utf8');
-  const bundle = JSON.parse(bundleText);
+  const auth = await authHeaders(base);
+  const bundle = await fetchExportBundle(base, auth.headers);
   const markdown = bundle.markdown || '';
   const attachments = bundle.attachments || [];
 
@@ -153,23 +241,36 @@ async function main() {
   fs.writeFileSync(outPath, markdown.endsWith('\n') ? markdown : `${markdown}\n`);
 
   let saved = 0;
+  let seenIds = {};
   for (const att of attachments) {
     if (!att.attachmentId || !att.relativePath) {
       continue;
     }
+    if (seenIds[att.attachmentId]) {
+      continue;
+    }
+    seenIds[att.attachmentId] = true;
     const dest = path.join(docsDir, att.relativePath);
     fs.mkdirSync(path.dirname(dest), {recursive: true});
-    const buf = await fetchBuffer(
-      `${base}/api/issues/attachments/${att.attachmentId}`,
-      headers
-    );
-    fs.writeFileSync(dest, buf);
-    saved += 1;
+    try {
+      const buf = await fetchAttachmentBuffer(base, att.attachmentId, auth);
+      fs.writeFileSync(dest, buf);
+      saved += 1;
+    } catch (error) {
+      console.warn(
+        `Skipped attachment ${att.attachmentId} (${att.relativePath}): ${error.message || error}`
+      );
+      console.warn(
+        '  → Deploy server with GET /api/issues/export/attachments/:id, or confirm the file exists on prod under server/fileserver/issue-attachments/.'
+      );
+    }
   }
 
   console.log(`Wrote ${outPath} from ${base}`);
-  if (saved) {
+  if (saved > 0) {
     console.log(`Downloaded ${saved} screenshot(s) under docs/team-backlog/attachments/`);
+  } else if (attachments.length) {
+    console.log('No screenshots downloaded (see warnings above).');
   }
 }
 

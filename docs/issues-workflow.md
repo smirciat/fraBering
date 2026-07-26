@@ -32,7 +32,7 @@ node scripts/export-team-backlog/index.js
 
 - **API:** `https://frat.beringair.com` (default)
 - **Auth:** `ISSUES_EXPORT_TOKEN` from your **dev** `server/config/local.env.js` (must match **prod** `local.env.js` so the server accepts the request)
-- **Output:** `docs/team-backlog.md` in this folder, plus screenshots under `docs/team-backlog/attachments/` (embedded in the markdown for Cursor)
+- **Output:** `docs/team-backlog.md` in this folder, plus screenshots under `docs/team-backlog/attachments/` when the server supports `GET /api/issues/agent-summary?format=export` (same token as agent-summary)
 
 You do **not** need to SSH to prod for this. Prod only needs the same token in its `local.env.js` so it can verify your export request.
 
@@ -74,8 +74,9 @@ If `DEVELOPER_EMAIL_ADDRESS` is empty, no email is sent (issue create still succ
 
 1. Set `DEVELOPER_EMAIL_ADDRESS` in **prod** `server/config/local.env.js` (not only dev).
 2. **Restart** the Node process after changing `local.env.js`.
-3. If you run from **`dist/`** (`cd dist && npm start`), run **`grunt build`** on deploy so `dist/server/api/issue/issue.notify.js` exists. Stale `dist/` without that file means no email (and older `issue.controller.js` without `notifyNewIssue`).
-4. After filing a test issue, check server logs for `issue notify:` — skipped, sending, sent, or send failed.
+3. **Deploy latest server** so `GET /api/issues/agent-summary?format=export` exists (same auth as agent-summary). Older servers return 404 for `/agent-export`; the export script falls back to markdown-only until you deploy.
+4. Run `node scripts/export-team-backlog/index.js` — writes `docs/team-backlog.md` and downloads screenshots when the bundle API is available.
+5. After filing a test issue, check server logs for `issue notify:` — skipped, sending, sent, or send failed.
 
 ## Screenshot paste (dev vs prod)
 

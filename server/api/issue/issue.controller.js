@@ -326,7 +326,17 @@ export function update(req, res) {
     .catch(handleError(res));
 }
 
+function sendAgentExportBundle(res) {
+  return buildAgentExportBundle()
+    .then(function(bundle) {
+      res.json(bundle);
+    });
+}
+
 export function agentSummary(req, res) {
+  if (req.query && (req.query.format === 'export' || req.query.format === 'json')) {
+    return sendAgentExportBundle(res).catch(handleError(res));
+  }
   return buildAgentSummaryMarkdown()
     .then(function(markdown) {
       res.type('text/markdown').send(markdown);
@@ -335,9 +345,5 @@ export function agentSummary(req, res) {
 }
 
 export function agentExport(req, res) {
-  return buildAgentExportBundle()
-    .then(function(bundle) {
-      res.json(bundle);
-    })
-    .catch(handleError(res));
+  return sendAgentExportBundle(res).catch(handleError(res));
 }

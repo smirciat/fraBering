@@ -36,6 +36,7 @@ function allowExportTokenOrUser(req, res, next) {
 
 router.get('/agent-summary', allowAgentSummaryAccess, controller.agentSummary);
 router.get('/agent-export', allowAgentSummaryAccess, controller.agentExport);
+router.get('/export/attachments/:attachmentId', allowAgentSummaryAccess, controller.serveAttachment);
 router.get('/attachments/:attachmentId', allowExportTokenOrUser, controller.serveAttachment);
 
 router.use(auth.hasRole('user'));
