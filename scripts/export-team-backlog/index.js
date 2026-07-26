@@ -255,6 +255,9 @@ async function main() {
           ? 'file missing on prod under server/fileserver/issue-attachments/'
           : 'attachment row missing in database';
       console.warn(`Skipped attachment ${att.attachmentId} (${att.relativePath}): ${reason}`);
+      console.warn(
+        '  → On prod host: ls server/fileserver/issue-attachments/<issueId>/ and dist/server/fileserver/issue-attachments/<issueId>/'
+      );
       continue;
     }
     try {

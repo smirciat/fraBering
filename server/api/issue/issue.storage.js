@@ -3,11 +3,37 @@
 import fs from 'fs';
 import path from 'path';
 
-var ISSUE_UPLOAD_ROOT = path.join(__dirname, '../../fileserver/issue-attachments');
 var MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
 
+function attachmentRootCandidates() {
+  var cwd = process.cwd();
+  return [
+    path.join(__dirname, '../../fileserver/issue-attachments'),
+    path.join(cwd, 'server/fileserver/issue-attachments'),
+    path.join(cwd, 'dist/server/fileserver/issue-attachments')
+  ];
+}
+
+function uniqueRoots(roots) {
+  var seen = {};
+  var out = [];
+  roots.forEach(function(r) {
+    var resolved = path.resolve(r);
+    if (!seen[resolved]) {
+      seen[resolved] = true;
+      out.push(resolved);
+    }
+  });
+  return out;
+}
+
+/** Where new issue uploads are written (runtime fileserver next to compiled API code). */
+function primaryUploadRoot() {
+  return path.resolve(path.join(__dirname, '../../fileserver/issue-attachments'));
+}
+
 export function issueAttachmentDir(issueId) {
-  return path.join(ISSUE_UPLOAD_ROOT, String(issueId));
+  return path.join(primaryUploadRoot(), String(issueId));
 }
 
 export function safeOriginalName(name) {
@@ -44,12 +70,28 @@ export function writeAttachmentFiles(issueId, files) {
 }
 
 export function resolveAttachmentPath(attachment) {
-  var dir = issueAttachmentDir(attachment.issueId);
-  var fullPath = path.resolve(path.join(dir, attachment.storedName));
-  if (!fullPath.startsWith(path.resolve(dir))) {
+  var issueId = String(attachment.issueId);
+  var storedName = attachment.storedName;
+  var roots = uniqueRoots(attachmentRootCandidates());
+
+  for (var i = 0; i < roots.length; i++) {
+    var root = roots[i];
+    var dir = path.resolve(path.join(root, issueId));
+    var fullPath = path.resolve(path.join(dir, storedName));
+    if (!fullPath.startsWith(dir + path.sep) && fullPath !== dir) {
+      continue;
+    }
+    if (fs.existsSync(fullPath)) {
+      return fullPath;
+    }
+  }
+
+  var fallbackDir = path.resolve(issueAttachmentDir(attachment.issueId));
+  var fallbackPath = path.resolve(path.join(fallbackDir, storedName));
+  if (!fallbackPath.startsWith(fallbackDir + path.sep) && fallbackPath !== fallbackDir) {
     return null;
   }
-  return fullPath;
+  return fallbackPath;
 }
 
 export {MAX_ATTACHMENT_BYTES};

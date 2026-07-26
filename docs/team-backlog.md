@@ -17,11 +17,11 @@ On the flight release modal, select or change an alternate airport.  After selec
 
 **Progress (changed, not resolved):**
 
-Andy Smircich: New screenshot shows new detail on failed refresh after adding alternate
+Andy Smircich: Re-uploaded a screenshot
 
 **Latest screenshot:**
 
-![screenshot-1785091191931.png](team-backlog/attachments/issue-5-att-4-screenshot-1785091191931.png)
+![screenshot-1785092071776.png](team-backlog/attachments/issue-5-att-5-screenshot-1785092071776.png)
 
 **Comments:**
 - Bering Air: Done When:
@@ -29,11 +29,13 @@ Andy Smircich: New screenshot shows new detail on failed refresh after adding al
 2. We need to test in multiple environments, iPad is where initial problem surfaced
 - Andy Smircich: New screenshot shows another failed update after select, it partially displays the alternate.  Save and reopen shows it correctly.
 - Andy Smircich: New screenshot shows new detail on failed refresh after adding alternate
+- Andy Smircich: Re-uploaded a screenshot
 
 **Attachments:**
 - ![screenshot-1785087618713.png](team-backlog/attachments/issue-5-att-2-screenshot-1785087618713.png)
 - ![screenshot-1785090629494.png](team-backlog/attachments/issue-5-att-3-screenshot-1785090629494.png)
 - ![screenshot-1785091191931.png](team-backlog/attachments/issue-5-att-4-screenshot-1785091191931.png)
+- ![screenshot-1785092071776.png](team-backlog/attachments/issue-5-att-5-screenshot-1785092071776.png)
 
 ## Ready for review (shipped — reporter verify, do not build)
 
