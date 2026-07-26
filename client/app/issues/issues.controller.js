@@ -27,6 +27,7 @@ class IssuesComponent {
     this.uploading = false;
     this.newComment = '';
     this.pendingNewFiles = [];
+    this.pasteFeedback = '';
     this.kinds = ['bug', 'feature', 'question'];
     this.priorities = ['low', 'medium', 'high', 'critical'];
     this.statuses = Object.keys(STATUS_LABELS);
@@ -153,14 +154,18 @@ class IssuesComponent {
 
   onPasteNew(event) {
     var self = this;
-    this.collectClipboardImages(event, function(files) {
+    if (!this.collectClipboardImages(event, function(files) {
       files.forEach(function(file) {
         self.pendingNewFiles.push(file);
       });
       if (event.target) {
         event.target.value = '';
       }
-    });
+      self.pasteFeedback = '';
+    })) {
+      this.pasteFeedback =
+        'No image on clipboard. Use Print Screen or Snipping Tool, click the box, then Ctrl+V (or right-click Paste).';
+    }
   }
 
   onPasteDetail(event) {
@@ -168,43 +173,69 @@ class IssuesComponent {
     if (!this.selected) {
       return;
     }
-    this.collectClipboardImages(event, function(files) {
+    if (!this.collectClipboardImages(event, function(files) {
       self.uploadFilesToIssue(self.selected._id, files);
-    });
+    })) {
+      this.pasteFeedback =
+        'No image on clipboard. Use Print Screen or Snipping Tool, click the box, then Ctrl+V (or right-click Paste).';
+    }
+  }
+
+  isClipboardImageBlob(blob, declaredType) {
+    if (!blob || !blob.size) {
+      return false;
+    }
+    var type = blob.type || declaredType || '';
+    if (type.indexOf('image/') === 0) {
+      return true;
+    }
+    if (!type || type === 'application/octet-stream') {
+      return blob.size > 64;
+    }
+    return false;
   }
 
   collectClipboardImages(event, done) {
     var clipboard = event.clipboardData || (event.originalEvent && event.originalEvent.clipboardData);
     if (!clipboard) {
-      return;
+      return false;
     }
     var blobs = [];
+    var seen = {};
+
+    function addBlob(blob, declaredType) {
+      if (!blob || !self.isClipboardImageBlob(blob, declaredType)) {
+        return;
+      }
+      var key = blob.size + ':' + (blob.type || declaredType || '');
+      if (seen[key]) {
+        return;
+      }
+      seen[key] = true;
+      blobs.push(blob);
+    }
+
+    var self = this;
     if (clipboard.files && clipboard.files.length) {
       for (var f = 0; f < clipboard.files.length; f++) {
-        var file = clipboard.files[f];
-        if (file && file.type && file.type.indexOf('image/') === 0) {
-          blobs.push(file);
-        }
+        addBlob.call(self, clipboard.files[f], clipboard.files[f].type);
       }
     }
     if (clipboard.items && clipboard.items.length) {
       for (var i = 0; i < clipboard.items.length; i++) {
         var item = clipboard.items[i];
-        if (!item.type || item.type.indexOf('image/') !== 0) {
+        if (item.kind && item.kind !== 'file') {
           continue;
         }
         var blob = item.getAsFile();
-        if (blob) {
-          blobs.push(blob);
-        }
+        addBlob.call(self, blob, item.type);
       }
     }
     if (!blobs.length) {
-      return;
+      return false;
     }
     event.preventDefault();
     event.stopPropagation();
-    var self = this;
     var pending = blobs.length;
     var collected = [];
     blobs.forEach(function(blob) {
@@ -218,6 +249,7 @@ class IssuesComponent {
         }
       });
     });
+    return true;
   }
 
   blobToUploadPayload(blob, callback) {
@@ -252,8 +284,15 @@ class IssuesComponent {
     this.http.post('/api/issues/' + issueId + '/attachments', payload).then(function(res) {
       self.uploading = false;
       self.selected = res.data;
-    }, function() {
+      self.pasteFeedback = '';
+    }, function(err) {
       self.uploading = false;
+      var status = err && err.status;
+      if (status === 413) {
+        self.pasteFeedback = 'Upload too large for the server proxy (ask admin to raise nginx client_max_body_size).';
+      } else {
+        self.pasteFeedback = 'Screenshot upload failed. Try again or use a smaller image.';
+      }
     });
   }
 
@@ -360,9 +399,8 @@ angular.module('workspaceApp')
       }
 
       function onPaste(event) {
-        $scope.$evalAsync(function() {
-          ctrl.onPaste({$event: event});
-        });
+        // Read clipboard synchronously — deferring clears clipboardData in many browsers (esp. HTTPS/prod).
+        ctrl.onPaste({$event: event});
       }
     }
   });

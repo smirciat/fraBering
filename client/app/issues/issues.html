@@ -34,6 +34,7 @@
             <div class="form-group">
               <label>Screenshots</label>
               <issues-paste-area on-paste="issues.onPasteNew($event)"></issues-paste-area>
+              <p class="text-warning issue-meta" ng-if="issues.pasteFeedback">{{issues.pasteFeedback}}</p>
               <ul class="issues-pending-thumbs" ng-if="issues.pendingNewFiles.length">
                 <li ng-repeat="file in issues.pendingNewFiles">
                   <img ng-src="{{file.previewUrl}}" alt="Pasted screenshot">
@@ -82,6 +83,7 @@
           <div class="form-group" style="margin-top: 1em;">
             <label>Add screenshot</label>
             <issues-paste-area on-paste="issues.onPasteDetail($event)"></issues-paste-area>
+            <p class="text-warning issue-meta" ng-if="issues.pasteFeedback">{{issues.pasteFeedback}}</p>
             <span class="issue-meta" ng-if="issues.uploading">Uploading screenshot…</span>
           </div>
           <div class="row issue-meta" ng-if="issues.isAdmin">

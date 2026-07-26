@@ -59,3 +59,10 @@ ISSUES_EXPORT_TOKEN: 'long-random-string'
 Same value as `ISSUES_EXPORT_TOKEN` when running the export script.
 
 If unset, only **admin** / **superadmin** JWT can call `/api/issues/agent-summary`.
+
+## Screenshot paste (dev vs prod)
+
+Paste runs in the browser only. **`grunt serve`** uses live `client/` files; **production** serves **`dist/`** after `grunt build`. If paste works locally but not on `https://frat.beringair.com`, redeploy a fresh build first.
+
+- The app reads the clipboard **during** the paste event (deferring loses data on HTTPS).
+- If a preview appears but save fails, nginx may be limiting body size — set `client_max_body_size 20m;` for the frat vhost (Express allows 50mb JSON).
