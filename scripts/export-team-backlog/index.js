@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Writes docs/team-backlog.md from GET /api/issues/agent-summary.
+ * Writes docs/team-backlog.md and downloads issue screenshots from GET /api/issues/agent-export.
  *
  * **Usual workflow (dev laptop):** run this in your fraBering repo on your machine.
  * It calls **production** API and saves markdown **in this repo** (docs/team-backlog.md).
@@ -52,12 +52,16 @@ function fetchBuffer(url, headers) {
       const chunks = [];
       res.on('data', (chunk) => chunks.push(chunk));
       res.on('end', () => {
-        const body = Buffer.concat(chunks).toString('utf8');
+        const body = Buffer.concat(chunks);
         if (res.statusCode && res.statusCode >= 400) {
-          reject(new Error(`HTTP ${res.statusCode} from ${url}${body ? ': ' + body.trim() : ''}`));
+          reject(
+            new Error(
+              `HTTP ${res.statusCode} from ${url}${body.length ? ': ' + body.toString('utf8').trim() : ''}`
+            )
+          );
           return;
         }
-        resolve(Buffer.from(body, 'utf8'));
+        resolve(body);
       });
     });
     req.on('error', reject);
@@ -134,13 +138,39 @@ async function authHeaders(base) {
 async function main() {
   const base = resolveApiBase();
   const headers = await authHeaders(base);
-  const markdown = (
-    await fetchBuffer(`${base}/api/issues/agent-summary`, headers)
+  const bundleText = (
+    await fetchBuffer(`${base}/api/issues/agent-export`, headers)
   ).toString('utf8');
-  const outPath = path.join(process.cwd(), 'docs/team-backlog.md');
-  fs.mkdirSync(path.dirname(outPath), {recursive: true});
+  const bundle = JSON.parse(bundleText);
+  const markdown = bundle.markdown || '';
+  const attachments = bundle.attachments || [];
+
+  const docsDir = path.join(process.cwd(), 'docs');
+  const outPath = path.join(docsDir, 'team-backlog.md');
+  const attachRoot = path.join(docsDir, 'team-backlog', 'attachments');
+
+  fs.mkdirSync(attachRoot, {recursive: true});
   fs.writeFileSync(outPath, markdown.endsWith('\n') ? markdown : `${markdown}\n`);
+
+  let saved = 0;
+  for (const att of attachments) {
+    if (!att.attachmentId || !att.relativePath) {
+      continue;
+    }
+    const dest = path.join(docsDir, att.relativePath);
+    fs.mkdirSync(path.dirname(dest), {recursive: true});
+    const buf = await fetchBuffer(
+      `${base}/api/issues/attachments/${att.attachmentId}`,
+      headers
+    );
+    fs.writeFileSync(dest, buf);
+    saved += 1;
+  }
+
   console.log(`Wrote ${outPath} from ${base}`);
+  if (saved) {
+    console.log(`Downloaded ${saved} screenshot(s) under docs/team-backlog/attachments/`);
+  }
 }
 
 main().catch((error) => {

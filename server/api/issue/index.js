@@ -23,12 +23,24 @@ function allowAgentSummaryAccess(req, res, next) {
   return auth.hasRole('admin')(req, res, next);
 }
 
+function allowExportTokenOrUser(req, res, next) {
+  var secret = exportTokenSecret();
+  if (secret) {
+    var provided = req.get('x-issues-export-token') || req.query.exportToken;
+    if (provided && String(provided) === String(secret)) {
+      return next();
+    }
+  }
+  return auth.hasRole('user')(req, res, next);
+}
+
 router.get('/agent-summary', allowAgentSummaryAccess, controller.agentSummary);
+router.get('/agent-export', allowAgentSummaryAccess, controller.agentExport);
+router.get('/attachments/:attachmentId', allowExportTokenOrUser, controller.serveAttachment);
 
 router.use(auth.hasRole('user'));
 
 router.get('/', controller.index);
-router.get('/attachments/:attachmentId', controller.serveAttachment);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/:id/comments', controller.addComment);

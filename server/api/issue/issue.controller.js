@@ -20,7 +20,7 @@ import {
   resolveAttachmentPath,
   safeOriginalName
 } from './issue.storage';
-import {buildAgentSummaryMarkdown} from './issue.agentSummary';
+import {buildAgentSummaryMarkdown, buildAgentExportBundle} from './issue.agentSummary';
 import {notifyNewIssue} from './issue.notify';
 
 var ADMIN_ROLES = ['admin', 'superadmin'];
@@ -330,6 +330,14 @@ export function agentSummary(req, res) {
   return buildAgentSummaryMarkdown()
     .then(function(markdown) {
       res.type('text/markdown').send(markdown);
+    })
+    .catch(handleError(res));
+}
+
+export function agentExport(req, res) {
+  return buildAgentExportBundle()
+    .then(function(bundle) {
+      res.json(bundle);
     })
     .catch(handleError(res));
 }

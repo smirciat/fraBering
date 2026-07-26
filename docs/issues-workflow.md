@@ -32,7 +32,7 @@ node scripts/export-team-backlog/index.js
 
 - **API:** `https://frat.beringair.com` (default)
 - **Auth:** `ISSUES_EXPORT_TOKEN` from your **dev** `server/config/local.env.js` (must match **prod** `local.env.js` so the server accepts the request)
-- **Output:** `docs/team-backlog.md` in this folder
+- **Output:** `docs/team-backlog.md` in this folder, plus screenshots under `docs/team-backlog/attachments/` (embedded in the markdown for Cursor)
 
 You do **not** need to SSH to prod for this. Prod only needs the same token in its `local.env.js` so it can verify your export request.
 

@@ -37,7 +37,9 @@ Admin login instead of token:
 ISSUES_EXPORT_EMAIL=… ISSUES_EXPORT_PASSWORD=… API_BASE_URL=… node scripts/export-team-backlog/index.js
 ```
 
-Commit **`docs/team-backlog.md`** after export so Cursor sees the current queue.
+Commit **`docs/team-backlog.md`** and **`docs/team-backlog/attachments/`** after export so Cursor sees the current queue and screenshots.
+
+Each active **`in_progress`** (or **`open`** with comments) item includes **Progress (changed, not resolved)** — latest comment plus **Latest screenshot** when attachments exist.
 
 Full workflow: **`docs/issues-workflow.md`**.
 

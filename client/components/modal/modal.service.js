@@ -352,7 +352,14 @@ angular.module('workspaceApp')
                     flight.alternate=choice;
                     this.alternateDisp=choice;
                     let i=alternateAirports.map(e=>e.icao).indexOf(choice);
-                    if (i>-1) flight.altObj=alternateAirports[i];
+                    if (i<0) {
+                      i=alternateAirports.map(e=>e.threeLetter).indexOf(choice);
+                    }
+                    if (i>-1) {
+                      flight.altObj=angular.copy(alternateAirports[i]);
+                    } else {
+                      flight.altObj=null;
+                    }
                   }
                 },
                 applyAlternateSelect:function(item){

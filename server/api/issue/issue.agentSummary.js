@@ -3,6 +3,8 @@
 import {Op} from 'sequelize';
 import {Issue, IssueComment, IssueAttachment} from '../../sqldb';
 
+var DEFAULT_IMAGE_BASE = 'team-backlog/attachments';
+
 function sortIssues(rows) {
   return rows.slice().sort(function(a, b) {
     var pri = {critical: 0, high: 1, medium: 2, low: 3};
@@ -44,7 +46,45 @@ function loadIssuesWithDetails(where) {
   });
 }
 
-function formatIssueBlock(issue, extraMeta) {
+function isImageAttachment(file) {
+  if (file.mimeType && String(file.mimeType).indexOf('image/') === 0) {
+    return true;
+  }
+  return /\.(png|jpe?g|gif|webp)$/i.test(file.originalName || '');
+}
+
+function attachmentRelativePath(issueId, file, imageBasePath) {
+  var safe = String(file.originalName || 'file').replace(/[^a-zA-Z0-9._-]+/g, '_');
+  return imageBasePath + '/issue-' + issueId + '-att-' + file._id + '-' + safe;
+}
+
+function registerAttachment(manifest, attachmentId, relativePath) {
+  if (!manifest) {
+    return;
+  }
+  var exists = manifest.some(function(entry) {
+    return entry.attachmentId === attachmentId;
+  });
+  if (!exists) {
+    manifest.push({attachmentId: attachmentId, relativePath: relativePath});
+  }
+}
+
+function shouldShowProgress(issue) {
+  if (issue.status === 'in_progress') {
+    return true;
+  }
+  if (issue.status === 'open' && issue.comments && issue.comments.length) {
+    return true;
+  }
+  return false;
+}
+
+function formatIssueBlock(issue, extraMeta, options) {
+  options = options || {};
+  var imageBasePath = options.imageBasePath;
+  var attachmentManifest = options.attachmentManifest;
+
   var flags = [issue.kind, issue.priority, issue.status].filter(Boolean).join(' · ');
   var block = [
     '## #' + issue._id + ' ' + issue.title,
@@ -61,7 +101,30 @@ function formatIssueBlock(issue, extraMeta) {
 
   if (issue.description) {
     block.push('');
+    block.push('**Original report:**');
+    block.push('');
     block.push(issue.description);
+  }
+
+  if (shouldShowProgress(issue) && issue.comments && issue.comments.length) {
+    var latest = issue.comments[issue.comments.length - 1];
+    block.push('');
+    block.push('**Progress (changed, not resolved):**');
+    block.push('');
+    block.push(latest.authorName + ': ' + latest.body);
+
+    if (issue.attachments && issue.attachments.length && imageBasePath) {
+      var images = issue.attachments.filter(isImageAttachment);
+      if (images.length) {
+        var newest = images[images.length - 1];
+        var rel = attachmentRelativePath(issue._id, newest, imageBasePath);
+        registerAttachment(attachmentManifest, newest._id, rel);
+        block.push('');
+        block.push('**Latest screenshot:**');
+        block.push('');
+        block.push('![' + newest.originalName + '](' + rel + ')');
+      }
+    }
   }
 
   if (issue.comments && issue.comments.length) {
@@ -76,9 +139,15 @@ function formatIssueBlock(issue, extraMeta) {
     block.push('');
     block.push('**Attachments:**');
     issue.attachments.forEach(function(file) {
-      block.push(
-        '- ' + file.originalName + ' (GET /api/issues/attachments/' + file._id + ')'
-      );
+      if (imageBasePath && isImageAttachment(file)) {
+        var path = attachmentRelativePath(issue._id, file, imageBasePath);
+        registerAttachment(attachmentManifest, file._id, path);
+        block.push('- ![' + file.originalName + '](' + path + ')');
+      } else {
+        block.push(
+          '- ' + file.originalName + ' (GET /api/issues/attachments/' + file._id + ')'
+        );
+      }
     });
   }
 
@@ -86,7 +155,7 @@ function formatIssueBlock(issue, extraMeta) {
   return block;
 }
 
-export function buildAgentSummaryMarkdown() {
+function buildMarkdownFromSections(formatBlock) {
   return Promise.all([
     loadIssuesWithDetails({
       developerApproved: true,
@@ -119,7 +188,7 @@ export function buildAgentSummaryMarkdown() {
       lines.push('_No approved backlog items right now._', '');
     } else {
       backlogRows.forEach(function(issue) {
-        lines = lines.concat(formatIssueBlock(issue));
+        lines = lines.concat(formatBlock(issue));
       });
     }
 
@@ -134,7 +203,7 @@ export function buildAgentSummaryMarkdown() {
       lines.push('_None._', '');
     } else {
       reviewRows.forEach(function(issue) {
-        lines = lines.concat(formatIssueBlock(issue, ['**Status:** ready for review']));
+        lines = lines.concat(formatBlock(issue, ['**Status:** ready for review']));
       });
     }
 
@@ -149,11 +218,11 @@ export function buildAgentSummaryMarkdown() {
       lines.push('_None._', '');
     } else {
       clarificationRows.forEach(function(issue) {
-        lines = lines.concat(formatIssueBlock(issue, ['**Status:** needs clarification']));
+        lines = lines.concat(formatBlock(issue, ['**Status:** needs clarification']));
       });
     }
 
-  lines.push(
+    lines.push(
       '## Out of scope for agents',
       '',
       '- **Done** / **closed** — not listed here.',
@@ -162,5 +231,27 @@ export function buildAgentSummaryMarkdown() {
     );
 
     return lines.join('\n');
+  });
+}
+
+export function buildAgentSummaryMarkdown() {
+  return buildMarkdownFromSections(function(issue, extraMeta) {
+    return formatIssueBlock(issue, extraMeta, {});
+  });
+}
+
+export function buildAgentExportBundle() {
+  var attachmentManifest = [];
+  var options = {
+    imageBasePath: DEFAULT_IMAGE_BASE,
+    attachmentManifest: attachmentManifest
+  };
+  return buildMarkdownFromSections(function(issue, extraMeta) {
+    return formatIssueBlock(issue, extraMeta, options);
+  }).then(function(markdown) {
+    return {
+      markdown: markdown,
+      attachments: attachmentManifest
+    };
   });
 }
