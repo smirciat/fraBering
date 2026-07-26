@@ -46,6 +46,10 @@ npm start            # Production server from dist/
 - Do not refactor unrelated code, rename modules, or modernize the stack unless asked.
 - Run or extend existing tests when changing API or auth behavior.
 
+### Do not replace working code
+
+This codebase is **legacy by design** (AngularJS 1.x, Grunt, Babel 6, Sequelize with older patterns). **Working production behavior beats “correct” modern style.** Do not swap out queries, endpoints, or client data flows that already work when implementing an unrelated feature. Copy the pattern already used elsewhere in the app; see `docs/legacy-development.md`.
+
 ## Local setup (for humans)
 
 Copy sample config files before first run:

@@ -14,7 +14,7 @@ router.use(auth.hasRole('user'));
 router.get('/', controller.index);
 //router.get('/stopped', controller.returnFail);
 //router.post('/stopped1', controller.returnFail);
-router.post('/stopped116', controller.returnStopped);
+router.post('/stopped117', controller.returnStopped);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);

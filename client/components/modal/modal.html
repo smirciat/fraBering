@@ -444,7 +444,10 @@
       </div>
       <div class="orange-line white">
         <div class="inner-modal">
-          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">{{modal.flight.pilotObject.displayName||modal.flight.pilot}}</span>
+          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">
+            {{modal.flight.pilotObject.displayName||modal.flight.pilot}}
+            <span ng-if="modal.pilotEmpNumber(modal.flight.pilotObject)" style="font-weight:normal;"> · EMP # {{modal.pilotEmpNumber(modal.flight.pilotObject)}}</span>
+          </span>
           <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">
             <input style="width:400px; height:27px; text-align: center;" type="text" ng-model="modal.flight.pilotComment" ng-disabled="modal.allDisabled()">
           </span>
@@ -452,7 +455,10 @@
       </div>
       <div class="orange-line white" ng-if="modal.flight.coPilotObject.displayName||modal.flight.coPilot">
         <div class="inner-modal">
-          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">{{modal.flight.coPilotObject.displayName||modal.flight.coPilot}}</span>
+          <span class="span-modal" style="float:left;padding-left:5px;font-weight:bold;">
+            {{modal.flight.coPilotObject.displayName||modal.flight.coPilot}}
+            <span ng-if="modal.pilotEmpNumber(modal.flight.coPilotObject)" style="font-weight:normal;"> · EMP # {{modal.pilotEmpNumber(modal.flight.coPilotObject)}}</span>
+          </span>
           <span class="span-modal" style="float:right; padding-right:5px;font-weight:bold;">
             <input style="width:400px; height:27px; text-align: center;" type="text" ng-model="modal.flight.coPilotComment" ng-disabled="modal.allDisabled()">
           </span>

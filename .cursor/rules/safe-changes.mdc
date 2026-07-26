@@ -7,6 +7,20 @@ alwaysApply: true
 
 This app runs live flight operations. Default to conservative edits.
 
+## Do not replace working code
+
+**This is a legacy production app.** Patterns that look “wrong” or outdated are often **correct for this stack** and **verified in ops**. “Modern” fixes frequently **break production** while looking smarter in a diff.
+
+**Hard rules for agents and contributors:**
+
+- **Do not rewrite queries, APIs, or data paths** that already work unless the user explicitly asks for that change. Prefer the **same endpoint and field names** sibling features use (e.g. audit CSVs should load flights the same way `dayFlights` / `setFlights` do, not a different Sequelize filter on `dateObject` because it reads cleaner).
+- **Do not “upgrade” Sequelize operators, async patterns, or Angular structure** in passing. Legacy `$between`-style code, Grunt/Bower, AngularJS 1.x DI, and Babel 6 imports are expected here.
+- **Scope changes to what the user asked for** (e.g. adding a CSV column is a **client** change; it is not permission to refactor the server SQL layer).
+- If something is broken, **find the last working caller pattern in this repo** and align with it before inventing a new approach.
+- When tempted to refactor “while you’re here”: **stop**. Ask the user or document the risk; do not ship drive-by modernization.
+
+Violating these rules has caused real regressions (e.g. empty audit flight lists after unrelated field work).
+
 ## Scope
 
 - Fix only what the user asked for; no drive-by refactors

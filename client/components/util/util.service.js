@@ -59,6 +59,22 @@
           return hostnameCheck && protocolCheck && portCheck;
         });
         return origins.length >= 1;
+      },
+
+      /**
+       * Firebase pilot record: empNumber, or _id if empNumber missing (both strings).
+       */
+      pilotEmpNumber(pilotObject) {
+        if (!pilotObject) {
+          return '';
+        }
+        if (pilotObject.empNumber != null && String(pilotObject.empNumber) !== '') {
+          return String(pilotObject.empNumber);
+        }
+        if (pilotObject._id != null && String(pilotObject._id) !== '') {
+          return String(pilotObject._id);
+        }
+        return '';
       }
     };
 

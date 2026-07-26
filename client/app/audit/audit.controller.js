@@ -3,11 +3,12 @@
 (function(){
 
 class AuditComponent {
-  constructor($http,$state,$timeout,$scope,Auth) {
+  constructor($http,$state,$timeout,$scope,Auth,Util) {
     this.http=$http;
     this.scope=$scope;
     this.timeout=$timeout;
     this.Auth=Auth;
+    this.Util=Util;
     this.startDate=new Date(new Date().setDate(new Date().getDate()-1));
     this.startDate.setHours(10);
     this.startDateStringFormatted=this.startDate.toLocaleDateString();
@@ -27,6 +28,7 @@ class AuditComponent {
   $onInit(){
     this.setPilots();
     this.setFlights();
+    this.pilotEmpNumber = this.Util.pilotEmpNumber.bind(this.Util);
     this.scope.$watch('audit.selectedItems.multipleSelect', (newValues, oldValues)=> {
       if (newValues !== oldValues && oldValues) {
         this.flightKeys.forEach(obj=>{obj.selected=false});
@@ -169,6 +171,30 @@ class AuditComponent {
     const timeDiff = Math.abs(date2.getTime() - date1.getTime());
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     return daysDiff;
+  }
+
+  /** Same data path as setFlights / custom audit — dayFlights per calendar day. */
+  async fetchFlightsInRange(startDate, endDate) {
+    let flights = [];
+    let seen = {};
+    let cursor = new Date(startDate);
+    cursor.setHours(0, 0, 0, 0);
+    let end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    while (cursor <= end) {
+      let res = await this.http.post('/api/todaysFlights/dayFlights', {
+        dateString: cursor.toLocaleDateString()
+      });
+      res.data.forEach(f => {
+        let id = f._id != null ? f._id : (f.date + '|' + f.flightNum);
+        if (!seen[id]) {
+          seen[id] = true;
+          flights.push(f);
+        }
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return flights;
   }
   
   async createCSVCustom(){
@@ -337,13 +363,9 @@ class AuditComponent {
     this.spinner=true;
     let date=new Date(this.startDate);
     let date1=new Date(this.endDate);
-    this.http.post('/api/todaysFlights/flightRange',{startDate:date,endDate:date1}).then(res=>{
-      console.log(res.data);
-    });
-    return this.http.post('/api/todaysFlights/flightRange',{startDate:date,endDate:date1}).then(res=>{
-      this.csv="PILOT,DATE,FLIGHTNUM,AIRCRAFT,FIKI,PILOT SIG,DISPATCH SIG,OC SIG,ROUTING,BASE WX,OTHER WX\r\n";
-      console.log(res.data);
-      let flights=res.data;
+    return this.fetchFlightsInRange(date, date1).then(flights=>{
+      this.csv="PILOT,EMP #,DATE,FLIGHTNUM,AIRCRAFT,FIKI,PILOT SIG,DISPATCH SIG,OC SIG,ROUTING,BASE WX,OTHER WX\r\n";
+      console.log(flights);
       //if (this.pilot) flights=flights.filter(p=>{return p.pilot===this.pilot.displayName});
       flights.sort((a,b)=>{
         if (!a.pilot) return -1;
@@ -357,6 +379,10 @@ class AuditComponent {
         let dispatchRelease=flight.dispatchRelease||'';
         let ocRelease=flight.ocRelease||'';
         let routing=flight.airports.toString().replaceAll(',','-')||'';
+        let csvValue=function(val){
+          if (val===undefined||val===null) return '';
+          return String(val).replaceAll(',','-');
+        };
         if (flight.airportObjs[0]&&flight.airportObjs[0]['Raw-Report']) raw=flight.airportObjs[0]['Raw-Report'];
         let other='';
         if (flight.airportObjs.length>1) {
@@ -364,7 +390,8 @@ class AuditComponent {
             other+=flight.airportObjs[x]['Raw-Report']+',';
           }
         }
-        this.csv+=flight.pilot+','+flight.date+','+flight.flightNum+','+flight.aircraft+','+knownIce+','+pilotAgree+','+dispatchRelease+','+ocRelease+','+routing+','+raw+','+other+'\r\n';
+        let empNum=this.pilotEmpNumber(flight.pilotObject);
+        this.csv+=flight.pilot+','+csvValue(empNum)+','+flight.date+','+flight.flightNum+','+flight.aircraft+','+knownIce+','+pilotAgree+','+dispatchRelease+','+ocRelease+','+routing+','+raw+','+other+'\r\n';
       }
       this.spinner=false;
       console.log(this.csv);
@@ -412,9 +439,8 @@ class AuditComponent {
     this.spinner=true;
     let date=new Date(this.startDate);
     let date1=new Date(this.endDate);
-    return this.http.post('/api/todaysFlights/flightRange',{startDate:date,endDate:date1}).then(res=>{
-      this.csv="DATE,TAIL #,TYPE,DISPATCHER,OC,PILOT,CREW ID,COCKPIT,CABIN,CARGO,WHEEL WELL\r\n";
-      let flights=res.data;
+    return this.fetchFlightsInRange(date, date1).then(flights=>{
+      this.csv="DATE,TAIL #,TYPE,DISPATCHER,OC,PILOT,EMP #,CREW ID,COCKPIT,CABIN,CARGO,WHEEL WELL\r\n";
       if (this.pilot) flights=flights.filter(p=>{return p.pilot===this.pilot.displayName});
       flights.sort((a,b)=>{
         if (!a.dateObject&&!a.date) return 1;
@@ -432,6 +458,7 @@ class AuditComponent {
         };
         this.csv+=csvValue(flight.date)+','+csvValue(flight.aircraft)+','+csvValue(aircraftType)+','+
           csvValue(flight.dispatchRelease)+','+csvValue(flight.ocRelease)+','+csvValue(flight.pilotAgree)+','+
+          csvValue(this.pilotEmpNumber(flight.pilotObject))+','+
           csvValue(flight.crewId)+','+csvValue(flight.cockpitInspection)+','+csvValue(flight.cabinInspection)+','+
           csvValue(flight.cargoInspection)+','+csvValue(flight.wheelWellInspection)+'\r\n';
       }

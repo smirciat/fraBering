@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('workspaceApp')
-  .factory('Modal', function($rootScope, $uibModal) {
+  .factory('Modal', function($rootScope, $uibModal, Util) {
     /**
      * Opens a modal
      * @param  {Object} scope      - an object to be merged with modal's scope
@@ -322,6 +322,7 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 flightModal:true,
+                pilotEmpNumber: Util.pilotEmpNumber,
                 securityDisp:flight.pfr.remarks1||flight.security,
                 timestamp:timestamp,
                 alternates:alternates,
