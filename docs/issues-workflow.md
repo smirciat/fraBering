@@ -70,6 +70,13 @@ When someone files an issue via **POST /api/issues**, the server sends a short H
 
 If `DEVELOPER_EMAIL_ADDRESS` is empty, no email is sent (issue create still succeeds). Email failures are logged only; they do not fail the API response.
 
+**Prod checklist**
+
+1. Set `DEVELOPER_EMAIL_ADDRESS` in **prod** `server/config/local.env.js` (not only dev).
+2. **Restart** the Node process after changing `local.env.js`.
+3. If you run from **`dist/`** (`cd dist && npm start`), run **`grunt build`** on deploy so `dist/server/api/issue/issue.notify.js` exists. Stale `dist/` without that file means no email (and older `issue.controller.js` without `notifyNewIssue`).
+4. After filing a test issue, check server logs for `issue notify:` — skipped, sending, sent, or send failed.
+
 ## Screenshot paste (dev vs prod)
 
 Paste runs in the browser only. **`grunt serve`** uses live `client/` files; **production** serves **`dist/`** after `grunt build`. If paste works locally but not on `https://frat.beringair.com`, redeploy a fresh build first.

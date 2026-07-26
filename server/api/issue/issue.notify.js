@@ -3,15 +3,34 @@
 import nodemailer from 'nodemailer';
 import localEnv from '../../config/local.env.js';
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: localEnv.GMAIL_ADDRESS,
-    pass: localEnv.GMAIL_APP_PASS
+function configString(key) {
+  var fromEnv = process.env[key];
+  if (fromEnv != null && String(fromEnv).trim() !== '') {
+    return String(fromEnv).trim();
   }
-});
+  if (localEnv[key] != null && String(localEnv[key]).trim() !== '') {
+    return String(localEnv[key]).trim();
+  }
+  return '';
+}
+
+function gmailAppPass() {
+  return configString('GMAIL_APP_PASS') || configString('GMAIL_PASS');
+}
+
+function getTransporter() {
+  var user = configString('GMAIL_ADDRESS');
+  var pass = gmailAppPass();
+  if (!user || !pass) {
+    return null;
+  }
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {user: user, pass: pass}
+  });
+}
 
 function escapeHtml(text) {
   return String(text)
@@ -25,18 +44,22 @@ function escapeHtml(text) {
  * Short email to DEVELOPER_EMAIL_ADDRESS when a new issue is filed. Fire-and-forget.
  */
 export function notifyNewIssue(issue, attachmentCount) {
-  var to = localEnv.DEVELOPER_EMAIL_ADDRESS;
+  var to = configString('DEVELOPER_EMAIL_ADDRESS');
   if (!to) {
+    console.log('issue notify: skipped — DEVELOPER_EMAIL_ADDRESS not set (local.env.js or env)');
     return;
   }
-  if (!localEnv.GMAIL_ADDRESS || !localEnv.GMAIL_APP_PASS) {
-    console.warn('issue notify: GMAIL_ADDRESS / GMAIL_APP_PASS not set');
+
+  var from = configString('GMAIL_ADDRESS');
+  var transporter = getTransporter();
+  if (!transporter) {
+    console.warn('issue notify: skipped — GMAIL_ADDRESS or GMAIL_APP_PASS / GMAIL_PASS not set');
     return;
   }
 
   var json = issue.toJSON ? issue.toJSON() : issue;
   var id = json._id;
-  var domain = (localEnv.DOMAIN || '').replace(/\/$/, '');
+  var domain = configString('DOMAIN').replace(/\/$/, '');
   var link = domain ? (domain + '/issues?issueId=' + id) : '';
 
   var desc = json.description || '';
@@ -57,14 +80,18 @@ export function notifyNewIssue(issue, attachmentCount) {
     html += '<br><br><a href="' + escapeHtml(link) + '">Open in fraBering</a>';
   }
 
+  console.log('issue notify: sending email for issue #' + id + ' to ' + to);
+
   transporter.sendMail({
-    from: localEnv.GMAIL_ADDRESS,
+    from: from,
     to: to,
     subject: '[fraBering issue #' + id + '] ' + (json.title || 'New issue'),
     html: html
-  }, function(err) {
+  }, function(err, info) {
     if (err) {
-      console.error('issue notify email failed:', err);
+      console.error('issue notify: send failed for issue #' + id + ':', err);
+      return;
     }
+    console.log('issue notify: sent for issue #' + id + (info && info.messageId ? ' (' + info.messageId + ')' : ''));
   });
 }
