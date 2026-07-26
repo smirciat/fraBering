@@ -21,6 +21,11 @@ fraBering is a **live flight-operations** app on a **frozen-era stack** (Angular
 
 TSA / Flight Release audit CSVs should load flights via the **dayFlights** pattern across the selected date range, not by “improving” server range queries without ops sign-off.
 
+## Status board — flight leg colors (future work)
+
+- **Jul 2026:** `refreshFlightAirportColors()` was fixed to always base leg METAR on `masterAirports[].metarObj` instead of reusing stale `flight.airportObjs` copies (internet + manual obs cycling after base-closure / `runScroll` updates).
+- **Still open:** `filterTodaysFlights()` mutates `flight.airportObjs[listIndex].color` with `+= " night "` whenever `isItNight` is true, on every filter pass, without rebuilding color from master METAR. If night styling or flight-color mismatch resurfaces, align night handling with `refreshFlightAirportColors()` (set `metarObj.night` and suffix once from a fresh `overallRiskClass` / cached color).
+
 ## Where else this is documented
 
 - `.cursor/rules/safe-changes.mdc` — always-on agent guardrails

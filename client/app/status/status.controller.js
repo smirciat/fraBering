@@ -531,6 +531,8 @@ class StatusComponent {
               if (!airportObjs[listIndex].airport) airportObjs[listIndex].airport=angular.copy(this.masterAirports[i]);
               airportObjs[listIndex].night=night;
               flight.airportObjs[listIndex].night=night;
+              // FIXME (future): appends " night " on every filterTodaysFlights pass without resetting color;
+              // can desync leg chips vs refreshFlightAirportColors (same class of bug as stale METAR copies, Jul 2026).
               if (night) flight.airportObjs[listIndex].color+=" night ";
               airportObjs[listIndex].aircraft=flight.aircraft;
               flight.airportObjs[listIndex].aircraft=flight.aircraft;
@@ -803,29 +805,16 @@ class StatusComponent {
           }
           if (!this.masterAirports[i].metarObj) this.masterAirports[i].metarObj={airport:{threeLetter:a}};
           let airportRecord=angular.copy(this.masterAirports[i]);
-          let metarObj;
-          if (flight.airportObjs&&flight.airportObjs[listIndex]) {
-            metarObj=angular.copy(flight.airportObjs[listIndex]);
-            if (!metarObj.airport) metarObj.airport=angular.copy(airportRecord);
-            else {
-              metarObj.airport.openClosed=airportRecord.openClosed;
-              metarObj.airport.runwayScore=airportRecord.runwayScore;
-              metarObj.airport.manualObs=airportRecord.manualObs;
-              metarObj.airport.manualTimestamp=airportRecord.manualTimestamp;
-            }
-          }
+          let metarObj=angular.copy(airportRecord.metarObj||{});
+          if (!metarObj.airport) metarObj.airport=angular.copy(airportRecord);
           else {
-            metarObj=angular.copy(airportRecord.metarObj||{});
-            if (!metarObj.airport) metarObj.airport=angular.copy(airportRecord);
+            metarObj.airport.openClosed=airportRecord.openClosed;
+            metarObj.airport.runwayScore=airportRecord.runwayScore;
+            metarObj.airport.manualObs=airportRecord.manualObs;
+            metarObj.airport.manualTimestamp=airportRecord.manualTimestamp;
           }
           metarObj.aircraft=flight.aircraft;
-          if (metarObj.usingManual) {
-            if (!metarObj.manualObs) metarObj.manualObs=airportRecord.manualObs;
-            this.syncManualOfficialFlag(metarObj,metarObj.manualObs||airportRecord.manualObs);
-            metarObj.color=this.overallRiskClass(metarObj);
-            this.applyUnofficialColorSuffix(metarObj);
-          }
-          else this.applyManualObservationIfNeeded(metarObj,airportRecord,flight.aircraft);
+          this.applyManualObservationIfNeeded(metarObj,airportRecord,flight.aircraft);
           if (night) {
             metarObj.night=true;
             metarObj.color+=' night ';
