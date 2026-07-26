@@ -49,14 +49,16 @@ function fetchBuffer(url, headers) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http;
     const req = client.get(url, {headers: headers || {}}, (res) => {
-      if (res.statusCode && res.statusCode >= 400) {
-        reject(new Error(`HTTP ${res.statusCode} from ${url}`));
-        res.resume();
-        return;
-      }
       const chunks = [];
       res.on('data', (chunk) => chunks.push(chunk));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
+      res.on('end', () => {
+        const body = Buffer.concat(chunks).toString('utf8');
+        if (res.statusCode && res.statusCode >= 400) {
+          reject(new Error(`HTTP ${res.statusCode} from ${url}${body ? ': ' + body.trim() : ''}`));
+          return;
+        }
+        resolve(Buffer.from(body, 'utf8'));
+      });
     });
     req.on('error', reject);
   });

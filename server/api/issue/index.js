@@ -3,14 +3,19 @@
 var express = require('express');
 var controller = require('./issue.controller');
 import * as auth from '../../auth/auth.service';
+import localEnv from '../../config/local.env.js';
 
 var router = express.Router();
 
+function exportTokenSecret() {
+  return process.env.ISSUES_EXPORT_TOKEN || localEnv.ISSUES_EXPORT_TOKEN || '';
+}
+
 function allowAgentSummaryAccess(req, res, next) {
-  var secret = process.env.ISSUES_EXPORT_TOKEN;
+  var secret = exportTokenSecret();
   if (secret) {
     var provided = req.get('x-issues-export-token') || req.query.exportToken;
-    if (provided === secret) {
+    if (provided && String(provided) === String(secret)) {
       return next();
     }
     return res.status(401).json({message: 'Invalid export token'});
