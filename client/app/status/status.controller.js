@@ -192,8 +192,13 @@ class StatusComponent {
       this.spinner=true;
       flight.newlyReleased=false;
       if ((flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree&&!flight.colorLock) {
-        flight.colorLock=flight.color;
         flight.newlyReleased=true;
+      }
+      if ((flight.ocRelease||flight.dispatchRelease)&&!flight.colorLock&&flight.color) {
+        flight.colorLock=flight.color;
+      }
+      if ((flight.ocRelease||flight.dispatchRelease)&&(!flight.airportObjsLocked||!flight.airportObjsLocked.length)) {
+        this.lockReleaseWeatherSnapshot(flight);
       }
       if (flight.pilotAgree&&flight.pilotAgree!==""&&!flight.releaseTimestamp) flight.releaseTimestamp=new Date();
       if (flight.pilotAgree&&flight.pilotAgree!=="") {
@@ -771,6 +776,17 @@ class StatusComponent {
 
   applyManualObservationIfNeeded(metarObj,airport,aircraft){
     if (!metarObj||!airport) return;
+    if (airport.manualObs&&airport.manualTimestamp&&this.isLessThanOneHourAgo(new Date(airport.manualTimestamp))) {
+      if (airport.manualObs.webcam||airport.manualObs.webcamIFR) {
+        metarObj.usingManual=true;
+        metarObj.manualObs=airport.manualObs;
+        this.syncManualOfficialFlag(metarObj,airport.manualObs);
+        metarObj['Raw-Report']=this.buildManualRawReport(airport.manualObs);
+        metarObj.color=this.overallRiskClass(metarObj);
+        this.applyUnofficialColorSuffix(metarObj);
+        return;
+      }
+    }
     metarObj.usingManual=false;
     metarObj.color=this.overallRiskClass(metarObj);
     if (!this.needsManualMetarFallback(metarObj.color)) return;
@@ -786,6 +802,25 @@ class StatusComponent {
     metarObj['Raw-Report']=this.buildManualRawReport(airport.manualObs);
     metarObj.color=this.overallRiskClass(metarObj);
     this.applyUnofficialColorSuffix(metarObj);
+  }
+
+  lockReleaseWeatherSnapshot(flight){
+    if (!flight||!flight.airports||!this.masterAirports) return;
+    flight.airportObjsLocked=[];
+    flight.airports.forEach((a,listIndex)=>{
+      let i=this.masterAirports.map(e=>e.name).indexOf(a);
+      if (i>-1) {
+        let airportRecord=angular.copy(this.masterAirports[i]);
+        let metarObj=angular.copy(airportRecord.metarObj||{});
+        if (!metarObj.airport) metarObj.airport=angular.copy(airportRecord);
+        metarObj.aircraft=flight.aircraft;
+        this.applyManualObservationIfNeeded(metarObj,airportRecord,flight.aircraft);
+        flight.airportObjsLocked.push(metarObj);
+      }
+      else if (flight.airportObjs&&flight.airportObjs[listIndex]) {
+        flight.airportObjsLocked.push(angular.copy(flight.airportObjs[listIndex]));
+      }
+    });
   }
 
   refreshFlightAirportColors(){

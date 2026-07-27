@@ -229,9 +229,89 @@ angular.module('workspaceApp')
                   now.setHours(now.getHours() + 1);
                   return targetTime >= now;
                 },
-                ocRequired=function(color){
-                  if (color==='airport-blue'||color==='airport-purple') return true;
-                  if (colors.indexOf(color)>3) return true;
+                riskColorTokens=function(colorStr){
+                  if (!colorStr) return [];
+                  return String(colorStr).replace(/\s+unofficial/g,'').split(/\s+/).filter(c=>colors.indexOf(c)>-1);
+                },
+                worstRiskColorIndex=function(colorStr){
+                  let max=0;
+                  riskColorTokens(colorStr).forEach(c=>{
+                    let i=colors.indexOf(c);
+                    if (i>max) max=i;
+                  });
+                  return max;
+                },
+                legBlocksDispatch=function(metarObj){
+                  let idx=worstRiskColorIndex(metarObj&&metarObj.color);
+                  return idx===1||idx===2||idx===4||idx===5;
+                },
+                flightHasLegBlockingDispatch=function(){
+                  let objs=flight.airportObjs||flight.airportObjsLocked;
+                  if (!objs||!objs.length) return false;
+                  for (let i=0;i<objs.length;i++) {
+                    if (legBlocksDispatch(objs[i])) return true;
+                  }
+                  return false;
+                },
+                flightHasBlueOrPurpleLeg=function(){
+                  let objs=flight.airportObjs||flight.airportObjsLocked;
+                  if (!objs||!objs.length) return false;
+                  for (let i=0;i<objs.length;i++) {
+                    let idx=worstRiskColorIndex(objs[i].color);
+                    if (idx===1||idx===2) return true;
+                  }
+                  return false;
+                },
+                manualObsRecent=function(airport){
+                  if (!airport||!airport.manualObs||!airport.manualTimestamp) return false;
+                  let oneHourAgo=new Date();
+                  oneHourAgo.setHours(oneHourAgo.getHours()-1);
+                  oneHourAgo.setMinutes(oneHourAgo.getMinutes()-10);
+                  return new Date(airport.manualTimestamp)>oneHourAgo;
+                },
+                enrichMetarWithManualObs=function(metarObj){
+                  if (!metarObj||!metarObj.airport||!manualObsRecent(metarObj.airport)) return;
+                  let mo=metarObj.airport.manualObs;
+                  if (mo.webcam) {
+                    metarObj['Raw-Report']='WebCam Observation, VFR Only';
+                    metarObj.usingManual=true;
+                    metarObj.isOfficial=false;
+                    return;
+                  }
+                  if (mo.webcamIFR) {
+                    metarObj['Raw-Report']='Official WebCam Observation';
+                    metarObj.usingManual=true;
+                    metarObj.isOfficial=true;
+                    return;
+                  }
+                  let priorColor=String(metarObj.color||'');
+                  let needsManual=!metarObj['Raw-Report']||priorColor.indexOf('airport-blue')>-1||priorColor.indexOf('airport-purple')>-1;
+                  if (!needsManual) return;
+                  let obs='UNOFFICIAL: ';
+                  if (mo.isOfficial) obs='OFFICIAL OBSERVATION: ';
+                  if (mo.windSpeed&&mo.windDirection) obs=obs+'Wind '+mo.windDirection+'@'+mo.windSpeed+'kts';
+                  if (mo.visibility) obs=obs+', Visibility '+mo.visibility;
+                  if (mo.ceiling) obs=obs+', Ceiling '+mo.ceiling;
+                  if (mo.altimeter) obs=obs+', Altimeter '+mo.altimeter;
+                  metarObj['Raw-Report']=obs;
+                  metarObj.Visibility=mo.visibility;
+                  metarObj.Ceiling=mo.ceiling;
+                  metarObj['Wind-Gust']=mo.windSpeed;
+                  metarObj['Wind-Direction']=mo.windDirection;
+                  metarObj.altimeter=mo.altimeter;
+                  metarObj.isOfficial=mo.isOfficial;
+                  metarObj.usingManual=true;
+                  metarObj.manualObs=mo;
+                },
+                snapshotReleaseWeather=function(){
+                  let source=flight.airportObjs;
+                  if (!source||!source.length) return;
+                  flight.airportObjsLocked=angular.copy(source);
+                  flight.airportObjsLocked.forEach(metarObj=>enrichMetarWithManualObs(metarObj));
+                  if (!flight.colorLock&&flight.color) flight.colorLock=flight.color;
+                },
+                ocRequired=function(){
+                  if (flightHasLegBlockingDispatch()) return true;
                   if (flight.pfr&&flight.pfr.legArray[0].fuel<flight.equipment.minFuel) return true;
                   if (flight.knownIce&&flight.equipment.name==="Caravan") return true;
                   if (highMinimums) return true;
@@ -268,6 +348,10 @@ angular.module('workspaceApp')
                   return;
                 },
                 quickModal;
+            if (flight.dispatchRelease||flight.ocRelease) {
+              if (!flight.airportObjsLocked||!flight.airportObjsLocked.length) snapshotReleaseWeather();
+            }
+            else snapshotReleaseWeather();
             quickModal = openModal({
               modal: {
                 Math:Math,
@@ -323,6 +407,13 @@ angular.module('workspaceApp')
                 show:false,
                 flightModal:true,
                 pilotEmpNumber: Util.pilotEmpNumber,
+                crewIdCheckedLabel:function(){
+                  if (flight.pilotAgree) return 'CHECKED';
+                  return '';
+                },
+                crewIdInputDisabled:function(){
+                  return allDisabled() || !!flight.pilotAgree;
+                },
                 securityDisp:flight.pfr.remarks1||flight.security,
                 timestamp:timestamp,
                 alternates:alternates,
@@ -405,12 +496,14 @@ angular.module('workspaceApp')
                   if (!flight.dispatchRelease) {
                     flight.dispatchRelease=user.name;
                     flight.dispatchReleaseTimestamp=new Date();
+                    snapshotReleaseWeather();
                   }
                 },
                 ocClick:function(){
                   if (!flight.ocRelease) {
                     flight.ocRelease=user.name;
                     flight.ocReleaseTimestamp=new Date();
+                    snapshotReleaseWeather();
                   }
                 },
                 pilotClick:function(){
@@ -445,7 +538,8 @@ angular.module('workspaceApp')
                 },
                 getDestinationType:function(index){
                   if (index===0) return "Departure";
-                  if (index===(flight.airportObjsLocked.length-1)) return "Destination";
+                  let legs=flight.airportObjsLocked||flight.airportObjs;
+                  if (index===(legs.length-1)) return "Destination";
                   return "Intermediate";
                 },
                 allDisabled:allDisabled,
@@ -455,13 +549,14 @@ angular.module('workspaceApp')
                   else return '';
                 },
                 isDispatchDisabled:function(){
-                  return ocRequired(flight.color) || moreThanOneHour() || !isAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
+                  return ocRequired() || moreThanOneHour() || !isAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
                 },
                 isOCDisabled:function(){
-                  return !ocRequired(flight.color) || moreThanOneHour() || !isSuperAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
+                  return !ocRequired() || moreThanOneHour() || !isSuperAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
                 },
                 isPilotDisabled:function(){
-                  return isWrongUser() || moreThanOneHour() || noPfr() || flight.pilotAgree || user.name==='Bering Air';
+                  return isWrongUser() || moreThanOneHour() || noPfr() || flight.pilotAgree || user.name==='Bering Air'
+                    || (flightHasBlueOrPurpleLeg()&&!flight.ocRelease);
                 },
                 dispatchInfo:function(){
                   let string='Dispatch Release can ONLY be signed when: \r\n';
@@ -469,7 +564,7 @@ angular.module('workspaceApp')
                   if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
                   if (noPfr()) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
                   if (!isAdmin) string+='- You are logged in as an OC Manager or Dispatcher';
-                  if (ocRequired(flight.color)) string+='- Flight color is NOT orange, red, purple, or blue, and the FIKI box is NOT checked (Caravans)\r\n';
+                  if (ocRequired()) string+='- Every leg is green or yellow only (no blue, purple, orange, or red), FIKI is not checked (Caravans), and captain is not high minimums,\r\n';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
                   window.alert(string);
                 },
@@ -478,7 +573,7 @@ angular.module('workspaceApp')
                   if (moreThanOneHour()) string+='- The flight is within one hour of scheduled departure,\r\n';
                   if (noPfr()) string+='- The captain has successfully created a PFR and entered fuel quantity,\r\n';
                   if (!isSuperAdmin) string+='- You are logged in as an OC Manager';
-                  if (!ocRequired(flight.color)) string+='- Flight color is orange, red, purple, or blue, or the FIKI box is checked (Caravans)\r\n';
+                  if (!ocRequired()) string+='- A leg is blue, purple, orange, or red, FIKI is checked (Caravans), or captain is high minimums,\r\n';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
                   window.alert(string);
                 },
@@ -488,6 +583,7 @@ angular.module('workspaceApp')
                   if (missingPfr()) string+='- The captain has successfully created a PFR,\r\n';
                   if (noPfr()) string+='- The captain has entered fuel quantity on the PFR,\r\n';
                   if (isWrongUser()) string+='- You are logged in as the Captain of the flight.';
+                  if (flightHasBlueOrPurpleLeg()&&!flight.ocRelease) string+='- OC Manager has signed (required for blue or purple airports),\r\n';
                   if (string.length<55) string+='All criteria for signing appear to have been met.  If you can`t sign, something unexpected has happened.';
                   window.alert(string);
                   if (noPfr()||missingPfr()){

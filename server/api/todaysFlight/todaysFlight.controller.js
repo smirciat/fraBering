@@ -589,33 +589,7 @@ export async function tf(req,res) {
           airport.metarObj.aircraft=flight.aircraft;
           airport.metarObj.color=overallRiskClass(airport.metarObj,aircraft);
           airport.metarObj.usingManual=false;
-          if (airport.metarObj.color===' airport-blue'||airport.metarObj.color===' airport-purple') {
-            if (airport.manualObs&&airport.manualTimestamp&&isLessThanOneHourAgo(new Date(airport.manualTimestamp))){
-              if (typeof airport.metarObj!=='object') airport.metarObj={};
-              if (!airport.metarObj['Raw-Report']) {
-                let obs="UNOFFICIAL: ";
-                if (airport.manualObs.isOfficial) obs="OFFICIAL OBSERVATION: ";
-                if (airport.manualObs.windSpeed&&airport.manualObs.windDirection) obs=obs + "Wind " + airport.manualObs.windDirection + "@" + airport.manualObs.windSpeed + "kts";
-                if (airport.manualObs.visibility) obs=obs + ", Visibility " + airport.manualObs.visibility;
-                if (airport.manualObs.ceiling) obs=obs + ", Ceiling " + airport.manualObs.ceiling;
-                if (airport.manualObs.altimeter) obs=obs + ", Altimeter " + airport.manualObs.altimeter;
-                airport.metarObj['Raw-Report']=obs;
-              }
-              airport.metarObj.Visibility=airport.manualObs.visibility;
-              airport.metarObj.Ceiling=airport.manualObs.ceiling;
-              airport.metarObj['Wind-Gust']=airport.manualObs.windSpeed;
-              airport.metarObj['Wind-Direction']=airport.manualObs.windDirection;
-              airport.metarObj.altimeter=airport.manualObs.altimeter;
-              airport.metarObj.isOfficial=airport.manualObs.isOfficial;
-              airport.metarObj.usingManual=true;
-              airport.metarObj.manualObs-airport.manualObs;
-              airport.metarObj.manualTimestamp-airport.manualTimestamp;
-              airport.metarObj.color=overallRiskClass(airport.metarObj,aircraft);
-              if (airport.manualObs.webcam) airport.metarObj['Raw-Report']="WebCam Observation, VFR Only";
-              if (airport.manualObs.webcamIFR) airport.metarObj['Raw-Report']="Official WebCam Observation";
-              if (!airport.metarObj.isOfficial&&airport.metarObj.usingManual) airport.metarObj.color=airport.metarObj.color+" unofficial";
-            }
-          }
+          applyAirportManualObservation(airport, airport.metarObj, aircraft);
           
           airport.metarObj.taf=taf;
           airport.metarObj.TAF=TAF;
@@ -817,7 +791,7 @@ export async function tf(req,res) {
           todaysFlights[index].airports=flight.airports;
           todaysFlights[index].departTimes=flight.departTimes;
         todaysFlights[index].airportObjs=flight.airportObjs;
-        if (!todaysFlights[index].pilotAgree||(!todaysFlights[index].ocRelease&&!todaysFlights[index].dispatchRelease)) {
+        if (!todaysFlights[index].dispatchRelease&&!todaysFlights[index].ocRelease) {
           todaysFlights[index].airportObjsLocked=JSON.parse(JSON.stringify(todaysFlights[index].airportObjs));
         }
         if (flightIndex>=flights.length-1) todaysFlights[index].runScroll=true;
@@ -1098,6 +1072,51 @@ function isLessThanOneHourAgo(date) {
   oneHourAgo.setHours(oneHourAgo.getHours() - 1);
   oneHourAgo.setMinutes(oneHourAgo.getMinutes() - 10);
   return date > oneHourAgo;
+}
+
+function applyAirportManualObservation(airport, metarObj, aircraft) {
+  if (!airport||!metarObj||!airport.manualObs||!airport.manualTimestamp) return;
+  if (!isLessThanOneHourAgo(new Date(airport.manualTimestamp))) return;
+  if (airport.manualObs.webcam) {
+    metarObj['Raw-Report']='WebCam Observation, VFR Only';
+    metarObj.usingManual=true;
+    metarObj.manualObs=airport.manualObs;
+    metarObj.isOfficial=false;
+    metarObj.color=overallRiskClass(metarObj, aircraft);
+    if (!metarObj.isOfficial&&metarObj.usingManual) metarObj.color=metarObj.color+' unofficial';
+    return;
+  }
+  if (airport.manualObs.webcamIFR) {
+    metarObj['Raw-Report']='Official WebCam Observation';
+    metarObj.usingManual=true;
+    metarObj.manualObs=airport.manualObs;
+    metarObj.isOfficial=true;
+    metarObj.color=overallRiskClass(metarObj, aircraft);
+    return;
+  }
+  let priorColor=String(metarObj.color||'');
+  let needsManual=!metarObj['Raw-Report']||priorColor.indexOf('airport-blue')>-1||priorColor.indexOf('airport-purple')>-1;
+  if (!needsManual) return;
+  if (!metarObj['Raw-Report']) {
+    let obs='UNOFFICIAL: ';
+    if (airport.manualObs.isOfficial) obs='OFFICIAL OBSERVATION: ';
+    if (airport.manualObs.windSpeed&&airport.manualObs.windDirection) obs=obs+'Wind '+airport.manualObs.windDirection+'@'+airport.manualObs.windSpeed+'kts';
+    if (airport.manualObs.visibility) obs=obs+', Visibility '+airport.manualObs.visibility;
+    if (airport.manualObs.ceiling) obs=obs+', Ceiling '+airport.manualObs.ceiling;
+    if (airport.manualObs.altimeter) obs=obs+', Altimeter '+airport.manualObs.altimeter;
+    metarObj['Raw-Report']=obs;
+  }
+  metarObj.Visibility=airport.manualObs.visibility;
+  metarObj.Ceiling=airport.manualObs.ceiling;
+  metarObj['Wind-Gust']=airport.manualObs.windSpeed;
+  metarObj['Wind-Direction']=airport.manualObs.windDirection;
+  metarObj.altimeter=airport.manualObs.altimeter;
+  metarObj.isOfficial=airport.manualObs.isOfficial;
+  metarObj.usingManual=true;
+  metarObj.manualObs=airport.manualObs;
+  metarObj.manualTimestamp=airport.manualTimestamp;
+  metarObj.color=overallRiskClass(metarObj, aircraft);
+  if (!metarObj.isOfficial&&metarObj.usingManual) metarObj.color=metarObj.color+' unofficial';
 }
 
 function createETA(flight){
