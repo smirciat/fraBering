@@ -1017,8 +1017,11 @@ function overallRiskClass(metarObj,aircraft){
       }
     }
     if (airportObj.icao==="PADG") {
-     equipment.wind=30;
-     equipment.xwind=15;
+      let limits=config.redDogWindLimitsForDirection(direction);
+      if (gust>limits.oc) return 'airport-pink';
+      if (gust>limits.dispatch) return 'airport-orange';
+      if (gust>limits.dispatch-5) return 'airport-yellow';
+      return 'airport-green';
     }
     //if (aircraft==="N701BA") console.log(equipment.wind+' '+equipment.xwind);
     if (gust>equipment.wind) return 'airport-orange';

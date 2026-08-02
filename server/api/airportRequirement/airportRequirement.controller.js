@@ -715,6 +715,13 @@ function overallRiskClass(airport){
     }
     crosswind = Math.round(gust*Math.sin(xwindAngle*(Math.PI/180)));
     xwind=crosswind;
+    if (airportObj.icao==="PADG") {
+      let limits=config.redDogWindLimitsForDirection(direction);
+      if (gust>limits.oc) return 'airport-pink';
+      if (gust>limits.dispatch) return 'airport-orange';
+      if (gust>limits.dispatch-5) return 'airport-yellow';
+      return 'airport-green';
+    }
     let windLimit=35;
     let xwindLimit=25;
     if (airportObj.icao==='PAGM'){
@@ -722,10 +729,6 @@ function overallRiskClass(airport){
         //wind-=5;
         //equipment.xwind-=10;
       }
-    }
-    if (airportObj.icao==="PADG") {
-     windLimit=30;
-     xwindLimit=15;
     }
     if (gust>windLimit) return 'airport-pink';
     if (crosswind>xwindLimit) return 'airport-pink';

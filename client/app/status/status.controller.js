@@ -3,7 +3,7 @@
 (function(){
 
 class StatusComponent {
-  constructor($http,$scope,$interval,$timeout,socket,metar,$location,$anchorScroll,moment,Auth,appConfig,Modal,$cookies) {
+  constructor($http,$scope,$interval,$timeout,socket,metar,$location,$anchorScroll,moment,Auth,appConfig,Modal,$cookies,Util) {
     this.cookies=$cookies;
     this.headerScroll=120;
     this.http=$http;
@@ -20,6 +20,7 @@ class StatusComponent {
     this.appConfig=appConfig;
     this.equipment=appConfig.equipment;
     this.Modal=Modal;
+    this.Util=Util;
     this.date=new Date();
     this.assignedFlights=[];
     this.todaysFlights=[];
@@ -1396,8 +1397,11 @@ class StatusComponent {
       }
     }
     if (airportObj.icao==="PADG") {
-     equipment.wind=30;
-     equipment.xwind=15;
+      let limits=this.Util.redDogWindLimitsForDirection(direction);
+      if (gust>limits.oc) return 'airport-pink';
+      if (gust>limits.dispatch) return 'airport-orange';
+      if (gust>limits.dispatch-5) return 'airport-yellow';
+      return 'airport-green';
     }
     if (gust>equipment.wind) return 'airport-pink';
     if (crosswind>equipment.xwind) return 'airport-pink';

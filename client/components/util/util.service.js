@@ -75,6 +75,19 @@
           return String(pilotObject._id);
         }
         return '';
+      },
+
+      /**
+       * Red Dog (PADG) directional wind limits — dispatch vs OC release (kts, magnetic).
+       */
+      redDogWindLimitsForDirection(direction) {
+        let d = parseInt(direction, 10);
+        if (isNaN(d)) return { dispatch: 25, oc: 30 };
+        if (d >= 330 || d <= 90) return { dispatch: 25, oc: 30 };
+        if (d >= 91 && d <= 150) return { dispatch: 15, oc: 20 };
+        if (d >= 151 && d <= 270) return { dispatch: 25, oc: 30 };
+        if (d >= 271 && d <= 329) return { dispatch: 15, oc: 20 };
+        return { dispatch: 25, oc: 30 };
       }
     };
 

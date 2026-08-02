@@ -262,6 +262,20 @@ angular.module('workspaceApp')
                   }
                   return false;
                 },
+                flightExceedsRedDogOcWind=function(){
+                  let objs=flight.airportObjs||flight.airportObjsLocked;
+                  if (!objs||!objs.length) return false;
+                  for (let i=0;i<objs.length;i++) {
+                    let m=objs[i];
+                    if (!m||!m.airport||m.airport.icao!=='PADG') continue;
+                    let gust=m['Wind-Gust']*1;
+                    let dir=m['Wind-Direction'];
+                    if (!gust||!dir) continue;
+                    let limits=Util.redDogWindLimitsForDirection(dir);
+                    if (gust>limits.oc) return true;
+                  }
+                  return false;
+                },
                 manualObsRecent=function(airport){
                   if (!airport||!airport.manualObs||!airport.manualTimestamp) return false;
                   let oneHourAgo=new Date();
@@ -552,7 +566,7 @@ angular.module('workspaceApp')
                   return ocRequired() || moreThanOneHour() || !isAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
                 },
                 isOCDisabled:function(){
-                  return !ocRequired() || moreThanOneHour() || !isSuperAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
+                  return !ocRequired() || flightExceedsRedDogOcWind() || moreThanOneHour() || !isSuperAdmin || noPfr() || flight.pfr.legArray[0].fuel<1 || allDisabled();
                 },
                 isPilotDisabled:function(){
                   return isWrongUser() || moreThanOneHour() || noPfr() || flight.pilotAgree || user.name==='Bering Air'
