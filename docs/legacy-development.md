@@ -26,8 +26,13 @@ TSA / Flight Release audit CSVs should load flights via the **dayFlights** patte
 - **Jul 2026:** `refreshFlightAirportColors()` was fixed to always base leg METAR on `masterAirports[].metarObj` instead of reusing stale `flight.airportObjs` copies (internet + manual obs cycling after base-closure / `runScroll` updates).
 - **Still open:** `filterTodaysFlights()` mutates `flight.airportObjs[listIndex].color` with `+= " night "` whenever `isItNight` is true, on every filter pass, without rebuilding color from master METAR. If night styling or flight-color mismatch resurfaces, align night handling with `refreshFlightAirportColors()` (set `metarObj.night` and suffix once from a fresh `overallRiskClass` / cached color).
 
+## Performance — status board / dayFlights (Aug 2026)
+
+Sequelize pool timeouts, sluggish `/status`, and public-board load were investigated on prod. Fixes (public query attributes, `TodaysFlights.date` index, deduped `firebaseGrab`) and follow-up work for bering-dev are documented in **`docs/performance-status-board-2026-08.md`**.
+
 ## Where else this is documented
 
+- `docs/performance-status-board-2026-08.md` — dayFlights pool exhaustion, benchmarks, deploy checklist
 - `.cursor/rules/safe-changes.mdc` — always-on agent guardrails
 - `AGENTS.md` — agent entry point
 - `.cursor/rules/project-overview.mdc` — stack and layout
