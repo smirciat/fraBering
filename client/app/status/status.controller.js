@@ -36,6 +36,7 @@ class StatusComponent {
     this.view='board';
     this.baseRunwayOverrideBusy=false;
     this.baseClosureComment='';
+    this.flightsRequestId=0;
     this.masterAirports=[];
     this.airportSocketReady=false;
     this.northWest=['PHO','KVL','WTK','RDG','TNC','WAA','SHH','TLA','KTS'];
@@ -72,35 +73,8 @@ class StatusComponent {
       this.cookies.put('token',storage);
       this.scope.$apply();
     }
-    let ctr=60;
-    let tempD='2/3/2026';
-    while (ctr<60){
-      this.http.post('/api/todaysFlights/dayFLights',{dateString:tempD}).then(res=>{
-        res.data.forEach(f=>{
-          f.dateObject=new Date(f.date);
-          console.log(f);
-          this.http.patch('/api/todaysFlights/'+f._id,{dateObject:new Date(f.dateObject)}).then(res=>{
-            console.log(res.data);
-          });
-        });
-      });
-      tempD=new Date(tempD);
-      tempD = new Date(tempD.getTime());
-      tempD.setDate(tempD.getDate() - 1);
-      tempD=tempD.toLocaleDateString();
-      ctr++;
-    }
     this.heliFLights=[];
     this.initHelis();
-    
-    this.http.post('/api/airportRequirements/pireps',{airport:'OTZ'}).then(res=>{console.log(res.data)});
-    this.http.post('/api/futureCharters/grab').then(res=>{console.log(res.data)});
-    this.http.post('/api/todaysFlights/getManifests',{date:'5/15/2026'}).then(res=>{console.log(res.data)});
-    this.http.post('/api/todaysFlights/getFlightLogs',{date:'2/24/2026'}).then(res=>{
-      console.log(res.data);
-      let arr=res.data.filter(log=>{return log.registration==='N148SK'});
-      console.log(arr);
-    });
     this.width=document.documentElement.clientWidth;
     if (this.width<768) this.mobile=true;
     if (this.width===768) this.iPad=true;
@@ -149,7 +123,7 @@ class StatusComponent {
       this.timeout(()=>{this.makeFutureCharters()},20*1000);
     },60*60*1000);
     
-    this.renewFirebase();
+    this.initFirebaseData();
     this.metarModal=this.Modal.confirm.metars();
     this.quickModal=this.Modal.confirm.quickMessage(response=>{this.clicked=true;});
     this.tafDisplay=this.Modal.confirm.quickShow(response=>{});
@@ -480,8 +454,9 @@ class StatusComponent {
       return array.filter(flight=>flight.aircraft===this.aircraft._id && flight.date===this.dateString );
     }
     else {
-      if (!this.dateString||!array) return array;
-      if (this.isFilter){
+      if (!array) return [];
+      if (!this.dateString) return array;
+      if (this.isFilter&&this.user&&this.user.name){
         let user=this.user.name.toLowerCase();
         let middle='';
         let userArr=user.split(' ');
@@ -2086,25 +2061,33 @@ class StatusComponent {
     return;
   }
   
-  renewFirebase(){
-    //this.http.post('/api/airplanes/firebaseLimited',{collection:'flights',limit:51}).then(res=>{
-    this.http.post('/api/airplanes/firebaseGrab').then(res=>{
-      this.recentFlights=res.data.flights.filter(flight=>{
-        return new Date(flight.dateString).toLocaleDateString()===new Date().toLocaleDateString();
-        //return flight.legArray.at(-1).onTime;
-      });
-      //console.log(this.recentFlights.filter(a=>{return a.acftNumber==='N408BA'}));
-    //});
-    //this.http.post('/api/airplanes/firebase',{collection:'pilots'}).then(res=>{
+  applyFirebaseGrabData(data){
+    if (!data) return;
+    this.recentFlights=(data.flights||[]).filter(flight=>{
+      return new Date(flight.dateString).toLocaleDateString()===new Date().toLocaleDateString();
+    });
+    if (this.allTodaysFlights&&this.allTodaysFlights.length) {
       this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights);
-      this.allPilots=res.data.pilots;
-      window.allPilots=res.data.pilots;
-      this.setPilotList();
-      this.allAircraft=res.data.aircraft;
-      this.timeout(()=>{this.setAirplaneList()},500);
-      //this.setPilotList();
-    //});
-    //this.http.post('/api/airplanes/firebase',{collection:'aircraft'}).then(res=>{
+    }
+    this.allPilots=data.pilots;
+    window.allPilots=data.pilots;
+    this.setPilotList();
+    this.allAircraft=data.aircraft;
+    this.timeout(()=>{this.setAirplaneList()},500);
+  }
+
+  initFirebaseData(){
+    window.applyFirebaseGrabData=(data)=>{
+      this.applyFirebaseGrabData(data);
+      this.scope.$evalAsync();
+    };
+    if (window.firebaseGrabData) this.applyFirebaseGrabData(window.firebaseGrabData);
+  }
+
+  renewFirebase(){
+    this.http.post('/api/airplanes/firebaseGrab').then(res=>{
+      window.firebaseGrabData=res.data;
+      this.applyFirebaseGrabData(res.data);
     });
   }
   
@@ -2229,11 +2212,13 @@ class StatusComponent {
   resetFlights(newVal){
     if (!newVal) newVal=this.dateString;
     this.spinner=true;
+    const requestId=++this.flightsRequestId;
     this.timeout(()=>{
         this.scope.nav.isCollapsed=true;
         this.dateString=newVal;
         this.date=new Date(this.dateString);
         this.http.post('/api/todaysFlights/dayFlights',{dateString:this.dateString}).then(res=>{
+          if (requestId!==this.flightsRequestId) return;
           console.log(res.data)
           this.allTodaysFlights=res.data;
           this.todaysFlights=this.filterTodaysFlights(res.data);
@@ -2287,6 +2272,11 @@ class StatusComponent {
               //else we don't want it!
             }
           });
+        })
+        .catch(err=>{
+          if (requestId!==this.flightsRequestId) return;
+          console.log(err);
+          this.spinner=false;
         });
       },this.timeoutVal);
   }

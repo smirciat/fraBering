@@ -95,9 +95,11 @@ class NavbarController {
     window.base=this.base;
     this.updateBase();
     this.http.post('/api/airplanes/firebaseGrab').then(res=>{
+      window.firebaseGrabData=res.data;
       this.allAircraft=res.data.aircraft.filter(a=>a._id.substring(0,1)==="N"&&!a.isInactive);
       this.allAircraft.unshift({_id:'All'});
       this.aircraft=this.allAircraft[0];
+      if (window.applyFirebaseGrabData) window.applyFirebaseGrabData(res.data);
     });
     window.dateString=this.dateString;
     if (window.stoppedInterval) this.interval.cancel(window.stoppedInterval);

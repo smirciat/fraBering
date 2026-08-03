@@ -128,6 +128,11 @@ export function returnFail(req,res){
   res.status(401).json({stopped:staleFile});
 }
 
+const PUBLIC_DAY_FLIGHT_ATTRS = [
+  'date', 'active', 'flightNum', 'airports', 'departTimes',
+  'tfliteDepart', 'flightStatus', 'coPilot', 'pilotObject', 'coPilotObject', 'equipment', 'pfr'
+];
+
 function toPublicFlightRow(flight) {
   const f = flight.dataValues || flight;
   let arrivalOnTimeString = null;
@@ -175,7 +180,8 @@ export function dayFlightsPublic(req, res) {
   return TodaysFlight.findAll({
     where: {
       date: date
-    }
+    },
+    attributes: PUBLIC_DAY_FLIGHT_ATTRS
   })
     .then(rows => rows.map(toPublicFlightRow))
     .then(respondWithResult(res))
