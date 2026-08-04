@@ -3,6 +3,7 @@ node_modules
 .idea
 client/bower_components
 dist
+uploads
 server/firebase.json
 server/config/local.env.js
 server/config/environment/development.js

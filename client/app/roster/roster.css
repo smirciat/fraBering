@@ -1,19 +1,841 @@
+.roster-page{
+  background:#eef2f7;
+  min-height:calc(100vh - 50px);
+}
+
+.roster-layout{
+  display:flex;
+  height:calc(100vh - 50px);
+  overflow:hidden;
+}
+
+.roster-navpanel{
+  width:250px;
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  gap:0.75em;
+  padding:0.85em;
+  background:#1f2937;
+  color:#e5e7eb;
+  border-right:1px solid #111827;
+  overflow-y:auto;
+}
+
+.roster-navpanel-brand{
+  padding-bottom:0.5em;
+  border-bottom:1px solid #374151;
+}
+
+.roster-navpanel-title{
+  font-size:1.15em;
+  font-weight:700;
+  color:#fff;
+}
+
+.roster-navpanel-base{
+  font-size:0.85em;
+  color:#9ca3af;
+  margin-top:0.15em;
+}
+
+.roster-navpanel-section{
+  display:flex;
+  flex-direction:column;
+  gap:0.45em;
+}
+
+.roster-navpanel-section-label{
+  font-size:0.72em;
+  font-weight:700;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:#9ca3af;
+}
+
+.roster-navpanel-nav{
+  display:flex;
+  flex-direction:column;
+  gap:0.35em;
+}
+
+.roster-navpanel-nav-btn{
+  display:flex;
+  align-items:center;
+  gap:0.55em;
+  width:100%;
+  padding:0.55em 0.65em;
+  border:1px solid transparent;
+  border-radius:6px;
+  background:transparent;
+  color:#e5e7eb;
+  text-align:left;
+  font-size:0.95em;
+}
+
+.roster-navpanel-nav-btn:hover,
+.roster-navpanel-nav-btn:focus{
+  background:#374151;
+  color:#fff;
+}
+
+.roster-navpanel-nav-btn.is-active{
+  background:#4a6fa5;
+  border-color:#5b7eb3;
+  color:#fff;
+}
+
+.roster-navpanel-btn-stack{
+  display:flex;
+  flex-direction:column;
+  gap:0.3em;
+}
+
+.roster-navpanel-btn-stack .btn-default{
+  background:#374151;
+  border-color:#4b5563;
+  color:#f3f4f6;
+}
+
+.roster-navpanel-btn-stack .btn-default:hover{
+  background:#4b5563;
+  color:#fff;
+}
+
+.roster-navpanel-select{
+  width:100%;
+}
+
+.roster-navpanel-hint{
+  margin:0;
+  font-size:0.78em;
+  line-height:1.35;
+  color:#9ca3af;
+}
+
+.roster-navpanel-hint code{
+  color:#d1d5db;
+  background:transparent;
+}
+
+.roster-navpanel-status{
+  margin-top:auto;
+  padding-top:0.5em;
+  border-top:1px solid #374151;
+  font-size:0.8em;
+}
+
+.roster-main{
+  flex:1;
+  min-width:0;
+  overflow:auto;
+  position:relative;
+}
+
+.roster-loading-overlay{
+  position:absolute;
+  z-index:20;
+  left:0;
+  top:0;
+  right:0;
+  bottom:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:0.75em;
+  background:rgba(238, 242, 247, 0.72);
+  pointer-events:none;
+}
+
+.roster-loading-overlay .myspinner{
+  position:static;
+  left:auto;
+  top:auto;
+  margin:0;
+}
+
+.roster-loading-label{
+  font-size:0.95em;
+  font-weight:600;
+  color:#1f2937;
+}
+
+.myspinner{
+  position:absolute;
+  left:50%;
+  top:50%;
+  height:60px;
+  width:60px;
+  margin:-30px 0 0 -30px;
+  -webkit-animation:roster-rotation .6s infinite linear;
+  -moz-animation:roster-rotation .6s infinite linear;
+  -o-animation:roster-rotation .6s infinite linear;
+  animation:roster-rotation .6s infinite linear;
+  border-left:6px solid rgba(0,174,239,.15);
+  border-right:6px solid rgba(0,174,239,.15);
+  border-bottom:6px solid rgba(0,174,239,.15);
+  border-top:6px solid rgba(0,174,239,.8);
+  border-radius:100%;
+}
+
+@-webkit-keyframes roster-rotation{
+  from{-webkit-transform:rotate(0deg);}
+  to{-webkit-transform:rotate(359deg);}
+}
+@-moz-keyframes roster-rotation{
+  from{-moz-transform:rotate(0deg);}
+  to{-moz-transform:rotate(359deg);}
+}
+@-o-keyframes roster-rotation{
+  from{-o-transform:rotate(0deg);}
+  to{-o-transform:rotate(359deg);}
+}
+@keyframes roster-rotation{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(359deg);}
+}
+
+.roster-month-picker--navpanel{
+  flex-wrap:wrap;
+}
+
+.roster-month-picker--navpanel .roster-month-picker-input{
+  width:100%;
+  flex:1 1 100%;
+  order:3;
+}
+
+.roster-month-display{
+  color:#1f2937;
+}
+
+.roster-toolbar{
+  display:none;
+}
+
+.roster-section-picker{
+  display:none;
+}
+
+.roster-grid-panel{
+  margin:0;
+  padding:0.75em;
+  min-height:100%;
+  background:#eef2f7;
+}
+
+.roster-grid-panel .myGrid{
+  background:#fff;
+  border:1px solid #c5d0de;
+  border-radius:6px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+
 .myGrid{
-  height:calc(100vh - 60px);
+  height:calc(100vh - 90px);
+  min-height:480px;
+}
+
+.roster-calendar-panel{
+  padding:0.85em 1em 1.5em;
+  min-height:100%;
+}
+
+.roster-calendar-header{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:1em;
+  margin-bottom:0.85em;
+}
+
+.roster-calendar-header h3{
+  margin:0;
+  font-size:1.35em;
+  font-weight:600;
+  color:#1f2937;
+}
+
+.roster-calendar-layout{
+  display:flex;
+  gap:1em;
+  align-items:flex-start;
+}
+
+.roster-calendar-card{
+  background:#fff;
+  border:1px solid #c5d0de;
+  border-radius:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  padding:1em;
+}
+
+.roster-calendar-month-card{
+  flex:1;
+  min-width:0;
+}
+
+.roster-calendar-side{
+  width:320px;
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  gap:1em;
+}
+
+.roster-calendar-card h4{
+  margin:0 0 0.65em;
+  font-size:1em;
+  font-weight:700;
+  color:#1f2937;
+}
+
+.roster-person-calendar{
+  width:100%;
+  table-layout:fixed;
+  border-collapse:collapse;
+}
+
+.roster-person-calendar th,
+.roster-person-calendar td{
+  text-align:center;
+  vertical-align:top;
+  padding:0.35em;
+}
+
+.roster-person-calendar th{
+  font-size:0.75em;
+  font-weight:700;
+  color:#64748b;
+  text-transform:uppercase;
+}
+
+.roster-person-calendar td{
+  border:1px solid #e2e8f0;
+  height:72px;
+  cursor:pointer;
+  background:#fff;
+}
+
+.roster-cal-empty{
+  background:#f8fafc;
+  cursor:default;
+}
+
+.roster-cal-weekend{
+  background:#fff8f8;
+}
+
+.roster-cal-selected{
+  background:#dbeafe;
+  box-shadow:inset 0 0 0 2px #60a5fa;
+}
+
+.roster-cal-range-edge{
+  box-shadow:inset 0 0 0 2px #1d4ed8;
+  background:#bfdbfe;
+}
+
+.roster-cal-day-num{
+  font-size:0.85em;
+  font-weight:700;
+  color:#334155;
+}
+
+.roster-cal-marker{
+  display:inline-block;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  margin:0.2em auto;
+}
+
+.roster-cal-marker--scheduled{
+  background:#0d9488;
+  box-shadow:0 0 0 2px #99f6e4;
+}
+
+.roster-cal-marker--work-request{
+  background:#2563eb;
+  box-shadow:0 0 0 2px #93c5fd;
+}
+
+.roster-cal-marker--time-off{
+  background:#7c3aed;
+}
+
+.roster-cal-marker--request{
+  background:#94a3b8;
+}
+
+.roster-cal-marker--empty{
+  background:transparent;
+}
+
+.roster-cal-labels{
+  font-size:0.65em;
+  line-height:1.2;
+  color:#475569;
+  overflow:hidden;
+  max-height:2.4em;
+}
+
+.roster-calendar-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.85em;
+  margin-top:0.85em;
+  font-size:0.8em;
+  color:#475569;
+}
+
+.roster-calendar-legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:0.35em;
+}
+
+.roster-calendar-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+
+.roster-calendar-list li{
+  padding:0.45em 0;
+  border-bottom:1px solid #e2e8f0;
+}
+
+.roster-calendar-list li:last-child{
+  border-bottom:none;
+}
+
+.roster-calendar-requests li{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.5em;
+}
+
+.roster-calendar-request-main{
+  display:flex;
+  flex-direction:column;
+  gap:0.1em;
+}
+
+.roster-calendar-empty{
+  margin:0;
+  font-size:0.9em;
+}
+
+.roster-team-panel{
+  margin:0;
+  padding:0.75em;
+  min-height:100%;
+}
+
+.roster-month-picker{
+  display:flex;
+  align-items:center;
+  gap:0.35em;
+}
+
+.roster-month-nav{
+  min-width:2.2em;
+  padding-left:0.5em;
+  padding-right:0.5em;
+}
+
+.roster-month-picker-input{
+  width:12.5em;
+}
+
+.roster-month-display{
+  font-size:1.05em;
+  font-weight:600;
+  color:#2c3e50;
+  cursor:pointer;
+  background:#fff;
+}
+
+.roster-month-datepicker-hidden{
+  display:none;
+}
+
+.roster-month-title{
+  margin:0;
+  font-size:1.35em;
+  font-weight:600;
+  color:#2c3e50;
+}
+
+.roster-team-section{
+  margin-bottom:1.5em;
+  padding:1em;
+  background:#fff;
+  border:1px solid #c5d0de;
+  border-radius:6px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+
+.roster-source-hint{
+  color:#666;
+  font-size:0.9em;
+}
+
+.roster-empty-hint,
+.roster-saving-hint{
+  font-size:0.9em;
+}
+
+.roster-import-btn{
+  margin-left:auto;
+}
+
+.roster-import-hint{
+  font-size:0.85em;
+}
+
+.roster-page .ui-grid{
+  border:1px solid #b8c4d6;
+  font-size:12px;
+}
+
+.roster-page .ui-grid-header{
+  background:#f4f7fb;
+  border-bottom:2px solid #8fa3bf;
+}
+
+.roster-page .ui-grid-top-panel{
+  background:#f4f7fb;
+}
+
+.roster-page .ui-grid-header-cell{
+  border-color:#d5dde8;
+}
+
+.roster-name-header .ui-grid-cell-contents{
+  font-weight:700;
+  color:#2c3e50;
+  text-align:left;
+  padding-left:10px;
+}
+
+.roster-day-header{
+  line-height:1.1;
+  padding:2px 0;
+}
+
+.roster-dow{
+  font-size:10px;
+  font-weight:600;
+  color:#6b7c93;
+  text-transform:uppercase;
+}
+
+.roster-dom{
+  font-size:13px;
+  font-weight:700;
+  color:#2c3e50;
+}
+
+.roster-weekday-header .ui-grid-cell-contents{
+  background:#f4f7fb;
+}
+
+.roster-weekend-header .ui-grid-cell-contents{
+  background:#fde8e8;
+  border-top:2px solid #e57373;
+}
+
+.roster-weekend-cell .ui-grid-cell-contents{
+  background:#fff8f8;
+}
+
+.roster-grid-row .ui-grid-cell{
+  border-color:#e2e8f0;
+}
+
+.roster-section-header-row .ui-grid-cell{
+  border-top:3px solid #4a6fa5;
+  border-bottom:1px solid #b8c4d6;
+}
+
+.roster-section-header-label .ui-grid-cell-contents{
+  background:#4a6fa5;
+  color:#fff;
+  text-align:left;
+  padding-left:12px;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+}
+
+.roster-section-header-day .ui-grid-cell-contents{
+  background:#edf2f8;
+}
+
+.roster-section-end .ui-grid-cell{
+  border-bottom:2px solid #94a3b8;
+}
+
+.roster-spacer-row .ui-grid-cell{
+  background:#eef2f7 !important;
+  border-color:#eef2f7 !important;
+  border-top:none !important;
+  border-bottom:none !important;
+}
+
+.roster-spacer-cell .ui-grid-cell-contents{
+  visibility:hidden;
+  padding:0;
+  min-height:0;
+}
+
+.roster-spacer-row + .roster-section-header-row .ui-grid-cell{
+  border-top:3px solid #4a6fa5;
+}
+
+.roster-person-name .ui-grid-cell-contents{
+  text-align:left;
+  padding-left:10px;
+  font-weight:600;
+  color:#1f2937;
+  background:#fafbfd;
+}
+
+.roster-employee-name .ui-grid-cell-contents{
+  text-align:left;
+  padding-left:10px;
+  font-weight:600;
+  color:#374151;
+  background:#f8fafc;
+  font-style:italic;
+}
+
+.roster-captain-row .roster-person-name .ui-grid-cell-contents{
+  background:#f8fbff;
+}
+
+.roster-fo-row .roster-person-name .ui-grid-cell-contents{
+  background:#fafbfd;
+}
+
+.roster-summary-row .ui-grid-cell{
+  background:#f1f5f9;
 }
 
 .ui-grid-icon-angle-down{
   display:none;
 }
 
-.ui-grid-cell-contents{
-    text-align:center;
-    font-weight:bold;
+.roster-page .ui-grid-cell-contents{
+  text-align:center;
+  font-weight:bold;
+  padding:4px 2px;
+}
+
+.roster-summary-label .ui-grid-cell-contents{
+  background-color:#dde4ec;
+  text-align:left;
+  padding-left:12px;
+  font-weight:700;
+  color:#334155;
+}
+
+.roster-summary-total-label .ui-grid-cell-contents{
+  background-color:#cbd5e1;
+  text-align:left;
+  padding-left:12px;
+  font-weight:700;
+  color:#1e293b;
+}
+
+.roster-summary-count .ui-grid-cell-contents{
+  background-color:#b8d4f0;
+  font-weight:bold;
+  color:#1e3a5f;
+}
+
+.roster-summary-zero .ui-grid-cell-contents{
+  background-color:#ef4444;
+  color:#fff;
+  font-weight:bold;
+}
+
+.roster-summary-total .ui-grid-cell-contents{
+  background-color:#cbd5e1;
+  font-weight:bold;
+  color:#1e293b;
+}
+
+/* Duty code colors */
+.KA .ui-grid-cell-contents,
+.B1 .ui-grid-cell-contents,
+.C1 .ui-grid-cell-contents,
+.S1 .ui-grid-cell-contents,
+.S2 .ui-grid-cell-contents,
+.B2 .ui-grid-cell-contents,
+.C2 .ui-grid-cell-contents,
+.C8 .ui-grid-cell-contents,
+.F .ui-grid-cell-contents,
+.OTZ .ui-grid-cell-contents{
+  background:#2563eb;
+  color:#fff;
+}
+
+.DM .ui-grid-cell-contents,
+.NM .ui-grid-cell-contents,
+.ND .ui-grid-cell-contents{
+  background:#f59e0b;
+  color:#1f2937;
+}
+
+.A .ui-grid-cell-contents,
+.OC .ui-grid-cell-contents,
+.SC .ui-grid-cell-contents,
+.SC2 .ui-grid-cell-contents{
+  background:#94a3b8;
+  color:#1f2937;
+}
+
+.IOE .ui-grid-cell-contents,
+.T .ui-grid-cell-contents{
+  background:#16a34a;
+  color:#fff;
+}
+
+.V .ui-grid-cell-contents,
+.RA .ui-grid-cell-contents,
+.RV .ui-grid-cell-contents,
+.RO .ui-grid-cell-contents,
+.RP .ui-grid-cell-contents{
+  background:#c084fc;
+  color:#1f2937;
 }
 
 .RA{
-    border:3px solid purple;
+  border:2px solid #7c3aed;
 }
-.C8 .ui-grid-cell-contents {
-    padding-top:0px;
+
+.C8 .ui-grid-cell-contents{
+  padding-top:2px;
+}
+
+.roster-section-picker-group .btn{
+  margin:0;
+}
+
+.roster-empty-sections{
+  padding:0.75em 1em;
+  margin:0;
+}
+
+.roster-team-section-head h4{
+  margin:0 0 0.75em;
+  color:#2c3e50;
+  font-weight:600;
+}
+
+.roster-team-note{
+  font-size:0.75em;
+  font-weight:normal;
+  color:#6b7c93;
+}
+
+.roster-team-table{
+  margin-bottom:0;
+  font-size:13px;
+}
+
+.roster-team-table thead th{
+  background:#f4f7fb;
+  border-bottom:2px solid #8fa3bf !important;
+  color:#2c3e50;
+}
+
+.roster-team-group-row td{
+  background:#4a6fa5;
+  color:#fff;
+  font-weight:700;
+  text-transform:uppercase;
+  font-size:11px;
+  letter-spacing:0.04em;
+  padding:6px 10px !important;
+}
+
+.roster-team-actions{
+  white-space:nowrap;
+}
+
+.roster-team-actions-bar{
+  display:flex;
+  align-items:center;
+  gap:0.5em;
+  flex-wrap:wrap;
+}
+
+.roster-import-span-label{
+  margin:0;
+  font-weight:normal;
+  color:#475569;
+  display:flex;
+  align-items:center;
+  gap:0.35em;
+}
+
+.roster-import-span{
+  width:auto;
+  display:inline-block;
+  min-width:52px;
+}
+
+.roster-import-result{
+  margin:0 0 0.75em;
+  font-size:0.9em;
+}
+
+.roster-employee-form{
+  margin-bottom:1em;
+}
+
+.roster-employee-form-fields .form-group{
+  margin-right:10px;
+  margin-bottom:8px;
+}
+
+.roster-employee-form-fields label{
+  margin-right:4px;
+  font-weight:600;
+  color:#475569;
+}
+
+.roster-qual-input{
+  min-width:220px;
+}
+
+.roster-team-local-hint{
+  margin-bottom:0.75em;
+}
+
+.roster-staff-category-block{
+  margin-bottom:1.25em;
+}
+
+.roster-staff-category-block:last-child{
+  margin-bottom:0;
+}
+
+.roster-staff-category-title{
+  margin:0 0 0.5em;
+  padding:0.35em 0.6em;
+  background:#edf2f8;
+  border-left:4px solid #4a6fa5;
+  color:#2c3e50;
+  font-size:13px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.03em;
 }
