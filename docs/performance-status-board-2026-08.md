@@ -84,6 +84,21 @@ EXPLAIN ANALYZE SELECT "date", "active", "flightNum"
 - `filterTodaysFlights` returns `[]` instead of `undefined` when array missing; pilot filter guarded when `this.user` not ready.
 - `resetFlights` ignores stale `dayFlights` responses via `flightsRequestId` counter; `.catch` clears spinner.
 
+### 5. Slim authenticated `dayFlights` (server)
+
+**File:** `server/api/todaysFlight/todaysFlight.controller.js`
+
+- `AUTH_DAY_FLIGHT_ATTRS` — column whitelist for `POST /api/todaysFlights/dayFlights` (status, loads, audit).
+- Omits unused/heavy columns: `json`, `flightLegs`, `miscObject`, `dateObject`, `dateForPG`, `daysOfWeek`, `base`, `mitigation`, `nonRevFlight`.
+- Still loads `pfr`, `airportObjs`, `airportObjsLocked`, `loadsObject`, release signatures, fuel fields.
+
+### 6. Short TTL cache for `public/dayFlights` (server)
+
+**File:** `server/api/todaysFlight/todaysFlight.controller.js`
+
+- In-memory cache keyed by locale `date`, **45s TTL**, stores post-`toPublicFlightRow` JSON.
+- Cuts repeated DB reads when many `/public` tabs poll every 60s.
+
 ## How to reproduce / monitor on bering-dev
 
 ### pm2 / logs
@@ -150,7 +165,7 @@ Sustained **>90%** heap after a few minutes suggests GC pressure; check concurre
 ## `/status` data flow (for further debugging)
 
 1. Navbar sets `window.dateString`, `window.base`; polls `stopped122` every 60s.
-2. Status `$watch('nav.dateString')` → `resetFlights()` → `POST /api/todaysFlights/dayFlights` (auth, **full rows**).
+2. Status `$watch('nav.dateString')` → `resetFlights()` → `POST /api/todaysFlights/dayFlights` (auth, **slim column list**).
 3. Template: `todaysFlights | filter:todaysFlightDisplayFilter` — uses `window.dateString`, `window.base`, `window.toggle`, `flight.active === 'true'`, aircraft prefix `N`, base airport names (`Nome`, `Kotzebue`, `Unalakleet`).
 4. Socket `todaysFlight:save` updates `allTodaysFlights`; re-filter on `runScroll` or `created` (skips `colorPatch === 'true'`).
 
@@ -160,8 +175,8 @@ If flights disappear after refresh, check: **My flights filter** (`nav.isFilter`
 
 | Item | Impact | Notes |
 |------|--------|--------|
-| **Slim authenticated `dayFlights`** | High for `/status` | Add `attributes` list for fields the status board actually uses (larger change than public; verify all controllers that consume `dayFlights`). |
-| **Server-side cache for `public/dayFlights`** | High under many `/public` tabs | Short TTL (30–60s) keyed by locale date; reduces repeated DB reads. |
+| ~~**Slim authenticated `dayFlights`**~~ | High for `/status` | **Done (Aug 2026):** `AUTH_DAY_FLIGHT_ATTRS` in `todaysFlight.controller.js` — omits `json`, `flightLegs`, `miscObject`, `dateObject`, `dateForPG`, `daysOfWeek`, `base`, `mitigation`, `nonRevFlight`. Keeps `pfr`, `airportObjs`, `loadsObject`, release fields. |
+| ~~**Server-side cache for `public/dayFlights`**~~ | High under many `/public` tabs | **Done (Aug 2026):** in-memory cache, **45s TTL**, keyed by locale `date` string; returns mapped `toPublicFlightRow` payload. |
 | **Increase Sequelize `pool.max`** | Medium | Only after slimming queries; `server/sqldb/index.js` + env-specific config. |
 | **METAR background job duration** | High | `metarFunction` observed 35–85s; blocks single-threaded Node (`server/app.js` — protected; needs approval). |
 | **`grunt babel:server` on deploy** | Ops hygiene | Ensure `dist/server` matches `server/`; do not rely on manual dist patches. |

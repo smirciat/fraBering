@@ -28,7 +28,7 @@ TSA / Flight Release audit CSVs should load flights via the **dayFlights** patte
 
 ## Performance — status board / dayFlights (Aug 2026)
 
-Sequelize pool timeouts, sluggish `/status`, and public-board load were investigated on prod. Fixes (public query attributes, `TodaysFlights.date` index, deduped `firebaseGrab`) and follow-up work for bering-dev are documented in **`docs/performance-status-board-2026-08.md`**.
+Sequelize pool timeouts, sluggish `/status`, and public-board load were investigated on prod. Fixes include public + authenticated `dayFlights` column whitelists, **45s in-memory cache** on `public/dayFlights`, `TodaysFlights.date` index, and deduped `firebaseGrab`. Details and benchmarks: **`docs/performance-status-board-2026-08.md`**.
 
 ## Where else this is documented
 

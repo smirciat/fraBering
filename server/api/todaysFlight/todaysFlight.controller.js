@@ -133,6 +133,43 @@ const PUBLIC_DAY_FLIGHT_ATTRS = [
   'tfliteDepart', 'flightStatus', 'coPilot', 'pilotObject', 'coPilotObject', 'equipment', 'pfr'
 ];
 
+// Status board, loads, audit CSVs — omit unused / duplicate heavy columns (json, flightLegs, dateObject, …).
+const AUTH_DAY_FLIGHT_ATTRS = [
+  '_id', 'active', 'date', 'pilot', 'coPilot', 'aircraft', 'flightNum', 'flightId',
+  'airports', 'departTimes', 'arriveTimes', 'departTimesZulu', 'status', 'operation',
+  'color', 'airportObjs', 'airportObjsLocked', 'runScroll', 'colorPatch', 'colorLock',
+  'flightStatus', 'knownIce', 'ocRelease', 'pilotAgree', 'dispatchRelease',
+  'releaseTimestamp', 'ocReleaseTimestamp', 'dispatchReleaseTimestamp',
+  'pfr', 'fuelTotalTaxi', 'fuelPreviouslyOnboard', 'autoOnboard', 'mel', 'other',
+  'pilotComment', 'coPilotComment', 'security', 'crewId',
+  'cockpitInspection', 'cabinInspection', 'cargoInspection', 'wheelWellInspection',
+  'otherEnvironment', 'taxiFuel', 'enrouteChanges', 'equipment', 'bew', 'alternate',
+  'loadsObject', 'pilotObject', 'coPilotObject', 'jumpseaterObject', 'airplaneObj',
+  'tfliteDepart', 'tfliteArrive',
+  'fueled', 'fueledBy', 'fueledTimestamp', 'truck', 'startFuel', 'stopFuel', 'gallonsUplifted'
+];
+
+const PUBLIC_DAY_FLIGHTS_CACHE_TTL_MS = 45000;
+let publicDayFlightsCache = {};
+
+function localeDateFromBody(dateString) {
+  return new Date(dateString).toLocaleDateString();
+}
+
+function getCachedPublicDayFlights(date) {
+  let entry = publicDayFlightsCache[date];
+  if (!entry) return null;
+  if (Date.now() - entry.at > PUBLIC_DAY_FLIGHTS_CACHE_TTL_MS) {
+    delete publicDayFlightsCache[date];
+    return null;
+  }
+  return entry.body;
+}
+
+function setCachedPublicDayFlights(date, body) {
+  publicDayFlightsCache[date] = {at: Date.now(), body: body};
+}
+
 function toPublicFlightRow(flight) {
   const f = flight.dataValues || flight;
   let arrivalOnTimeString = null;
@@ -164,11 +201,12 @@ function toPublicFlightRow(flight) {
 
 // Gets a list of TodaysFlights
 export function dayFlights(req, res) {
-  let date=new Date(req.body.dateString).toLocaleDateString();
+  let date=localeDateFromBody(req.body.dateString);
   return TodaysFlight.findAll({
       where:{
         date:date
-      }
+      },
+      attributes: AUTH_DAY_FLIGHT_ATTRS
     })
     .then(respondWithResult(res))
     .catch(handleError(res));
@@ -176,7 +214,11 @@ export function dayFlights(req, res) {
 
 // Public departures board — whitelisted fields only (no auth)
 export function dayFlightsPublic(req, res) {
-  let date=new Date(req.body.dateString).toLocaleDateString();
+  let date=localeDateFromBody(req.body.dateString);
+  let cached=getCachedPublicDayFlights(date);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
   return TodaysFlight.findAll({
     where: {
       date: date
@@ -184,6 +226,10 @@ export function dayFlightsPublic(req, res) {
     attributes: PUBLIC_DAY_FLIGHT_ATTRS
   })
     .then(rows => rows.map(toPublicFlightRow))
+    .then(body => {
+      setCachedPublicDayFlights(date, body);
+      return body;
+    })
     .then(respondWithResult(res))
     .catch(handleError(res));
 }
