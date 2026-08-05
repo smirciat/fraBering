@@ -624,6 +624,24 @@
   font-size:12px;
 }
 
+.roster-page .ui-grid-cell{
+  border-right:1px solid #c5d0de;
+  border-bottom:1px solid #c5d0de;
+}
+
+.roster-page .ui-grid-header-cell{
+  border-right:1px solid #b8c4d6;
+  border-bottom:2px solid #8fa3bf;
+}
+
+.roster-page .ui-grid-header-cell.roster-name-header{
+  border-right:2px solid #8fa3bf;
+}
+
+.roster-grid-row .ui-grid-cell:first-child{
+  border-right:2px solid #8fa3bf;
+}
+
 .roster-page .ui-grid-header{
   background:#f4f7fb;
   border-bottom:2px solid #8fa3bf;
@@ -633,15 +651,18 @@
   background:#f4f7fb;
 }
 
-.roster-page .ui-grid-header-cell{
-  border-color:#d5dde8;
-}
-
 .roster-name-header .ui-grid-cell-contents{
   font-weight:700;
   color:#2c3e50;
   text-align:left;
-  padding-left:10px;
+  padding:4px 8px;
+}
+
+.roster-name-cell-text{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 
 .roster-day-header{
@@ -676,7 +697,19 @@
 }
 
 .roster-grid-row .ui-grid-cell{
-  border-color:#e2e8f0;
+  border-color:#c5d0de;
+}
+
+.roster-grid-row.roster-captain-row .ui-grid-cell:not(:first-child) .ui-grid-cell-contents,
+.roster-grid-row.roster-fo-row .ui-grid-cell:not(:first-child) .ui-grid-cell-contents,
+.roster-grid-row.roster-employee-row .ui-grid-cell:not(:first-child) .ui-grid-cell-contents{
+  box-shadow:inset 0 -1px 0 #d8e0ea;
+}
+
+.roster-grid-row.roster-captain-row:hover .ui-grid-cell .ui-grid-cell-contents,
+.roster-grid-row.roster-fo-row:hover .ui-grid-cell .ui-grid-cell-contents,
+.roster-grid-row.roster-employee-row:hover .ui-grid-cell .ui-grid-cell-contents{
+  box-shadow:inset 0 0 0 9999px rgba(74, 111, 165, 0.07);
 }
 
 .roster-section-header-row .ui-grid-cell{
@@ -688,8 +721,8 @@
   background:#4a6fa5;
   color:#fff;
   text-align:left;
-  padding-left:12px;
-  font-size:12px;
+  padding:4px 8px;
+  font-size:11px;
   font-weight:700;
   letter-spacing:0.04em;
   text-transform:uppercase;
@@ -708,6 +741,7 @@
   border-color:#eef2f7 !important;
   border-top:none !important;
   border-bottom:none !important;
+  border-right-color:#eef2f7 !important;
 }
 
 .roster-spacer-cell .ui-grid-cell-contents{
@@ -722,7 +756,7 @@
 
 .roster-person-name .ui-grid-cell-contents{
   text-align:left;
-  padding-left:10px;
+  padding:4px 8px;
   font-weight:600;
   color:#1f2937;
   background:#fafbfd;
@@ -730,7 +764,7 @@
 
 .roster-employee-name .ui-grid-cell-contents{
   text-align:left;
-  padding-left:10px;
+  padding:4px 8px;
   font-weight:600;
   color:#374151;
   background:#f8fafc;
@@ -759,24 +793,37 @@
   padding:4px 2px;
 }
 
-.roster-summary-label .ui-grid-cell-contents{
+.roster-grid-row.roster-summary-code-row .ui-grid-cell:first-child .ui-grid-cell-contents,
+.roster-summary-label .ui-grid-cell-contents,
+.roster-name-cell-text--summary-code{
   background-color:#dde4ec;
-  text-align:right;
-  padding-right:8px;
-  padding-left:4px;
-  font-weight:600;
-  font-size:10px;
+  text-align:center;
+  padding:4px 8px;
+  font-weight:800;
+  font-size:13px;
   line-height:1.25;
-  white-space:normal;
+  white-space:nowrap;
   color:#334155;
 }
 
-.roster-summary-total-label .ui-grid-cell-contents{
+.roster-grid-row.roster-summary-total-row .ui-grid-cell:first-child .ui-grid-cell-contents,
+.roster-summary-total-label .ui-grid-cell-contents,
+.roster-name-cell-text--summary-total{
   background-color:#cbd5e1;
   text-align:right;
-  padding-right:8px;
-  padding-left:4px;
-  font-weight:700;
+  padding:4px 8px;
+  font-weight:800;
+  font-size:13px;
+  line-height:1.25;
+  color:#1e293b;
+}
+
+.roster-grid-row.roster-summary-total-row .ui-grid-cell:not(:first-child) .ui-grid-cell-contents,
+.roster-summary-total .ui-grid-cell-contents{
+  background-color:#cbd5e1;
+  font-weight:800;
+  font-size:13px;
+  text-align:center;
   color:#1e293b;
 }
 
@@ -851,12 +898,6 @@
   background-color:#f1f5f9;
   color:#475569;
   font-weight:600;
-}
-
-.roster-summary-total .ui-grid-cell-contents{
-  background-color:#cbd5e1;
-  font-weight:bold;
-  color:#1e293b;
 }
 
 /* Duty code colors */

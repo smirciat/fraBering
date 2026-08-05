@@ -924,13 +924,115 @@ function pilotFullName(pilot) {
   return pilot.displayName || '';
 }
 
-function acrorosterLabelForGrid(record, pilot) {
-  let label = record.label;
-  if (label === '8') label = 'C8';
-  if (label === '16') {
-    label = pilot && pilot.far299Exp ? 'NM' : 'ND';
+const ACRO_GRID_DUTY_CODES = [
+  'A', 'DM', 'IOE', '8', 'KA', 'B1', 'B2', 'C1', 'C2', 'S1', 'S2', 'F', 'OTZ',
+  'OC', 'NM', 'ND', 'T', 'V', 'RA', 'RV', 'RO', 'RP', 'C8', 'C', 'SC', 'SC2', 'B'
+];
+const ACRO_CAPTAIN_ONLY_DUTY_CODES = ['KA', 'NM', 'C8'];
+const ACRO_FO_ONLY_DUTY_CODES = ['ND', 'B2', 'C2', 'S2'];
+const ACRO_LOCATION_SKIP_TOKENS = {
+  NOME: true,
+  KOTZEBUE: true,
+  KOTZ: true,
+  UNALAKLEET: true,
+  UNK: true,
+  HELICOPTER: true,
+  HELI: true,
+  CAPT: true,
+  FO: true,
+  PILOT: true
+};
+
+function pilotRoleFromLocationName(locationName) {
+  const upper = String(locationName || '').toUpperCase();
+  if (!upper) return null;
+  const hasCapt = /\bCAPT\b/.test(upper);
+  const hasFo = /\bFO\b/.test(upper);
+  if (hasCapt && !hasFo) return 'captain';
+  if (hasFo && !hasCapt) return 'fo';
+  if (hasFo) return 'fo';
+  if (hasCapt) return 'captain';
+  return null;
+}
+
+function pilotMatchesAcrorosterEventRole(record, pilot) {
+  const eventRole = pilotRoleFromLocationName(record && record.location_name);
+  if (!eventRole) return true;
+  const isCaptain = !!(pilot && pilot.far299Exp);
+  return eventRole === (isCaptain ? 'captain' : 'fo');
+}
+
+function dutyTokensFromAcrorosterText(text) {
+  const parts = String(text || '').toUpperCase().split(/[\s,/]+/).filter(Boolean);
+  return parts.filter(part => !ACRO_LOCATION_SKIP_TOKENS[part] && ACRO_GRID_DUTY_CODES.indexOf(part) > -1);
+}
+
+function normalizeAcrorosterDutyToken(raw, pilot) {
+  let duty = String(raw || '').trim();
+  if (!duty) return '';
+  if (duty === '8') duty = 'C8';
+  if (duty === '16') duty = pilot && pilot.far299Exp ? 'NM' : 'ND';
+  duty = duty.toUpperCase();
+  if (duty.length > 4) duty = duty.substring(0, 4);
+  return duty;
+}
+
+function acrorosterDutyCodeForPilot(record, pilot) {
+  if (!record || !pilot) return '';
+  if (!pilotMatchesAcrorosterEventRole(record, pilot)) return '';
+
+  const isCaptain = !!pilot.far299Exp;
+  const labelUpper = String(record.label || '').trim().toUpperCase();
+  let duty = '';
+
+  if (labelUpper && labelUpper !== 'CAPT' && labelUpper !== 'FO') {
+    duty = normalizeAcrorosterDutyToken(record.label, pilot);
   }
-  return label;
+  if (!duty) {
+    const fromLocation = dutyTokensFromAcrorosterText(record.location_name);
+    if (fromLocation.length) duty = fromLocation[0];
+  }
+  if (!duty) {
+    const fromQuals = dutyTokensFromAcrorosterText(record.qualifications || record.qualification || '');
+    if (fromQuals.length) duty = fromQuals[0];
+  }
+  if (!duty) return '';
+
+  if (!isCaptain && ACRO_CAPTAIN_ONLY_DUTY_CODES.indexOf(duty) > -1) return '';
+  if (isCaptain && ACRO_FO_ONLY_DUTY_CODES.indexOf(duty) > -1) return '';
+
+  return duty;
+}
+
+function scoreAcrorosterPilotEvent(record, pilot) {
+  let score = 0;
+  const loc = String(record.location_name || '').toUpperCase();
+  const isCaptain = !!pilot.far299Exp;
+  if (isCaptain && /\bCAPT\b/.test(loc)) score += 20;
+  if (!isCaptain && /\bFO\b/.test(loc)) score += 20;
+  const duty = acrorosterDutyCodeForPilot(record, pilot);
+  if (duty) score += 10;
+  if (String(record.type || '').toLowerCase() === 'shift') score += 5;
+  return score;
+}
+
+function pickPilotDutyFromAcrorosterRecords(records, pilot) {
+  let best = '';
+  let bestScore = -1;
+  (records || []).forEach(record => {
+    const duty = acrorosterDutyCodeForPilot(record, pilot);
+    if (!duty) return;
+    const score = scoreAcrorosterPilotEvent(record, pilot);
+    if (score > bestScore) {
+      bestScore = score;
+      best = duty;
+    }
+  });
+  return best;
+}
+
+function acrorosterLabelForGrid(record, pilot) {
+  return acrorosterDutyCodeForPilot(record, pilot);
 }
 
 function employeeLabelForGrid(record) {
@@ -960,6 +1062,7 @@ function spreadAcrorosterEvents(events) {
 
 function acrorosterEventsToScheduleDays(events, pilots, employees) {
   const days = {};
+  const pilotEventsByRosterDay = {};
   const employeeByName = {};
   (employees || []).forEach(employee => {
     const displayName = employee.displayName || pilotFullName(employee);
@@ -968,12 +1071,13 @@ function acrorosterEventsToScheduleDays(events, pilots, employees) {
   spreadAcrorosterEvents(events).forEach(record => {
     if (isBlockedRosterEmployee(record)) return;
     if (record.type && record.type !== 'shift') return;
-    const day = new Date(record.start_plain_date_time).getUTCDate();
+    const day = String(new Date(record.start_plain_date_time).getUTCDate());
     const pilot = findPilotByRecordName(record.employee_full_name, pilots);
     if (pilot && pilot._id) {
       const rosterId = `pilot:${pilot._id}`;
-      if (!days[rosterId]) days[rosterId] = {};
-      days[rosterId][String(day)] = acrorosterLabelForGrid(record, pilot);
+      if (!pilotEventsByRosterDay[rosterId]) pilotEventsByRosterDay[rosterId] = {};
+      if (!pilotEventsByRosterDay[rosterId][day]) pilotEventsByRosterDay[rosterId][day] = [];
+      pilotEventsByRosterDay[rosterId][day].push(record);
       return;
     }
     if (isPilotLocation(record.location_name)) return;
@@ -981,8 +1085,20 @@ function acrorosterEventsToScheduleDays(events, pilots, employees) {
     if (!employee || !employee._id) return;
     const rosterId = `employee:${employee._id}`;
     if (!days[rosterId]) days[rosterId] = {};
-    days[rosterId][String(day)] = employeeLabelForGrid(record);
+    days[rosterId][day] = employeeLabelForGrid(record);
   });
+
+  Object.keys(pilotEventsByRosterDay).forEach(rosterId => {
+    const pilotId = rosterId.slice(6);
+    const pilot = (pilots || []).find(item => item._id === pilotId);
+    if (!pilot) return;
+    if (!days[rosterId]) days[rosterId] = {};
+    Object.keys(pilotEventsByRosterDay[rosterId]).forEach(day => {
+      const duty = pickPilotDutyFromAcrorosterRecords(pilotEventsByRosterDay[rosterId][day], pilot);
+      if (duty) days[rosterId][day] = duty;
+    });
+  });
+
   return days;
 }
 

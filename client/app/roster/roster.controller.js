@@ -90,7 +90,7 @@ class RosterComponent {
       '</div>',
       '</div>',
       '</div>',
-      '<span ng-if="!row.entity.isDutyBrushRow">{{COL_FIELD}}</span>',
+      '<span ng-if="!row.entity.isDutyBrushRow" class="roster-name-cell-text" ng-class="{\'roster-name-cell-text--summary-total\': row.entity.isSummaryTotal, \'roster-name-cell-text--summary-code\': row.entity.isSummaryRow && !row.entity.isSummaryTotal}" ng-attr-title="{{grid.options.nameCellTitle(row.entity)}}">{{COL_FIELD}}</span>',
       '</div>'
     ].join('');
     this.data=[];
@@ -201,12 +201,14 @@ class RosterComponent {
                       enableGridMenu: false,
                       enableCellEdit: false,
                       data:this.data,
-                      rowTemplate:'<div class="roster-grid-row" ng-class="grid.options.getRosterRowClass(row.entity)"><div ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid" ui-grid-cell class="ui-grid-cell" ng-class="{\'ui-grid-row-header-cell\': col.isRowHeader, \'roster-brush-day-cell\': row.entity.isDutyBrushRow && colRenderIndex > 0}"></div></div>',
+                      rowTemplate:'<div class="roster-grid-row" ng-class="grid.options.getRosterRowClass(row.entity)"><div ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid" ui-grid-cell class="ui-grid-cell" ng-class="grid.options.getRosterCellClass(row, col, colRenderIndex)"></div></div>',
                       getRosterRowClass:function(entity) {
                         if (!entity) return {};
                         return {
                           'roster-section-header-row': entity.isSectionHeader,
                           'roster-summary-row': entity.isSummaryRow,
+                          'roster-summary-total-row': entity.isSummaryTotal,
+                          'roster-summary-code-row': entity.isSummaryRow && !entity.isSummaryTotal,
                           'roster-duty-brush-row': entity.isDutyBrushRow,
                           'roster-duty-brush-row--active': entity.isDutyBrushRow && rosterCtrl.showDutyBrushToolbar(),
                           'roster-duty-brush-row--panel-open': entity.isDutyBrushRow && rosterCtrl.isDutyBrushPanelOpen(entity.sectionKey),
@@ -218,6 +220,29 @@ class RosterComponent {
                           'roster-section-start': entity.sectionStart,
                           'roster-spacer-row': entity.isSpacerRow
                         };
+                      },
+                      getRosterCellClass:function(row, col, colRenderIndex) {
+                        const classes = {
+                          'ui-grid-row-header-cell': !!(col && col.isRowHeader)
+                        };
+                        if (!row || !row.entity || !col || !col.colDef) return classes;
+                        if (row.entity.isDutyBrushRow && colRenderIndex > 0) {
+                          classes['roster-brush-day-cell'] = true;
+                        }
+                        const cellClass = col.colDef.cellClass;
+                        if (typeof cellClass === 'function') {
+                          const resolved = cellClass(row.grid, row, col);
+                          if (resolved) {
+                            String(resolved).split(' ').forEach(name => {
+                              if (name) classes[name] = true;
+                            });
+                          }
+                        } else if (cellClass) {
+                          String(cellClass).split(' ').forEach(name => {
+                            if (name) classes[name] = true;
+                          });
+                        }
+                        return classes;
                       },
                       showDutyBrushToolbar:function() {
                         return rosterCtrl.showDutyBrushToolbar();
@@ -254,6 +279,16 @@ class RosterComponent {
                       },
                       getDutyCellClasses:function(entity, dayField) {
                         return rosterCtrl.getDutyCellClasses(entity, dayField);
+                      },
+                      summaryCodeTitle:function(code) {
+                        return rosterCtrl.dutyBrushCodeTitle(code);
+                      },
+                      nameCellTitle:function(entity) {
+                        if (!entity) return '';
+                        if (entity.isSummaryRow && !entity.isSummaryTotal && entity.summaryCode) {
+                          return rosterCtrl.dutyBrushCodeTitle(entity.summaryCode);
+                        }
+                        return entity.displayName || '';
                       }
     };
     
@@ -468,6 +503,109 @@ class RosterComponent {
     label=String(label || '').trim();
     if (label.length > 4) label=label.substring(0, 4);
     return label.toUpperCase();
+  }
+
+  acroGridDutyCodes() {
+    return this.codes.concat(this.dutyCodes).filter((code, index, arr)=>arr.indexOf(code) === index);
+  }
+
+  pilotRoleFromAcrorosterLocation(locationName) {
+    const upper=String(locationName || '').toUpperCase();
+    if (!upper) return null;
+    const hasCapt=/\bCAPT\b/.test(upper);
+    const hasFo=/\bFO\b/.test(upper);
+    if (hasCapt && !hasFo) return 'captain';
+    if (hasFo && !hasCapt) return 'fo';
+    if (hasFo) return 'fo';
+    if (hasCapt) return 'captain';
+    return null;
+  }
+
+  pilotMatchesAcrorosterEventRole(record, pilot) {
+    const eventRole=this.pilotRoleFromAcrorosterLocation(record && record.location_name);
+    if (!eventRole) return true;
+    const isCaptain=!!(pilot && pilot.far299Exp);
+    return eventRole === (isCaptain ? 'captain' : 'fo');
+  }
+
+  dutyTokensFromAcrorosterText(text) {
+    const skip={
+      NOME:true, KOTZEBUE:true, KOTZ:true, UNALAKLEET:true, UNK:true,
+      HELICOPTER:true, HELI:true, CAPT:true, FO:true, PILOT:true
+    };
+    const known=new Set(this.acroGridDutyCodes());
+    return String(text || '').toUpperCase().split(/[\s,/]+/).filter(Boolean).filter(part=>{
+      return !skip[part] && known.has(part);
+    });
+  }
+
+  normalizeAcrorosterDutyToken(raw, pilot) {
+    let duty=String(raw || '').trim();
+    if (!duty) return '';
+    if (duty === '8') duty='C8';
+    if (duty === '16') duty=pilot && pilot.far299Exp ? 'NM' : 'ND';
+    duty=duty.toUpperCase();
+    if (duty.length > 4) duty=duty.substring(0, 4);
+    return duty;
+  }
+
+  acrorosterDutyCodeForPilot(record, pilot) {
+    if (!record || !pilot) return '';
+    if (!this.pilotMatchesAcrorosterEventRole(record, pilot)) return '';
+
+    const isCaptain=!!pilot.far299Exp;
+    const labelUpper=String(record.label || '').trim().toUpperCase();
+    let duty='';
+
+    if (labelUpper && labelUpper !== 'CAPT' && labelUpper !== 'FO') {
+      duty=this.normalizeAcrorosterDutyToken(record.label, pilot);
+    }
+    if (!duty) {
+      const fromLocation=this.dutyTokensFromAcrorosterText(record.location_name);
+      if (fromLocation.length) duty=fromLocation[0];
+    }
+    if (!duty) {
+      const fromQuals=this.dutyTokensFromAcrorosterText(record.qualifications || record.qualification || '');
+      if (fromQuals.length) duty=fromQuals[0];
+    }
+    if (!duty) return '';
+
+    const captainOnly=['KA', 'NM', 'C8'];
+    const foOnly=['ND', 'B2', 'C2', 'S2'];
+    if (!isCaptain && captainOnly.indexOf(duty) > -1) return '';
+    if (isCaptain && foOnly.indexOf(duty) > -1) return '';
+
+    return duty;
+  }
+
+  scoreAcrorosterPilotEvent(record, pilot) {
+    let score=0;
+    const loc=String(record.location_name || '').toUpperCase();
+    const isCaptain=!!pilot.far299Exp;
+    if (isCaptain && /\bCAPT\b/.test(loc)) score += 20;
+    if (!isCaptain && /\bFO\b/.test(loc)) score += 20;
+    if (this.acrorosterDutyCodeForPilot(record, pilot)) score += 10;
+    if (String(record.type || '').toLowerCase() === 'shift') score += 5;
+    return score;
+  }
+
+  pickPilotDutyFromAcrorosterRecords(records, pilot) {
+    let best='';
+    let bestScore=-1;
+    (records || []).forEach(record=>{
+      const duty=this.acrorosterDutyCodeForPilot(record, pilot);
+      if (!duty) return;
+      const score=this.scoreAcrorosterPilotEvent(record, pilot);
+      if (score > bestScore) {
+        bestScore=score;
+        best=duty;
+      }
+    });
+    return best;
+  }
+
+  pilotDutyLabelForCount(record, pilot) {
+    return this.acrorosterDutyCodeForPilot(record, pilot);
   }
 
   spreadMultiDayEvents(records) {
@@ -1339,7 +1477,7 @@ class RosterComponent {
   }
 
   summaryRowLabel(code) {
-    return this.dutyBrushCodeTitle(code);
+    return String(code || '').trim().toUpperCase();
   }
 
   syncEntityCellDisplay(entity, day) {
@@ -2929,13 +3067,15 @@ class RosterComponent {
         let totalFOOTZ=0;
         element.availablePilots.forEach(p=>{
           if (p.employee_full_name==="Sophia Hobbs") p.employee_full_name="Sophia Evans";
+          const duty=this.pilotDutyLabelForCount(p, p.pilotObj);
+          if (!duty || this.dutyCodes.indexOf(duty) < 0) return;
           if (p.pilotObj.pilotBase==="OME"){
-            if (p.pilotObj.far299Exp&&this.dutyCodes.indexOf(p.label)>-1) totalCaptOME++;
-            if (!p.pilotObj.far299Exp&&this.dutyCodes.indexOf(p.label)>-1) totalFOOME++;
+            if (p.pilotObj.far299Exp) totalCaptOME++;
+            else totalFOOME++;
           }
           if (p.pilotObj.pilotBase==="OTZ"){
-            if (p.pilotObj.far299Exp&&this.dutyCodes.indexOf(p.label)>-1) totalCaptOTZ++;
-            if (!p.pilotObj.far299Exp&&this.dutyCodes.indexOf(p.label)>-1) totalFOOTZ++;
+            if (p.pilotObj.far299Exp) totalCaptOTZ++;
+            else totalFOOTZ++;
           }
         });
         element.totalCaptOME=totalCaptOME;
@@ -2946,15 +3086,10 @@ class RosterComponent {
         if (this.date.getMonth() === calendarDate.getMonth() && this.date.getFullYear() === calendarDate.getFullYear()){
           let pilotArr=element.availablePilots.filter(p=>{return p.employee_full_name===pilot.firstName+' '+pilot.lastName});
           if (pilotArr.length>0) {
-            let newPilotArr=pilotArr.filter(e=>{return e.type==='shift'});
-            if (newPilotArr.length>0) pilotArr=newPilotArr;
-            let index=0;
-            if (pilotArr[index].label==="8") pilotArr[index].label="C8";
-            if (pilotArr[index].label==="16") {
-              if (pilot.far299Exp) pilotArr[index].label="NM";
-              else pilotArr[index].label="ND";
-            }
-            pilot[element.day]=pilotArr[index].label;
+            let shiftArr=pilotArr.filter(e=>{return e.type==='shift'});
+            if (shiftArr.length>0) pilotArr=shiftArr;
+            const duty=this.pickPilotDutyFromAcrorosterRecords(pilotArr, pilot);
+            if (duty) pilot[element.day]=duty;
           }
         }
       }
@@ -2978,7 +3113,9 @@ class RosterComponent {
     let columnDefs=[{
       name:'Name',
       field:'displayName',
-      minWidth:280,
+      width:148,
+      minWidth:118,
+      maxWidth:168,
       enableCellEdit:false,
       cellTemplate:this.nameCellTemplate,
       cellClass:this.nameCellClass.bind(this),
