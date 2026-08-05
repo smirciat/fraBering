@@ -27,6 +27,9 @@ module.exports = {
   KEY: '/etc/letsencrypt/live/domainname.com/privkey.pem',
   CERT: '/etc/letsencrypt/live/domainname.com/fullchain.pem',
   ROSTER_TOKEN: 'Bearer (string)',
+  // Local roster data: firebase (legacy dev) or postgres (production)
+  // See docs/roster-postgres.md
+  ROSTER_DATA_STORE: 'firebase',
   NODE_OPTIONS:"--max-old-space-size=4096",
   // Optional: shared secret for GET /api/issues/agent-summary (scripts/export-team-backlog)
   ISSUES_EXPORT_TOKEN: ''

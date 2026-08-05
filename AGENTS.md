@@ -62,7 +62,8 @@ See `README.md` for full install steps (npm, bower, node version quirks).
 
 ## Related docs
 
-- `docs/roster-acro-status.md` — `/roster` AcroRoster integration status and next steps
+- `docs/roster-acro-status.md` — `/roster` feature status and user-feedback targets
+- `docs/roster-postgres.md` — Local roster Postgres deploy, migration, smoke tests
 - `docs/legacy-development.md` — do not replace working legacy patterns
 - `docs/team-backlog.md` / `docs/issues-workflow.md` — team Issues queue
 - `docs/performance-status-board-2026-08.md` — `/status` performance notes

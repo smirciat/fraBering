@@ -13,6 +13,8 @@ import _ from 'lodash';
 import {Calendar} from '../../sqldb';
 const axios = require("axios");
 import localEnv from '../../config/local.env.js';
+import config from '../../config/environment';
+import * as rosterDataStore from '../rosterDataStore';
 const admin = require('firebase-admin');
 const serviceAccount = require('../../firebase.json');
 if (!admin.apps.length) {
@@ -21,15 +23,13 @@ if (!admin.apps.length) {
   });
 }
 const firebase_db = admin.firestore();
-const ROSTER_SCHEDULES_COLLECTION = 'rosterschedules';
-const EMPLOYEES_COLLECTION = 'employees';
-const ROSTER_CALENDAR_COLLECTION = 'rostercalendar';
 const STAFF_JOB_CATEGORIES = [
   'csa-dispatch',
   'ground-cargo',
   'maintenance',
   'cleaner',
   'office-admin',
+  'helicopter',
   'uncategorized'
 ];
 let todaysRoster=[];
@@ -178,25 +178,84 @@ export function destroy(req, res) {
     .catch(handleError(res));
 }
 
+function rosterRoleIndex(role) {
+  return (config.userRoles || []).indexOf(role || 'guest');
+}
+
+function isRosterSuperAdmin(user) {
+  return !!(user && user.role === 'superadmin');
+}
+
+function isRosterUser(user) {
+  return rosterRoleIndex(user && user.role) >= rosterRoleIndex('user');
+}
+
+function rosterForbidden(res, message) {
+  return res.status(403).json({ message: message || 'Forbidden' });
+}
+
+function assertRosterSuperAdmin(req, res) {
+  if (!isRosterSuperAdmin(req.user)) {
+    rosterForbidden(res, 'Superadmin required');
+    return false;
+  }
+  return true;
+}
+
+async function getRosterMonthMeta(monthKey) {
+  return rosterDataStore.getMonthMeta(monthKey);
+}
+
+async function assertRosterMonthWritable(req, res, dateString) {
+  if (isRosterSuperAdmin(req.user)) return true;
+  const monthKey = rosterMonthDocId(dateString);
+  const meta = await getRosterMonthMeta(monthKey);
+  if (meta.locked) {
+    rosterForbidden(res, 'This month is locked');
+    return false;
+  }
+  return true;
+}
+
+function assertOwnPersonOrSuperAdmin(req, res, personName) {
+  if (isRosterSuperAdmin(req.user)) return true;
+  const userName = req.user && req.user.name ? String(req.user.name).trim() : '';
+  if (!userName || !personNamesMatch(userName, personName)) {
+    rosterForbidden(res, 'You can only change your own calendar');
+    return false;
+  }
+  return true;
+}
+
+function rosterIdBelongsToUser(rosterId, user, pilots, employees) {
+  if (!rosterId || !user || !user.name) return false;
+  if (String(rosterId).indexOf('pilot:') === 0) {
+    const pilotId = String(rosterId).slice(6);
+    const pilot = (pilots || []).find(item => item._id === pilotId);
+    if (!pilot) return false;
+    return personNamesMatch(pilotFullName(pilot), user.name);
+  }
+  if (String(rosterId).indexOf('employee:') === 0) {
+    const employeeId = String(rosterId).slice(9);
+    const employee = (employees || []).find(item => item._id === employeeId);
+    if (!employee) return false;
+    const displayName = employee.displayName || pilotFullName(employee);
+    return personNamesMatch(displayName, user.name);
+  }
+  return false;
+}
+
 function rosterMonthDocId(dateString) {
   const date = new Date(dateString);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   return `${date.getFullYear()}-${month}`;
 }
 
-function rosterScheduleDocId(base, dateString) {
-  return `${base}-${rosterMonthDocId(dateString)}`;
-}
-
 function personKeyFromName(name) {
   return normalizePersonName(name).replace(/\s+/g, '-');
 }
 
-function rosterCalendarDocId(base, dateString, personName) {
-  return `${base}-${rosterMonthDocId(dateString)}-${personKeyFromName(personName)}`;
-}
-
-const ROSTER_BASES = ['OME', 'OTZ', 'UNK'];
+const ROSTER_BASES = ['OME', 'OTZ', 'UNK', 'HELI'];
 
 function normalizeRequestedBases(body) {
   let bases = [];
@@ -220,11 +279,11 @@ function recordMatchesBaseFilter(record, base) {
   return recordBase === base;
 }
 
-function filterEventsForPerson(events, personName, base) {
-  const target = normalizePersonName(personName);
+function filterEventsForPerson(events, personName, base, pilots) {
   return filterRosterImport(events || []).filter(record => {
-    if (normalizePersonName(record.employee_full_name) !== target) return false;
-    return recordMatchesBaseFilter(record, base);
+    if (!personRecordMatchesName(record.employee_full_name, personName, pilots)) return false;
+    if (base) return recordMatchesBaseFilter(record, base);
+    return true;
   });
 }
 
@@ -238,7 +297,7 @@ function isAcrorosterShiftEvent(record) {
 function inferAcrorosterRequestType(record) {
   const type = String(record.type || '').toLowerCase();
   const label = String(record.label || '').trim().toUpperCase();
-  const offCodes = ['V', 'RA', 'RV', 'RO', 'RP', 'B', 'T'];
+  const offCodes = ['V', 'RA', 'RV', 'RO', 'RP', 'O', 'B'];
   if (type.indexOf('time_off') > -1 || type.indexOf('time-off') > -1 || type.indexOf('pto') > -1) {
     return 'time_off';
   }
@@ -290,41 +349,29 @@ function normalizeRequestedDays(body) {
   return days;
 }
 
-async function upsertImportedPersonRequests(dateString, personName, base, importedRequests) {
-  const docId = rosterCalendarDocId(base, dateString, personName);
-  const ref = firebase_db.collection(ROSTER_CALENDAR_COLLECTION).doc(docId);
-  const snap = await ref.get();
-  const existing = snap.exists ? (snap.data().requests || []) : [];
-  const keptLocal = existing.filter(request => request.source === 'local');
-  const byDay = {};
-  importedRequests.forEach(request => {
-    if (!request || !request.day) return;
-    byDay[String(request.day)] = Object.assign({}, request, {
-      source: 'acroroster',
-      status: request.status || 'approved'
-    });
-  });
-  keptLocal.forEach(request => {
-    byDay[String(request.day)] = request;
-  });
-  const requests = Object.keys(byDay)
-    .map(key => byDay[key])
-    .sort((a, b) => a.day - b.day);
-  await ref.set({
-    base,
-    monthKey: rosterMonthDocId(dateString),
-    personName,
-    personKey: personKeyFromName(personName),
-    requests,
-    importedFrom: 'acroroster',
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
-  return requests;
+function isAcrorosterWorkCalendarRequest(request) {
+  if (!request || String(request.source || '').toLowerCase() !== 'acroroster') return false;
+  const label = String(request.label || '').trim().toUpperCase();
+  const offCodes = ['V', 'RA', 'RV', 'RO', 'RP', 'O', 'B'];
+  if (offCodes.indexOf(label) > -1) return false;
+  return request.requestType === 'work' ||
+    request.type === 'work_request' ||
+    label === '8' ||
+    label === 'C8';
 }
 
-async function importAcrorosterRequestsForBases(events, dateString, bases) {
+async function upsertImportedPersonRequests(dateString, personName, base, importedRequests) {
+  return rosterDataStore.upsertImportedPersonRequests(
+    dateString,
+    personName,
+    base,
+    importedRequests
+  );
+}
+
+async function importAcrorosterRequestsForBases(events, dateString, bases, pilots) {
   const byPersonBase = {};
-  const offCodes = ['V', 'RA', 'RV', 'RO', 'RP', 'B', 'T'];
+  const offCodes = ['V', 'RA', 'RV', 'RO', 'RP', 'O', 'B'];
   (events || []).forEach(record => {
     if (isBlockedRosterEmployee(record)) return;
     const personName = String(record.employee_full_name || '').trim();
@@ -340,14 +387,23 @@ async function importAcrorosterRequestsForBases(events, dateString, bases) {
       if (offCodes.indexOf(label) > -1) requestType = 'time_off';
     }
     if (!requestType) return;
+    if (requestType === 'work') return;
 
     const key = `${eventBase}::${normalizePersonName(personName)}`;
     if (!byPersonBase[key]) {
-      byPersonBase[key] = { personName, base: eventBase, requests: [] };
+      byPersonBase[key] = {
+        personName: canonicalPersonName(personName, pilots, []),
+        base: eventBase,
+        requests: []
+      };
     }
     spreadAcrorosterEvents([record]).forEach(dayRecord => {
       const day = new Date(dayRecord.start_plain_date_time).getUTCDate();
       const label = String(dayRecord.label || (requestType === 'time_off' ? 'V' : '8')).trim().toUpperCase();
+      if (requestType === 'work') {
+        const existing = byPersonBase[key].requests.find(item => item.day === day);
+        if (existing && existing.requestType === 'time_off') return;
+      }
       byPersonBase[key].requests.push({
         day,
         requestType,
@@ -363,6 +419,17 @@ async function importAcrorosterRequestsForBases(events, dateString, bases) {
   let people = 0;
   for (const key of Object.keys(byPersonBase)) {
     const entry = byPersonBase[key];
+    const byDay = {};
+    entry.requests.forEach(request => {
+      const existing = byDay[request.day];
+      if (!existing) {
+        byDay[request.day] = request;
+        return;
+      }
+      if (request.requestType === 'time_off') byDay[request.day] = request;
+      else if (existing.requestType !== 'time_off') byDay[request.day] = request;
+    });
+    entry.requests = Object.keys(byDay).map(dayKey => byDay[dayKey]);
     const deduped = {};
     entry.requests.forEach(request => {
       deduped[String(request.day)] = request;
@@ -378,43 +445,137 @@ async function importAcrorosterRequestsForBases(events, dateString, bases) {
   return { people, requestGroups: Object.keys(byPersonBase).length };
 }
 
-async function loadLocalPersonCalendarEvents(dateString, personName, base, pilots, employees) {
+async function loadLocalPersonCalendarEvents(dateString, personName, pilots, employees, rosterId, bases, options) {
+  const opts=options || {};
+  const monthLocked=!!opts.monthLocked;
   const events = [];
-  const target = normalizePersonName(personName);
-  const pilot = (pilots || []).find(item => normalizePersonName(pilotFullName(item)) === target);
-  const employee = (employees || []).find(item => normalizePersonName(item.displayName || pilotFullName(item)) === target);
-  let rosterId = null;
-  if (pilot && pilot._id) rosterId = `pilot:${pilot._id}`;
-  else if (employee && employee._id) rosterId = `employee:${employee._id}`;
+  const basesToLoad = bases && bases.length ? bases : ROSTER_BASES;
+  const pilot = findPilotByName(personName, pilots);
+  const employee = findEmployeeByName(personName, employees);
+  let resolvedRosterId = rosterId || null;
+  if (!resolvedRosterId) {
+    if (pilot && pilot._id) resolvedRosterId = `pilot:${pilot._id}`;
+    else if (employee && employee._id) resolvedRosterId = `employee:${employee._id}`;
+  }
+  const canonicalName = pilot
+    ? pilotFullName(pilot)
+    : (employee ? (employee.displayName || pilotFullName(employee)) : personName);
+  const calendarNames = [];
+  if (canonicalName) calendarNames.push(canonicalName);
+  if (personName && calendarNames.indexOf(personName) < 0) calendarNames.push(personName);
 
-  if (rosterId) {
-    const docId = rosterScheduleDocId(base, dateString);
-    const doc = await firebase_db.collection(ROSTER_SCHEDULES_COLLECTION).doc(docId).get();
-    const personDays = doc.exists && doc.data().days ? doc.data().days[rosterId] || {} : {};
-    Object.keys(personDays).forEach(dayKey => {
-      if (!personDays[dayKey]) return;
-      events.push({
-        day: parseInt(dayKey, 10),
-        label: personDays[dayKey],
-        type: 'shift',
-        source: 'schedule'
+  const offCodes = ['V', 'RA', 'RV', 'RO', 'RP', 'O', 'B'];
+  const workPlaceholders = ['8', 'C8'];
+
+  function inferRequestTypeFromRecord(request) {
+    if (!request) return null;
+    const label = String(request.label || '').trim().toUpperCase();
+    if (offCodes.indexOf(label) > -1) return 'time_off';
+    if (workPlaceholders.indexOf(label) > -1) return 'work';
+    if (request.requestType === 'time_off' || request.type === 'time_off_request') return 'time_off';
+    if (request.requestType === 'work' || request.type === 'work_request') return 'work';
+    return null;
+  }
+
+  const calendarRequestsByDay = {};
+  const seenCalKeys = {};
+  const monthKey = rosterMonthDocId(dateString);
+  const requestRows = await rosterDataStore.loadPersonCalendarRequestRows(
+    monthKey,
+    basesToLoad,
+    calendarNames
+  );
+  requestRows.forEach(row => {
+    const request = {
+      day: row.day,
+      requestType: row.requestType,
+      label: row.label,
+      type: row.type,
+      status: row.status,
+      source: row.source,
+      updatedAt: row.updatedAt,
+      requestedBy: row.requestedBy,
+      reviewedBy: row.reviewedBy
+    };
+    const status = String(request.status || 'pending').toLowerCase();
+    if (monthLocked && status !== 'approved') return;
+    const key = `${row.base}:${request.day}:${request.requestType}:${request.label}`;
+    if (seenCalKeys[key]) return;
+    seenCalKeys[key] = true;
+    const dayKey = String(request.day);
+    if (!calendarRequestsByDay[dayKey] || status === 'approved') {
+      calendarRequestsByDay[dayKey] = request;
+    }
+    events.push(Object.assign({}, request, {
+      source: request.source || 'local',
+      status,
+      base: row.base
+    }));
+  });
+
+  if (resolvedRosterId) {
+    for (const loadBase of basesToLoad) {
+      const personDays = await rosterDataStore.getPersonScheduleDays(
+        loadBase,
+        dateString,
+        resolvedRosterId
+      );
+      Object.keys(personDays).forEach(dayKey => {
+        if (!personDays[dayKey]) return;
+        const label = String(personDays[dayKey]).trim().toUpperCase();
+        const dayRequest = calendarRequestsByDay[dayKey] || null;
+        if (monthLocked) {
+          if (dayRequest) {
+            const reqStatus = String(dayRequest.status || 'pending').toLowerCase();
+            if (reqStatus !== 'approved') return;
+          }
+        } else if (dayRequest) {
+          const reqStatus = String(dayRequest.status || 'pending').toLowerCase();
+          const reqType = inferRequestTypeFromRecord(dayRequest);
+          if (reqStatus === 'pending') {
+            if (reqType === 'time_off') return;
+            if (reqType === 'work' && workPlaceholders.indexOf(label) > -1) return;
+          }
+          if (reqStatus === 'denied') return;
+        }
+        events.push({
+          day: parseInt(dayKey, 10),
+          label: personDays[dayKey],
+          type: 'shift',
+          source: 'schedule',
+          base: loadBase
+        });
       });
-    });
+    }
   }
 
-  const calDocId = rosterCalendarDocId(base, dateString, personName);
-  const calDoc = await firebase_db.collection(ROSTER_CALENDAR_COLLECTION).doc(calDocId).get();
-  if (calDoc.exists) {
-    (calDoc.data().requests || []).forEach(request => {
-      events.push(Object.assign({}, request, { source: 'local' }));
-    });
-  }
   return events;
 }
 
 const ACRO_NAME_ALIASES = {
   'sophia hobbs': 'sophia evans'
 };
+
+const ROSTER_NAME_ALIASES = {
+  'donald showalter': 'keith showalter',
+  'donald keith showalter': 'keith showalter',
+  'timothy kunkel': 'tim kunkel',
+  'michael k evans': 'mike k evans',
+  'michael k. evans': 'mikey evans',
+  'michael r evans': 'mike r evans',
+  'michael r. evans': 'mike r evans',
+  'jacob larson': 'jake larson',
+  'nik la croix': 'nikolas lacroix',
+  'conor  murray': 'conor murray',
+  'josh bryant': 'joshua bryant'
+};
+
+function normalizeRosterLookupName(name) {
+  let key = normalizePersonName(name);
+  key = key.replace(/\(/g, ' ').replace(/\)/g, ' ').replace(/\s+/g, ' ').trim();
+  if (ROSTER_NAME_ALIASES[key]) return ROSTER_NAME_ALIASES[key];
+  return key;
+}
 
 function parseFullName(fullName) {
   const parts = String(fullName || '').trim().split(/\s+/);
@@ -428,12 +589,119 @@ function normalizePersonName(name) {
   return ACRO_NAME_ALIASES[key] || key;
 }
 
+function parsePersonNameParts(name) {
+  let raw = String(name || '').trim();
+  let middleFromParen = '';
+  const parenMatch = raw.match(/\(([^)]+)\)/);
+  if (parenMatch) {
+    middleFromParen = parenMatch[1].trim();
+    raw = raw.replace(/\([^)]+\)/g, ' ').trim();
+  }
+  const tokens = raw.replace(/\./g, ' ').split(/\s+/).filter(Boolean);
+  if (!tokens.length) return { first: '', middle: '', last: '' };
+  if (tokens.length === 1) return { first: tokens[0], middle: middleFromParen, last: tokens[0] };
+  const first = tokens[0];
+  const last = tokens[tokens.length - 1];
+  let middle = middleFromParen;
+  if (!middle && tokens.length > 2) middle = tokens.slice(1, -1).join(' ');
+  return { first, middle, last };
+}
+
+function middleNameKey(middle) {
+  if (!middle) return '';
+  return String(middle).replace(/\./g, '').trim().toLowerCase().charAt(0);
+}
+
+function personNamesMatch(a, b) {
+  const na = normalizeRosterLookupName(a);
+  const nb = normalizeRosterLookupName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  const pa = parsePersonNameParts(na);
+  const pb = parsePersonNameParts(nb);
+  if (pa.last !== pb.last) return false;
+  const firstA = pa.first.toLowerCase();
+  const firstB = pb.first.toLowerCase();
+  if (firstA !== firstB && firstA.charAt(0) !== firstB.charAt(0)) return false;
+  const midA = middleNameKey(pa.middle);
+  const midB = middleNameKey(pb.middle);
+  if (midA && midB && midA !== midB) return false;
+  return true;
+}
+
+function findPilotByName(personName, pilots) {
+  if (!personName) return null;
+  const matches = (pilots || []).filter(pilot => personNamesMatch(pilotFullName(pilot), personName));
+  if (matches.length === 1) return matches[0];
+  if (matches.length > 1) {
+    const exact = matches.find(pilot => {
+      return normalizeRosterLookupName(pilotFullName(pilot)) === normalizeRosterLookupName(personName);
+    });
+    return exact || null;
+  }
+  return null;
+}
+
+function findEmployeeByName(personName, employees) {
+  if (!personName) return null;
+  return (employees || []).find(employee => {
+    const displayName = employee.displayName || pilotFullName(employee);
+    return personNamesMatch(displayName, personName);
+  }) || null;
+}
+
+function personRecordMatchesName(recordName, personName, pilots) {
+  if (personNamesMatch(recordName, personName)) return true;
+  const pilot = findPilotByName(personName, pilots);
+  if (!pilot) return false;
+  return personNamesMatch(recordName, pilotFullName(pilot));
+}
+
+function canonicalPersonName(personName, pilots, employees) {
+  const pilot = findPilotByName(personName, pilots);
+  if (pilot) return pilotFullName(pilot);
+  const employee = findEmployeeByName(personName, employees);
+  if (employee) return employee.displayName || pilotFullName(employee);
+  return personName;
+}
+
+function buildPilotNameLookup(pilots) {
+  const lookup = {};
+  (pilots || []).forEach(pilot => {
+    const fullName = pilotFullName(pilot);
+    if (!fullName) return;
+    lookup[fullName] = pilot;
+    lookup[normalizeRosterLookupName(fullName)] = pilot;
+    if (pilot.firstName && pilot.lastName) {
+      lookup[`${pilot.firstName[0]}. ${pilot.lastName}`] = pilot;
+      lookup[normalizeRosterLookupName(`${pilot.firstName[0]}. ${pilot.lastName}`)] = pilot;
+      lookup[`Mike ${pilot.lastName}`] = pilot;
+      lookup[`Mikey ${pilot.lastName}`] = pilot;
+      lookup[normalizeRosterLookupName(`Mike ${pilot.lastName}`)] = pilot;
+      lookup[normalizeRosterLookupName(`Mikey ${pilot.lastName}`)] = pilot;
+    }
+    if (fullName === 'Sophia Evans') lookup['Sophia Hobbs'] = pilot;
+  });
+  return lookup;
+}
+
+function findPilotByRecordName(recordName, pilots) {
+  if (!recordName) return null;
+  const lookup = buildPilotNameLookup(pilots);
+  if (lookup[recordName]) return lookup[recordName];
+  const normalized = normalizeRosterLookupName(recordName);
+  if (lookup[normalized]) return lookup[normalized];
+  if (lookup[recordName]) return lookup[recordName];
+  return findPilotByName(recordName, pilots);
+}
+
 function locationToBase(locationName) {
   if (!locationName) return null;
   const location = String(locationName).split(' ')[0].toUpperCase();
   if (location === 'NOME') return 'OME';
   if (location === 'KOTZEBUE' || location === 'KOTZ') return 'OTZ';
   if (location === 'UNALAKLEET' || location === 'UNK') return 'UNK';
+  if (location === 'HELICOPTER' || location === 'HELI') return 'HELI';
   return null;
 }
 
@@ -479,6 +747,9 @@ function inferJobCategory(text) {
   if (/office|admin|account|payroll|assistant|receivable|human resource|\bhr\b|bookkeep/.test(hay)) {
     return 'office-admin';
   }
+  if (/helicopter|\bheli\b/.test(hay)) {
+    return 'helicopter';
+  }
   return 'uncategorized';
 }
 
@@ -494,11 +765,13 @@ function mapAcrorosterEmployeeRecord(record, base) {
   const jobCategory = normalizeJobCategory(
     record.job_category || record.jobCategory || inferJobCategory(`${qualificationText} ${record.location_name || ''} ${record.title || ''}`)
   );
+  const mappedBase = locationToBase(record.location_name || record.base || record.location);
+  if (!mappedBase || mappedBase !== base) return null;
   return {
     firstName: firstName || parsed.firstName,
     lastName: lastName || parsed.lastName,
     displayName: displayName || `${parsed.firstName} ${parsed.lastName}`.trim(),
-    base: locationToBase(record.location_name || record.base || record.location) || base,
+    base: mappedBase,
     employeeNumber: String(record.employee_number || record.employeeNumber || record.emp_number || '').trim(),
     qualifications: qualificationText,
     jobCategory,
@@ -508,7 +781,32 @@ function mapAcrorosterEmployeeRecord(record, base) {
   };
 }
 
-function inferEmployeesFromAcrorosterEvents(events, pilots, base) {
+function pickCanonicalEmployeeBase(baseCounts) {
+  const bases = Object.keys(baseCounts || {});
+  if (!bases.length) return null;
+  bases.sort((a, b) => {
+    const diff = (baseCounts[b] || 0) - (baseCounts[a] || 0);
+    if (diff !== 0) return diff;
+    return a.localeCompare(b);
+  });
+  return bases[0];
+}
+
+function normalizeInferOptions(baseOrOptions) {
+  if (typeof baseOrOptions === 'string') {
+    return { bases: [baseOrOptions], onlyBases: [baseOrOptions] };
+  }
+  const options = baseOrOptions || {};
+  return {
+    bases: options.bases || null,
+    onlyBases: options.onlyBases || null
+  };
+}
+
+function inferEmployeesFromAcrorosterEvents(events, pilots, baseOrOptions) {
+  const options = normalizeInferOptions(baseOrOptions);
+  const basesFilter = options.bases;
+  const onlyBases = options.onlyBases;
   const pilotNames = buildPilotNameSet(pilots);
   const byName = {};
 
@@ -519,8 +817,9 @@ function inferEmployeesFromAcrorosterEvents(events, pilots, base) {
     if (pilotNames.has(normalizePersonName(fullName))) return;
     if (isPilotLocation(record.location_name)) return;
 
-    const recordBase = locationToBase(record.location_name) || base;
-    if (recordBase !== base) return;
+    const recordBase = locationToBase(record.location_name);
+    if (!recordBase) return;
+    if (basesFilter && basesFilter.indexOf(recordBase) < 0) return;
 
     const key = normalizePersonName(fullName);
     if (!byName[key]) {
@@ -529,16 +828,15 @@ function inferEmployeesFromAcrorosterEvents(events, pilots, base) {
         firstName: parsed.firstName,
         lastName: parsed.lastName,
         displayName: fullName,
-        base: recordBase,
-        employeeNumber: '',
+        baseCounts: {},
         qualificationParts: new Set(),
-        eventCount: 0,
+        employeeNumber: '',
         acrorosterEmployeeId: ''
       };
     }
     const entry = byName[key];
-    entry.eventCount++;
-    if (record.location_name) entry.qualificationParts.add(record.location_name);
+    entry.baseCounts[recordBase] = (entry.baseCounts[recordBase] || 0) + 1;
+    entry.qualificationParts.add(record.location_name);
     if (record.label) entry.qualificationParts.add(record.label);
     const empNum = record.employee_number || record.employeeNumber;
     if (empNum && !entry.employeeNumber) entry.employeeNumber = String(empNum);
@@ -547,21 +845,24 @@ function inferEmployeesFromAcrorosterEvents(events, pilots, base) {
   });
 
   return Object.values(byName).map(entry => {
+    const canonicalBase = pickCanonicalEmployeeBase(entry.baseCounts);
+    if (!canonicalBase) return null;
+    if (onlyBases && onlyBases.indexOf(canonicalBase) < 0) return null;
     const qualifications = Array.from(entry.qualificationParts).join(', ');
     return {
       firstName: entry.firstName,
       lastName: entry.lastName,
       displayName: entry.displayName,
-      base: entry.base,
+      base: canonicalBase,
       employeeNumber: entry.employeeNumber,
       qualifications,
       jobCategory: inferJobCategory(qualifications),
       isActive: true,
       importedFrom: 'acroroster',
       acrorosterEmployeeId: entry.acrorosterEmployeeId,
-      sourceEventCount: entry.eventCount
+      sourceEventCount: entry.baseCounts[canonicalBase] || 0
     };
-  });
+  }).filter(Boolean);
 }
 
 function mergeInferredEmployees(directEmployees, inferredEmployees) {
@@ -617,46 +918,6 @@ async function fetchAcrorosterEventsForRange(centerDateString, monthSpan) {
   return { events, monthsLoaded, monthSpan: span };
 }
 
-async function upsertImportedEmployee(employee) {
-  let existingDoc = null;
-  if (employee.acrorosterEmployeeId) {
-    const byAcroId = await firebase_db.collection(EMPLOYEES_COLLECTION)
-      .where('base', '==', employee.base)
-      .where('acrorosterEmployeeId', '==', employee.acrorosterEmployeeId)
-      .limit(1)
-      .get();
-    if (!byAcroId.empty) existingDoc = byAcroId.docs[0];
-  }
-  if (!existingDoc) {
-    const byName = await firebase_db.collection(EMPLOYEES_COLLECTION)
-      .where('base', '==', employee.base)
-      .where('displayName', '==', employee.displayName)
-      .limit(1)
-      .get();
-    if (!byName.empty) existingDoc = byName.docs[0];
-  }
-
-  const payload = Object.assign({}, employee, {
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    lastImportedAt: admin.firestore.FieldValue.serverTimestamp()
-  });
-  delete payload._id;
-
-  if (existingDoc) {
-    const existing = existingDoc.data();
-    if (existing.jobCategory && existing.jobCategory !== 'uncategorized') {
-      payload.jobCategory = existing.jobCategory;
-    }
-    await existingDoc.ref.set(payload, { merge: true });
-    return { _id: existingDoc.id, updated: true, displayName: employee.displayName };
-  }
-
-  const docRef = firebase_db.collection(EMPLOYEES_COLLECTION).doc();
-  payload.createdAt = admin.firestore.FieldValue.serverTimestamp();
-  await docRef.set(payload);
-  return { _id: docRef.id, created: true, displayName: employee.displayName };
-}
-
 function pilotFullName(pilot) {
   if (!pilot) return '';
   if (pilot.firstName && pilot.lastName) return `${pilot.firstName} ${pilot.lastName}`;
@@ -699,11 +960,6 @@ function spreadAcrorosterEvents(events) {
 
 function acrorosterEventsToScheduleDays(events, pilots, employees) {
   const days = {};
-  const pilotByName = {};
-  (pilots || []).forEach(pilot => {
-    pilotByName[pilotFullName(pilot)] = pilot;
-    if (pilotFullName(pilot) === 'Sophia Evans') pilotByName['Sophia Hobbs'] = pilot;
-  });
   const employeeByName = {};
   (employees || []).forEach(employee => {
     const displayName = employee.displayName || pilotFullName(employee);
@@ -713,7 +969,7 @@ function acrorosterEventsToScheduleDays(events, pilots, employees) {
     if (isBlockedRosterEmployee(record)) return;
     if (record.type && record.type !== 'shift') return;
     const day = new Date(record.start_plain_date_time).getUTCDate();
-    const pilot = pilotByName[record.employee_full_name];
+    const pilot = findPilotByRecordName(record.employee_full_name, pilots);
     if (pilot && pilot._id) {
       const rosterId = `pilot:${pilot._id}`;
       if (!days[rosterId]) days[rosterId] = {};
@@ -735,20 +991,24 @@ export async function rosterPersonMonth(req, res) {
   const base = req.body.base;
   const source = req.body.source || 'acroroster';
   const dateString = req.body.date || new Date();
-  if (!personName || !base) return res.status(400).json({ message: 'personName and base are required' });
+  const pilots = req.body.pilots || [];
+  if (!personName) return res.status(400).json({ message: 'personName is required' });
   try {
     if (source === 'local') {
       const events = await loadLocalPersonCalendarEvents(
         dateString,
         personName,
-        base,
-        req.body.pilots || [],
-        req.body.employees || []
+        pilots,
+        req.body.employees || [],
+        req.body.rosterId,
+        normalizeRequestedBases(req.body),
+        { monthLocked: req.body.monthLocked === true }
       );
       return res.status(200).json({ events });
     }
     const monthEvents = await setRosterMonth(dateString);
-    const personEvents = filterEventsForPerson(monthEvents, personName, base);
+    const allBases = req.body.allBases === true;
+    const personEvents = filterEventsForPerson(monthEvents, personName, allBases ? null : base, pilots);
     return res.status(200).json({ events: expandEventsToDayRecords(personEvents) });
   } catch (err) {
     console.log(err);
@@ -763,75 +1023,60 @@ export async function rosterCalendarSave(req, res) {
   const action = req.body.action || 'add';
   const dateString = req.body.date || new Date();
   const days = normalizeRequestedDays(req.body);
-  if (!base || !personName || !requestType || !days.length) {
-    return res.status(400).json({ message: 'base, personName, requestType, and day/days are required' });
+  if (!base || !personName || !days.length) {
+    return res.status(400).json({ message: 'base, personName, and day/days are required' });
+  }
+  const isModeration = action === 'approve' || action === 'deny';
+  if (!isModeration && action !== 'delete' && !requestType) {
+    return res.status(400).json({ message: 'requestType is required' });
   }
   const defaultLabel = requestType === 'time_off' ? 'V' : '8';
   const eventLabel = String(req.body.label || defaultLabel).trim().toUpperCase();
   const applyToSchedule = req.body.applyToSchedule !== false;
   const rosterId = req.body.rosterId || null;
-  const docId = rosterCalendarDocId(base, dateString, personName);
   try {
-    const ref = firebase_db.collection(ROSTER_CALENDAR_COLLECTION).doc(docId);
-    const snap = await ref.get();
-    let requests = snap.exists ? (snap.data().requests || []).slice() : [];
-    if (action === 'delete') {
-      requests = requests.filter(request => {
-        if (days.indexOf(request.day) < 0) return true;
-        if (requestType && request.requestType !== requestType) return true;
-        if (req.body.label && request.label !== eventLabel) return true;
-        return false;
-      });
-    } else {
-      requests = requests.filter(request => days.indexOf(request.day) < 0);
-      days.forEach(day => {
-        requests.push({
-          day,
-          requestType,
-          label: eventLabel,
-          type: requestType === 'time_off' ? 'time_off_request' : 'work_request',
-          status: 'pending',
-          source: 'local',
-          updatedAt: new Date().toISOString()
-        });
-      });
-    }
-    requests.sort((a, b) => a.day - b.day);
-    await ref.set({
+    if (!(await assertRosterMonthWritable(req, res, dateString))) return;
+    if (isModeration) {
+      if (!assertRosterSuperAdmin(req, res)) return;
+    } else if (!assertOwnPersonOrSuperAdmin(req, res, personName)) return;
+
+    const mutation = await rosterDataStore.mutateCalendarRequests({
       base,
-      monthKey: rosterMonthDocId(dateString),
+      dateString,
       personName,
-      personKey: personKeyFromName(personName),
-      requests,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+      rosterId,
+      days,
+      action,
+      requestType,
+      eventLabel,
+      isModeration,
+      isSuperAdmin: isRosterSuperAdmin(req.user),
+      requesterName: req.user.name || req.user.email,
+      reviewerName: req.user.name || req.user.email,
+      filterLabel: req.body.label
+    });
+    const requests = mutation.requests;
+    let scheduleApplyLabel = mutation.scheduleApplyLabel;
+    let scheduleApplyAction = mutation.scheduleApplyAction;
 
     let scheduleDays = null;
-    if (applyToSchedule && rosterId) {
-      const scheduleDocId = rosterScheduleDocId(base, dateString);
-      const scheduleRef = firebase_db.collection(ROSTER_SCHEDULES_COLLECTION).doc(scheduleDocId);
-      await scheduleRef.set({
+    const shouldApplySchedule = rosterId && (
+      action === 'delete' ? applyToSchedule !== false
+        : isModeration ? true
+        : (isRosterSuperAdmin(req.user) && applyToSchedule)
+    );
+    if (shouldApplySchedule) {
+      scheduleDays = await rosterDataStore.applyScheduleCells(
         base,
-        monthKey: rosterMonthDocId(dateString),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-      const updates = {};
-      days.forEach(day => {
-        const fieldPath = `days.${rosterId}.${day}`;
-        if (action === 'delete') {
-          updates[fieldPath] = admin.firestore.FieldValue.delete();
-        } else {
-          updates[fieldPath] = eventLabel;
-        }
-      });
-      if (Object.keys(updates).length) await scheduleRef.update(updates);
-      const scheduleSnap = await scheduleRef.get();
-      scheduleDays = scheduleSnap.exists && scheduleSnap.data().days
-        ? (scheduleSnap.data().days[rosterId] || {})
-        : {};
+        dateString,
+        rosterId,
+        days,
+        scheduleApplyLabel,
+        scheduleApplyAction === 'delete' || action === 'deny' ? 'delete' : 'add'
+      );
     }
 
-    return res.status(200).json({ requests, days, scheduleDays, rosterId });
+    return res.status(200).json({ requests, days, scheduleDays, rosterId, action });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ message: 'Failed to save calendar request' });
@@ -850,22 +1095,28 @@ export async function rosterScheduleLocal(req, res) {
   if (req.body.date) dateString = req.body.date;
   const base = req.body.base;
   if (!base) return res.status(400).json({ message: 'base is required' });
-  const docId = rosterScheduleDocId(base, dateString);
   try {
-    const doc = await firebase_db.collection(ROSTER_SCHEDULES_COLLECTION).doc(docId).get();
-    if (!doc.exists) {
-      return res.status(200).json({ days: {}, docId, empty: true });
-    }
-    const data = doc.data();
-    return res.status(200).json({
-      days: data.days || {},
-      docId,
-      empty: !data.days || !Object.keys(data.days).length,
-      updatedAt: data.updatedAt || data.importedAt || null
-    });
+    const result = await rosterDataStore.loadScheduleLocal(base, dateString);
+    return res.status(200).json(result);
   } catch (err) {
     console.log(err);
     return res.status(500).json({ message: 'Failed to load local roster schedule' });
+  }
+}
+
+export async function rosterScheduleLocalBulk(req, res) {
+  const dateString = req.body.date || new Date();
+  const bases = normalizeRequestedBases(req.body);
+  if (!bases.length) return res.status(400).json({ message: 'base or bases is required' });
+  const monthKeys = Array.isArray(req.body.monthKeys) && req.body.monthKeys.length ?
+    req.body.monthKeys.map(key => String(key).trim()) :
+    null;
+  try {
+    const result = await rosterDataStore.loadScheduleBulk(dateString, bases, monthKeys);
+    return res.status(200).json(result);
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: 'Failed to load local roster schedules' });
   }
 }
 
@@ -878,39 +1129,136 @@ export async function rosterScheduleSave(req, res) {
   if (!base || !rosterId || !day) {
     return res.status(400).json({ message: 'base, rosterId, and day are required' });
   }
-  const docId = rosterScheduleDocId(base, dateString);
-  const dayKey = String(day);
-  const fieldPath = `days.${rosterId}.${dayKey}`;
   try {
-    const docRef = firebase_db.collection(ROSTER_SCHEDULES_COLLECTION).doc(docId);
-    await docRef.set({
-      base,
-      monthKey: rosterMonthDocId(dateString),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-    if (!code) {
-      await docRef.update({
-        [fieldPath]: admin.firestore.FieldValue.delete()
-      });
-    } else {
-      code = String(code).trim().toUpperCase();
-      await docRef.set({
-        [fieldPath]: code
-      }, { merge: true });
+    if (!(await assertRosterMonthWritable(req, res, dateString))) return;
+    if (!isRosterSuperAdmin(req.user)) {
+      const pilots = req.body.pilots || [];
+      const employees = req.body.employees || [];
+      if (!rosterIdBelongsToUser(rosterId, req.user, pilots, employees)) {
+        return rosterForbidden(res, 'You can only edit your own schedule row');
+      }
     }
-    return res.status(200).json({ saved: true, docId, rosterId, day, code: code || null });
+    const result = await rosterDataStore.saveScheduleCell(base, dateString, rosterId, day, code);
+    return res.status(200).json(result);
   } catch (err) {
     console.log(err);
     return res.status(500).json({ message: 'Failed to save roster schedule cell' });
   }
 }
 
-export async function rosterEmployees(req, res) {
-  const base = req.body.base;
-  if (!base) return res.status(400).json({ message: 'base is required' });
+export async function rosterCalendarMonthIndex(req, res) {
+  const dateString = req.body.date || new Date();
+  const bases = normalizeRequestedBases(req.body);
+  const pilots = req.body.pilots || [];
+  const employees = req.body.employees || [];
+  const monthKey = rosterMonthDocId(dateString);
+  const requestsByRosterId = {};
   try {
-    const snapshot = await firebase_db.collection(EMPLOYEES_COLLECTION).where('base', '==', base).get();
-    const employees = snapshot.docs.map(doc => Object.assign({ _id: doc.id }, doc.data()));
+    const rows = await rosterDataStore.loadCalendarRequestRows(monthKey, bases);
+    rows.forEach(row => {
+      const personName = row.personName;
+      let rosterId = row.rosterId || null;
+      if (!rosterId) {
+        const pilot = findPilotByName(personName, pilots);
+        if (pilot && pilot._id) rosterId = `pilot:${pilot._id}`;
+        else {
+          const employee = findEmployeeByName(personName, employees);
+          if (employee && employee._id) rosterId = `employee:${employee._id}`;
+        }
+      }
+      if (!rosterId) return;
+      const request = {
+        day: row.day,
+        requestType: row.requestType,
+        label: row.label,
+        type: row.type,
+        status: row.status,
+        source: row.source,
+        updatedAt: row.updatedAt,
+        requestedBy: row.requestedBy,
+        reviewedBy: row.reviewedBy
+      };
+      if (isAcrorosterWorkCalendarRequest(request)) return;
+      const dayKey = String(request.day);
+      if (!requestsByRosterId[rosterId]) requestsByRosterId[rosterId] = {};
+      if (!requestsByRosterId[rosterId][dayKey]) requestsByRosterId[rosterId][dayKey] = [];
+      requestsByRosterId[rosterId][dayKey].push(request);
+    });
+    return res.status(200).json({ requestsByRosterId, monthKey });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: 'Failed to load calendar request index' });
+  }
+}
+
+export async function rosterStaffingMinimumsGet(req, res) {
+  try {
+    const minimums = await rosterDataStore.getStaffingMinimums();
+    return res.status(200).json({ minimums: minimums || null });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: 'Failed to load staffing minimums' });
+  }
+}
+
+export async function rosterStaffingMinimumsSave(req, res) {
+  if (!assertRosterSuperAdmin(req, res)) return;
+  const minimums = req.body.minimums;
+  if (!minimums || typeof minimums !== 'object') {
+    return res.status(400).json({ message: 'minimums object is required' });
+  }
+  try {
+    await rosterDataStore.saveStaffingMinimums(
+      minimums,
+      req.user.name || req.user.email
+    );
+    return res.status(200).json({ saved: true });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: 'Failed to save staffing minimums' });
+  }
+}
+
+export async function rosterMonthMeta(req, res) {
+  const dateString = req.body.date || new Date();
+  const monthKey = rosterMonthDocId(dateString);
+  try {
+    const meta = await getRosterMonthMeta(monthKey);
+    return res.status(200).json({
+      monthKey,
+      locked: !!meta.locked,
+      lockedAt: meta.lockedAt || null,
+      lockedBy: meta.lockedBy || null
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: 'Failed to load roster month metadata' });
+  }
+}
+
+export async function rosterMonthLock(req, res) {
+  if (!assertRosterSuperAdmin(req, res)) return;
+  const dateString = req.body.date || new Date();
+  const locked = req.body.locked === true;
+  const monthKey = rosterMonthDocId(dateString);
+  try {
+    const result = await rosterDataStore.setMonthLock(
+      monthKey,
+      locked,
+      req.user.name || req.user.email
+    );
+    return res.status(200).json({ monthKey: result.monthKey, locked: result.locked });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: 'Failed to update month lock' });
+  }
+}
+
+export async function rosterEmployees(req, res) {
+  const bases = normalizeRequestedBases(req.body);
+  if (!bases.length) return res.status(400).json({ message: 'base or bases is required' });
+  try {
+    const employees = await rosterDataStore.loadEmployees(bases);
     return res.status(200).json(employees);
   } catch (err) {
     console.log(err);
@@ -919,12 +1267,14 @@ export async function rosterEmployees(req, res) {
 }
 
 export async function rosterEmployeeSave(req, res) {
+  if (!assertRosterSuperAdmin(req, res)) return;
   const base = req.body.base;
   const firstName = (req.body.firstName || '').trim();
   const lastName = (req.body.lastName || '').trim();
   if (!base) return res.status(400).json({ message: 'base is required' });
   if (!firstName || !lastName) return res.status(400).json({ message: 'firstName and lastName are required' });
   const payload = {
+    _id: req.body._id,
     base,
     firstName,
     lastName,
@@ -932,20 +1282,11 @@ export async function rosterEmployeeSave(req, res) {
     employeeNumber: (req.body.employeeNumber || '').trim(),
     qualifications: (req.body.qualifications || '').trim(),
     jobCategory: normalizeJobCategory(req.body.jobCategory),
-    isActive: req.body.isActive !== false,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    isActive: req.body.isActive !== false
   };
   try {
-    let docId = req.body._id;
-    if (docId) {
-      await firebase_db.collection(EMPLOYEES_COLLECTION).doc(docId).set(payload, { merge: true });
-    } else {
-      const docRef = firebase_db.collection(EMPLOYEES_COLLECTION).doc();
-      docId = docRef.id;
-      payload.createdAt = admin.firestore.FieldValue.serverTimestamp();
-      await docRef.set(payload);
-    }
-    return res.status(200).json(Object.assign({ _id: docId }, payload));
+    const saved = await rosterDataStore.saveEmployeeRecord(payload);
+    return res.status(200).json(saved);
   } catch (err) {
     console.log(err);
     return res.status(500).json({ message: 'Failed to save employee' });
@@ -953,10 +1294,11 @@ export async function rosterEmployeeSave(req, res) {
 }
 
 export async function rosterEmployeeDelete(req, res) {
+  if (!assertRosterSuperAdmin(req, res)) return;
   const docId = req.body._id;
   if (!docId) return res.status(400).json({ message: '_id is required' });
   try {
-    await firebase_db.collection(EMPLOYEES_COLLECTION).doc(docId).delete();
+    await rosterDataStore.deleteEmployeeRecord(docId);
     return res.status(200).json({ deleted: true, _id: docId });
   } catch (err) {
     console.log(err);
@@ -965,6 +1307,7 @@ export async function rosterEmployeeDelete(req, res) {
 }
 
 export async function rosterEmployeesImportFromAcroroster(req, res) {
+  if (!assertRosterSuperAdmin(req, res)) return;
   const bases = normalizeRequestedBases(req.body);
   const pilots = req.body.pilots || [];
   let dateString = req.body.date || new Date();
@@ -990,16 +1333,18 @@ export async function rosterEmployeesImportFromAcroroster(req, res) {
       monthSpan: range.monthSpan
     };
 
+    const inferredAll = inferEmployeesFromAcrorosterEvents(range.events, pilots, { bases });
+
     for (const base of bases) {
       const directEmployees = employeeTable
         .map(record => mapAcrorosterEmployeeRecord(record, base))
         .filter(record => record && record.base === base);
-      const inferredEmployees = inferEmployeesFromAcrorosterEvents(range.events, pilots, base);
+      const inferredEmployees = inferredAll.filter(employee => employee.base === base);
       const candidates = mergeInferredEmployees(directEmployees, inferredEmployees);
       const baseResult = { base, created: 0, updated: 0, count: candidates.length };
 
       for (const employee of candidates) {
-        const saved = await upsertImportedEmployee(employee);
+        const saved = await rosterDataStore.upsertImportedEmployee(employee, { silent: true });
         if (saved.created) {
           results.created++;
           baseResult.created++;
@@ -1012,6 +1357,8 @@ export async function rosterEmployeesImportFromAcroroster(req, res) {
       results.byBase[base] = baseResult;
     }
 
+    await rosterDataStore.importEmployeesBulk(bases);
+
     return res.status(200).json(results);
   } catch (err) {
     console.log(err);
@@ -1020,6 +1367,7 @@ export async function rosterEmployeesImportFromAcroroster(req, res) {
 }
 
 export async function rosterScheduleLocalImport(req, res) {
+  if (!assertRosterSuperAdmin(req, res)) return;
   let dateString = new Date();
   if (req.body.date) dateString = req.body.date;
   const bases = normalizeRequestedBases(req.body);
@@ -1032,47 +1380,41 @@ export async function rosterScheduleLocalImport(req, res) {
     let employeesCreated = 0;
     let employeesUpdated = 0;
     const baseResults = [];
+    const inferredAll = inferEmployeesFromAcrorosterEvents(events, pilots, { bases });
+    const savedEmployeesByName = {};
+
+    for (const employee of inferredAll) {
+      const saved = await rosterDataStore.upsertImportedEmployee(employee, { silent: true });
+      savedEmployeesByName[normalizePersonName(employee.displayName)] = Object.assign({}, employee, { _id: saved._id });
+      if (saved.created) employeesCreated++;
+      else employeesUpdated++;
+    }
+
+    await rosterDataStore.importEmployeesBulk(bases);
 
     for (const base of bases) {
-      const docId = rosterScheduleDocId(base, dateString);
       const baseEvents = events.filter(record => locationToBase(record.location_name) === base);
-      const inferredEmployees = inferEmployeesFromAcrorosterEvents(baseEvents, pilots, base);
-      const savedEmployees = [];
-      for (const employee of inferredEmployees) {
-        const saved = await upsertImportedEmployee(employee);
-        savedEmployees.push(saved);
-        if (saved.created) employeesCreated++;
-        else employeesUpdated++;
-      }
-      const employeeDocs = savedEmployees.map(saved => {
-        const match = inferredEmployees.find(employee => employee.displayName === saved.displayName);
-        return Object.assign({}, match || {}, { _id: saved._id });
-      });
+      const employeeDocs = inferredAll
+        .filter(employee => employee.base === base)
+        .map(employee => savedEmployeesByName[normalizePersonName(employee.displayName)])
+        .filter(Boolean);
       const days = acrorosterEventsToScheduleDays(baseEvents, pilots, employeeDocs);
       Object.keys(days).forEach(rosterId => {
         if (!mergedDays[rosterId]) mergedDays[rosterId] = {};
         Object.assign(mergedDays[rosterId], days[rosterId]);
       });
-      const payload = {
-        base,
-        monthKey: rosterMonthDocId(dateString),
-        days,
-        importedFrom: 'acroroster',
-        importedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      };
-      await firebase_db.collection(ROSTER_SCHEDULES_COLLECTION).doc(docId).set(payload, { merge: true });
+      const importResult = await rosterDataStore.importScheduleDays(base, dateString, days);
       baseResults.push({
         base,
-        docId,
+        docId: importResult.docId,
         empty: !Object.keys(days).length,
         dayKeys: Object.keys(days).length,
-        employeesCreated: savedEmployees.filter(saved => saved.created).length,
-        employeesUpdated: savedEmployees.filter(saved => saved.updated).length
+        scheduleRows: importResult.rowCount
       });
     }
 
-    const requestImport = await importAcrorosterRequestsForBases(events, dateString, bases);
+    const requestImport = await importAcrorosterRequestsForBases(events, dateString, bases, pilots);
+    await rosterDataStore.importCalendarRequestsBulk(dateString, bases);
 
     return res.status(200).json({
       days: mergedDays,

@@ -34,7 +34,7 @@
             <li ui-sref-active="active"><a ui-sref="main">Other</a></li>
             <li ng-show="nav.isAdmin()" ui-sref-active="active"><a ui-sref="admin">Manage Users</a></li>
             <li ng-show="nav.Auth.isSuperAdmin()" ui-sref-active="active"><a ui-sref="audit">Audit</a></li>
-            <li ng-show="nav.Auth.isUser()" ui-sref-active="active"><a ui-sref="roster">Roster</a></li>
+            <li ng-show="nav.Auth.isUser()" ui-sref-active="active"><a ui-sref="roster"><i class="fa fa-calendar-check-o"></i> Roster</a></li>
           </ul>
         </li>
         <li ng-show="nav.Auth.isUser()" style="padding-left:1em;padding-top:7px;">

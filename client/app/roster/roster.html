@@ -1,3 +1,4 @@
+<div class="roster-shell">
 <navbar></navbar>
 <div class="roster-page">
   <div class="roster-layout">
@@ -72,6 +73,13 @@
           <i class="fa fa-users"></i>
           <span>Team</span>
         </button>
+        <button type="button"
+                class="roster-navpanel-nav-btn"
+                ng-class="{'is-active': roster.activeView === 'minimums'}"
+                ng-click="roster.setActiveView('minimums')">
+          <i class="fa fa-cloud"></i>
+          <span>Minimums</span>
+        </button>
       </nav>
 
       <div class="roster-navpanel-section" ng-if="roster.activeView === 'schedule'">
@@ -94,7 +102,7 @@
 
       <div class="roster-navpanel-section" ng-if="roster.activeView === 'schedule' || roster.activeView === 'team'">
         <div class="roster-navpanel-section-label">Show tables</div>
-        <div class="roster-navpanel-btn-stack">
+        <div class="roster-navpanel-btn-stack roster-navpanel-btn-stack--scroll">
           <button type="button"
                   class="btn btn-xs btn-block"
                   ng-repeat="opt in roster.sectionPickerOptions track by opt.key"
@@ -110,8 +118,12 @@
         <select class="form-control input-sm roster-navpanel-select"
                 ng-model="roster.calendarPerson"
                 ng-change="roster.setCalendarPerson(roster.calendarPerson)"
+                ng-disabled="!roster.canViewAllCalendars()"
                 ng-options="opt.key as opt.label for opt in roster.calendarPersonOptions">
         </select>
+        <p class="roster-navpanel-hint" ng-if="!roster.canViewAllCalendars()">
+          Calendar is limited to your name. Superadmins can view all calendars.
+        </p>
         <p class="roster-navpanel-hint" ng-if="!roster.calendarPersonOptions.length">
           No people loaded for this base yet.
         </p>
@@ -141,15 +153,21 @@
             Click a start day, then an end day to select a range.
           </p>
           <p class="roster-navpanel-hint">
-            Requests save to the calendar and write duty codes on the local schedule (8 / V).
+            Requests are submitted for approval. Superadmins apply duty codes when approved.
           </p>
         </div>
-        <p class="roster-navpanel-hint" ng-if="!roster.canEditCalendar()">
+        <p class="roster-navpanel-hint" ng-if="roster.monthLocked && !roster.isRosterSuperAdmin()">
+          This month is locked — no schedule or calendar changes.
+        </p>
+        <p class="roster-navpanel-hint" ng-if="!roster.isLocalMode()">
           AcroRoster live is read-only. Switch Scheduling to <strong>Local</strong> to add requests.
+        </p>
+        <p class="roster-navpanel-hint" ng-if="roster.isLocalMode() && !roster.canEditCalendar() && !roster.monthLocked">
+          You can only submit requests for your own name.
         </p>
       </div>
 
-      <div class="roster-navpanel-section" ng-if="roster.activeView === 'schedule' && roster.isLocalMode()">
+      <div class="roster-navpanel-section" ng-if="roster.activeView === 'schedule' && roster.isLocalMode() && roster.canImportRoster()">
         <div class="roster-navpanel-section-label">Local tools</div>
         <button type="button"
                 class="btn btn-sm btn-default btn-block"
@@ -158,11 +176,11 @@
           {{ roster.importing ? 'Importing all bases…' : 'Import month (all bases)' }}
         </button>
         <p class="roster-navpanel-hint">
-          Imports OME, OTZ, and UNK pilot/staff schedules into <code>rosterschedules</code>.
+          Imports OME, OTZ, and UNK pilot/staff schedules into the local schedule store.
         </p>
       </div>
 
-      <div class="roster-navpanel-section" ng-if="roster.activeView === 'team' && roster.isLocalMode()">
+      <div class="roster-navpanel-section" ng-if="roster.activeView === 'team' && roster.isLocalMode() && roster.canImportRoster()">
         <div class="roster-navpanel-section-label">Staff import</div>
         <label class="roster-import-span-label">
           Sample
@@ -180,11 +198,22 @@
         <button type="button"
                 class="btn btn-sm btn-primary btn-block"
                 ng-click="roster.openEmployeeForm()">
-          Add employee
+          Add employee…
         </button>
       </div>
 
       <div class="roster-navpanel-status" ng-if="roster.activeView === 'schedule'">
+        <span class="text-danger roster-lock-hint" ng-if="roster.monthLocked">
+          <i class="fa fa-lock"></i> Month locked<span ng-if="roster.monthLockedBy"> by {{roster.monthLockedBy}}</span>
+        </span>
+        <button type="button"
+                class="btn btn-xs btn-block"
+                ng-class="roster.monthLocked ? 'btn-warning' : 'btn-default'"
+                ng-if="roster.canModerateRoster() && roster.isLocalMode()"
+                ng-click="roster.toggleMonthLock()">
+          <i class="fa" ng-class="roster.monthLocked ? 'fa-unlock' : 'fa-lock'"></i>
+          {{ roster.monthLocked ? 'Unlock month' : 'Lock month' }}
+        </button>
         <span class="text-muted roster-saving-hint" ng-if="roster.isLocalMode() && roster.savingCell">Saving…</span>
         <span class="text-warning roster-empty-hint" ng-if="roster.isLocalMode() && roster.localEmpty">
           No local schedule for this month yet.
@@ -195,7 +224,7 @@
       </div>
     </aside>
 
-    <div class="roster-main">
+    <div class="roster-main" ng-class="{'roster-main--schedule': roster.activeView === 'schedule'}">
       <div ng-show="roster.spinner || roster.calendarLoading || roster.viewRefreshing || roster.importing || roster.importingEmployees"
            class="roster-loading-overlay">
         <div class="myspinner"></div>
@@ -206,7 +235,24 @@
         <p class="text-muted roster-empty-sections" ng-if="!roster.gridOptions.data.length && !roster.spinner">
           No tables selected. Use the controls panel to show captains, first officers, or staff groups.
         </p>
-        <div class="myGrid" ui-grid="roster.gridOptions" ui-grid-cellnav ui-grid-edit></div>
+        <p class="roster-summary-legend text-muted" ng-if="roster.gridOptions.data.length">
+          Duty counts: <span class="roster-legend-swatch roster-legend-swatch--zero">0</span> none (tracked codes)
+          · <span class="roster-legend-swatch roster-legend-swatch--below">1</span> below minimum
+          · <span class="roster-legend-swatch roster-legend-swatch--ok">2</span> ok
+          · <span class="roster-grid-pending roster-grid-pending--time-off roster-legend-pending"></span> local time off pending
+          · <span class="roster-grid-pending roster-grid-pending--work roster-legend-pending"></span> local work pending
+        </p>
+        <p class="roster-duty-picker-hint text-warning" ng-if="roster.showDutyBrushToolbar() && !roster.isLocalMode()">
+          Switch to <strong>Local</strong> in the sidebar to pick a code and assign duties.
+        </p>
+        <p class="roster-duty-picker-hint text-muted" ng-if="roster.showDutyBrushToolbar() && roster.isLocalMode() && roster.monthLocked && !roster.isRosterSuperAdmin()">
+          Month is locked — duty assignment is disabled.
+        </p>
+        <p class="roster-duty-picker-hint text-muted" ng-if="roster.canUseDutyPicker()">
+          Open <strong>Duty event → Select</strong> on each table, pick a code, then click cells to assign.
+          To approve a <strong>work request</strong> on Calendar, open that person's duty event first, then Approve.
+        </p>
+        <div class="myGrid" ui-grid="roster.gridOptions" ui-grid-cellnav></div>
       </div>
 
       <div class="roster-calendar-panel" ng-if="roster.activeView === 'calendar'">
@@ -234,17 +280,22 @@
                         'roster-cal-empty': !day,
                         'roster-cal-weekend': day && ($index === 0 || $index === 6),
                         'roster-cal-selected': roster.isCalendarDaySelected(day),
-                        'roster-cal-range-edge': roster.isCalendarDayRangeEdge(day)
+                        'roster-cal-range-edge': roster.isCalendarDayRangeEdge(day),
+                        'roster-cal-cell--assigned': day && roster.getCalendarDayDisplay(day).kind === 'assigned'
                       }"
                       ng-click="roster.selectCalendarDay(day)">
                     <div class="roster-cal-day" ng-if="day">
                       <div class="roster-cal-day-num">{{day}}</div>
-                      <div class="roster-cal-marker"
-                           ng-class="'roster-cal-marker--' + roster.calendarDayPrimaryKind(day)"></div>
-                      <div class="roster-cal-labels">
-                        <span ng-repeat="marker in roster.calendarDayMarkers(day) track by $index">
-                          {{marker.label}}
-                        </span>
+                      <div class="roster-cal-x"
+                           ng-if="roster.getCalendarDayDisplay(day).kind === 'time-off-approved'">✕</div>
+                      <div class="roster-cal-marker roster-cal-marker--time-off-pending"
+                           ng-if="roster.getCalendarDayDisplay(day).kind === 'time-off-pending'"></div>
+                      <div class="roster-cal-marker roster-cal-marker--work-request"
+                           ng-if="roster.getCalendarDayDisplay(day).kind === 'work-request-pending' || roster.getCalendarDayDisplay(day).showWorkPending"></div>
+                      <div class="roster-cal-duty-label"
+                           ng-class="roster.getCalendarDayDisplay(day).dutyClass"
+                           ng-if="roster.getCalendarDayDisplay(day).kind === 'assigned' && roster.getCalendarDayDisplay(day).label">
+                        {{roster.getCalendarDayDisplay(day).label}}
                       </div>
                     </div>
                   </td>
@@ -252,9 +303,11 @@
               </tbody>
             </table>
             <div class="roster-calendar-legend">
-              <span><i class="roster-cal-marker roster-cal-marker--scheduled"></i> Scheduled</span>
-              <span><i class="roster-cal-marker roster-cal-marker--work-request"></i> Work request</span>
-              <span><i class="roster-cal-marker roster-cal-marker--time-off"></i> Time off</span>
+              <span><i class="roster-cal-x roster-cal-x--legend">✕</i> Time off</span>
+              <span><i class="roster-cal-marker roster-cal-marker--time-off-pending"></i> Time off (pending)</span>
+              <span><i class="roster-cal-marker roster-cal-marker--work-request"></i> Work requested</span>
+              <span><span class="roster-cal-duty-label roster-cal-duty--flight roster-cal-duty-label--legend">8</span> Flight duty</span>
+              <span><span class="roster-cal-duty-label roster-cal-duty--b1 roster-cal-duty-label--legend">B1</span> Beech 1900</span>
             </div>
           </section>
 
@@ -274,6 +327,9 @@
 
             <div class="roster-calendar-card">
               <h4>This month's requests <span class="badge">{{roster.calendarRequests.length}}</span></h4>
+              <p class="text-warning roster-calendar-moderation-hint" ng-if="roster.calendarModerationMessage">
+                {{roster.calendarModerationMessage}}
+              </p>
               <ul class="roster-calendar-list roster-calendar-requests" ng-if="roster.calendarRequests.length">
                 <li ng-repeat="request in roster.calendarRequests">
                   <div class="roster-calendar-request-main">
@@ -286,10 +342,24 @@
                   </div>
                   <button type="button"
                           class="btn btn-xs btn-danger"
-                          ng-if="roster.canEditCalendar() && request.source === 'local'"
+                          ng-if="roster.canDeleteCalendarRequest(request)"
                           ng-click="roster.deleteCalendarRequest(request)"
                           ng-disabled="roster.savingCalendarRequest">
                     Remove
+                  </button>
+                  <button type="button"
+                          class="btn btn-xs btn-success"
+                          ng-if="roster.canModerateRoster() && request.status === 'pending'"
+                          ng-click="roster.moderateCalendarRequest(request, 'approve')"
+                          ng-disabled="roster.savingCalendarRequest">
+                    Approve
+                  </button>
+                  <button type="button"
+                          class="btn btn-xs btn-default"
+                          ng-if="roster.canModerateRoster() && request.status === 'pending'"
+                          ng-click="roster.moderateCalendarRequest(request, 'deny')"
+                          ng-disabled="roster.savingCalendarRequest">
+                    Deny
                   </button>
                 </li>
               </ul>
@@ -358,6 +428,13 @@
             <div class="panel-body">
               <form class="form-inline roster-employee-form-fields" ng-submit="roster.saveEmployee()">
                 <div class="form-group">
+                  <label>Base</label>
+                  <select class="form-control input-sm"
+                          ng-model="roster.employeeForm.base"
+                          ng-options="base as roster.baseShortLabel(base) for base in roster.rosterBases"
+                          required></select>
+                </div>
+                <div class="form-group">
                   <label>First</label>
                   <input class="form-control input-sm" ng-model="roster.employeeForm.firstName" required>
                 </div>
@@ -373,7 +450,7 @@
                   <label>Job</label>
                   <select class="form-control input-sm"
                           ng-model="roster.employeeForm.jobCategory"
-                          ng-options="cat.id as cat.label for cat in roster.staffJobCategories"></select>
+                          ng-options="cat.id as cat.label for cat in roster.staffJobCategoriesForBase(roster.employeeForm.base)"></select>
                 </div>
                 <div class="form-group">
                   <label>Qualifications</label>
@@ -393,10 +470,18 @@
           </p>
 
           <div ng-repeat="base in roster.rosterBases">
-            <div ng-repeat="cat in roster.staffJobCategories">
+            <div ng-repeat="cat in roster.staffJobCategoriesForBase(base)">
               <div class="roster-staff-category-block"
                    ng-if="roster.isSectionVisible(base + ':' + cat.id) && roster.employeesByBaseAndCategory[base][cat.id].length">
-              <h5 class="roster-staff-category-title">{{roster.baseShortLabel(base)}} {{cat.label}}</h5>
+              <div class="roster-staff-category-head clearfix">
+                <h5 class="roster-staff-category-title pull-left">{{roster.staffSectionLabel(base, cat)}}</h5>
+                <button type="button"
+                        class="btn btn-xs btn-default pull-right"
+                        ng-if="roster.canImportRoster()"
+                        ng-click="roster.openEmployeeForm(null, base)">
+                  Add at {{roster.baseShortLabel(base)}}
+                </button>
+              </div>
               <div class="table-responsive">
                 <table class="table table-striped table-condensed roster-team-table">
                   <thead>
@@ -405,7 +490,7 @@
                       <th>Emp #</th>
                       <th>Qualifications</th>
                       <th>Status</th>
-                      <th ng-if="roster.isLocalMode()"></th>
+                      <th ng-if="roster.canImportRoster()"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -418,7 +503,7 @@
                           {{employee.isActive === false ? 'Inactive' : 'Active'}}
                         </span>
                       </td>
-                      <td class="roster-team-actions" ng-if="roster.isLocalMode()">
+                      <td class="roster-team-actions" ng-if="roster.canImportRoster()">
                         <button type="button" class="btn btn-xs btn-default" ng-click="roster.openEmployeeForm(employee)">Edit</button>
                         <button type="button" class="btn btn-xs btn-danger" ng-click="roster.deleteEmployee(employee)">Delete</button>
                       </td>
@@ -437,6 +522,72 @@
           No team sections selected. Use the section toggles in the controls panel.
         </p>
       </div>
+
+      <div class="roster-minimums-panel" ng-if="roster.activeView === 'minimums'">
+        <div class="roster-minimums-header">
+          <h3>Staffing minimums</h3>
+          <p class="text-muted">
+            Set the minimum headcount per duty code for each location and grouping.
+            Use <strong>Weekday</strong> (Mon–Fri) and <strong>Weekend</strong> (Sat–Sun) separately.
+            Shared for all users (saved on the server). Only superadmins can edit.
+          </p>
+        </div>
+
+        <div class="roster-minimums-actions" ng-if="roster.canSaveMinimums()">
+          <button type="button" class="btn btn-primary btn-sm" ng-click="roster.saveStaffingMinimums()" ng-disabled="roster.savingMinimums">
+            {{ roster.savingMinimums ? 'Saving…' : 'Save minimums' }}
+          </button>
+          <button type="button" class="btn btn-default btn-sm" ng-click="roster.resetStaffingMinimums()">
+            Reset to defaults
+          </button>
+          <span class="text-success roster-minimums-save-msg" ng-if="roster.minimumsSaveMessage">
+            {{roster.minimumsSaveMessage}}
+          </span>
+        </div>
+        <p class="text-muted" ng-if="!roster.canSaveMinimums()">View only — contact a superadmin to change minimums.</p>
+
+        <div class="roster-minimums-group" ng-repeat="group in roster.minimumsEditorGroups track by group.sectionType">
+          <h4 class="roster-minimums-group-title">{{group.label}}</h4>
+          <div class="roster-minimums-base" ng-repeat="base in group.bases track by base">
+            <h5 class="roster-minimums-base-title">{{roster.baseShortLabel(base)}}</h5>
+            <div class="table-responsive">
+              <table class="table table-condensed table-striped roster-minimums-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Weekday</th>
+                    <th>Weekend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr ng-repeat="code in group.codes track by code">
+                    <td><code>{{code}}</code></td>
+                    <td>
+                      <input type="number"
+                             class="form-control input-sm roster-minimums-input"
+                             min="0"
+                             step="1"
+                             ng-disabled="!roster.canSaveMinimums()"
+                             ng-model="roster.staffingMinimums[group.sectionType][base][code].weekday"
+                             ng-init="roster.ensureStaffingMinimumSlot(group.sectionType, base, code)">
+                    </td>
+                    <td>
+                      <input type="number"
+                             class="form-control input-sm roster-minimums-input"
+                             min="0"
+                             step="1"
+                             ng-disabled="!roster.canSaveMinimums()"
+                             ng-model="roster.staffingMinimums[group.sectionType][base][code].weekend"
+                             ng-init="roster.ensureStaffingMinimumSlot(group.sectionType, base, code)">
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 </div>

@@ -36,6 +36,9 @@ function onConnect(socket) {
   require('../api/flight/flight.socket').register(socket);
   require('../api/pilot/pilot.socket').register(socket);
   require('../api/assessment/assessment.socket').register(socket);
+  require('../api/rosterScheduleCell/rosterScheduleCell.socket').register(socket);
+  require('../api/rosterCalendarRequest/rosterCalendarRequest.socket').register(socket);
+  require('../api/rosterEmployee/rosterEmployee.socket').register(socket);
 
 }
 

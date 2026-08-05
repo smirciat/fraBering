@@ -36,5 +36,10 @@ db.Flight = require('../api/flight/flight.model').default(db.sequelize, Sequeliz
 db.Pilot = require('../api/pilot/pilot.model').default(db.sequelize, Sequelize.DataTypes);
 db.Assessment = require('../api/assessment/assessment.model').default(db.sequelize, Sequelize.DataTypes);
 db.User = require('../api/user/user.model')(db.sequelize, Sequelize.DataTypes);
+db.RosterScheduleCell = require('../api/rosterScheduleCell/rosterScheduleCell.model').default(db.sequelize, Sequelize.DataTypes);
+db.RosterEmployee = require('../api/rosterEmployee/rosterEmployee.model').default(db.sequelize, Sequelize.DataTypes);
+db.RosterCalendarRequest = require('../api/rosterCalendarRequest/rosterCalendarRequest.model').default(db.sequelize, Sequelize.DataTypes);
+db.RosterMonthMeta = require('../api/rosterMonthMeta/rosterMonthMeta.model').default(db.sequelize, Sequelize.DataTypes);
+db.RosterStaffingMinimum = require('../api/rosterStaffingMinimum/rosterStaffingMinimum.model').default(db.sequelize, Sequelize.DataTypes);
 
 module.exports = db;

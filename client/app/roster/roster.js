@@ -5,6 +5,7 @@ angular.module('workspaceApp')
     $stateProvider
       .state('roster', {
         url: '/roster',
-        template: '<roster></roster>'
+        template: '<roster></roster>',
+        authenticate: 'user'
       });
   });

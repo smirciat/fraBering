@@ -4,6 +4,7 @@
 
 class RosterComponent {
   constructor($http,$state,$timeout,$scope,uiGridConstants,moment,Modal,socket,Auth) {
+    const rosterCtrl=this;
     this.http=$http;
     this.scope=$scope;
     this.timeout=$timeout;
@@ -11,9 +12,87 @@ class RosterComponent {
     this.Auth=Auth;
     this.dutyCodes=['A','DM','IOE','8','KA','B1','B2','C1','C2','S1','S2','F','OTZ'];
     this.codes=['OC','A','DM','NM','ND','T','V','RA','RV','RO','RP','C8','C','SC','B','KA','B2','C2','SC2','F','IOE','OTZ'];
-    this.captainSummaryCodes=['KA','C1','S1','8','B1','OC','NM'];
-    this.foSummaryCodes=['KA','C1','S1','8','B1','OC','ND'];
-    this.template='<div class="ui-grid-cell-contents" title="TOOLTIP"><span ng-if="COL_FIELD!==\'B\'">{{COL_FIELD}}</span><i ng-if="COL_FIELD===\'B\'" class="fa fa-solid fa-umbrella-beach fa-autosize"></i></div>';
+    this.captainSummaryCodes=['KA','C1','S1','8','B1','OC','A','T','NM'];
+    this.foSummaryCodes=['KA','C1','S1','8','B1','OC','A','T','ND'];
+    this.captainOnlySummaryCodes=['NM'];
+    this.foOnlySummaryCodes=['ND'];
+    this.summaryOptionalCodes=['A','T'];
+    this.captainTotalExclude=['NM'];
+    this.foTotalExclude=['ND'];
+    this.staffSummarySeeds={
+      'csa-dispatch':['OC','A','DM','8','T','B1'],
+      'ground-cargo':['A','DM','8','OC'],
+      'maintenance':['A','DM','8'],
+      'cleaner':['A','DM'],
+      'office-admin':['A','DM','OC'],
+      'uncategorized':['OC','A','DM','8'],
+      'helicopter':['A','AS','S','T','OC','DM','8']
+    };
+    this.template=[
+      '<div class="ui-grid-cell-contents roster-duty-cell"',
+      ' ng-class="grid.options.getDutyCellClasses(row.entity, col.colDef.field)"',
+      ' ng-click="grid.options.onDutyCellClick(row.entity, col.colDef.field, $event)"',
+      ' title="{{row.entity._cellMeta && row.entity._cellMeta[col.colDef.field] ? row.entity._cellMeta[col.colDef.field].title : COL_FIELD}}">',
+      '<span class="roster-grid-pending roster-grid-pending--time-off"',
+      ' ng-if="row.entity._cellMeta && row.entity._cellMeta[col.colDef.field].pendingKind === \'time-off\'"></span>',
+      '<span class="roster-grid-pending roster-grid-pending--work"',
+      ' ng-if="row.entity._cellMeta && row.entity._cellMeta[col.colDef.field].pendingKind === \'work\'"></span>',
+      '<span ng-if="COL_FIELD && COL_FIELD !== \'B\' && COL_FIELD !== \'O\'">{{COL_FIELD}}</span>',
+      '<i ng-if="COL_FIELD===\'B\' || COL_FIELD===\'O\'" class="fa fa-solid fa-umbrella-beach fa-autosize"></i>',
+      '</div>'
+    ].join('');
+    this.nameCellTemplate=[
+      '<div class="ui-grid-cell-contents roster-name-cell-wrap"',
+      ' ng-class="{\'roster-name-cell-wrap--brush\': row.entity.isDutyBrushRow && grid.options.showDutyBrushToolbar()}">',
+      '<div ng-if="row.entity.isDutyBrushRow && grid.options.showDutyBrushToolbar()"',
+      ' class="roster-section-duty-brush-wrap" ng-click="$event.stopPropagation()">',
+      '<div class="roster-section-duty-brush-bar">',
+      '<i class="fa fa-paint-brush roster-section-duty-brush-icon" aria-hidden="true"></i>',
+      '<span class="roster-section-duty-brush-title">Duty event</span>',
+      '<span class="roster-section-duty-brush-section">{{row.entity.sectionLabel}}</span>',
+      '<span class="roster-section-duty-brush-badge"',
+      ' ng-if="grid.options.getSelectedDutyBrush(row.entity.sectionKey) !== null"',
+      ' ng-class="{\'roster-section-duty-brush-badge--clear\': !grid.options.getSelectedDutyBrush(row.entity.sectionKey)}">',
+      '{{grid.options.getSelectedDutyBrushLabel(row.entity.sectionKey)}}',
+      '</span>',
+      '<span class="roster-section-duty-brush-badge roster-section-duty-brush-badge--empty"',
+      ' ng-if="grid.options.getSelectedDutyBrush(row.entity.sectionKey) === null">',
+      'None',
+      '</span>',
+      '<button type="button"',
+      ' class="roster-section-duty-brush-palette-btn"',
+      ' ng-class="{\'roster-section-duty-brush-palette-btn--open\': grid.options.isDutyBrushPanelOpen(row.entity.sectionKey)}"',
+      ' ng-disabled="!grid.options.canUseDutyPicker()"',
+      ' ng-click="grid.options.toggleDutyBrushPanel(row.entity.sectionKey, $event)">',
+      '<i class="fa fa-th" aria-hidden="true"></i>',
+      '<span>Select</span>',
+      '<i class="fa" ng-class="grid.options.isDutyBrushPanelOpen(row.entity.sectionKey) ? \'fa-chevron-up\' : \'fa-chevron-down\'" aria-hidden="true"></i>',
+      '</button>',
+      '</div>',
+      '<div class="roster-section-duty-brush-panel"',
+      ' ng-if="grid.options.isDutyBrushPanelOpen(row.entity.sectionKey)">',
+      '<div class="roster-section-duty-brush-panel-head">',
+      '<span>Select a duty code, then click cells to assign</span>',
+      '<button type="button" class="roster-section-duty-brush-panel-close"',
+      ' ng-click="grid.options.toggleDutyBrushPanel(row.entity.sectionKey, $event)">',
+      '<i class="fa fa-times" aria-hidden="true"></i>',
+      '</button>',
+      '</div>',
+      '<div class="roster-section-duty-brush-codes">',
+      '<button type="button" class="btn btn-sm roster-duty-code-btn"',
+      ' ng-repeat="code in grid.options.getDutyBrushCodes(row.entity.sectionKey) track by $index"',
+      ' ng-class="{\'roster-duty-code-btn--active\': grid.options.canUseDutyPicker() && grid.options.isDutyBrushSelected(row.entity.sectionKey, code)}"',
+      ' ng-disabled="!grid.options.canUseDutyPicker()"',
+      ' ng-attr-title="{{grid.options.dutyBrushCodeTitle(code)}}"',
+      ' ng-click="grid.options.selectDutyBrushForSection(row.entity.sectionKey, code); $event.stopPropagation()">',
+      '<span ng-if="code">{{code}}</span><span ng-if="!code">Clear</span>',
+      '</button>',
+      '</div>',
+      '</div>',
+      '</div>',
+      '<span ng-if="!row.entity.isDutyBrushRow">{{COL_FIELD}}</span>',
+      '</div>'
+    ].join('');
     this.data=[];
     this.date=new Date();
     this.dateString=this.date.toLocaleDateString();
@@ -22,6 +101,44 @@ class RosterComponent {
     this.importing=false;
     this.savingCell=false;
     this.scheduleDays={};
+    this.scheduleDaysByMonth={};
+    this.calendarRequestsByRosterId={};
+    this.dutyBrushBySection={};
+    this.dutyBrushCodesBySection={};
+    this.dutyBrushPanelOpenBySection={};
+    this.dutyBrushOffCodes=['V','RA','RV','RO','RP','O'];
+    this.dutyBrushCodeTitles={
+      '':'Clear cell — remove duty and all requests',
+      'V':'Vacation (time off)',
+      'RA':'Requested absence / approved off',
+      'RV':'Vacation relief day',
+      'RO':'Regular off day',
+      'RP':'Reserve / personal off',
+      'O':'Off',
+      '8':'Caravan captain',
+      'C8':'Caravan captain',
+      'KA':'King Air captain',
+      'B1':'Beech 1900 — captain (1)',
+      'B2':'Beech 1900 — first officer (2)',
+      'C1':'C212 captain',
+      'C2':'C212 first officer',
+      'S1':'Sky Courier / C408 captain',
+      'S2':'Sky Courier / C408 first officer',
+      'OC':'Operations center',
+      'A':'Admin',
+      'T':'Training',
+      'D':'Dispatch',
+      'M':'Medevac',
+      'N':'Night',
+      'DM':'Dispatch / medevac',
+      'NM':'Night — captain',
+      'ND':'Night — first officer',
+      'F':'Ferry / reposition',
+      'OTZ':'Kotzebue base duty',
+      'IOE':'Initial operating experience',
+      'AS':'Aircraft specialist',
+      'S':'Scheduled / standby'
+    };
     this.employees=[];
     this.allEmployees=[];
     this.teamCaptains=[];
@@ -43,7 +160,14 @@ class RosterComponent {
       { id:'office-admin', label:'Office / Admin' },
       { id:'uncategorized', label:'Staff (Other)' }
     ];
-    this.rosterBases=['OME', 'OTZ', 'UNK'];
+    this.helicopterStaffCategory={ id:'helicopter', label:'Helicopter' };
+    this.rosterBases=['OME', 'OTZ', 'UNK', 'HELI'];
+    this.staffingMinimums=this.normalizeStaffingMinimumsTree(this.defaultStaffingMinimums());
+    this.minimumsEditorGroups=this.buildMinimumsEditorGroups();
+    this.minimumsSaveMessage='';
+    this.monthLocked=false;
+    this.monthLockedBy='';
+    this.savingMinimums=false;
     this.allPilots=[];
     this.teamPilotsByBase={};
     this.employeesByBaseAndCategory={};
@@ -60,6 +184,7 @@ class RosterComponent {
     this.calendarPersonOptions=[];
     this.calendarWeeks=[];
     this.calendarEventsByDay={};
+    this.calendarDays={};
     this.calendarRequests=[];
     this.calendarUpcoming=[];
     this.selectedCalendarDay=null;
@@ -69,24 +194,66 @@ class RosterComponent {
     this.calendarRangeStart=null;
     this.calendarRangeEnd=null;
     this.savingCalendarRequest=false;
+    this.calendarModerationMessage='';
     this.gridOptions={rowHeight:26,
                       headerRowHeight:42,
                       enableSorting: false,
                       enableGridMenu: false,
+                      enableCellEdit: false,
                       data:this.data,
-                      rowTemplate:'<div class="roster-grid-row" ng-class="grid.options.getRosterRowClass(row.entity)"><div ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid" ui-grid-cell class="ui-grid-cell" ng-class="{\'ui-grid-row-header-cell\': col.isRowHeader}"></div></div>',
+                      rowTemplate:'<div class="roster-grid-row" ng-class="grid.options.getRosterRowClass(row.entity)"><div ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid" ui-grid-cell class="ui-grid-cell" ng-class="{\'ui-grid-row-header-cell\': col.isRowHeader, \'roster-brush-day-cell\': row.entity.isDutyBrushRow && colRenderIndex > 0}"></div></div>',
                       getRosterRowClass:function(entity) {
                         if (!entity) return {};
                         return {
                           'roster-section-header-row': entity.isSectionHeader,
                           'roster-summary-row': entity.isSummaryRow,
+                          'roster-duty-brush-row': entity.isDutyBrushRow,
+                          'roster-duty-brush-row--active': entity.isDutyBrushRow && rosterCtrl.showDutyBrushToolbar(),
+                          'roster-duty-brush-row--panel-open': entity.isDutyBrushRow && rosterCtrl.isDutyBrushPanelOpen(entity.sectionKey),
                           'roster-captain-row': entity.rowSection === 'captain',
                           'roster-fo-row': entity.rowSection === 'fo',
                           'roster-employee-row': entity.rowSection === 'employee',
+                          'roster-staff-summary-row': entity.rowSection === 'staff-summary',
                           'roster-section-end': entity.sectionEnd,
                           'roster-section-start': entity.sectionStart,
                           'roster-spacer-row': entity.isSpacerRow
                         };
+                      },
+                      showDutyBrushToolbar:function() {
+                        return rosterCtrl.showDutyBrushToolbar();
+                      },
+                      getDutyBrushCodes:function(sectionKey) {
+                        return rosterCtrl.getDutyBrushCodes(sectionKey);
+                      },
+                      selectDutyBrushForSection:function(sectionKey, code) {
+                        return rosterCtrl.selectDutyBrushForSection(sectionKey, code);
+                      },
+                      isDutyBrushSelected:function(sectionKey, code) {
+                        return rosterCtrl.isDutyBrushSelected(sectionKey, code);
+                      },
+                      getSelectedDutyBrush:function(sectionKey) {
+                        return rosterCtrl.getSelectedDutyBrushForSection(sectionKey);
+                      },
+                      getSelectedDutyBrushLabel:function(sectionKey) {
+                        return rosterCtrl.getSelectedDutyBrushLabel(sectionKey);
+                      },
+                      toggleDutyBrushPanel:function(sectionKey, ev) {
+                        return rosterCtrl.toggleDutyBrushPanel(sectionKey, ev);
+                      },
+                      isDutyBrushPanelOpen:function(sectionKey) {
+                        return rosterCtrl.isDutyBrushPanelOpen(sectionKey);
+                      },
+                      dutyBrushCodeTitle:function(code) {
+                        return rosterCtrl.dutyBrushCodeTitle(code);
+                      },
+                      onDutyCellClick:function(entity, dayField, ev) {
+                        rosterCtrl.onDutyCellClick(entity, dayField, ev);
+                      },
+                      canUseDutyPicker:function() {
+                        return rosterCtrl.canUseDutyPicker();
+                      },
+                      getDutyCellClasses:function(entity, dayField) {
+                        return rosterCtrl.getDutyCellClasses(entity, dayField);
                       }
     };
     
@@ -100,6 +267,53 @@ class RosterComponent {
 
   isLocalMode() {
     return this.dataSource === 'local';
+  }
+
+  isRosterSuperAdmin() {
+    return this.Auth.isSuperAdmin();
+  }
+
+  canViewAllCalendars() {
+    return this.isRosterSuperAdmin();
+  }
+
+  canSaveMinimums() {
+    return this.isRosterSuperAdmin();
+  }
+
+  canModerateRoster() {
+    return this.isRosterSuperAdmin();
+  }
+
+  canImportRoster() {
+    return this.isRosterSuperAdmin();
+  }
+
+  canEditRosterSchedule() {
+    return this.isLocalMode() && (!this.monthLocked || this.isRosterSuperAdmin());
+  }
+
+  getCurrentUserName() {
+    const user=this.Auth.getCurrentUser();
+    return user && user.name ? String(user.name).trim() : '';
+  }
+
+  isOwnRosterPerson(personName) {
+    const userName=this.getCurrentUserName();
+    if (!userName || !personName) return false;
+    return this.rosterPersonNamesMatch(userName, personName);
+  }
+
+  canEditCalendarForSelectedPerson() {
+    if (!this.canEditRosterSchedule()) return false;
+    if (this.isRosterSuperAdmin()) return true;
+    return this.isOwnRosterPerson(this.calendarPerson);
+  }
+
+  canDeleteCalendarRequest(request) {
+    if (!request || !this.canEditCalendarForSelectedPerson()) return false;
+    if (this.isRosterSuperAdmin()) return request.source === 'local';
+    return request.source === 'local' && request.status === 'pending';
   }
 
   isPilotActive(pilot) {
@@ -121,9 +335,85 @@ class RosterComponent {
   }
 
   normalizeRosterPersonName(name) {
-    const key=String(name || '').trim().toLowerCase();
+    let key=String(name || '').trim().toLowerCase();
+    key=key.replace(/\(/g, ' ').replace(/\)/g, ' ').replace(/\s+/g, ' ').trim();
     if (key === 'sophia hobbs') return 'sophia evans';
+    if (this.rosterNameAlias(key)) return this.rosterNameAlias(key);
     return key;
+  }
+
+  rosterNameAlias(key) {
+    const aliases={
+      'donald showalter':'keith showalter',
+      'donald keith showalter':'keith showalter',
+      'timothy kunkel':'tim kunkel',
+      'michael k evans':'mike k evans',
+      'michael k. evans':'mikey evans',
+      'michael r evans':'mike r evans',
+      'michael r. evans':'mike r evans',
+      'jacob larson':'jake larson',
+      'nik la croix':'nikolas lacroix',
+      'conor  murray':'conor murray',
+      'josh bryant':'joshua bryant'
+    };
+    return aliases[key] || null;
+  }
+
+  parseRosterPersonName(name) {
+    let raw=String(name || '').trim();
+    let middleFromParen='';
+    const parenMatch=raw.match(/\(([^)]+)\)/);
+    if (parenMatch) {
+      middleFromParen=parenMatch[1].trim();
+      raw=raw.replace(/\([^)]+\)/g, ' ').trim();
+    }
+    const tokens=raw.replace(/\./g, ' ').split(/\s+/).filter(Boolean);
+    if (!tokens.length) return {first:'', middle:'', last:''};
+    if (tokens.length === 1) return {first:tokens[0], middle:middleFromParen, last:tokens[0]};
+    const first=tokens[0];
+    const last=tokens[tokens.length - 1];
+    let middle=middleFromParen;
+    if (!middle && tokens.length > 2) middle=tokens.slice(1, -1).join(' ');
+    return {first, middle, last};
+  }
+
+  middleNameKey(middle) {
+    if (!middle) return '';
+    return String(middle).replace(/\./g, '').trim().toLowerCase().charAt(0);
+  }
+
+  rosterPersonNamesMatch(a, b) {
+    const na=this.normalizeRosterPersonName(a);
+    const nb=this.normalizeRosterPersonName(b);
+    if (!na || !nb) return false;
+    if (na === nb) return true;
+    const pa=this.parseRosterPersonName(na);
+    const pb=this.parseRosterPersonName(nb);
+    if (pa.last !== pb.last) return false;
+    const firstA=pa.first.toLowerCase();
+    const firstB=pb.first.toLowerCase();
+    const firstOk=firstA === firstB ||
+      firstA.charAt(0) === firstB.charAt(0);
+    if (!firstOk) return false;
+    const midA=this.middleNameKey(pa.middle);
+    const midB=this.middleNameKey(pb.middle);
+    if (midA && midB && midA !== midB) return false;
+    return true;
+  }
+
+  findPilotByRosterName(personName) {
+    const matches=(this.pilots || []).filter(pilot=>{
+      return this.rosterPersonNamesMatch(this.pilotDisplayName(pilot), personName);
+    });
+    if (matches.length === 1) return matches[0];
+    if (matches.length > 1) {
+      const exact=matches.find(pilot=>{
+        return this.normalizeRosterPersonName(this.pilotDisplayName(pilot)) ===
+          this.normalizeRosterPersonName(personName);
+      });
+      return exact || null;
+    }
+    return null;
   }
 
   eventBaseFromRecord(record) {
@@ -132,6 +422,7 @@ class RosterComponent {
     if (location === 'NOME') return 'OME';
     if (location === 'KOTZEBUE' || location === 'KOTZ') return 'OTZ';
     if (location === 'UNALAKLEET' || location === 'UNK') return 'UNK';
+    if (location === 'HELICOPTER' || location === 'HELI') return 'HELI';
     return null;
   }
 
@@ -164,6 +455,9 @@ class RosterComponent {
     }
     if (/office|admin|account|payroll|assistant|receivable|human resource|\bhr\b|bookkeep/.test(hay)) {
       return 'office-admin';
+    }
+    if (/helicopter|\bheli\b/.test(hay)) {
+      return 'helicopter';
     }
     return 'uncategorized';
   }
@@ -243,19 +537,29 @@ class RosterComponent {
   }
 
   jobCategoryLabel(jobCategory) {
-    const match=this.staffJobCategories.find(cat=>cat.id === (jobCategory || 'uncategorized'));
+    const match=this.staffJobCategories.find(cat=>cat.id === (jobCategory || 'uncategorized')) ||
+      (this.helicopterStaffCategory.id === (jobCategory || '') ? this.helicopterStaffCategory : null);
     return match ? match.label : 'Staff (Other)';
+  }
+
+  staffJobCategoriesForBase(base) {
+    if (base === 'HELI') return [this.helicopterStaffCategory];
+    return this.staffJobCategories;
+  }
+
+  allStaffJobCategories() {
+    return this.staffJobCategories.concat([this.helicopterStaffCategory]);
   }
 
   rebuildEmployeeGroups() {
     this.employeesByCategory={};
     this.employeesByBaseAndCategory={};
-    this.staffJobCategories.forEach(cat=>{
+    this.allStaffJobCategories().forEach(cat=>{
       this.employeesByCategory[cat.id]=[];
     });
     this.rosterBases.forEach(base=>{
       this.employeesByBaseAndCategory[base]={};
-      this.staffJobCategories.forEach(cat=>{
+      this.staffJobCategoriesForBase(base).forEach(cat=>{
         this.employeesByBaseAndCategory[base][cat.id]=[];
       });
     });
@@ -267,12 +571,12 @@ class RosterComponent {
         this.employeesByBaseAndCategory[base][key].push(employee);
       }
     });
-    this.staffJobCategories.forEach(cat=>{
+    this.allStaffJobCategories().forEach(cat=>{
       this.employeesByCategory[cat.id].sort((a,b)=>{
         return this.employeeDisplayName(a).localeCompare(this.employeeDisplayName(b));
       });
       this.rosterBases.forEach(base=>{
-        if (!this.employeesByBaseAndCategory[base]) return;
+        if (!this.employeesByBaseAndCategory[base] || !this.employeesByBaseAndCategory[base][cat.id]) return;
         this.employeesByBaseAndCategory[base][cat.id].sort((a,b)=>{
           return this.employeeDisplayName(a).localeCompare(this.employeeDisplayName(b));
         });
@@ -327,6 +631,184 @@ class RosterComponent {
     return 'Loading…';
   }
 
+  defaultStaffingMinimums() {
+    const min=(weekday, weekend)=>{
+      return {weekday:weekday, weekend:weekend != null ? weekend : weekday};
+    };
+    return {
+      captains:{
+        OME:{KA:min(1), OC:min(1)},
+        OTZ:{KA:min(1)},
+        UNK:{KA:min(1), OC:min(1)}
+      },
+      fos:{
+        OME:{KA:min(1), OC:min(1)},
+        UNK:{KA:min(1)}
+      }
+    };
+  }
+
+  normalizeMinimumEntry(value) {
+    if (value != null && typeof value === 'object') {
+      return {
+        weekday:parseInt(value.weekday, 10) || 0,
+        weekend:parseInt(value.weekend, 10) || 0
+      };
+    }
+    const parsed=parseInt(value, 10) || 0;
+    return {weekday:parsed, weekend:parsed};
+  }
+
+  normalizeStaffingMinimumsTree(tree) {
+    const normalized=JSON.parse(JSON.stringify(tree || {}));
+    Object.keys(normalized).forEach(sectionType=>{
+      Object.keys(normalized[sectionType] || {}).forEach(base=>{
+        Object.keys(normalized[sectionType][base] || {}).forEach(code=>{
+          normalized[sectionType][base][code]=this.normalizeMinimumEntry(normalized[sectionType][base][code]);
+        });
+      });
+    });
+    return normalized;
+  }
+
+  loadStaffingMinimumsFromServer() {
+    return this.http.post('/api/calendar/rosterStaffingMinimumsGet', {}).then(resp=>{
+      const stored=resp.data && resp.data.minimums;
+      if (stored) {
+        this.staffingMinimums=this.normalizeStaffingMinimumsTree(
+          this.mergeStaffingMinimums(this.defaultStaffingMinimums(), stored)
+        );
+      }
+      if (this.gridOptions.data && this.gridOptions.data.length) this.refreshSummaryRows();
+    }, () => {
+      // keep defaults
+    });
+  }
+
+  fetchMonthMeta() {
+    return this.http.post('/api/calendar/rosterMonthMeta', { date:this.date }).then(resp=>{
+      this.monthLocked=!!(resp.data && resp.data.locked);
+      this.monthLockedBy=(resp.data && resp.data.lockedBy) || '';
+      this.updateGridEditing();
+      if (this.isLocalMode()) {
+        return this.loadLocalCalendarIndex().then(()=>{
+          if (this.cachedPersonRows && this.cachedPersonRows.length) this.applyLocalScheduleToGrid();
+        });
+      }
+    }, ()=>{
+      this.monthLocked=false;
+      this.monthLockedBy='';
+    });
+  }
+
+  refreshLocalScheduleViews() {
+    if (!this.isLocalMode()) return Promise.resolve();
+    return this.loadLocalCalendarIndex().then(()=>{
+      this.applyLocalScheduleToGrid();
+      if (this.activeView === 'calendar') this.loadCalendarData();
+    });
+  }
+
+  toggleMonthLock() {
+    if (!this.canModerateRoster()) return;
+    this.http.post('/api/calendar/rosterMonthLock', {
+      date:this.date,
+      locked:!this.monthLocked
+    }).then(resp=>{
+      this.monthLocked=!!(resp.data && resp.data.locked);
+      this.updateGridEditing();
+      return this.refreshLocalScheduleViews();
+    });
+  }
+
+  mergeStaffingMinimums(defaults, stored) {
+    const merged=JSON.parse(JSON.stringify(defaults || {}));
+    Object.keys(stored || {}).forEach(sectionType=>{
+      if (!merged[sectionType]) merged[sectionType]={};
+      Object.keys(stored[sectionType] || {}).forEach(base=>{
+        if (!merged[sectionType][base]) merged[sectionType][base]={};
+        Object.keys(stored[sectionType][base] || {}).forEach(code=>{
+          merged[sectionType][base][code]=stored[sectionType][base][code];
+        });
+      });
+    });
+    return merged;
+  }
+
+  buildMinimumsEditorGroups() {
+    const pilotBases=this.rosterBases.filter(base=>base !== 'HELI');
+    const groups=[
+      {sectionType:'captains', label:'Captains', bases:pilotBases.slice(), codes:this.captainSummaryCodes.slice()},
+      {sectionType:'fos', label:'First officers', bases:pilotBases.filter(base=>base !== 'OTZ'), codes:this.foSummaryCodes.slice()}
+    ];
+    this.allStaffJobCategories().forEach(cat=>{
+      const bases=cat.id === 'helicopter' ?
+        ['HELI'] :
+        this.rosterBases.filter(base=>base !== 'HELI');
+      groups.push({
+        sectionType:`staff-${cat.id}`,
+        label:cat.label,
+        bases:bases,
+        codes:this.getStaffSummarySeedCodes(cat.id)
+      });
+    });
+    return groups;
+  }
+
+  ensureStaffingMinimumSlot(sectionType, base, code) {
+    if (!this.staffingMinimums[sectionType]) this.staffingMinimums[sectionType]={};
+    if (!this.staffingMinimums[sectionType][base]) this.staffingMinimums[sectionType][base]={};
+    if (this.staffingMinimums[sectionType][base][code] == null) {
+      this.staffingMinimums[sectionType][base][code]={weekday:0, weekend:0};
+    } else {
+      this.staffingMinimums[sectionType][base][code]=this.normalizeMinimumEntry(
+        this.staffingMinimums[sectionType][base][code]
+      );
+    }
+  }
+
+  isWeekendDay(dayNum) {
+    const day=parseInt(dayNum, 10);
+    if (!this.date || !day) return false;
+    const dow=new Date(this.date.getFullYear(), this.date.getMonth(), day).getDay();
+    return dow === 0 || dow === 6;
+  }
+
+  getStaffingMinimumValue(sectionType, base, code, period) {
+    this.ensureStaffingMinimumSlot(sectionType, base, code);
+    const entry=this.staffingMinimums[sectionType][base][code];
+    return period === 'weekend' ? entry.weekend : entry.weekday;
+  }
+
+  setStaffingMinimumValue(sectionType, base, code, period, value) {
+    this.ensureStaffingMinimumSlot(sectionType, base, code);
+    const parsed=parseInt(value, 10);
+    this.staffingMinimums[sectionType][base][code][period]=isNaN(parsed) || parsed < 0 ? 0 : parsed;
+  }
+
+  saveStaffingMinimums() {
+    if (!this.canSaveMinimums()) return;
+    this.savingMinimums=true;
+    this.http.post('/api/calendar/rosterStaffingMinimumsSave', {
+      minimums:this.staffingMinimums
+    }).then(()=>{
+      this.minimumsSaveMessage='Saved — minimums apply for all users.';
+      this.refreshSummaryRows();
+      this.timeout(()=>{ this.minimumsSaveMessage=''; }, 4000);
+    }, ()=>{
+      this.minimumsSaveMessage='Could not save minimums.';
+    }).finally(()=>{
+      this.savingMinimums=false;
+    });
+  }
+
+  resetStaffingMinimums() {
+    if (!this.canSaveMinimums()) return;
+    this.staffingMinimums=this.normalizeStaffingMinimumsTree(this.defaultStaffingMinimums());
+    this.saveStaffingMinimums();
+    this.minimumsSaveMessage='Reset to defaults and saved.';
+  }
+
   setActiveView(view) {
     if (this.activeView === view) return;
     this.viewRefreshing=true;
@@ -334,7 +816,11 @@ class RosterComponent {
     window.sessionStorage.setItem('rosterActiveView', view);
     this.timeout(()=>{
       if (view === 'team') this.refreshTeamLists();
-      if (view === 'schedule') this.refreshSummaryRows();
+      if (view === 'schedule') {
+        this.refreshSummaryRows();
+        this.refreshDutyBrushCodesBySection();
+      }
+      if (view === 'minimums') this.minimumsEditorGroups=this.buildMinimumsEditorGroups();
       if (view === 'calendar') {
         this.refreshCalendarPersonOptions();
         this.loadCalendarData();
@@ -374,7 +860,7 @@ class RosterComponent {
     this.teamFirstOfficers=this.teamPilotsByBase.OME ? this.teamPilotsByBase.OME.fos : [];
   }
 
-  openEmployeeForm(employee) {
+  openEmployeeForm(employee, preferredBase) {
     this.editingEmployee=employee || null;
     this.employeeForm=employee ? angular.copy(employee) : {
       firstName:'',
@@ -382,9 +868,15 @@ class RosterComponent {
       employeeNumber:'',
       qualifications:'',
       jobCategory:'csa-dispatch',
+      base:preferredBase || 'OME',
       isActive:true
     };
-    if (!this.employeeForm.jobCategory) this.employeeForm.jobCategory='uncategorized';
+    if (!this.employeeForm.base) {
+      this.employeeForm.base=employee && employee.base ? employee.base : (preferredBase || 'OME');
+    }
+    if (!this.employeeForm.jobCategory) {
+      this.employeeForm.jobCategory=this.employeeForm.base === 'HELI' ? 'helicopter' : 'uncategorized';
+    }
     this.showEmployeeForm=true;
   }
 
@@ -396,9 +888,10 @@ class RosterComponent {
 
   saveEmployee() {
     if (!this.isLocalMode() || this.savingEmployee) return;
+    if (!this.employeeForm.base) return;
     this.savingEmployee=true;
     this.http.post('/api/calendar/rosterEmployeeSave', Object.assign({}, this.employeeForm, {
-      base:this.getNavBaseCode(),
+      base:this.employeeForm.base,
       _id:this.editingEmployee && this.editingEmployee._id
     })).then(()=>{
       return this.loadEmployees();
@@ -451,15 +944,10 @@ class RosterComponent {
   }
 
   loadEmployees() {
-    const requests=this.rosterBases.map(base=>{
-      return this.http.post('/api/calendar/rosterEmployees', { base }).then(empResp=>{
-        return (empResp && empResp.data ? empResp.data : []).map(employee=>{
-          return Object.assign({}, employee, { base:employee.base || base });
-        });
+    return this.http.post('/api/calendar/rosterEmployees', { bases:this.rosterBases }).then(empResp=>{
+      this.allEmployees=(empResp && empResp.data ? empResp.data : []).map(employee=>{
+        return Object.assign({}, employee, { base:employee.base || 'OME' });
       });
-    });
-    return Promise.all(requests).then(results=>{
-      this.allEmployees=[].concat.apply([], results);
       this.employees=this.allEmployees.filter(employee=>this.isEmployeeActive(employee));
       this.sortEmployeeList();
       this.allEmployees.sort((a,b)=>this.employeeDisplayName(a).localeCompare(this.employeeDisplayName(b)));
@@ -495,6 +983,7 @@ class RosterComponent {
     this.dateString=normalized.toLocaleDateString();
     this.syncNavDateStrings(normalized);
     this.spinner=true;
+    this.fetchMonthMeta();
     this.init();
   }
 
@@ -521,8 +1010,11 @@ class RosterComponent {
   refreshCalendarPersonOptions() {
     const options=[];
     const seen=new Set();
+    const restrictToSelf=!this.canViewAllCalendars();
+    const userName=this.getCurrentUserName();
     (this.pilots || []).forEach(pilot=>{
       const label=this.pilotDisplayName(pilot);
+      if (restrictToSelf && !this.rosterPersonNamesMatch(userName, label)) return;
       const key=this.normalizeRosterPersonName(label);
       if (!label || seen.has(key)) return;
       seen.add(key);
@@ -530,6 +1022,7 @@ class RosterComponent {
     });
     (this.employees || []).forEach(employee=>{
       const label=this.employeeDisplayName(employee);
+      if (restrictToSelf && !this.rosterPersonNamesMatch(userName, label)) return;
       const key=this.normalizeRosterPersonName(label);
       if (!label || seen.has(key)) return;
       seen.add(key);
@@ -547,8 +1040,6 @@ class RosterComponent {
       return;
     }
     if (this.calendarPerson && options.some(opt=>opt.key === this.calendarPerson)) return;
-    const user=this.Auth.getCurrentUser();
-    const userName=user && user.name ? String(user.name).trim() : '';
     const match=options.find(opt=>this.normalizeRosterPersonName(opt.key) === this.normalizeRosterPersonName(userName));
     this.calendarPerson=match ? match.key : options[0].key;
   }
@@ -568,29 +1059,33 @@ class RosterComponent {
 
   resolveCalendarPersonMeta() {
     const target=this.normalizeRosterPersonName(this.calendarPerson);
-    const pilot=(this.pilots || []).find(item=>{
-      return this.normalizeRosterPersonName(this.pilotDisplayName(item)) === target;
-    });
+    const pilot=this.findPilotByRosterName(this.calendarPerson) ||
+      (this.pilots || []).find(item=>{
+        return this.rosterPersonNamesMatch(this.pilotDisplayName(item), this.calendarPerson);
+      });
     if (pilot && pilot._id) {
       return {
         base:pilot.pilotBase || this.getNavBaseCode(),
         rosterId:`pilot:${pilot._id}`,
+        personName:this.pilotDisplayName(pilot),
         kind:'pilot'
       };
     }
     const employee=(this.allEmployees || this.employees || []).find(item=>{
-      return this.normalizeRosterPersonName(this.employeeDisplayName(item)) === target;
+      return this.rosterPersonNamesMatch(this.employeeDisplayName(item), this.calendarPerson);
     });
     if (employee && employee._id) {
       return {
         base:employee.base || this.getNavBaseCode(),
         rosterId:`employee:${employee._id}`,
+        personName:this.employeeDisplayName(employee),
         kind:'employee'
       };
     }
     return {
       base:this.getNavBaseCode(),
       rosterId:null,
+      personName:this.calendarPerson,
       kind:null
     };
   }
@@ -602,8 +1097,12 @@ class RosterComponent {
     this.http.post('/api/calendar/rosterPersonMonth', {
       date:this.date,
       base:meta.base,
-      personName:this.calendarPerson,
+      personName:meta.personName || this.calendarPerson,
+      rosterId:meta.rosterId,
+      bases:this.rosterBases,
+      allBases:true,
       source:this.isLocalMode() ? 'local' : 'acroroster',
+      monthLocked:this.monthLocked,
       pilots:this.pilots,
       employees:this.allEmployees || this.employees
     }).then(resp=>{
@@ -613,30 +1112,647 @@ class RosterComponent {
     });
   }
 
+  showDutyBrushToolbar() {
+    return this.isRosterSuperAdmin() && this.activeView === 'schedule';
+  }
+
+  canUseDutyPicker() {
+    return this.showDutyBrushToolbar() && this.canEditRosterSchedule();
+  }
+
+  refreshGridSize() {
+    if (!this.gridApi || !this.gridApi.core) return;
+    this.timeout(()=>{
+      if (this.gridApi && this.gridApi.core) this.gridApi.core.handleWindowResize();
+    }, 0);
+  }
+
+  refreshDutyBrushCodesBySection() {
+    this.dutyBrushCodesBySection={};
+    (this.sectionPickerOptions || []).forEach(opt=>{
+      if (this.isSectionVisible(opt.key)) {
+        this.dutyBrushCodesBySection[opt.key]=this.collectDutyCodesForSection(opt.key);
+      }
+    });
+  }
+
+  getDutyBrushCodes(sectionKey) {
+    if (!sectionKey) return [];
+    if (!this.dutyBrushCodesBySection[sectionKey]) {
+      this.dutyBrushCodesBySection[sectionKey]=this.collectDutyCodesForSection(sectionKey);
+    }
+    return this.dutyBrushCodesBySection[sectionKey];
+  }
+
+  getSelectedDutyBrushForSection(sectionKey) {
+    if (!sectionKey || !this.dutyBrushBySection.hasOwnProperty(sectionKey)) return null;
+    return this.dutyBrushBySection[sectionKey];
+  }
+
+  selectDutyBrushForSection(sectionKey, code) {
+    if (!sectionKey) return;
+    if (code === null || code === undefined) {
+      this.dutyBrushBySection[sectionKey]=null;
+    } else if (code === '') {
+      this.dutyBrushBySection[sectionKey]='';
+    } else {
+      this.dutyBrushBySection[sectionKey]=String(code).trim().toUpperCase();
+    }
+    if (this.scope && !this.scope.$$phase) this.scope.$applyAsync();
+  }
+
+  isDutyBrushSelected(sectionKey, code) {
+    const selected=this.getSelectedDutyBrushForSection(sectionKey);
+    if (selected === null) return false;
+    if (code === '' || code === null || code === undefined) return selected === '';
+    return selected === String(code).trim().toUpperCase();
+  }
+
+  getSelectedDutyBrushLabel(sectionKey) {
+    const brush=this.getSelectedDutyBrushForSection(sectionKey);
+    if (brush === null) return '';
+    if (brush === '') return 'Clear';
+    return brush;
+  }
+
+  isDutyBrushPanelOpen(sectionKey) {
+    return !!(sectionKey && this.dutyBrushPanelOpenBySection[sectionKey]);
+  }
+
+  toggleDutyBrushPanel(sectionKey, event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (!sectionKey) return;
+    const wasOpen=!!this.dutyBrushPanelOpenBySection[sectionKey];
+    this.dutyBrushPanelOpenBySection={};
+    if (!wasOpen) this.dutyBrushPanelOpenBySection[sectionKey]=true;
+    if (this.scope && !this.scope.$$phase) this.scope.$applyAsync();
+  }
+
+  getSectionKeyForCalendarPerson() {
+    const pilot=this.findPilotByRosterName(this.calendarPerson) ||
+      (this.pilots || []).find(item=>{
+        return this.rosterPersonNamesMatch(this.pilotDisplayName(item), this.calendarPerson);
+      });
+    if (pilot && pilot._id) {
+      if (pilot.far299Exp) return this.sectionFilterKey(pilot.pilotBase, 'captains');
+      return this.sectionFilterKey(pilot.pilotBase, 'fos');
+    }
+    const employee=(this.allEmployees || this.employees || []).find(item=>{
+      return this.rosterPersonNamesMatch(this.employeeDisplayName(item), this.calendarPerson);
+    });
+    if (employee && employee._id) {
+      const base=employee.base || this.getNavBaseCode();
+      return this.sectionFilterKey(base, employee.jobCategory || 'uncategorized');
+    }
+    return null;
+  }
+
+  currentMonthKey() {
+    const y=this.date.getFullYear();
+    const m=this.date.getMonth() + 1;
+    return `${y}-${m < 10 ? '0' : ''}${m}`;
+  }
+
+  monthKeyFromDate(date) {
+    const y=date.getFullYear();
+    const m=date.getMonth() + 1;
+    return `${y}-${m < 10 ? '0' : ''}${m}`;
+  }
+
+  monthKeysForDutyInference() {
+    const keys=[];
+    const d=this.date;
+    const prev=new Date(d.getFullYear(), d.getMonth() - 1, 1);
+    const next=new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    keys.push(this.monthKeyFromDate(prev));
+    keys.push(this.currentMonthKey());
+    keys.push(this.monthKeyFromDate(next));
+    const seen={};
+    return keys.filter(key=>{
+      if (seen[key]) return false;
+      seen[key]=true;
+      return true;
+    });
+  }
+
+  getSectionKeyForRow(entity) {
+    if (!entity || entity.isSummaryRow || entity.isSectionHeader || entity.isSpacerRow || entity.isDutyBrushRow) return null;
+    if (entity.rowSection === 'captain') return this.sectionFilterKey(entity.pilotBase, 'captains');
+    if (entity.rowSection === 'fo') return this.sectionFilterKey(entity.pilotBase, 'fos');
+    if (entity.rowSection === 'employee') {
+      const base=entity.base || entity.pilotBase || this.getNavBaseCode() || 'OME';
+      return this.sectionFilterKey(base, entity.jobCategory || entity.staffCategory || 'uncategorized');
+    }
+    return null;
+  }
+
+  getPersonRowsForSection(sectionKey) {
+    const rows=this.cachedPersonRows || [];
+    if (!sectionKey) return [];
+    return rows.filter(row=>this.getSectionKeyForRow(row) === sectionKey);
+  }
+
+  getSeedsForSection(sectionKey) {
+    if (!sectionKey) return [];
+    const parts=sectionKey.split(':');
+    const sectionId=parts.slice(1).join(':');
+    if (sectionId === 'captains') return this.captainSummaryCodes.slice();
+    if (sectionId === 'fos') return this.foSummaryCodes.slice();
+    return this.getStaffSummarySeedCodes(sectionId);
+  }
+
+  collectDutyCodesForSection(sectionKey) {
+    const rows=this.getPersonRowsForSection(sectionKey);
+    const seeds=this.getSeedsForSection(sectionKey);
+    const excludeCodes=sectionKey && sectionKey.indexOf(':captains') > -1 ?
+      this.foOnlySummaryCodes :
+      (sectionKey && sectionKey.indexOf(':fos') > -1 ? this.captainOnlySummaryCodes : []);
+    const seen={};
+    const extras=[];
+    const addCode=(raw)=>{
+      const code=this.normalizeCodeForSummary(raw);
+      if (!code || seen[code] || excludeCodes.indexOf(code) > -1) return;
+      seen[code]=true;
+      extras.push(code);
+    };
+    const rosterIds=rows.map(row=>row.rosterId).filter(Boolean);
+    this.monthKeysForDutyInference().forEach(monthKey=>{
+      const daysMap=monthKey === this.currentMonthKey() ?
+        this.scheduleDays :
+        (this.scheduleDaysByMonth[monthKey] || {});
+      rosterIds.forEach(rosterId=>{
+        const byDay=daysMap[rosterId];
+        if (!byDay) return;
+        Object.keys(byDay).forEach(dayKey=>addCode(byDay[dayKey]));
+      });
+    });
+    const lastDay=new Date(this.date.getFullYear(), this.date.getMonth() + 1, 0).getDate();
+    rows.forEach(row=>{
+      for (let day=1; day<=lastDay; day++) addCode(row[String(day)]);
+    });
+    const ordered=[''];
+    seeds.forEach(code=>{
+      if (excludeCodes.indexOf(code) > -1) return;
+      if (seen[code] && ordered.indexOf(code) < 0) ordered.push(code);
+    });
+    extras.sort().forEach(code=>{
+      if (ordered.indexOf(code) < 0) ordered.push(code);
+    });
+    if (ordered.length === 1 && seeds.length) {
+      seeds.forEach(code=>{
+        if (excludeCodes.indexOf(code) > -1) return;
+        if (ordered.indexOf(code) < 0) ordered.push(code);
+      });
+    }
+    this.dutyBrushOffCodes.forEach(code=>{
+      if (ordered.indexOf(code) < 0) ordered.push(code);
+    });
+    return ordered;
+  }
+
+  inferCalendarRequestType(event) {
+    if (!event) return null;
+    const label=String(event.label || '').trim().toUpperCase();
+    if (this.isCalendarOffCode(label)) return 'time_off';
+    if (this.isWorkRequestPlaceholderCode(label) && !this.isCalendarOffCode(label)) return 'work';
+    if (event.requestType === 'time_off' || event.type === 'time_off_request') return 'time_off';
+    if (event.requestType === 'work' || event.type === 'work_request') return 'work';
+    return null;
+  }
+
+  isCalendarRequestEvent(event) {
+    if (!event) return false;
+    if (event.source === 'local') return true;
+    if (event.requestType) return true;
+    const type=String(event.type || '').toLowerCase();
+    return type === 'time_off_request' || type === 'work_request';
+  }
+
+  dutyBrushCodeTitle(code) {
+    const key=String(code || '').trim().toUpperCase();
+    if (!key) return this.dutyBrushCodeTitles[''] || 'Clear cell';
+    if (this.dutyBrushCodeTitles[key]) return `${key} — ${this.dutyBrushCodeTitles[key]}`;
+    return key;
+  }
+
+  summaryRowLabel(code) {
+    return this.dutyBrushCodeTitle(code);
+  }
+
+  syncEntityCellDisplay(entity, day) {
+    if (!entity || !day) return;
+    const dayKey=String(day);
+    if (!entity._cellMeta) entity._cellMeta={};
+    entity._cellMeta[dayKey]=this.getGridCellState(entity, dayKey);
+    entity[dayKey]=entity._cellMeta[dayKey].displayCode || '';
+  }
+
+  hasConcreteScheduleCode(code) {
+    const normalized=String(code || '').trim().toUpperCase();
+    return !!normalized && !this.isWorkRequestPlaceholderCode(normalized);
+  }
+
+  getCalendarRequestsForCell(rosterId, dayKey) {
+    const byDay=this.calendarRequestsByRosterId[rosterId];
+    if (!byDay) return [];
+    const entry=byDay[String(dayKey)];
+    if (!entry) return [];
+    return Array.isArray(entry) ? entry : [entry];
+  }
+
+  getCalendarRequestForCell(rosterId, dayKey) {
+    const requests=this.getCalendarRequestsForCell(rosterId, dayKey);
+    return requests.length ? requests[0] : null;
+  }
+
+  getGridCellState(entity, dayField) {
+    const empty={ displayCode:'', pendingKind:null, cellClass:'', title:'' };
+    if (!entity || entity.isSummaryRow || entity.isSectionHeader || entity.isSpacerRow || entity.isDutyBrushRow) return empty;
+    const dayKey=String(dayField);
+    const scheduleCode=String(((this.scheduleDays[entity.rosterId] || {})[dayKey]) || '').trim().toUpperCase();
+    const requests=this.getGridCalendarRequestsForCell(entity.rosterId, dayKey);
+    const statusOf=(req)=>String(req.status || 'pending').toLowerCase();
+    const typeOf=(req)=>this.calendarRequestType(req);
+
+    if (this.monthLocked && !this.isRosterSuperAdmin()) {
+      const hasPending=requests.some(req=>statusOf(req) === 'pending');
+      if (hasPending) return empty;
+    }
+
+    if (this.hasConcreteScheduleCode(scheduleCode)) {
+      const title=this.isCalendarOffCode(scheduleCode) ?
+        this.dutyBrushCodeTitle(scheduleCode) :
+        scheduleCode;
+      return { displayCode:scheduleCode, pendingKind:null, cellClass:scheduleCode, title };
+    }
+
+    const approvedOff=requests.find(req=>statusOf(req) === 'approved' && typeOf(req) === 'time_off');
+    const approvedWork=requests.find(req=>statusOf(req) === 'approved' && typeOf(req) === 'work');
+    const pendingOff=requests.find(req=>this.isLocalPendingCalendarRequest(req) && typeOf(req) === 'time_off');
+    const pendingWork=requests.find(req=>this.isLocalPendingCalendarRequest(req) && typeOf(req) === 'work');
+    const grantedTimeOff=!!approvedOff || this.isCalendarOffCode(scheduleCode);
+
+    let displayCode=scheduleCode;
+    let pendingKind=null;
+
+    if (approvedOff) {
+      displayCode=String(approvedOff.label || 'V').trim().toUpperCase();
+    } else if (grantedTimeOff) {
+      displayCode=scheduleCode;
+    } else if (approvedWork) {
+      displayCode=String(approvedWork.label || scheduleCode || '8').trim().toUpperCase();
+    }
+
+    if (!this.monthLocked) {
+      if (!grantedTimeOff && pendingOff) {
+        pendingKind='time-off';
+        displayCode='';
+      } else if (!grantedTimeOff && pendingWork) {
+        pendingKind='work';
+        displayCode='';
+      }
+    } else if (!this.isRosterSuperAdmin() && !displayCode) {
+      return empty;
+    }
+
+    const cellClass=displayCode || '';
+    let title=displayCode;
+    if (pendingKind === 'time-off') title='Time off requested (pending approval)';
+    else if (pendingKind === 'work') title='Work requested (pending approval)';
+    else if (grantedTimeOff || approvedOff) title=this.dutyBrushCodeTitle(displayCode || 'V');
+    return { displayCode, pendingKind, cellClass, title };
+  }
+
+  getDutyCellClasses(entity, dayField) {
+    const classes=[];
+    if (this.canUseDutyPicker() && entity && !entity.isSummaryRow && !entity.isSectionHeader && !entity.isSpacerRow && !entity.isDutyBrushRow) {
+      classes.push('roster-duty-cell--picker');
+      const sectionKey=this.getSectionKeyForRow(entity);
+      if (sectionKey && this.getSelectedDutyBrushForSection(sectionKey) !== null) {
+        classes.push('roster-duty-cell--brush');
+      }
+    }
+    if (entity && entity._cellMeta && entity._cellMeta[dayField] && entity._cellMeta[dayField].cellClass) {
+      classes.push(entity._cellMeta[dayField].cellClass);
+    }
+    return classes.join(' ');
+  }
+
+  onDutyCellClick(entity, dayField, event) {
+    if (!this.canUseDutyPicker()) return;
+    if (!entity || entity.isSummaryRow || entity.isSectionHeader || entity.isSpacerRow || entity.isDutyBrushRow) return;
+    if (!entity.rosterId) return;
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const day=parseInt(dayField, 10);
+    if (!day) return;
+    const sectionKey=this.getSectionKeyForRow(entity);
+    if (!sectionKey) return;
+    const brush=this.getSelectedDutyBrushForSection(sectionKey);
+    if (brush !== null) {
+      this.applyDutyCodeToCell(entity, day, brush);
+    }
+    if (this.scope && !this.scope.$$phase) this.scope.$applyAsync();
+  }
+
+  applyDutyCodeToCell(entity, day, code) {
+    if (!entity || !day) return;
+    const normalized=String(code || '').trim().toUpperCase();
+    if (!normalized) {
+      this.clearScheduleCell(entity, day);
+      return;
+    }
+    this.savingCell=true;
+    this.clearCalendarRequestsForDay(entity, day).then(()=>{
+      if (!this.scheduleDays[entity.rosterId]) this.scheduleDays[entity.rosterId]={};
+      this.scheduleDays[entity.rosterId][String(day)]=normalized;
+      return this.saveScheduleCell(entity, String(day), normalized, {skipRefresh:true});
+    }).then(()=>{
+      return this.loadLocalCalendarIndex();
+    }).then(()=>{
+      this.syncEntityCellDisplay(entity, day);
+      this.refreshSummaryRows();
+      if (this.gridApi && this.gridApi.core) this.gridApi.core.notifyDataChange('all');
+      if (this.activeView === 'calendar') this.loadCalendarData();
+    }).finally(()=>{
+      this.savingCell=false;
+    });
+  }
+
+  clearCalendarRequestsForDay(entity, day) {
+    const personName=entity.displayName || this.pilotDisplayName(entity) || this.employeeDisplayName(entity);
+    const base=entity.base || entity.pilotBase || this.getNavBaseCode();
+    if (!personName || !base || !entity.rosterId) return Promise.resolve();
+    return this.http.post('/api/calendar/rosterCalendarSave', {
+      date:this.date,
+      base,
+      personName,
+      rosterId:entity.rosterId,
+      day,
+      days:[day],
+      action:'delete',
+      applyToSchedule:false
+    }).then(resp=>{
+      this.reindexCalendarRequestsForPerson(entity.rosterId, (resp.data && resp.data.requests) || []);
+    }, ()=>{
+      // ignore
+    });
+  }
+
+  reindexCalendarRequestsForPerson(rosterId, requests) {
+    if (!rosterId) return;
+    const byDay={};
+    (requests || []).forEach(req=>{
+      const dayKey=String(req.day);
+      if (!byDay[dayKey]) byDay[dayKey]=[];
+      byDay[dayKey].push(req);
+    });
+    this.calendarRequestsByRosterId[rosterId]=byDay;
+  }
+
+  dismissPendingWorkRequests(entity, day) {
+    const personName=entity.displayName || this.pilotDisplayName(entity) || this.employeeDisplayName(entity);
+    const base=entity.base || entity.pilotBase || this.getNavBaseCode();
+    if (!personName || !base || !entity.rosterId) return Promise.resolve();
+    return this.http.post('/api/calendar/rosterCalendarSave', {
+      date:this.date,
+      base,
+      personName,
+      rosterId:entity.rosterId,
+      day,
+      days:[day],
+      requestType:'work',
+      action:'delete',
+      applyToSchedule:false
+    }).then(resp=>{
+      this.reindexCalendarRequestsForPerson(entity.rosterId, (resp.data && resp.data.requests) || []);
+    }, ()=>{
+      // ignore
+    });
+  }
+
+  mergeCalendarRequestsForCell(rosterId, day, requests) {
+    this.reindexCalendarRequestsForPerson(rosterId, requests);
+  }
+
+  clearScheduleCell(entity, day) {
+    const dayKey=String(day);
+    const personName=entity.displayName || this.pilotDisplayName(entity) || this.employeeDisplayName(entity);
+    const base=entity.base || entity.pilotBase || this.getNavBaseCode();
+    if (!personName || !base || !entity.rosterId) return;
+    this.savingCell=true;
+    const clearSchedule=this.http.post('/api/calendar/rosterScheduleSave', {
+      date:this.date,
+      base,
+      rosterId:entity.rosterId,
+      day,
+      code:'',
+      pilots:this.pilots,
+      employees:this.allEmployees || this.employees
+    });
+    const clearCalendar=this.clearCalendarRequestsForDay(entity, day);
+    Promise.all([clearSchedule, clearCalendar]).then(()=>{
+      if (!this.scheduleDays[entity.rosterId]) this.scheduleDays[entity.rosterId]={};
+      delete this.scheduleDays[entity.rosterId][dayKey];
+      const currentKey=this.currentMonthKey();
+      if (this.scheduleDaysByMonth[currentKey] &&
+          this.scheduleDaysByMonth[currentKey][entity.rosterId]) {
+        delete this.scheduleDaysByMonth[currentKey][entity.rosterId][dayKey];
+      }
+      if (this.calendarRequestsByRosterId[entity.rosterId]) {
+        delete this.calendarRequestsByRosterId[entity.rosterId][dayKey];
+      }
+      return this.loadLocalCalendarIndex();
+    }).then(()=>{
+      this.syncEntityCellDisplay(entity, day);
+      this.refreshSummaryRows();
+      if (this.gridApi && this.gridApi.core) this.gridApi.core.notifyDataChange('all');
+      if (this.activeView === 'calendar') this.loadCalendarData();
+    }).finally(()=>{
+      this.savingCell=false;
+    });
+  }
+
+  loadLocalCalendarIndex() {
+    return this.http.post('/api/calendar/rosterCalendarMonthIndex', {
+      date:this.date,
+      bases:this.rosterBases,
+      pilots:this.pilots,
+      employees:this.allEmployees || this.employees
+    }).then(resp=>{
+      this.calendarRequestsByRosterId=(resp.data && resp.data.requestsByRosterId) || {};
+    }, ()=>{
+      this.calendarRequestsByRosterId={};
+    });
+  }
+
+  isCalendarOffCode(label) {
+    const code=String(label || '').trim().toUpperCase();
+    return ['V','RA','RV','RO','RP','O','B'].indexOf(code) > -1;
+  }
+
+  isWorkRequestPlaceholderCode(label) {
+    const code=String(label || '').trim().toUpperCase();
+    return code === '8' || code === 'C8';
+  }
+
+  isAcrorosterCalendarRequest(req) {
+    return String((req && req.source) || '').toLowerCase() === 'acroroster';
+  }
+
+  isLocalPendingCalendarRequest(req) {
+    if (!req) return false;
+    if (this.isAcrorosterCalendarRequest(req)) return false;
+    return String(req.status || 'pending').toLowerCase() === 'pending';
+  }
+
+  isAcrorosterWorkCalendarRequest(req) {
+    if (!this.isAcrorosterCalendarRequest(req)) return false;
+    const label=String(req.label || '').trim().toUpperCase();
+    if (this.isCalendarOffCode(label)) return false;
+    return req.requestType === 'work' ||
+      req.type === 'work_request' ||
+      this.isWorkRequestPlaceholderCode(label);
+  }
+
+  getGridCalendarRequestsForCell(rosterId, dayKey) {
+    return this.getCalendarRequestsForCell(rosterId, dayKey)
+      .filter(req=>!this.isAcrorosterWorkCalendarRequest(req));
+  }
+
+  calendarRequestType(req) {
+    const label=String((req && req.label) || '').trim().toUpperCase();
+    if (this.isCalendarOffCode(label)) return 'time_off';
+    return this.inferCalendarRequestType(req);
+  }
+
+  buildCalendarDayDisplay(dayEvents) {
+    const events=dayEvents || [];
+    let pendingTimeOff=null;
+    let pendingWork=null;
+    let approvedTimeOff=null;
+    let scheduleCode=null;
+
+    events.forEach(event=>{
+      const label=String(event.label || '').trim().toUpperCase();
+      if (!this.isLocalPendingCalendarRequest(event)) return;
+      const isTimeOff=this.isCalendarOffCode(label) ||
+        event.requestType === 'time_off' ||
+        event.type === 'time_off_request';
+      const isWork=!isTimeOff && (
+        event.requestType === 'work' ||
+        event.type === 'work_request' ||
+        this.isWorkRequestPlaceholderCode(label)
+      );
+      if (isTimeOff) pendingTimeOff={label:label || 'V', event};
+      else if (isWork) pendingWork={label, event};
+    });
+
+    events.forEach(event=>{
+      const label=String(event.label || '').trim().toUpperCase();
+      const status=String(event.status || '').toLowerCase();
+      const reqType=this.inferCalendarRequestType(event);
+
+      if (status === 'pending') return;
+
+      if (this.isCalendarRequestEvent(event) || reqType) {
+        if (reqType === 'time_off') {
+          approvedTimeOff={label:label || 'V', event};
+          return;
+        }
+        if (reqType === 'work') {
+          if (label && !this.isWorkRequestPlaceholderCode(label)) scheduleCode=label;
+          return;
+        }
+        if (this.isCalendarOffCode(label)) approvedTimeOff={label, event};
+        return;
+      }
+
+      const isSchedule=event.source === 'schedule' || event.type === 'shift';
+      if (!isSchedule) return;
+      if (pendingTimeOff) return;
+      if (this.isCalendarOffCode(label)) {
+        if (!approvedTimeOff) approvedTimeOff={label:label || 'V', event};
+      } else if (label) {
+        scheduleCode=label;
+      }
+    });
+
+    if (approvedTimeOff) {
+      return {
+        kind:'time-off-approved',
+        label:approvedTimeOff.label || 'V',
+        title:'Time Off (approved)'
+      };
+    }
+
+    if (scheduleCode && !this.isWorkRequestPlaceholderCode(scheduleCode)) {
+      const display=this.calendarAssignedDisplay(scheduleCode);
+      if (pendingWork) {
+        display.showWorkPending=true;
+        display.title=`${scheduleCode} assigned (work was requested)`;
+      }
+      return display;
+    }
+
+    if (pendingTimeOff) {
+      return {
+        kind:'time-off-pending',
+        label:pendingTimeOff.label || 'V',
+        title:`Time Off Request (${pendingTimeOff.label || 'V'})`
+      };
+    }
+    if (pendingWork) {
+      return {kind:'work-request-pending', label:'', title:'Work Request'};
+    }
+    return {kind:'empty', label:'', title:''};
+  }
+
   processCalendarEvents(events) {
     this.calendarEventsByDay={};
+    this.calendarDays={};
     this.calendarRequests=[];
-    const requestKeys={};
     (events || []).forEach(event=>{
       const day=event.day || new Date(event.start_plain_date_time).getUTCDate();
       if (!day) return;
       if (!this.calendarEventsByDay[day]) this.calendarEventsByDay[day]=[];
       this.calendarEventsByDay[day].push(event);
-      const kind=this.calendarEventKind(event);
-      if (kind === 'scheduled') return;
-      const key=`${day}:${kind}:${String(event.label || '').toUpperCase()}`;
-      if (requestKeys[key]) return;
-      requestKeys[key]=true;
-      this.calendarRequests.push({
-        day,
-        kind,
-        label:event.label,
-        requestType:event.requestType || (kind === 'time-off' ? 'time_off' : 'work'),
-        type:event.type,
-        status:event.status || (event.source === 'local' ? 'pending' : 'approved'),
-        title:this.calendarEventTitle(event, kind),
-        source:event.source
-      });
+    });
+    Object.keys(this.calendarEventsByDay).forEach(dayKey=>{
+      const day=parseInt(dayKey, 10);
+      const display=this.buildCalendarDayDisplay(this.calendarEventsByDay[day]);
+      this.calendarDays[day]=display;
+      if (display.kind === 'time-off-pending' || display.kind === 'work-request-pending') {
+        const localReq=(this.calendarEventsByDay[day] || []).find(ev=>{
+          return ev.source === 'local' || ev.requestType || ev.type === 'time_off_request' || ev.type === 'work_request';
+        });
+        const requestType=localReq
+          ? (this.inferCalendarRequestType(localReq) || (display.kind === 'time-off-pending' ? 'time_off' : 'work'))
+          : (display.kind === 'time-off-pending' ? 'time_off' : 'work');
+        this.calendarRequests.push({
+          day,
+          kind:display.kind === 'time-off-pending' ? 'time-off' : 'work-request',
+          label:display.label,
+          status:(localReq && localReq.status) || 'pending',
+          title:display.title,
+          source:(localReq && localReq.source) || 'local',
+          requestType
+        });
+      } else if (display.kind === 'time-off-approved') {
+        this.calendarRequests.push({
+          day,
+          kind:'time-off',
+          label:'V',
+          status:'approved',
+          title:display.title,
+          source:'schedule'
+        });
+      }
     });
     this.calendarRequests.sort((a,b)=>a.day - b.day);
     const today=new Date();
@@ -648,9 +1764,34 @@ class RosterComponent {
     this.buildCalendarWeeks();
   }
 
+  getCalendarDayDisplay(day) {
+    if (!day) return {kind:'empty', label:''};
+    return this.calendarDays[day] || {kind:'empty', label:''};
+  }
+
+  calendarAssignedDisplay(code) {
+    const label=String(code || '').trim().toUpperCase();
+    return {
+      kind:'assigned',
+      label,
+      title:label,
+      dutyClass:this.calendarDutyClass(label)
+    };
+  }
+
+  calendarDutyClass(label) {
+    const code=String(label || '').trim().toUpperCase();
+    if (!code) return 'roster-cal-duty--default';
+    if (code === 'B1' || code === 'B2') return 'roster-cal-duty--b1';
+    if (['KA','C1','S1','C2','S2','8','F','OTZ','C8'].indexOf(code) > -1) return 'roster-cal-duty--flight';
+    if (['OC','A','T','DM','NM','ND','IOE','SC','SC2'].indexOf(code) > -1) return 'roster-cal-duty--ops';
+    if (['V','RA','RV','RO','RP','O','B'].indexOf(code) > -1) return 'roster-cal-duty--off';
+    return 'roster-cal-duty--default';
+  }
+
   calendarEventKind(event) {
     const label=String(event.label || '').trim().toUpperCase();
-    const offCodes=['V','RA','RV','RO','RP','B','T'];
+    const offCodes=['V','RA','RV','RO','RP','O','B'];
     if (event.requestType === 'time_off' || event.type === 'time_off_request') return 'time-off';
     if (event.requestType === 'work' || event.type === 'work_request') return 'work-request';
     if (offCodes.indexOf(label) > -1) return 'time-off';
@@ -745,7 +1886,7 @@ class RosterComponent {
   }
 
   canEditCalendar() {
-    return this.isLocalMode();
+    return this.canEditCalendarForSelectedPerson();
   }
 
   applyCalendarScheduleResponse(meta, resp) {
@@ -771,14 +1912,15 @@ class RosterComponent {
     this.http.post('/api/calendar/rosterCalendarSave', {
       date:this.date,
       base:meta.base,
-      personName:this.calendarPerson,
+      personName:meta.personName || this.calendarPerson,
+      rosterId:meta.rosterId,
       days,
       requestType:requestType,
-      rosterId:meta.rosterId,
-      applyToSchedule:true,
+      applyToSchedule:this.isRosterSuperAdmin(),
       action:'add'
     }).then(resp=>{
       this.applyCalendarScheduleResponse(meta, resp);
+      if (this.isLocalMode()) return this.refreshLocalScheduleViews();
       return this.loadCalendarData();
     }).finally(()=>{
       this.savingCalendarRequest=false;
@@ -786,14 +1928,15 @@ class RosterComponent {
   }
 
   deleteCalendarRequest(request) {
-    if (!this.canEditCalendar() || !request || this.savingCalendarRequest) return;
+    if (!this.canDeleteCalendarRequest(request) || this.savingCalendarRequest) return;
     const meta=this.resolveCalendarPersonMeta();
     if (!meta.base) return;
     this.savingCalendarRequest=true;
     this.http.post('/api/calendar/rosterCalendarSave', {
       date:this.date,
       base:meta.base,
-      personName:this.calendarPerson,
+      personName:meta.personName || this.calendarPerson,
+      rosterId:meta.rosterId,
       days:[request.day],
       requestType:request.requestType || (request.kind === 'time-off' ? 'time_off' : 'work'),
       label:request.label,
@@ -805,6 +1948,46 @@ class RosterComponent {
         delete this.scheduleDays[meta.rosterId][String(request.day)];
       }
       this.applyCalendarScheduleResponse(meta, resp);
+      if (this.isLocalMode()) return this.refreshLocalScheduleViews();
+      return this.loadCalendarData();
+    }).finally(()=>{
+      this.savingCalendarRequest=false;
+    });
+  }
+
+  moderateCalendarRequest(request, action) {
+    if (!this.canModerateRoster() || !request || this.savingCalendarRequest) return;
+    const meta=this.resolveCalendarPersonMeta();
+    if (!meta.base) return;
+    const requestType=request.requestType || (request.kind === 'time-off' ? 'time_off' : 'work');
+    let label=request.label;
+    if (action === 'approve' && requestType === 'work') {
+      const sectionKey=this.getSectionKeyForCalendarPerson();
+      const brush=sectionKey ? this.getSelectedDutyBrushForSection(sectionKey) : null;
+      if (brush && brush !== '' && !this.isCalendarOffCode(brush)) {
+        label=brush;
+      } else if (this.isWorkRequestPlaceholderCode(label) || !label) {
+        this.calendarModerationMessage='Open Duty event → Select for that person\'s section (Scheduling), pick a code, then Approve.';
+        return;
+      }
+    }
+    if (action === 'approve' && requestType === 'time_off') {
+      label=String(request.label || 'V').trim().toUpperCase();
+    }
+    this.calendarModerationMessage='';
+    this.savingCalendarRequest=true;
+    this.http.post('/api/calendar/rosterCalendarSave', {
+      date:this.date,
+      base:meta.base,
+      personName:meta.personName || this.calendarPerson,
+      rosterId:meta.rosterId,
+      days:[request.day],
+      requestType,
+      label,
+      action
+    }).then(resp=>{
+      this.applyCalendarScheduleResponse(meta, resp);
+      if (this.isLocalMode()) return this.refreshLocalScheduleViews();
       return this.loadCalendarData();
     }).finally(()=>{
       this.savingCalendarRequest=false;
@@ -820,6 +2003,7 @@ class RosterComponent {
     if (base === 'OME') return 'NOME CAPT';
     if (base === 'OTZ') return 'KOTZEBUE CAPT';
     if (base === 'UNK') return 'UNK CAPT';
+    if (base === 'HELI') return 'HELICOPTER CAPT';
     return `${base} CAPT`;
   }
 
@@ -828,6 +2012,7 @@ class RosterComponent {
     if (base === 'OME') return 'NOME FO';
     if (base === 'OTZ') return 'KOTZEBUE FO';
     if (base === 'UNK') return 'UNK FO';
+    if (base === 'HELI') return 'HELICOPTER FO';
     return `${base} FO`;
   }
 
@@ -835,7 +2020,13 @@ class RosterComponent {
     if (base === 'OME') return 'NOME';
     if (base === 'OTZ') return 'KOTZ';
     if (base === 'UNK') return 'UNK';
+    if (base === 'HELI') return 'Helicopter';
     return base;
+  }
+
+  staffSectionLabel(base, cat) {
+    if (base === 'HELI' && cat && cat.id === 'helicopter') return 'OME Helicopter';
+    return `${this.baseShortLabel(base)} ${cat.label}`;
   }
 
   sectionFilterKey(base, sectionId) {
@@ -865,9 +2056,13 @@ class RosterComponent {
   getDefaultSectionFilters() {
     const filters={};
     this.rosterBases.forEach(base=>{
-      filters[this.sectionFilterKey(base, 'captains')]=base === 'OME';
-      if (base !== 'OTZ') filters[this.sectionFilterKey(base, 'fos')]=false;
-      this.staffJobCategories.forEach(cat=>{
+      if (base !== 'HELI') {
+        filters[this.sectionFilterKey(base, 'captains')]=base === 'OME';
+      }
+      if (base !== 'OTZ' && base !== 'HELI') {
+        filters[this.sectionFilterKey(base, 'fos')]=false;
+      }
+      this.staffJobCategoriesForBase(base).forEach(cat=>{
         filters[this.sectionFilterKey(base, cat.id)]=false;
       });
     });
@@ -897,13 +2092,15 @@ class RosterComponent {
   refreshSectionPickerOptions() {
     const options=[];
     this.rosterBases.forEach(base=>{
-      options.push({
-        key:this.sectionFilterKey(base, 'captains'),
-        label:this.baseSectionLabel(base),
-        base,
-        sectionType:'captains'
-      });
-      if (base !== 'OTZ') {
+      if (base !== 'HELI') {
+        options.push({
+          key:this.sectionFilterKey(base, 'captains'),
+          label:this.baseSectionLabel(base),
+          base,
+          sectionType:'captains'
+        });
+      }
+      if (base !== 'OTZ' && base !== 'HELI') {
         options.push({
           key:this.sectionFilterKey(base, 'fos'),
           label:this.foSectionLabel(base),
@@ -911,10 +2108,10 @@ class RosterComponent {
           sectionType:'fos'
         });
       }
-      this.staffJobCategories.forEach(cat=>{
+      this.staffJobCategoriesForBase(base).forEach(cat=>{
         options.push({
           key:this.sectionFilterKey(base, cat.id),
-          label:`${this.baseShortLabel(base)} ${cat.label}`,
+          label:this.staffSectionLabel(base, cat),
           base,
           sectionType:'staff',
           staffCategory:cat.id
@@ -934,7 +2131,7 @@ class RosterComponent {
 
   hasVisibleStaffSections() {
     return this.rosterBases.some(base=>{
-      return this.staffJobCategories.some(cat=>{
+      return this.staffJobCategoriesForBase(base).some(cat=>{
         const rows=this.employeesByBaseAndCategory[base] && this.employeesByBaseAndCategory[base][cat.id];
         return this.isSectionVisible(this.sectionFilterKey(base, cat.id)) && rows && rows.length;
       });
@@ -959,6 +2156,7 @@ class RosterComponent {
     if (base === 'OME') return 'Nome';
     if (base === 'OTZ') return 'Kotzebue';
     if (base === 'UNK') return 'Unalakleet';
+    if (base === 'HELI') return 'Helicopter';
     return base;
   }
 
@@ -968,6 +2166,16 @@ class RosterComponent {
       isSectionHeader: true,
       sectionStart: true,
       rosterKind: 'header'
+    };
+  }
+
+  makeDutyBrushRow(sectionKey, sectionLabel) {
+    return {
+      displayName: sectionLabel || '',
+      isDutyBrushRow: true,
+      sectionKey,
+      sectionLabel: sectionLabel || '',
+      rosterKind: 'brush'
     };
   }
 
@@ -984,26 +2192,38 @@ class RosterComponent {
   }
 
   canEditRowEntity(entity) {
-    return entity && !entity.isSummaryRow && !entity.isSectionHeader && !entity.isSpacerRow;
+    if (!entity || entity.isSummaryRow || entity.isSectionHeader || entity.isSpacerRow || entity.isDutyBrushRow) return false;
+    if (!this.canEditRosterSchedule()) return false;
+    if (this.isRosterSuperAdmin()) return true;
+    const personName=entity.displayName || this.pilotDisplayName(entity) || this.employeeDisplayName(entity);
+    return this.isOwnRosterPerson(personName);
   }
   
   $onInit(){
     const self=this;
+    this.setupScheduleSocketListeners();
     this.refreshSectionPickerOptions();
+    this.loadStaffingMinimumsFromServer();
+    this.fetchMonthMeta();
     this.gridOptions.onRegisterApi=function(gridApi) {
       self.gridApi=gridApi;
-      if (!gridApi.edit) return;
-      gridApi.edit.on.afterCellEdit(self.scope, function(rowEntity, colDef, newValue, oldValue) {
-        if (!self.isLocalMode()) return;
-        if (newValue === oldValue) return;
-        self.saveScheduleCell(rowEntity, colDef.field, newValue);
-        self.refreshSummaryRows();
-      });
+      self.refreshGridSize();
     };
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
       if (!newVal||newVal==='') return;
       if (!oldVal||oldVal==='') return;
       if (this.scope.nav) this.scope.nav.isCollapsed=true;
+    });
+    let lastAuthRole=null;
+    this.scope.$watch(()=>{
+      const user=this.Auth.getCurrentUser();
+      return user && user.role;
+    }, (role)=>{
+      if (role === lastAuthRole) return;
+      lastAuthRole=role;
+      if (this.cachedPersonRows && this.cachedPersonRows.length) {
+        this.refreshSummaryRows();
+      }
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{
       if (!newVal||newVal==='') return;
@@ -1025,6 +2245,203 @@ class RosterComponent {
     });
   }
 
+  $onDestroy() {
+    this.teardownScheduleSocketListeners();
+  }
+
+  setupScheduleSocketListeners() {
+    if (this._scheduleSocketBound) return;
+    this._scheduleSocketBound=true;
+    this._onScheduleCellSocket=(payload)=>{
+      if (this.scope && !this.scope.$$phase) {
+        this.scope.$applyAsync(()=>this.handleScheduleCellSocket(payload));
+      } else {
+        this.handleScheduleCellSocket(payload);
+      }
+    };
+    this._onScheduleBulkSocket=(payload)=>{
+      if (this.scope && !this.scope.$$phase) {
+        this.scope.$applyAsync(()=>this.handleScheduleBulkSocket(payload));
+      } else {
+        this.handleScheduleBulkSocket(payload);
+      }
+    };
+    this._onCalendarRequestBulkSocket=(payload)=>{
+      if (this.scope && !this.scope.$$phase) {
+        this.scope.$applyAsync(()=>this.handleCalendarRequestBulkSocket(payload));
+      } else {
+        this.handleCalendarRequestBulkSocket(payload);
+      }
+    };
+    this._onCalendarRequestSocket=(payload)=>{
+      if (this.scope && !this.scope.$$phase) {
+        this.scope.$applyAsync(()=>this.handleCalendarRequestSocket(payload));
+      } else {
+        this.handleCalendarRequestSocket(payload);
+      }
+    };
+    this._onEmployeeBulkSocket=(payload)=>{
+      if (this.scope && !this.scope.$$phase) {
+        this.scope.$applyAsync(()=>this.handleEmployeeBulkSocket(payload));
+      } else {
+        this.handleEmployeeBulkSocket(payload);
+      }
+    };
+    this._onEmployeeRemoveSocket=(employee)=>{
+      if (this.scope && !this.scope.$$phase) {
+        this.scope.$applyAsync(()=>this.handleEmployeeRemoveSocket(employee));
+      } else {
+        this.handleEmployeeRemoveSocket(employee);
+      }
+    };
+    this._onEmployeeSaveSocket=(employee)=>{
+      if (this.scope && !this.scope.$$phase) {
+        this.scope.$applyAsync(()=>this.handleEmployeeSaveSocket(employee));
+      } else {
+        this.handleEmployeeSaveSocket(employee);
+      }
+    };
+    this.socket.socket.on('rosterScheduleCell:cell', this._onScheduleCellSocket);
+    this.socket.socket.on('rosterScheduleCell:bulk', this._onScheduleBulkSocket);
+    this.socket.socket.on('rosterCalendarRequest:change', this._onCalendarRequestSocket);
+    this.socket.socket.on('rosterCalendarRequest:bulk', this._onCalendarRequestBulkSocket);
+    this.socket.socket.on('rosterEmployee:save', this._onEmployeeSaveSocket);
+    this.socket.socket.on('rosterEmployee:remove', this._onEmployeeRemoveSocket);
+    this.socket.socket.on('rosterEmployee:bulk', this._onEmployeeBulkSocket);
+  }
+
+  teardownScheduleSocketListeners() {
+    if (!this._scheduleSocketBound) return;
+    this.socket.socket.removeListener('rosterScheduleCell:cell', this._onScheduleCellSocket);
+    this.socket.socket.removeListener('rosterScheduleCell:bulk', this._onScheduleBulkSocket);
+    this.socket.socket.removeListener('rosterCalendarRequest:change', this._onCalendarRequestSocket);
+    this.socket.socket.removeListener('rosterCalendarRequest:bulk', this._onCalendarRequestBulkSocket);
+    this.socket.socket.removeListener('rosterEmployee:save', this._onEmployeeSaveSocket);
+    this.socket.socket.removeListener('rosterEmployee:remove', this._onEmployeeRemoveSocket);
+    this.socket.socket.removeListener('rosterEmployee:bulk', this._onEmployeeBulkSocket);
+    this._scheduleSocketBound=false;
+  }
+
+  handleScheduleCellSocket(payload) {
+    if (!this.isLocalMode() || !payload) return;
+    const monthKey=payload.monthKey;
+    const rosterId=payload.rosterId;
+    const dayKey=String(payload.day);
+    const code=payload.code ? String(payload.code).trim().toUpperCase() : null;
+    if (!monthKey || !rosterId || !dayKey) return;
+
+    if (!this.scheduleDaysByMonth[monthKey]) this.scheduleDaysByMonth[monthKey]={};
+    if (!this.scheduleDaysByMonth[monthKey][rosterId]) this.scheduleDaysByMonth[monthKey][rosterId]={};
+    if (code) this.scheduleDaysByMonth[monthKey][rosterId][dayKey]=code;
+    else delete this.scheduleDaysByMonth[monthKey][rosterId][dayKey];
+
+    if (monthKey !== this.currentMonthKey()) return;
+    if (!this.scheduleDays[rosterId]) this.scheduleDays[rosterId]={};
+    if (code) this.scheduleDays[rosterId][dayKey]=code;
+    else delete this.scheduleDays[rosterId][dayKey];
+
+    this.patchGridRowForRosterId(rosterId, payload.day);
+  }
+
+  handleScheduleBulkSocket(payload) {
+    if (!this.isLocalMode() || !payload || !payload.monthKey) return;
+    const loadedMonthKeys=this.monthKeysForDutyInference();
+    if (loadedMonthKeys.indexOf(payload.monthKey) < 0) return;
+    if (payload.bases && payload.bases.length) {
+      const touchesBase=payload.bases.some(base=>this.rosterBases.indexOf(base) > -1);
+      if (!touchesBase) return;
+    }
+    this.viewRefreshing=true;
+    this.loadLocalScheduleData().finally(()=>{
+      this.viewRefreshing=false;
+    });
+  }
+
+  patchGridRowForRosterId(rosterId, day) {
+    const dayNum=parseInt(day, 10);
+    if (!dayNum || !rosterId) return;
+    let touched=false;
+    const touchRow=(row)=>{
+      if (!row || row.rosterId !== rosterId) return;
+      this.syncEntityCellDisplay(row, dayNum);
+      touched=true;
+    };
+    (this.cachedPersonRows || []).forEach(touchRow);
+    (this.gridOptions.data || []).forEach(touchRow);
+    if (!touched) return;
+    this.refreshSummaryRows();
+    this.refreshDutyBrushCodesBySection();
+    if (this.gridApi && this.gridApi.core) this.gridApi.core.notifyDataChange('all');
+    if (this.activeView === 'calendar') this.loadCalendarData();
+  }
+
+  handleCalendarRequestSocket(payload) {
+    if (!this.isLocalMode() || !payload) return;
+    if (payload.monthKey && payload.monthKey !== this.currentMonthKey()) return;
+    this.viewRefreshing=true;
+    this.loadLocalCalendarIndex().then(()=>{
+      if (payload.rosterId) this.refreshGridRowsForRosterId(payload.rosterId);
+      else this.applyLocalScheduleToGrid();
+      if (this.activeView === 'calendar') this.loadCalendarData();
+    }).finally(()=>{
+      this.viewRefreshing=false;
+    });
+  }
+
+  handleCalendarRequestBulkSocket(payload) {
+    if (!this.isLocalMode() || !payload || !payload.monthKey) return;
+    if (payload.monthKey !== this.currentMonthKey()) return;
+    if (payload.bases && payload.bases.length) {
+      const touchesBase=payload.bases.some(base=>this.rosterBases.indexOf(base) > -1);
+      if (!touchesBase) return;
+    }
+    this.handleCalendarRequestSocket(payload);
+  }
+
+  refreshGridRowsForRosterId(rosterId) {
+    if (!rosterId) return;
+    const lastDay=new Date(this.date.getFullYear(), this.date.getMonth() + 1, 0).getDate();
+    let touched=false;
+    const touchRow=(row)=>{
+      if (!row || row.rosterId !== rosterId) return;
+      for (let day=1; day<=lastDay; day++) {
+        this.syncEntityCellDisplay(row, day);
+      }
+      touched=true;
+    };
+    (this.cachedPersonRows || []).forEach(touchRow);
+    (this.gridOptions.data || []).forEach(touchRow);
+    if (!touched) return;
+    this.refreshSummaryRows();
+    if (this.gridApi && this.gridApi.core) this.gridApi.core.notifyDataChange('all');
+  }
+
+  refreshEmployeesFromSocket() {
+    if (!this.isLocalMode()) return Promise.resolve();
+    this.viewRefreshing=true;
+    return this.loadEmployees().then(()=>{
+      if (this.cachedPersonRows && this.cachedPersonRows.length) {
+        this.applyLocalScheduleToGrid();
+      }
+      this.refreshTeamLists();
+      this.refreshCalendarPersonOptions();
+    }).finally(()=>{
+      this.viewRefreshing=false;
+    });
+  }
+
+  handleEmployeeSaveSocket() {
+    this.refreshEmployeesFromSocket();
+  }
+
+  handleEmployeeRemoveSocket() {
+    this.refreshEmployeesFromSocket();
+  }
+
+  handleEmployeeBulkSocket() {
+    this.refreshEmployeesFromSocket();
+  }
+
   setDataSource(source) {
     if (this.dataSource === source) return;
     this.dataSource = source;
@@ -1043,6 +2460,8 @@ class RosterComponent {
       pilots: this.pilots
     }).then(resp => {
       this.scheduleDays = (resp.data && resp.data.days) || {};
+      const currentKey=this.currentMonthKey();
+      this.scheduleDaysByMonth[currentKey]=Object.assign({}, this.scheduleDays);
       this.localEmpty = !!(resp.data && resp.data.empty);
       return this.loadEmployees();
     }).then(()=>{
@@ -1054,27 +2473,45 @@ class RosterComponent {
     });
   }
 
-  saveScheduleCell(rowEntity, dayField, code) {
+  saveScheduleCell(rowEntity, dayField, code, options) {
+    const opts=options || {};
     const day = parseInt(dayField, 10);
-    if (!day || !rowEntity || !rowEntity.rosterId) return;
+    if (!day || !rowEntity || !rowEntity.rosterId) return Promise.resolve();
     const normalized=(code || '').trim().toUpperCase();
     const base=rowEntity.base || rowEntity.pilotBase || this.getNavBaseCode();
-    if (!base) return;
-    this.savingCell = true;
-    this.http.post('/api/calendar/rosterScheduleSave', {
+    if (!base) return Promise.resolve();
+    if (!opts.skipRefresh) this.savingCell = true;
+    return this.http.post('/api/calendar/rosterScheduleSave', {
       date: this.date,
       base,
       rosterId: rowEntity.rosterId,
       day: day,
-      code: normalized
+      code: normalized,
+      pilots: this.pilots,
+      employees: this.allEmployees || this.employees
     }).then(() => {
       if (!this.scheduleDays[rowEntity.rosterId]) this.scheduleDays[rowEntity.rosterId]={};
       if (normalized) this.scheduleDays[rowEntity.rosterId][String(day)] = normalized;
       else delete this.scheduleDays[rowEntity.rosterId][String(day)];
+      const currentKey=this.currentMonthKey();
+      if (!this.scheduleDaysByMonth[currentKey]) this.scheduleDaysByMonth[currentKey]={};
+      if (normalized) this.scheduleDaysByMonth[currentKey][rowEntity.rosterId]=Object.assign(
+        {},
+        this.scheduleDaysByMonth[currentKey][rowEntity.rosterId] || {},
+        this.scheduleDays[rowEntity.rosterId]
+      );
+      else if (this.scheduleDaysByMonth[currentKey][rowEntity.rosterId]) {
+        delete this.scheduleDaysByMonth[currentKey][rowEntity.rosterId][String(day)];
+      }
       this.localEmpty = false;
-      this.refreshSummaryRows();
+      this.syncEntityCellDisplay(rowEntity, day);
+      if (!opts.skipRefresh) {
+        this.refreshDutyBrushCodesBySection();
+        this.refreshSummaryRows();
+        if (this.gridApi && this.gridApi.core) this.gridApi.core.notifyDataChange('all');
+      }
     }).finally(() => {
-      this.savingCell = false;
+      if (!opts.skipRefresh) this.savingCell = false;
     });
   }
   
@@ -1115,20 +2552,32 @@ class RosterComponent {
   }
 
   loadLocalScheduleData() {
-    const requests=this.rosterBases.map(base=>{
-      return this.http.post('/api/calendar/rosterScheduleLocal', {
-        date:this.date,
-        base
-      });
+    const monthDates=[
+      new Date(this.date.getFullYear(), this.date.getMonth() - 1, 1),
+      new Date(this.date.getFullYear(), this.date.getMonth(), 1),
+      new Date(this.date.getFullYear(), this.date.getMonth() + 1, 1)
+    ];
+    const seenMonths={};
+    const monthKeys=[];
+    monthDates.forEach(monthDate=>{
+      const monthKey=this.monthKeyFromDate(monthDate);
+      if (seenMonths[monthKey]) return;
+      seenMonths[monthKey]=true;
+      monthKeys.push(monthKey);
     });
-    return Promise.all(requests).then(results=>{
+    return this.http.post('/api/calendar/rosterScheduleLocalBulk', {
+      date:this.date,
+      bases:this.rosterBases,
+      monthKeys
+    }).then(resp=>{
+      this.scheduleDaysByMonth=(resp.data && resp.data.scheduleDaysByMonth) ? resp.data.scheduleDaysByMonth : {};
       this.scheduleDays={};
-      this.localEmpty=true;
-      results.forEach(resp=>{
-        if (!resp || !resp.data) return;
-        Object.assign(this.scheduleDays, resp.data.days || {});
-        if (!resp.data.empty) this.localEmpty=false;
-      });
+      this.localEmpty=!!(resp.data && resp.data.empty);
+      const currentKey=this.currentMonthKey();
+      this.scheduleDays=Object.assign({}, this.scheduleDaysByMonth[currentKey] || {});
+      this.refreshDutyBrushCodesBySection();
+      return this.loadLocalCalendarIndex();
+    }).then(()=>{
       this.applyLocalScheduleToGrid();
     }, () => {
       // ignore
@@ -1163,18 +2612,25 @@ class RosterComponent {
     const rows=this.buildLocalRows();
     const lastDay=new Date(this.date.getFullYear(), this.date.getMonth()+1, 0).getDate();
     rows.forEach(row=>{
-      const personDays=this.scheduleDays[row.rosterId] || {};
+      row._cellMeta={};
       for (let day=1; day<=lastDay; day++) {
-        row[String(day)]=personDays[String(day)] || '';
+        const dayKey=String(day);
+        const state=this.getGridCellState(row, dayKey);
+        row[dayKey]=state.displayCode || '';
+        row._cellMeta[dayKey]=state;
       }
     });
     this.cachedPersonRows=rows;
     this.gridOptions.data=this.buildGridWithSummaries(rows);
     this.updateGridEditing();
+    this.refreshDutyBrushCodesBySection();
+    this.refreshGridSize();
   }
 
   personRowsOnly() {
-    return (this.gridOptions.data || []).filter(row=>!row.isSummaryRow && !row.isSectionHeader && !row.isSpacerRow);
+    return (this.gridOptions.data || []).filter(row=>{
+      return !row.isSummaryRow && !row.isSectionHeader && !row.isSpacerRow && !row.isDutyBrushRow;
+    });
   }
 
   personRowsForSummary() {
@@ -1198,15 +2654,87 @@ class RosterComponent {
     return count;
   }
 
-  buildSummaryRows(rows, summaryCodes) {
+  getStaffSummarySeedCodes(staffCategory) {
+    const seeds=this.staffSummarySeeds && this.staffSummarySeeds[staffCategory];
+    return seeds ? seeds.slice() : ['OC','A','DM','8'];
+  }
+
+  getStaffingMinimum(base, sectionType, summaryCode, dayNum) {
+    const section=this.staffingMinimums && this.staffingMinimums[sectionType];
+    if (!section || !section[base]) return 0;
+    const entry=this.normalizeMinimumEntry(section[base][summaryCode]);
+    return this.isWeekendDay(dayNum) ? entry.weekend : entry.weekday;
+  }
+
+  isSummaryBelowMinimum(entity, dayKey, value) {
+    if (!entity || entity.isSummaryTotal || !entity.summaryCode) return false;
+    const min=this.getStaffingMinimum(entity.summaryBase, entity.summarySection, entity.summaryCode, dayKey);
+    if (!min) return false;
+    const count=parseInt(value, 10) || 0;
+    return count < min;
+  }
+
+  isSummaryRowAllZero(row, lastDay) {
+    for (let day=1; day<=lastDay; day++) {
+      if ((parseInt(row[String(day)], 10) || 0) > 0) return false;
+    }
+    return true;
+  }
+
+  inferSummaryCodesForRows(rows, seedCodes, options) {
+    const opts=options || {};
+    const onlyPresent=!!opts.onlyPresent;
+    const excludeCodes=opts.excludeCodes || [];
+    const optional=this.summaryOptionalCodes || [];
+    const ordered=seedCodes.filter(code=>excludeCodes.indexOf(code) < 0);
+    const seen={};
+    ordered.forEach(code=>{ seen[code]=true; });
     const lastDay=new Date(this.date.getFullYear(), this.date.getMonth()+1, 0).getDate();
-    const summaryRows=summaryCodes.map(code=>{
+    (rows || []).forEach(row=>{
+      for (let day=1; day<=lastDay; day++) {
+        const code=this.normalizeCodeForSummary(row[String(day)]);
+        if (!code || seen[code] || excludeCodes.indexOf(code) > -1) continue;
+        seen[code]=true;
+        ordered.push(code);
+      }
+    });
+    return ordered.filter(code=>{
+      if (excludeCodes.indexOf(code) > -1) return false;
+      if (onlyPresent) return this.codePresentInMonth(rows, code);
+      if (optional.indexOf(code) < 0) return true;
+      return this.codePresentInMonth(rows, code);
+    });
+  }
+
+  codePresentInMonth(rows, summaryCode) {
+    const lastDay=new Date(this.date.getFullYear(), this.date.getMonth()+1, 0).getDate();
+    for (let day=1; day<=lastDay; day++) {
+      if (this.countDutyForDay(rows, summaryCode, day) > 0) return true;
+    }
+    return false;
+  }
+
+  buildSummaryRows(rows, summaryCodes, base, sectionType, options) {
+    const opts=options || {};
+    const optionalCodes=opts.optionalCodes || [];
+    const excludeFromTotal=opts.excludeFromTotal || [];
+    const lastDay=new Date(this.date.getFullYear(), this.date.getMonth()+1, 0).getDate();
+    const activeCodes=summaryCodes.filter(code=>{
+      if (opts.onlyPresentCodes) return this.codePresentInMonth(rows, code);
+      if (optionalCodes.indexOf(code) < 0) return true;
+      return this.codePresentInMonth(rows, code);
+    });
+    if (!activeCodes.length) return [];
+    const summaryRows=activeCodes.map(code=>{
       const summaryRow={
-        displayName: code,
+        displayName: this.summaryRowLabel(code),
         isSummaryRow: true,
         isSummaryTotal: false,
         rosterKind: 'summary',
-        summaryCode: code
+        summaryCode: code,
+        summaryBase: base,
+        summarySection: sectionType,
+        excludeFromTotal: excludeFromTotal.indexOf(code) > -1
       };
       for (let day=1; day<=lastDay; day++) {
         summaryRow[String(day)]=this.countDutyForDay(rows, code, day);
@@ -1221,9 +2749,14 @@ class RosterComponent {
     };
     for (let day=1; day<=lastDay; day++) {
       const dayKey=String(day);
-      totalRow[dayKey]=summaryRows.reduce((sum, row)=>sum + (parseInt(row[dayKey], 10) || 0), 0);
+      totalRow[dayKey]=summaryRows.reduce((sum, row)=>{
+        if (row.excludeFromTotal) return sum;
+        return sum + (parseInt(row[dayKey], 10) || 0);
+      }, 0);
     }
-    summaryRows.push(totalRow);
+    if (opts.includeTotal !== false && !this.isSummaryRowAllZero(totalRow, lastDay)) {
+      summaryRows.push(totalRow);
+    }
     return summaryRows;
   }
 
@@ -1250,9 +2783,16 @@ class RosterComponent {
         if (!captains.length) return;
         addMajorSpacer();
         parts.push(this.makeSectionHeader(this.baseSectionLabel(opt.base)));
+        parts.push(this.makeDutyBrushRow(opt.key, opt.label));
         captains.forEach(row=>{ row.rowSection='captain'; });
         parts.push.apply(parts, captains);
-        const captainSummary=this.buildSummaryRows(captains, this.captainSummaryCodes);
+        const captainCodes=this.inferSummaryCodesForRows(captains, this.captainSummaryCodes, {
+          onlyPresent:true,
+          excludeCodes:this.foOnlySummaryCodes
+        });
+        const captainSummary=this.buildSummaryRows(captains, captainCodes, opt.base, 'captains', {
+          excludeFromTotal:this.captainTotalExclude
+        });
         captainSummary.forEach(row=>{ row.rowSection='capt-summary'; });
         if (captainSummary.length) captainSummary[captainSummary.length - 1].sectionEnd=true;
         parts.push.apply(parts, captainSummary);
@@ -1268,9 +2808,16 @@ class RosterComponent {
         if (!fos.length) return;
         addMajorSpacer();
         parts.push(this.makeSectionHeader(this.foSectionLabel(opt.base)));
+        parts.push(this.makeDutyBrushRow(opt.key, opt.label));
         fos.forEach(row=>{ row.rowSection='fo'; });
         parts.push.apply(parts, fos);
-        const foSummary=this.buildSummaryRows(fos, this.foSummaryCodes);
+        const foCodes=this.inferSummaryCodesForRows(fos, this.foSummaryCodes, {
+          onlyPresent:true,
+          excludeCodes:this.captainOnlySummaryCodes
+        });
+        const foSummary=this.buildSummaryRows(fos, foCodes, opt.base, 'fos', {
+          excludeFromTotal:this.foTotalExclude
+        });
         foSummary.forEach(row=>{ row.rowSection='fo-summary'; });
         if (foSummary.length) foSummary[foSummary.length - 1].sectionEnd=true;
         parts.push.apply(parts, foSummary);
@@ -1289,12 +2836,27 @@ class RosterComponent {
         if (!hasVisibleStaff && hasVisibleSection) addMajorSpacer();
         addStaffSpacer();
         parts.push(this.makeSectionHeader(opt.label.toUpperCase()));
+        parts.push(this.makeDutyBrushRow(opt.key, opt.label));
         rows.forEach(row=>{
           row.rowSection='employee';
           row.staffCategory=opt.staffCategory;
         });
         parts.push.apply(parts, rows);
-        if (rows.length) rows[rows.length - 1].sectionEnd=true;
+        const staffSectionType=`staff-${opt.staffCategory}`;
+        const staffCodes=this.inferSummaryCodesForRows(
+          rows,
+          this.getStaffSummarySeedCodes(opt.staffCategory),
+          {onlyPresent:true}
+        );
+        const staffSummary=this.buildSummaryRows(rows, staffCodes, opt.base, staffSectionType, {
+          onlyPresentCodes:true,
+          includeTotal:staffCodes.length > 0
+        });
+        if (staffSummary.length) {
+          staffSummary.forEach(row=>{ row.rowSection='staff-summary'; });
+          staffSummary[staffSummary.length - 1].sectionEnd=true;
+          parts.push.apply(parts, staffSummary);
+        }
         hasVisibleStaff=true;
         hasVisibleSection=true;
       }
@@ -1307,25 +2869,22 @@ class RosterComponent {
     const personRows=this.personRowsForSummary();
     this.gridOptions.data=this.buildGridWithSummaries(personRows);
     if (this.gridApi && this.gridApi.core) this.gridApi.core.notifyDataChange('all');
+    this.refreshDutyBrushCodesBySection();
+    this.refreshGridSize();
   }
 
   updateGridEditing() {
-    const editable=this.isLocalMode();
-    const self=this;
-    this.gridOptions.enableCellEditOnFocus=editable;
+    this.gridOptions.enableCellEditOnFocus=false;
     if (!this.gridOptions.columnDefs) return;
     this.gridOptions.columnDefs.forEach(col=>{
       if (col.field === 'displayName') {
         col.enableCellEdit=false;
+        col.cellTemplate=this.nameCellTemplate;
         col.cellClass=this.nameCellClass.bind(this);
         return;
       }
-      col.enableCellEdit=editable;
+      col.enableCellEdit=false;
       col.cellClass=this.dayCellClass.bind(this);
-      col.cellEditableCondition=function($scope) {
-        return editable && self.canEditRowEntity($scope.row && $scope.row.entity);
-      };
-      col.editableCellTemplate='<input type="text" ui-grid-editor ng-model="MODEL_COL_FIELD" maxlength="4" style="text-transform:uppercase;" />';
     });
     if (this.gridApi && this.gridApi.core) this.gridApi.core.notifyDataChange('column');
   }
@@ -1408,19 +2967,20 @@ class RosterComponent {
     const allRows=pilotRows.concat(staffRows || []);
     this.cachedPersonRows=allRows;
     this.gridOptions.data=this.buildGridWithSummaries(allRows);
+    this.refreshDutyBrushCodesBySection();
     return allRows;
   }
   
   setDaysOfMonth(){
     const lastDay=new Date(this.date.getFullYear(), this.date.getMonth()+1, 0).getDate();
-    const editable=this.isLocalMode();
     const self=this;
     const dow=['SU','MO','TU','WE','TH','FR','SA'];
     let columnDefs=[{
       name:'Name',
       field:'displayName',
-      minWidth:180,
+      minWidth:280,
       enableCellEdit:false,
+      cellTemplate:this.nameCellTemplate,
       cellClass:this.nameCellClass.bind(this),
       headerCellClass:'roster-name-header'
     }];
@@ -1439,19 +2999,19 @@ class RosterComponent {
         cellClass:this.dayCellClass.bind(this),
         headerCellClass:isWeekend ? 'roster-weekend-header' : 'roster-weekday-header',
         headerCellTemplate:'<div class="ui-grid-cell-contents roster-day-header"><div class="roster-dow">{{col.colDef.dayAbbrev}}</div><div class="roster-dom">{{col.colDef.dayOfMonth}}</div></div>',
-        enableCellEdit:editable,
-        cellEditableCondition:function($scope) {
-          return editable && self.canEditRowEntity($scope.row && $scope.row.entity);
-        },
-        editableCellTemplate:'<input type="text" ui-grid-editor ng-model="MODEL_COL_FIELD" maxlength="4" style="text-transform:uppercase;" />'
+        enableCellEdit:false,
+        cellEditableCondition:function() {
+          return false;
+        }
       });
     }
     this.gridOptions.columnDefs=columnDefs;
-    this.gridOptions.enableCellEditOnFocus=editable;
+    this.gridOptions.enableCellEditOnFocus=false;
   }
 
   nameCellClass(grid, row, col) {
     if (row && row.entity && row.entity.isSpacerRow) return 'roster-spacer-cell';
+    if (row && row.entity && row.entity.isDutyBrushRow) return 'roster-duty-brush-name-cell';
     if (row && row.entity && row.entity.isSectionHeader) return 'roster-section-header-label';
     if (row && row.entity && row.entity.isSummaryRow) {
       return row.entity.isSummaryTotal ? 'roster-summary-total-label' : 'roster-summary-label';
@@ -1466,6 +3026,10 @@ class RosterComponent {
       classes.push('roster-spacer-cell');
       return classes.join(' ');
     }
+    if (row && row.entity && row.entity.isDutyBrushRow) {
+      classes.push('roster-brush-day-cell');
+      return classes.join(' ');
+    }
     if (col && col.colDef && col.colDef.isWeekend) classes.push('roster-weekend-cell');
     if (row && row.entity && row.entity.isSectionHeader) {
       classes.push('roster-section-header-day');
@@ -1474,12 +3038,31 @@ class RosterComponent {
     if (row && row.entity && row.entity.isSummaryRow) {
       const value=grid.getCellValue(row, col);
       if (row.entity.isSummaryTotal) classes.push('roster-summary-total');
-      else if (value === 0 || value === '0') classes.push('roster-summary-zero');
-      else classes.push('roster-summary-count');
+      else {
+        const count=parseInt(value, 10) || 0;
+        const min=this.getStaffingMinimum(
+          row.entity.summaryBase,
+          row.entity.summarySection,
+          row.entity.summaryCode,
+          col.field
+        );
+        if (min > 0) {
+          if (count === 0) classes.push('roster-summary-zero');
+          else if (count < min) classes.push('roster-summary-below-min');
+          else classes.push('roster-summary-count');
+        } else classes.push('roster-summary-neutral');
+      }
       return classes.join(' ');
     }
     const dutyClass=this.cellClass(grid, row, col);
     if (dutyClass) classes.push(dutyClass);
+    if (row && row.entity && row.entity._cellMeta && col && col.field) {
+      const meta=row.entity._cellMeta[col.field];
+      if (meta && meta.pendingKind) {
+        classes.push('roster-cell-pending');
+        classes.push(`roster-cell-pending--${meta.pendingKind}`);
+      }
+    }
     return classes.join(' ');
   }
 
