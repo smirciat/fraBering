@@ -632,8 +632,15 @@ export async function firebaseInterval(req,res){
   }
 }
 
-export function firebaseGrab(req,res){
-  let json={flights:allFlights,pilots:firebasePilots,aircraft:firebaseAircraft};
+export async function firebaseGrab(req, res) {
+  try {
+    if (!firebasePilots || !firebasePilots.length) {
+      await firebaseInterval();
+    }
+  } catch (err) {
+    console.log('firebaseGrab prefetch failed', err);
+  }
+  let json = { flights: allFlights, pilots: firebasePilots, aircraft: firebaseAircraft };
   res.status(200).json(json);
 }
 

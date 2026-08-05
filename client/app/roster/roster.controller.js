@@ -8,6 +8,7 @@ class RosterComponent {
     this.http=$http;
     this.scope=$scope;
     this.timeout=$timeout;
+    this.uiGridConstants=uiGridConstants;
     this.socket=socket;
     this.Auth=Auth;
     this.dutyCodes=['A','DM','IOE','8','KA','B1','B2','C1','C2','S1','S2','F','OTZ'];
@@ -1265,6 +1266,46 @@ class RosterComponent {
     }, 0);
   }
 
+  syncGridAfterDataLoad() {
+    if (!this.gridApi || !this.gridApi.core) return;
+    const dataChange=this.uiGridConstants && this.uiGridConstants.dataChange;
+    const changeType=dataChange ? dataChange.ALL : 'all';
+    this.timeout(()=>{
+      if (!this.gridApi || !this.gridApi.core) return;
+      this.gridApi.core.notifyDataChange(changeType);
+      this.gridApi.core.handleWindowResize();
+    }, 0);
+  }
+
+  fetchFirebaseGrabData(attempt) {
+    const tryNum=attempt || 0;
+    const cached=window.firebaseGrabData;
+    if (cached && cached.pilots && cached.pilots.length) {
+      return Promise.resolve({ data: cached });
+    }
+    return this.http.post('/api/airplanes/firebaseGrab').then(res=>{
+      if (res && res.data) window.firebaseGrabData=res.data;
+      const pilots=res && res.data && res.data.pilots;
+      if ((!pilots || !pilots.length) && tryNum < 4) {
+        const delay=Math.min(250 * (tryNum + 1), 1500);
+        return this.timeout(delay).then(()=>this.fetchFirebaseGrabData(tryNum + 1));
+      }
+      return res;
+    });
+  }
+
+  applyFirebasePilots(data) {
+    if (!data || !data.pilots || !data.pilots.length) return false;
+    this.allPilots=data.pilots.filter(pilot=>{
+      return this.rosterBases.indexOf(pilot.pilotBase) > -1 && this.isPilotActive(pilot);
+    });
+    this.pilots=this.allPilots;
+    this.sortPilotList();
+    this.refreshTeamLists();
+    this.refreshCalendarPersonOptions();
+    return this.pilots.length > 0;
+  }
+
   refreshDutyBrushCodesBySection() {
     this.dutyBrushCodesBySection={};
     (this.sectionPickerOptions || []).forEach(opt=>{
@@ -2345,7 +2386,8 @@ class RosterComponent {
     this.fetchMonthMeta();
     this.gridOptions.onRegisterApi=function(gridApi) {
       self.gridApi=gridApi;
-      self.refreshGridSize();
+      if (self.gridOptions.data && self.gridOptions.data.length) self.syncGridAfterDataLoad();
+      else self.refreshGridSize();
     };
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
       if (!newVal||newVal==='') return;
@@ -2656,18 +2698,11 @@ class RosterComponent {
   init(){
     this.refreshSectionPickerOptions();
     this.setDaysOfMonth();
-    this.http.post('/api/airplanes/firebaseGrab').then(res=>{
-      if (!res || !res.data || !res.data.pilots) {
+    this.fetchFirebaseGrabData(0).then(res=>{
+      if (!res || !res.data || !this.applyFirebasePilots(res.data)) {
         this.spinner = false;
         return;
       }
-      this.allPilots=res.data.pilots.filter(pilot=>{
-        return this.rosterBases.indexOf(pilot.pilotBase) > -1 && this.isPilotActive(pilot);
-      });
-      this.pilots=this.allPilots;
-      this.sortPilotList();
-      this.refreshTeamLists();
-      this.refreshCalendarPersonOptions();
       return this.loadEmployees().then(()=>{
         if (!this.isLocalMode()) return this.loadAcrorosterData();
         return this.loadLocalScheduleData();
@@ -2762,7 +2797,7 @@ class RosterComponent {
     this.gridOptions.data=this.buildGridWithSummaries(rows);
     this.updateGridEditing();
     this.refreshDutyBrushCodesBySection();
-    this.refreshGridSize();
+    this.syncGridAfterDataLoad();
   }
 
   personRowsOnly() {
@@ -3103,6 +3138,7 @@ class RosterComponent {
     this.cachedPersonRows=allRows;
     this.gridOptions.data=this.buildGridWithSummaries(allRows);
     this.refreshDutyBrushCodesBySection();
+    this.syncGridAfterDataLoad();
     return allRows;
   }
   
