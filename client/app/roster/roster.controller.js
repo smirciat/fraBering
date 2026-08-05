@@ -1122,8 +1122,9 @@ class RosterComponent {
     this.dateString=normalized.toLocaleDateString();
     this.syncNavDateStrings(normalized);
     this.spinner=true;
+    this._monthLoaded=true;
     this.fetchMonthMeta();
-    this.init();
+    return this.init();
   }
 
   prevMonth() {
@@ -1259,22 +1260,44 @@ class RosterComponent {
     return this.showDutyBrushToolbar() && this.canEditRosterSchedule();
   }
 
+  resolveBootstrapMonthStart() {
+    const navDate=this.scope.nav && this.scope.nav.dateString;
+    let start=this.date || new Date();
+    if (navDate) {
+      const parsed=new Date(navDate);
+      if (!isNaN(parsed.getTime())) start=parsed;
+    }
+    return new Date(start.getFullYear(), start.getMonth(), 1);
+  }
+
+  bootstrapScheduleLoad() {
+    this.loadMonth(this.resolveBootstrapMonthStart());
+  }
+
+  scheduleGridRefresh() {
+    const delays=[0, 50, 150, 350, 700];
+    const dataChange=this.uiGridConstants && this.uiGridConstants.dataChange;
+    const changeType=dataChange ? dataChange.ALL : 'all';
+    delays.forEach(delay=>{
+      this.timeout(()=>{
+        if (!this.gridApi || !this.gridApi.core) return;
+        if (this.gridOptions.data && this.gridOptions.data.length) {
+          this.gridApi.core.notifyDataChange(changeType);
+        }
+        this.gridApi.core.handleWindowResize();
+        if (this.gridApi.grid && typeof this.gridApi.grid.refresh === 'function') {
+          this.gridApi.grid.refresh();
+        }
+      }, delay);
+    });
+  }
+
   refreshGridSize() {
-    if (!this.gridApi || !this.gridApi.core) return;
-    this.timeout(()=>{
-      if (this.gridApi && this.gridApi.core) this.gridApi.core.handleWindowResize();
-    }, 0);
+    this.scheduleGridRefresh();
   }
 
   syncGridAfterDataLoad() {
-    if (!this.gridApi || !this.gridApi.core) return;
-    const dataChange=this.uiGridConstants && this.uiGridConstants.dataChange;
-    const changeType=dataChange ? dataChange.ALL : 'all';
-    this.timeout(()=>{
-      if (!this.gridApi || !this.gridApi.core) return;
-      this.gridApi.core.notifyDataChange(changeType);
-      this.gridApi.core.handleWindowResize();
-    }, 0);
+    this.scheduleGridRefresh();
   }
 
   fetchFirebaseGrabData(attempt) {
@@ -2386,8 +2409,28 @@ class RosterComponent {
     this.fetchMonthMeta();
     this.gridOptions.onRegisterApi=function(gridApi) {
       self.gridApi=gridApi;
-      if (self.gridOptions.data && self.gridOptions.data.length) self.syncGridAfterDataLoad();
-      else self.refreshGridSize();
+      self.scheduleGridRefresh();
+    };
+    this.bootstrapScheduleLoad();
+    this.timeout(()=>{
+      if (self.gridOptions.data && self.gridOptions.data.length) {
+        self.scheduleGridRefresh();
+        return;
+      }
+      if (self._bootstrapRetried) return;
+      self._bootstrapRetried=true;
+      self.bootstrapScheduleLoad();
+    }, 400);
+    const priorFirebaseGrabApply=window.applyFirebaseGrabData;
+    window.applyFirebaseGrabData=(data)=>{
+      if (priorFirebaseGrabApply) priorFirebaseGrabApply(data);
+      if (self.pilots && self.pilots.length) return;
+      if (!data || !self.applyFirebasePilots(data)) return;
+      self.spinner=true;
+      self.loadEmployees().then(()=>{
+        if (!self.isLocalMode()) return self.loadAcrorosterData();
+        return self.loadLocalScheduleData();
+      });
     };
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
       if (!newVal||newVal==='') return;
@@ -2407,19 +2450,17 @@ class RosterComponent {
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{
       if (!newVal||newVal==='') return;
-      const isFirstRun=!oldVal || oldVal === '';
-      if (!isFirstRun && newVal === this.dateString) return;
+      if (!oldVal || oldVal === '') return;
+      if (newVal === this.dateString) return;
       const newDate=new Date(newVal);
       if (isNaN(newDate.getTime())) return;
-      if (!isFirstRun && oldVal !== '') {
-        const oldDate=new Date(oldVal);
-        if (!isNaN(oldDate.getTime()) &&
-            newDate.getFullYear() === oldDate.getFullYear() &&
-            newDate.getMonth() === oldDate.getMonth()) {
-          this.date=newDate;
-          this.dateString=newVal;
-          return;
-        }
+      const oldDate=new Date(oldVal);
+      if (!isNaN(oldDate.getTime()) &&
+          newDate.getFullYear() === oldDate.getFullYear() &&
+          newDate.getMonth() === oldDate.getMonth()) {
+        this.date=newDate;
+        this.dateString=newVal;
+        return;
       }
       this.loadMonth(newDate);
     });
@@ -2698,7 +2739,7 @@ class RosterComponent {
   init(){
     this.refreshSectionPickerOptions();
     this.setDaysOfMonth();
-    this.fetchFirebaseGrabData(0).then(res=>{
+    return this.fetchFirebaseGrabData(0).then(res=>{
       if (!res || !res.data || !this.applyFirebasePilots(res.data)) {
         this.spinner = false;
         return;
@@ -2720,6 +2761,7 @@ class RosterComponent {
       // ignore
     }).finally(() => {
       this.spinner = false;
+      this.scheduleGridRefresh();
       if (this.activeView === 'calendar') this.loadCalendarData();
     });
   }
@@ -2756,6 +2798,7 @@ class RosterComponent {
       // ignore
     }).finally(() => {
       this.spinner = false;
+      this.scheduleGridRefresh();
       if (this.activeView === 'calendar') this.loadCalendarData();
     });
   }

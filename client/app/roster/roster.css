@@ -264,6 +264,10 @@
   height:100%;
 }
 
+.roster-grid-panel .ui-grid-viewport{
+  min-height:240px;
+}
+
 .myGrid{
   height:100%;
   min-height:0;
