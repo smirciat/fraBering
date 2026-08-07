@@ -14,10 +14,10 @@
     </div>
     <div uib-collapse="nav.isCollapsed" class="navbar-collapse collapse" id="navbar-main">
       <ul class="nav navbar-nav">
-        <li ng-show="nav.Auth.isUser()" ui-sref-active="active"><a ui-sref="issues">Bugs</a></li>
+        <li ng-show="nav.Auth.isUser()" ui-sref-active="active"><a href="#" ng-click="nav.navigateTo('issues', $event)">Bugs</a></li>
         <li ng-repeat="item in nav.menu" ui-sref-active="active">
             <a ng-if="item.state !== 'status'" ui-sref="{{item.state}}">{{item.title}}</a>
-            <a ng-if="item.state === 'status'" href="/" ng-click="nav.goHome($event)">{{item.title}}</a>
+            <a ng-if="item.state === 'status'" href="#" ng-click="nav.goHome($event)">{{item.title}}</a>
         </li>
         <li ng-show="nav.Auth.isUser()" class="dropdown">
           <a href="#" data-toggle="dropdown" class="dropdown-toggle">View <b class="caret"></b></a>
@@ -35,7 +35,7 @@
             <li ui-sref-active="active"><a ui-sref="main">Other</a></li>
             <li ng-show="nav.isAdmin()" ui-sref-active="active"><a ui-sref="admin">Manage Users</a></li>
             <li ng-show="nav.Auth.isSuperAdmin()" ui-sref-active="active"><a ui-sref="audit">Audit</a></li>
-            <li ng-show="nav.Auth.isUser()" ui-sref-active="active"><a ui-sref="roster"><i class="fa fa-calendar-check-o"></i> Roster</a></li>
+            <li ui-sref-active="active"><a href="#" ng-click="nav.navigateTo('roster', $event)"><i class="fa fa-calendar-check-o"></i> Roster</a></li>
           </ul>
         </li>
         <li ng-show="nav.Auth.isUser()" style="padding-left:1em;padding-top:7px;">

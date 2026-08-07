@@ -86,7 +86,13 @@ class NavbarController {
   $onInit() {
     this.user=this.Auth.getCurrentUser();
     if (this.user.role==='user') this.isFilter=true;
-    if (window.localStorage.getItem('view')) this.setView(this.views.indexOf(window.localStorage.getItem('view')));
+    const savedView = window.localStorage.getItem('view');
+    if (savedView) {
+      const viewIndex = this.views.indexOf(savedView);
+      if (viewIndex > -1) {
+        this.view = this.views[viewIndex];
+      }
+    }
     let tempFilter=window.localStorage.getItem('isFilter');
     if (tempFilter==='true') this.isFilter=true;
     if (tempFilter==='false') this.isFilter=false;
@@ -130,7 +136,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='126';
+    let version='127';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -571,6 +577,19 @@ class NavbarController {
     return this.$state.is('status') || this.$state.is('new.status');
   }
 
+  navigateTo(stateName, $event){
+    if ($event) {
+      $event.preventDefault();
+      if ($event.stopPropagation) $event.stopPropagation();
+    }
+    if (!this.$state || !stateName) return;
+    if (stateName === 'status') {
+      this.goHome($event);
+      return;
+    }
+    this.$state.go(stateName);
+  }
+
   goHome($event){
     if ($event) {
       $event.preventDefault();
@@ -591,9 +610,6 @@ class NavbarController {
     if (index>-1&&index<5){
       window.localStorage.setItem('view',this.views[index]);
       this.view=this.views[index];
-      if (index===0 && !this.isOnStatusRoute()) {
-        this.$state.go('status');
-      }
     }
   }
   

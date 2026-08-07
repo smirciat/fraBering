@@ -4,45 +4,34 @@
 
   angular.module('workspaceApp.auth')
     .run(function($rootScope, $state, Auth) {
-      // Redirect to login if route requires auth and the user is not logged in, or doesn't have required role
       let authBootstrapped = false;
+
       $rootScope.$on('$stateChangeStart', function(event, next) {
-        // allow first transition to complete bootstrap
         if (!authBootstrapped) {
           authBootstrapped = true;
+          return;
+        }
+
+        if (!next.authenticate) {
           return;
         }
 
         if (!Auth.initialized) {
           Auth.getCurrentUser();
         }
-        if (!next.authenticate) {
-          return;
+
+        // Logged-in users with sufficient role: let ui-router proceed (no preventDefault).
+        if (Auth.isLoggedIn()) {
+          if (typeof next.authenticate !== 'string' || Auth.hasRole(next.authenticate)) {
+            return;
+          }
         }
 
-        if (typeof next.authenticate === 'string') {
-          Auth.hasRole(next.authenticate, _.noop)
-            .then(has => {
-              if (has) {
-                return;
-              }
-
-              event.preventDefault();
-              return Auth.isLoggedIn(_.noop)
-                .then(is => {
-                  $state.go('login');//is ? 'main' : 'login');
-                });
-            });
-        } else {
-          Auth.isLoggedIn(_.noop)
-            .then(is => {
-              if (is) {
-                return;
-              }
-
-              event.preventDefault();
-              $state.go('login');
-            });
+        // No token — send to login. Do not preventDefault when a token exists but the
+        // profile has not resolved yet; blocking here caused URL flicker and stuck routing.
+        if (!Auth.getToken()) {
+          event.preventDefault();
+          $state.go('login');
         }
       });
     });
