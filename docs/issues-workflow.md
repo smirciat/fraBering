@@ -84,3 +84,19 @@ Paste runs in the browser only. **`grunt serve`** uses live `client/` files; **p
 
 - The app reads the clipboard **during** the paste event (deferring loses data on HTTPS).
 - If a preview appears but save fails, nginx may be limiting body size — set `client_max_body_size 20m;` for the frat vhost (Express allows 50mb JSON).
+
+## Issue attachment storage (prod)
+
+Screenshots are **not** in git or in `dist/`. They live on disk at:
+
+`server/fileserver/issue-attachments/<issueId>/`
+
+**Why attachments disappeared after deploy:** Older builds wrote uploads under `dist/server/fileserver/…`. `grunt build` starts with `clean:dist`, which **deletes everything in `dist/`** except a few dotfiles. DB rows stayed; files were wiped.
+
+**Current behavior:** New uploads always go to `server/fileserver/issue-attachments/` at the **repo root** (outside `dist/`), so `grunt build` / `grunt babel:server` does not remove them. The API still checks legacy `dist/server/fileserver/…` paths when serving old files.
+
+**After deploying this fix:** Re-upload any missing screenshots, or copy files from `dist/server/fileserver/issue-attachments/` into `server/fileserver/issue-attachments/` on prod before the next full build (if any remain in dist).
+
+Optional override: `ISSUE_ATTACHMENT_ROOT` in `local.env.js` (see `local.env.sample.js`).
+
+Export (`scripts/export-team-backlog`) only **reads** attachments; it does not delete them.

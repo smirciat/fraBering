@@ -2,12 +2,46 @@
 
 import fs from 'fs';
 import path from 'path';
+import localEnv from '../../config/local.env.js';
 
 var MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Repo root (Gruntfile + client/ + server/), not dist/. Uploads must live
+ * outside dist/ because `grunt build` runs clean:dist and wipes runtime files there.
+ */
+function findRepoRoot() {
+  var dir = __dirname;
+  for (var i = 0; i < 10; i++) {
+    if (
+      fs.existsSync(path.join(dir, 'Gruntfile.js')) &&
+      fs.existsSync(path.join(dir, 'client')) &&
+      fs.existsSync(path.join(dir, 'server'))
+    ) {
+      return dir;
+    }
+    var parent = path.dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  return process.cwd();
+}
+
+/** Persistent upload directory — survives grunt build / dist clean. */
+function persistentAttachmentRoot() {
+  var override = process.env.ISSUE_ATTACHMENT_ROOT || localEnv.ISSUE_ATTACHMENT_ROOT;
+  if (override) {
+    return path.resolve(String(override));
+  }
+  return path.join(findRepoRoot(), 'server/fileserver/issue-attachments');
+}
 
 function attachmentRootCandidates() {
   var cwd = process.cwd();
   return [
+    persistentAttachmentRoot(),
     path.join(__dirname, '../../fileserver/issue-attachments'),
     path.join(cwd, 'server/fileserver/issue-attachments'),
     path.join(cwd, 'dist/server/fileserver/issue-attachments')
@@ -27,9 +61,8 @@ function uniqueRoots(roots) {
   return out;
 }
 
-/** Where new issue uploads are written (runtime fileserver next to compiled API code). */
 function primaryUploadRoot() {
-  return path.resolve(path.join(__dirname, '../../fileserver/issue-attachments'));
+  return path.resolve(persistentAttachmentRoot());
 }
 
 export function issueAttachmentDir(issueId) {
@@ -86,12 +119,7 @@ export function resolveAttachmentPath(attachment) {
     }
   }
 
-  var fallbackDir = path.resolve(issueAttachmentDir(attachment.issueId));
-  var fallbackPath = path.resolve(path.join(fallbackDir, storedName));
-  if (!fallbackPath.startsWith(fallbackDir + path.sep) && fallbackPath !== fallbackDir) {
-    return null;
-  }
-  return fallbackPath;
+  return null;
 }
 
 export {MAX_ATTACHMENT_BYTES};
