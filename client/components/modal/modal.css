@@ -185,6 +185,15 @@
   display:block;
 }
 
+.fiki-remark-snippets{
+  margin-top:4px;
+}
+
+.fiki-remark-snippets .btn{
+  white-space:normal;
+  text-align:left;
+}
+
 .span-modal{
   vertical-align: middle;
   line-height:30px !important;

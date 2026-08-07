@@ -335,7 +335,6 @@
     
     init(){
       var self=this;
-      //console.log(this.appConfig);
       //this.appConfig.pilots.forEach(pilot=>{
       //  self.$http.post('/api/pilots',pilot).then(function(response){
       //    console.log(pilot);
@@ -967,6 +966,10 @@
       var self=this;
       if (self.isSubmitted) return "submitted";
       else return;
+    }
+
+    isNomeBaseAirport(airport){
+      return airport&&(airport.baseGroup==='PAOM'||airport.baseGroup==='OMESeasonal');
     }
     
   }

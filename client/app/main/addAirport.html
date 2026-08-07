@@ -12,7 +12,7 @@
         </md-optgroup>
         <md-optgroup label="Nome">
           <md-option class="dialog-options" ng-value="airport.icao" ng-repeat="airport in main.airports | 
-              orderBy:'-longitude' | filter: {baseGroup:'PAOM'} ">
+              orderBy:'-longitude' | filter: main.isNomeBaseAirport">
                   {{airport.name + ': ' + airport.icao}}</md-option>
         </md-optgroup>
         <md-optgroup label="Unalakleet">

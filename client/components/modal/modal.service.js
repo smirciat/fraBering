@@ -428,6 +428,29 @@ angular.module('workspaceApp')
                 crewIdInputDisabled:function(){
                   return allDisabled() || !!flight.pilotAgree;
                 },
+                fikiRemarkSnippets:[
+                  {label:'Below icing forecast', text:'Planned flight altitude below icing forecast.'},
+                  {label:'Recent PIREP — no icing', text:'Recent PIREP indicates no icing.'}
+                ],
+                knownIcePrior:!!flight.knownIce,
+                showFikiUncheckHint:false,
+                applyFikiUncheckRemark:function(){
+                  let defaultText='Planned flight altitude below icing forecast.';
+                  if (!flight.otherEnvironment||!String(flight.otherEnvironment).trim()) {
+                    flight.otherEnvironment=defaultText;
+                  }
+                  this.showFikiUncheckHint=true;
+                },
+                applyFikiRemarkSnippet:function(snippet){
+                  if (!snippet||!snippet.text) return;
+                  flight.otherEnvironment=snippet.text;
+                  this.showFikiUncheckHint=false;
+                },
+                onKnownIceChange:function(){
+                  if (this.knownIcePrior&&!flight.knownIce) this.applyFikiUncheckRemark();
+                  else if (flight.knownIce) this.showFikiUncheckHint=false;
+                  this.knownIcePrior=!!flight.knownIce;
+                },
                 securityDisp:flight.pfr.remarks1||flight.security,
                 timestamp:timestamp,
                 alternates:alternates,

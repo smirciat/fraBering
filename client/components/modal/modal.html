@@ -525,11 +525,17 @@
          <table class="table table-borderless">
            <tr>
              <td><span style="padding-top:5px;margin-top:5px">FIKI?</span></td>
-             <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-disabled="modal.allDisabled()"></td>
+             <td><input class="form-control" style="margin:0;padding:0;width:30px" name="isKnownIcing" type="checkbox" ng-model="modal.flight.knownIce" ng-change="modal.onKnownIceChange()" ng-disabled="modal.allDisabled()"></td>
            </tr><tr>
              <td><span style="padding-top:5px;margin-top:5px">FIKI REMARK:</span></td>
-             <td><textarea class="form-control" style="height:50px;padding-top:5px;margin-top:5px" ng-style="modal.getWidth(450,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.allDisabled()"></textarea></td>
-           </tr>
+             <td>
+               <textarea class="form-control" style="height:50px;padding-top:5px;margin-top:5px" ng-style="modal.getWidth(450,'px')" name="otherEnvironment" type="text" ng-model="modal.flight.otherEnvironment" ng-disabled="modal.allDisabled()"></textarea>
+               <p ng-if="modal.showFikiUncheckHint" style="color:#0066cc;font-style:italic;margin:6px 0 4px 0;">Planned flight altitude below icing forecast.</p>
+               <div ng-if="!modal.flight.knownIce && !modal.allDisabled()" class="fiki-remark-snippets">
+                 <span style="font-size:0.9em;">Quick remark:</span>
+                 <button type="button" class="btn btn-default btn-xs" style="margin:2px 4px;" ng-repeat="snippet in modal.fikiRemarkSnippets" ng-click="modal.applyFikiRemarkSnippet(snippet)">{{snippet.label}}</button>
+               </div>
+             </td>
          </table>
        </div>
       </div>
@@ -694,7 +700,7 @@
       </table>
     </div>
     <hr class="my-hr">
-    <p>I certify that the requirements of GOM 05.29 Flight Release have been met and crew ID`s checked. The Aircraft Security Search has been completed and no prohibited items, suspicious objects, or evidence of unauthorized access was found</p>
+    <p>I certify that the requirements of GOM 05.29 Flight Release have been met and crew ID's have been checked.</p>
     <table class="table table-borderless">
       <tr>
         <td><p style="padding-top:5px; margin-top:7px; ">DISPATCHER</p></td>

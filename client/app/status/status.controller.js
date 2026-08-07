@@ -50,7 +50,7 @@ class StatusComponent {
     this.BE20Configs=['Mx','9','Primary','Secondary','Single','Tandem','Aft Tandem','Low Hours','Silver Sky'];
     this.BE20Equipments=[0,0,40,40,40,40,40,40,40,0];
     this.alternateArray=['OME','OTZ','UNK','BET','GAL','ANC','FAI'];
-    this.airportOrder=['PAOM','PAUN','PAOT','PAGM','PASA','PASH','PAIW','PATC','PFKT','PATE','PAWM','PAGL','PFEL',
+    this.airportOrder=['PAOM','PAUN','PAOT','A06','NAV','PAGM','PASA','PASH','PAIW','PATC','PFKT','PATE','PAWM','PAGL','PFEL',
             'PAKK','PFSH','PAMK','WBB','PADG','PAPO','PALU','PAVL','PAWN','PFNO','PAIK','PASK','PAFM','PAGH','PAOB','PABL','PADE'];
     this.captainPlusMinus="+";
     this.copilotPlusMinus="+";
@@ -541,9 +541,39 @@ class StatusComponent {
     }
   }
   
+  isOmeSeasonalActive(date){
+    let d=date||new Date();
+    let month=d.getMonth();
+    return month>=4&&month<=8;
+  }
+
+  airportMatchesBaseGroup(airport, baseFour){
+    if (!airport||!airport.threeLetter||airport.threeLetter==='') return false;
+    if (airport.icao===baseFour) return true;
+    if (airport.baseGroup==='OMESeasonal') return baseFour==='PAOM'&&this.isOmeSeasonalActive();
+    if (baseFour==='PAOM') return airport.baseGroup==='PAOM'||airport.baseGroup==='PAUN';
+    return airport.baseGroup===baseFour;
+  }
+
+  airportInStatusSidebar(airport, baseFour){
+    if (!airport||!airport.threeLetter||airport.threeLetter==='') return false;
+    if (this.airportMatchesBaseGroup(airport, baseFour)) return true;
+    if (airport.icao==='PAOM'||airport.icao==='PAUN'||airport.icao==='PAOT') return true;
+    return false;
+  }
+
+  applyFikiUncheckRemark(flight){
+    if (!flight) return;
+    let defaultText='Planned flight altitude below icing forecast.';
+    if (!flight.otherEnvironment||!String(flight.otherEnvironment).trim()) {
+      flight.otherEnvironment=defaultText;
+    }
+  }
+
   updateKnownIce(flight){
     if (!flight||!flight._id||(flight.pilotAgree&&flight.ocRelease||(flight.dispatchRelease))) return;
-    let f={knownIce:flight.knownIce};
+    if (!flight.knownIce) this.applyFikiUncheckRemark(flight);
+    let f={knownIce:flight.knownIce, otherEnvironment:flight.otherEnvironment};
     this.http.patch('/api/todaysFlights/'+flight._id,f).then(res=>{
       console.log(res.data);
     });
@@ -559,6 +589,7 @@ class StatusComponent {
         flights.forEach(flight=>{
           if ((flight.pilotAgree&&flight.ocRelease||(flight.dispatchRelease))) return;
           flight.knownIce=false;
+          this.applyFikiUncheckRemark(flight);
         });
         break;
       case 'All Routes FIKI':
@@ -685,9 +716,7 @@ class StatusComponent {
     }
     return this.masterAirports.filter(e=>{
       if (!e.threeLetter||e.threeLetter==='') return false;
-      if (e.icao===baseFour) return true;
-      if (baseFour==='PAOM') return e.baseGroup==='PAOM'||e.baseGroup==='PAUN';
-      return e.baseGroup===baseFour;
+      return this.airportMatchesBaseGroup(e, baseFour);
     });
   }
 
@@ -1087,19 +1116,9 @@ class StatusComponent {
         //if (airportIndex>=airports.length-1) this.todaysFlights=this.filterTodaysFlights(this.todaysFlights);
       });
       if (!this.scope.nav) return;
-      if (this.scope.nav.base.four==="PAOM") {
-        this.airports=airports.filter(e=>{
-          return (e.threeLetter&&e.threeLetter!==""&&(e.baseGroup===window.base.four||e.baseGroup==="PAUN"))
-              ||e.icao==="PAOM"||e.icao==="PAUN"||e.icao==="PAOT";
-        });
-      }
-      else if (this.scope.nav.base.four==="HELI") this.airports=airports;
-      else {
-        this.airports=airports.filter(e=>{
-          return (e.threeLetter&&e.threeLetter!==""&&(e.baseGroup===window.base.four))
-              ||e.icao==="PAOM"||e.icao==="PAUN"||e.icao==="PAOT";
-        });
-      }
+      let baseFour=this.scope.nav.base.four;
+      if (baseFour==="HELI") this.airports=airports;
+      else this.airports=airports.filter(e=>this.airportInStatusSidebar(e, baseFour));
       
       this.airports.sort((a,b)=>{
         let aI=this.airportOrder.indexOf(a.icao);
