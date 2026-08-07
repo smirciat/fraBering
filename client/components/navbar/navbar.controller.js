@@ -13,10 +13,11 @@ class NavbarController {
   isCollapsed = true;
   //end-non-standard
 
-  constructor(Auth,$interval,$http,$scope,$timeout,$window,Modal,socket) {
+  constructor(Auth,$interval,$http,$scope,$timeout,$window,Modal,socket,$state) {
     this.Auth=Auth;
     this.Modal=Modal;
     this.socket=socket;
+    this.$state=$state;
     this.isLoggedIn = Auth.isLoggedIn;
     this.isAdmin = Auth.isAdmin;
     this.hasRole = Auth.hasRole;
@@ -565,15 +566,43 @@ class NavbarController {
     window.localStorage.setItem('isFilter',this.isFilter.toString());
   }
   
+  isOnStatusRoute(){
+    if (!this.$state) return false;
+    return this.$state.is('status') || this.$state.is('new.status');
+  }
+
+  goHome($event){
+    if ($event) {
+      $event.preventDefault();
+    }
+    if (!this.$state) return;
+    if (this.isOnStatusRoute()) {
+      this.setView(0);
+      if (this.scope && this.scope.status && this.scope.status.resetFlights) {
+        this.scope.status.resetFlights();
+      }
+      return;
+    }
+    this.setView(0);
+    this.$state.go('status');
+  }
+
   setView(index){
     if (index>-1&&index<5){
       window.localStorage.setItem('view',this.views[index]);
       this.view=this.views[index];
+      if (index===0 && !this.isOnStatusRoute()) {
+        this.$state.go('status');
+      }
     }
   }
   
   refresh(){
-    this.scope.status.resetFlights();
+    if (this.scope && this.scope.status && this.scope.status.resetFlights) {
+      this.scope.status.resetFlights();
+      return;
+    }
+    this.goHome();
   }
   
   buttonClass(){

@@ -660,14 +660,43 @@ class StatusComponent {
     this.socket.syncUpdates('airportRequirement', this.masterAirports,(event,item,array)=>{
       this.timeout(()=>{
         if (!array||!array.length) return;
-        this.airports=this.setBase(array);
-        this.syncBaseClosureComment();
         if (item&&item.runScroll) {
-          console.log('AirportRequirements updated at: '+new Date().toLocaleString());
+          this.setBase(array);
+          this.syncBaseClosureComment();
           this.refreshFlightAirportColors();
+          console.log('AirportRequirements updated at: '+new Date().toLocaleString());
+        } else if (item) {
+          this.refreshSidebarAirport(item);
         }
       },0);
     });
+  }
+
+  decorateAirportMetar(airport){
+    if (!airport) return;
+    if (airport.name==='Fairbanks International') airport.name='Fairbanks';
+    let taf='';
+    let TAF={};
+    if (airport.currentTaf) taf=airport.currentTaf;
+    if (airport.currentTafObject) TAF=airport.currentTafObject;
+    if (airport.metarObj&&(!taf||taf==='')) taf=airport.metarObj.taf;
+    if (!airport.metarObj) airport.metarObj={};
+    airport.metarObj.airport=angular.copy(airport);
+    airport.metarObj.color=this.overallRiskClass(airport.metarObj);
+    airport.metarObj.taf=taf;
+    airport.metarObj.TAF=TAF;
+    let masterIndex=this.masterAirports.map(e=>e.threeLetter).indexOf(airport.threeLetter);
+    if (masterIndex>-1) this.masterAirports[masterIndex].metarObj=angular.copy(airport.metarObj);
+  }
+
+  refreshSidebarAirport(item){
+    if (!item||!item._id||!this.airports||!this.airports.length) return;
+    let sidebarIndex=this.airports.findIndex(e=>e&&e._id===item._id);
+    if (sidebarIndex<0) return;
+    this.decorateAirportMetar(item);
+    angular.extend(this.airports[sidebarIndex], item);
+    let hub=this.getBaseHubAirport();
+    if (hub&&hub._id===item._id) this.syncBaseClosureComment();
   }
 
   loadMasterAirports(){
@@ -675,7 +704,7 @@ class StatusComponent {
       let data=res.data||[];
       this.masterAirports.length=0;
       Array.prototype.push.apply(this.masterAirports, data);
-      this.airports=this.setBase(this.masterAirports);
+      this.setBase(this.masterAirports);
       this.syncBaseClosureComment();
       this.setupAirportSocket();
       return this.masterAirports;
@@ -1088,32 +1117,12 @@ class StatusComponent {
     this.timeout(()=>{
       if (!airports) return;
       this.alternateAirports=[];
-      airports.forEach((airport,airportIndex)=>{
+      airports.forEach((airport)=>{
         if (!airport) return;
-        if (airport.name==="Fairbanks International") airport.name="Fairbanks";
-        let taf='';
-        let TAF={};
-        if (airport.currentTaf) taf=airport.currentTaf;
-        if (airport.currentTafObject) TAF=airport.currentTafObject;
-        if (airport.metarObj&&(!taf||taf==='')) taf=airport.metarObj.taf;
-        if (!airport.metarObj) airport.metarObj={};
-        airport.metarObj.airport=angular.copy(airport);
-        airport.metarObj.color=this.overallRiskClass(airport.metarObj);
-        airport.metarObj.taf=taf;
-        airport.metarObj.TAF=TAF;
-        let masterIndex=this.masterAirports.map(e=>e.threeLetter).indexOf(airport.threeLetter);
-        if (masterIndex>-1) this.masterAirports[masterIndex].metarObj=angular.copy(airport.metarObj);
+        this.decorateAirportMetar(airport);
         if (airport.icao==='PAOM'||airport.icao==='PAOT'||airport.icao==='PAUN'||airport.icao==='PANC'||airport.icao==='PABE'||airport.icao==='PAGA'||airport.icao==='PAFA') {
-          //this.http.get('https://avwx.rest/api/taf/' + airport.icao.toUpperCase() + '?token=' + this.appConfig.token).then(res=>{
-            //if (res.data.Error) console.log(res.data.Error);
-            //airport.metarObj.taf=taf
-            //airport.metarObj.TAF=TAF;
-            if (this.alternateArray.indexOf(airport.threeLetter)>-1) this.alternateAirports.push(angular.copy(airport));
-          //}).catch(err=>{
-            //if (this.alternateArray.indexOf(airport.threeLetter)>-1) this.alternateAirports.push(angular.copy(airport));
-            //console.log(err)});
+          if (this.alternateArray.indexOf(airport.threeLetter)>-1) this.alternateAirports.push(angular.copy(airport));
         }
-        //if (airportIndex>=airports.length-1) this.todaysFlights=this.filterTodaysFlights(this.todaysFlights);
       });
       if (!this.scope.nav) return;
       let baseFour=this.scope.nav.base.four;

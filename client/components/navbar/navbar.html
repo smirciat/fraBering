@@ -16,12 +16,13 @@
       <ul class="nav navbar-nav">
         <li ng-show="nav.Auth.isUser()" ui-sref-active="active"><a ui-sref="issues">Bugs</a></li>
         <li ng-repeat="item in nav.menu" ui-sref-active="active">
-            <a ui-sref="{{item.state}}">{{item.title}}</a>
+            <a ng-if="item.state !== 'status'" ui-sref="{{item.state}}">{{item.title}}</a>
+            <a ng-if="item.state === 'status'" href="/" ng-click="nav.goHome($event)">{{item.title}}</a>
         </li>
         <li ng-show="nav.Auth.isUser()" class="dropdown">
           <a href="#" data-toggle="dropdown" class="dropdown-toggle">View <b class="caret"></b></a>
           <ul class="dropdown-menu">
-            <li ng-click="nav.setView(0)"><a>Status Board</a></li>
+            <li><a href="#" ng-click="nav.goHome($event)">Status Board</a></li>
             <li ng-click="nav.setView(1)" ng-show="nav.isAdmin()"><a>Today's FIKI</a></li>
             <li ng-click="nav.setView(2)" ng-show="nav.isAdmin()"><a>Future Charters</a></li>
             <li ng-click="nav.setView(3)"><a>Loads Available</a></li>
