@@ -32,29 +32,17 @@ angular.module('workspaceApp')
         authenticate: true
       });
   })
-  .run(function($rootScope, Auth, $state, $timeout) {
+  .run(function($rootScope, Auth) {
     let authBootstrapped = false;
-    let pendingNav = null;
-
     $rootScope.$on('$stateChangeStart', function(event, next, nextParams, current) {
       // allow first transition to complete bootstrap
       if (!authBootstrapped) {
         authBootstrapped = true;
         return;
       }
-    
+
       if (!Auth.initialized) {
-        event.preventDefault();
-        pendingNav = { name: next.name, params: nextParams || {} };
-        Auth.getCurrentUser(function() {
-          if (!pendingNav) return;
-          const target = pendingNav;
-          pendingNav = null;
-          $timeout(function() {
-            $state.go(target.name, target.params);
-          }, 0);
-        });
-        return;
+        Auth.getCurrentUser();
       }
       if (next.name === 'logout' && current && current.name && !current.authenticate) {
         next.referrer = current.name;

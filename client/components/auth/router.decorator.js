@@ -12,10 +12,9 @@
           authBootstrapped = true;
           return;
         }
-      
+
         if (!Auth.initialized) {
-          event.preventDefault();
-          return;
+          Auth.getCurrentUser();
         }
         if (!next.authenticate) {
           return;

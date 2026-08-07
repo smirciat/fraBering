@@ -130,7 +130,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='125';
+    let version='126';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -645,3 +645,5 @@ class NavbarController {
 
 angular.module('workspaceApp')
   .controller('NavbarController', NavbarController);
+
+NavbarController.$inject = ['Auth', '$interval', '$http', '$scope', '$timeout', '$window', 'Modal', 'socket', '$state'];
