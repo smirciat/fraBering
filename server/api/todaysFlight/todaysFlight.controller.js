@@ -156,6 +156,19 @@ function localeDateFromBody(dateString) {
   return new Date(dateString).toLocaleDateString();
 }
 
+function localeDateFromQuery(dateString) {
+  if (!dateString) return null;
+  const trimmed = String(dateString).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const parts = trimmed.split('-');
+    const year = Number(parts[0]);
+    const month = Number(parts[1]) - 1;
+    const day = Number(parts[2]);
+    return new Date(year, month, day).toLocaleDateString();
+  }
+  return new Date(trimmed).toLocaleDateString();
+}
+
 function getCachedPublicDayFlights(date) {
   let entry = publicDayFlightsCache[date];
   if (!entry) return null;
@@ -197,6 +210,73 @@ function toPublicFlightRow(flight) {
     },
     arrivalOnTimeString
   };
+}
+
+const OPS_EXPORT_ATTRS = [
+  'flightNum', 'active', 'color', 'colorLock',
+  'pilotAgree', 'dispatchRelease', 'ocRelease',
+];
+
+function normalizeFratColorClass(raw) {
+  if (!raw) return 'airport-green';
+  const tokens = String(raw).trim().split(/\s+/);
+  for (let i = tokens.length - 1; i >= 0; i -= 1) {
+    const token = tokens[i];
+    if (token.indexOf('airport-') === 0) return token;
+  }
+  return 'airport-green';
+}
+
+function fratColorModifiers(raw) {
+  const text = String(raw || '').toLowerCase();
+  return {
+    night: text.indexOf('night') > -1,
+    unofficial: text.indexOf('unofficial') > -1,
+  };
+}
+
+function toOpsExportRow(flight) {
+  const f = flight.dataValues || flight;
+  const colorRaw = String(f.colorLock || f.color || '').trim();
+  const pilotAccepted = Boolean(f.pilotAgree && String(f.pilotAgree).trim());
+  const dispatchReleased = Boolean(
+    f.dispatchRelease && String(f.dispatchRelease).trim()
+  );
+  const ocReleased = Boolean(f.ocRelease && String(f.ocRelease).trim());
+  return {
+    flightNum: String(f.flightNum || '').trim(),
+    color: normalizeFratColorClass(colorRaw),
+    colorRaw,
+    modifiers: fratColorModifiers(colorRaw),
+    pilotAccepted,
+    dispatchReleased,
+    ocReleased,
+    released: pilotAccepted && (dispatchReleased || ocReleased),
+  };
+}
+
+// Token-gated export for reservations daily board (#126)
+export function opsExport(req, res) {
+  const date = localeDateFromQuery(req.query.date);
+  if (!date) {
+    return res.status(400).json({message: 'Query parameter date is required (YYYY-MM-DD or parseable date)'});
+  }
+
+  return TodaysFlight.findAll({
+    where: {
+      date,
+      active: 'true',
+    },
+    attributes: OPS_EXPORT_ATTRS,
+    order: [['flightNum', 'ASC']],
+  })
+    .then(rows => rows.map(toOpsExportRow).filter(row => row.flightNum))
+    .then(flights => res.status(200).json({
+      date,
+      generatedAt: new Date().toISOString(),
+      flights,
+    }))
+    .catch(handleError(res));
 }
 
 // Gets a list of TodaysFlights

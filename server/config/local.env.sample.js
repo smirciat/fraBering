@@ -33,6 +33,8 @@ module.exports = {
   NODE_OPTIONS:"--max-old-space-size=4096",
   // Optional: shared secret for GET /api/issues/agent-summary (scripts/export-team-backlog)
   ISSUES_EXPORT_TOKEN: '',
+  // Optional: shared secret for GET /api/todaysFlights/ops-export (reservations daily board)
+  FRAT_OPS_EXPORT_TOKEN: '',
   // Optional: override issue screenshot storage (default: <repo>/server/fileserver/issue-attachments)
   ISSUE_ATTACHMENT_ROOT: ''
 };
