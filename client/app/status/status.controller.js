@@ -169,11 +169,13 @@ class StatusComponent {
       if ((flight.ocRelease||flight.dispatchRelease)&&flight.pilotAgree&&!flight.colorLock) {
         flight.newlyReleased=true;
       }
-      if ((flight.ocRelease||flight.dispatchRelease)&&!flight.colorLock&&flight.color) {
-        flight.colorLock=flight.color;
-      }
-      if ((flight.ocRelease||flight.dispatchRelease)&&(!flight.airportObjsLocked||!flight.airportObjsLocked.length)) {
-        this.lockReleaseWeatherSnapshot(flight);
+      if (flight.ocRelease||flight.dispatchRelease) {
+        if (!flight.airportObjsLocked||!flight.airportObjsLocked.length) {
+          this.lockReleaseWeatherSnapshot(flight);
+        }
+        if (!flight.colorLock) {
+          this.lockFlightColorFromLegs(flight);
+        }
       }
       if (flight.pilotAgree&&flight.pilotAgree!==""&&!flight.releaseTimestamp) flight.releaseTimestamp=new Date();
       if (flight.pilotAgree&&flight.pilotAgree!=="") {
@@ -836,6 +838,15 @@ class StatusComponent {
     metarObj['Raw-Report']=this.buildManualRawReport(airport.manualObs);
     metarObj.color=this.overallRiskClass(metarObj);
     this.applyUnofficialColorSuffix(metarObj);
+  }
+
+  lockFlightColorFromLegs(flight){
+    if (!flight) return;
+    let objs=flight.airportObjsLocked;
+    if (!objs||!objs.length) return;
+    let locked=this.flightRiskClass(objs);
+    flight.colorLock=locked;
+    flight.color=locked;
   }
 
   lockReleaseWeatherSnapshot(flight){

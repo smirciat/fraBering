@@ -241,6 +241,25 @@ angular.module('workspaceApp')
                   });
                   return max;
                 },
+                lockFlightColorFromLegs=function(objs){
+                  if (!objs||!objs.length) return;
+                  let color=colors[0];
+                  let night=false;
+                  let colorIndex=0;
+                  for (let i=0;i<objs.length;i++) {
+                    let myClass=objs[i].color;
+                    if (!myClass) continue;
+                    myClass.split(' ').forEach(a=>{
+                      if (a==='night') night=true;
+                      if (colors.indexOf(a)>colorIndex) {
+                        color=a;
+                        colorIndex=colors.indexOf(a);
+                      }
+                    });
+                  }
+                  flight.colorLock=night?('night '+color):color;
+                  flight.color=flight.colorLock;
+                },
                 legBlocksDispatch=function(metarObj){
                   let idx=worstRiskColorIndex(metarObj&&metarObj.color);
                   return idx===1||idx===2||idx===4||idx===5;
@@ -290,12 +309,14 @@ angular.module('workspaceApp')
                     metarObj['Raw-Report']='WebCam Observation, VFR Only';
                     metarObj.usingManual=true;
                     metarObj.isOfficial=false;
+                    metarObj.color=(String(metarObj.color||'').indexOf('night')>-1?'night ':'')+'airport-green';
                     return;
                   }
                   if (mo.webcamIFR) {
                     metarObj['Raw-Report']='Official WebCam Observation';
                     metarObj.usingManual=true;
                     metarObj.isOfficial=true;
+                    metarObj.color=(String(metarObj.color||'').indexOf('night')>-1?'night ':'')+'airport-orange';
                     return;
                   }
                   let priorColor=String(metarObj.color||'');
@@ -317,12 +338,12 @@ angular.module('workspaceApp')
                   metarObj.usingManual=true;
                   metarObj.manualObs=mo;
                 },
-                snapshotReleaseWeather=function(){
+                snapshotReleaseWeather=function(lockColor){
                   let source=flight.airportObjs;
                   if (!source||!source.length) return;
                   flight.airportObjsLocked=angular.copy(source);
                   flight.airportObjsLocked.forEach(metarObj=>enrichMetarWithManualObs(metarObj));
-                  if (!flight.colorLock&&flight.color) flight.colorLock=flight.color;
+                  if (lockColor&&!flight.colorLock) lockFlightColorFromLegs(flight.airportObjsLocked);
                 },
                 ocRequired=function(){
                   if (flightHasLegBlockingDispatch()) return true;
@@ -363,9 +384,9 @@ angular.module('workspaceApp')
                 },
                 quickModal;
             if (flight.dispatchRelease||flight.ocRelease) {
-              if (!flight.airportObjsLocked||!flight.airportObjsLocked.length) snapshotReleaseWeather();
+              if (!flight.airportObjsLocked||!flight.airportObjsLocked.length) snapshotReleaseWeather(false);
             }
-            else snapshotReleaseWeather();
+            else snapshotReleaseWeather(false);
             quickModal = openModal({
               modal: {
                 Math:Math,
@@ -533,14 +554,14 @@ angular.module('workspaceApp')
                   if (!flight.dispatchRelease) {
                     flight.dispatchRelease=user.name;
                     flight.dispatchReleaseTimestamp=new Date();
-                    snapshotReleaseWeather();
+                    snapshotReleaseWeather(true);
                   }
                 },
                 ocClick:function(){
                   if (!flight.ocRelease) {
                     flight.ocRelease=user.name;
                     flight.ocReleaseTimestamp=new Date();
-                    snapshotReleaseWeather();
+                    snapshotReleaseWeather(true);
                   }
                 },
                 pilotClick:function(){
