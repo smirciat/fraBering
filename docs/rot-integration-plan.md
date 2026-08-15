@@ -1,6 +1,22 @@
 # ROT → fraBering integration plan (#10)
 
-_Preliminary planning — not started in code. Regenerate context from `~/ROT` and this doc before implementation._
+## Progress (2026-08-14)
+
+**Pilot Evals slice — live on prod (smoke test passed).**
+
+| Step | Status |
+|------|--------|
+| PDF backup prod → vultr (3) + dev (1) | Done — cron installed |
+| `RotEvaluations` table + API + UI | Deployed |
+| DB import (`migrate-rot-evaluations`) | Done — 24 rows |
+| Eval PDFs → `server/fileserver/rot/attachments/` | Done |
+| Standalone ROT :58786 | Still running (parallel until sign-off) |
+
+**Next when resuming:** Phase 3 — SIC Hours + `<rot-pilot-selector>`.
+
+See also: `docs/rot-backup-restore.md`.
+
+---
 
 ## Goal
 
@@ -70,12 +86,13 @@ Management ▼
 - [x] Routes: `/api/rot/evaluations`, `/api/rot/files/{attachments,records,pdfs,fileserver}` (JWT auth)
 - [x] Persistent files: `server/fileserver/rot/` (repo root, survives `grunt build`)
 - [x] Migration script: `scripts/migrate-rot-evaluations/index.js`
-- [ ] Import prod `Evaluations` rows + copy attachment PDFs before cutover
+- [x] Import prod `Evaluations` rows + copy attachment PDFs before cutover
 
 ### Phase 2 — First UI: Pilot Evals
 
 - [x] `client/app/rot/pilotEvals/`, state `rot.pilotEvals` at `/rot/evals`
 - [x] Management → **Pilot Evals**
+- [x] Abstract parent state `rot` + prod `grunt build` deploy
 
 ### Phase 3 — Pilot selector + SIC Hours
 

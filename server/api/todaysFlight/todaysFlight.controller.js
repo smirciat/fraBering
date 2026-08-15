@@ -146,7 +146,8 @@ const AUTH_DAY_FLIGHT_ATTRS = [
   'otherEnvironment', 'taxiFuel', 'enrouteChanges', 'equipment', 'bew', 'alternate',
   'loadsObject', 'pilotObject', 'coPilotObject', 'jumpseaterObject', 'airplaneObj',
   'tfliteDepart', 'tfliteArrive',
-  'fueled', 'fueledBy', 'fueledTimestamp', 'truck', 'startFuel', 'stopFuel', 'gallonsUplifted'
+  'fueled', 'fueledBy', 'fueledTimestamp', 'truck', 'startFuel', 'stopFuel', 'gallonsUplifted',
+  'miscObject'
 ];
 
 const PUBLIC_DAY_FLIGHTS_CACHE_TTL_MS = 45000;
