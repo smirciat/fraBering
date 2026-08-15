@@ -59,7 +59,7 @@ if (!fs.existsSync(envFile)) {
 require('babel-register');
 
 const Sequelize = require('sequelize');
-const envConfig = require('../../server/config/environment').default;
+const envConfig = require('../../server/config/environment');
 const sourceUri = process.env.ROT_SOURCE_URI;
 
 if (!sourceUri) {
