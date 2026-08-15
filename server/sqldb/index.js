@@ -41,5 +41,6 @@ db.RosterEmployee = require('../api/rosterEmployee/rosterEmployee.model').defaul
 db.RosterCalendarRequest = require('../api/rosterCalendarRequest/rosterCalendarRequest.model').default(db.sequelize, Sequelize.DataTypes);
 db.RosterMonthMeta = require('../api/rosterMonthMeta/rosterMonthMeta.model').default(db.sequelize, Sequelize.DataTypes);
 db.RosterStaffingMinimum = require('../api/rosterStaffingMinimum/rosterStaffingMinimum.model').default(db.sequelize, Sequelize.DataTypes);
+db.RotEvaluation = require('../api/rotEvaluation/rotEvaluation.model').default(db.sequelize, Sequelize.DataTypes);
 
 module.exports = db;

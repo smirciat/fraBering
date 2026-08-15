@@ -36,5 +36,9 @@ module.exports = {
   // Optional: shared secret for GET /api/todaysFlights/ops-export (reservations daily board)
   FRAT_OPS_EXPORT_TOKEN: '',
   // Optional: override issue screenshot storage (default: <repo>/server/fileserver/issue-attachments)
-  ISSUE_ATTACHMENT_ROOT: ''
+  ISSUE_ATTACHMENT_ROOT: '',
+  // ROT integration — source Postgres for one-time Evaluations import (scripts/migrate-rot-evaluations)
+  ROT_SOURCE_URI: '',
+  // ROT document storage root (default: <repo>/server/fileserver/rot)
+  ROT_FILE_ROOT: ''
 };

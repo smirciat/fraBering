@@ -1,0 +1,37 @@
+<div style="width:90%;margin-left:auto;margin-right:auto;padding-top:1em;">
+  <h3>Pilot Evaluations</h3>
+  <p>Choose pilot name from list</p>
+  <div style="width:250px">
+    <ui-select ng-model="rotPilotEvals.currentPilot" theme="bootstrap" ng-change="rotPilotEvals.filterEvals()">
+      <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+      <ui-select-choices repeat="pilot in rotPilotEvals.pilotNames">
+        <div ng-bind-html="pilot | highlight: $select.search"></div>
+      </ui-select-choices>
+    </ui-select>
+  </div>
+  <hr>
+  <table class="table table-bordered">
+    <tr>
+      <th>Date</th>
+      <th>Flt#</th>
+      <th>Evaluator</th>
+      <th>Aircraft</th>
+      <th>Hours</th>
+      <th>Cumulative Hours</th>
+      <th>Total Score</th>
+      <th></th>
+      <th></th>
+    </tr>
+    <tr ng-repeat="e in rotPilotEvals.filteredEvals track by $index">
+      <td>{{e.date}}</td>
+      <td>{{e.Flt}}</td>
+      <td>{{e.Check_Pilot_Name}}</td>
+      <td>{{e.Aircraft_Type}}</td>
+      <td>{{e.Hours}}</td>
+      <td>{{e.cumHours}}</td>
+      <td>{{e.SCORE}}</td>
+      <td style="width:120px"><button class="btn btn-success" ng-click="rotPilotEvals.viewEval(e)">View Full Eval</button></td>
+      <td style="width:120px"><button class="btn btn-danger" ng-click="rotPilotEvals.deleteEval(e, $index)">Delete Evaluation</button></td>
+    </tr>
+  </table>
+</div>

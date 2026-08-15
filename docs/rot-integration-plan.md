@@ -64,17 +64,18 @@ Management ▼
 - [ ] Is `/xml` still used?
 - [ ] Parallel run ROT :58786 until cutover?
 
-### Phase 1 — Server spine
+### Phase 1 — Server spine (slice 1: evaluations only)
 
-- Sequelize 6 models: `RotEvaluation`, `RotRaw`, `RotPilot`, `RotThing` (no `RotUser`).
-- Routes: `/api/rot/evaluations`, `/api/rot/raws`, `/api/rot/things`, `/api/rot/pilots`, file serving under auth.
-- Migration script: ROT Postgres → `metar`.
-- Smoke: `GET /api/rot/evaluations` with fraBering JWT.
+- [x] Sequelize 6 model: `RotEvaluation` → table `RotEvaluations`
+- [x] Routes: `/api/rot/evaluations`, `/api/rot/files/{attachments,records,pdfs,fileserver}` (JWT auth)
+- [x] Persistent files: `server/fileserver/rot/` (repo root, survives `grunt build`)
+- [x] Migration script: `scripts/migrate-rot-evaluations/index.js`
+- [ ] Import prod `Evaluations` rows + copy attachment PDFs before cutover
 
 ### Phase 2 — First UI: Pilot Evals
 
-- Smallest slice: no pilot selector, no Firebase client.
-- `client/app/rot/pilotEvals/`, state `rot.pilotEvals`, Management link.
+- [x] `client/app/rot/pilotEvals/`, state `rot.pilotEvals` at `/rot/evals`
+- [x] Management → **Pilot Evals**
 
 ### Phase 3 — Pilot selector + SIC Hours
 
@@ -105,5 +106,6 @@ Management ▼
 ## References
 
 - ROT agent guide: `~/ROT/AGENTS.md`
+- **ROT PDF backups & `ROT_SOURCE_URI` explained:** `docs/rot-backup-restore.md`
 - fraBering roster Postgres pattern: `docs/roster-postgres.md`
 - Issue attachment storage (repo-root fileserver): `docs/issues-workflow.md`
