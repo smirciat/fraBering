@@ -82,6 +82,8 @@ export default function(sequelize, DataTypes) {
     COURIER4: DataTypes.STRING
   }, {
     tableName: 'RotEvaluations',
-    timestamps: false
+    timestamps: false,
+    createdAt: false,
+    updatedAt: false
   });
 }

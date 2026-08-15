@@ -87,9 +87,15 @@ async function main() {
   }
 
   let inserted = 0;
+  const modelAttrs = Object.keys(sqldb.RotEvaluation.rawAttributes);
   for (let row of rows) {
     const payload = Object.assign({}, row);
     delete payload._id;
+    delete payload.createdAt;
+    delete payload.updatedAt;
+    Object.keys(payload).forEach(key => {
+      if (modelAttrs.indexOf(key) === -1) delete payload[key];
+    });
     await target.query(
       `INSERT INTO "RotEvaluations" (${Object.keys(payload).map(k => `"${k}"`).join(', ')})
        VALUES (${Object.keys(payload).map((k, i) => `$${i + 1}`).join(', ')})`,
