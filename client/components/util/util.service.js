@@ -93,6 +93,52 @@
       /** Gambell (PAGM) Casa crosswind limits (kts). */
       gambellCasaCrosswindLimits() {
         return { yellow: 20, orange: 25 };
+      },
+
+      /** Match Firebase flight dateString field (MM/DD/YY). */
+      formatFirebaseDate(date) {
+        let d = date instanceof Date ? date : new Date(date);
+        if (isNaN(d.getTime())) return '';
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const yy = String(d.getFullYear()).slice(-2);
+        return mm + '/' + dd + '/' + yy;
+      },
+
+      /**
+       * Normalize helicopter departure text for hub matching.
+       * Pilots use OME, Nome, PAOM, Nome AK, etc. interchangeably.
+       */
+      normalizeHeliDeparture(dep) {
+        if (!dep) return '';
+        let s = String(dep).trim().toUpperCase();
+        s = s.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, ' ');
+        s = s.replace(/\s+/g, ' ').trim();
+        s = s.replace(/\s+AK$/, '').trim();
+        return s;
+      },
+
+      /** Accepted spellings per fuel-page hub (OME / OTZ / UNK). */
+      heliDepartureHubAliases() {
+        return {
+          OME: ['OME', 'PAOM', 'NOME', 'NOME AIRPORT', 'NOME FIELD'],
+          OTZ: ['OTZ', 'PAOT', 'KOTZEBUE', 'KOTZ', 'RALPH WIEN MEMORIAL'],
+          UNK: ['UNK', 'PAUN', 'UNALAKLEET', 'UNALAKLEET AIRPORT']
+        };
+      },
+
+      heliDepartureMatchesHub(dep, hubBase) {
+        if (!hubBase || hubBase === 'HEL') return true;
+        let norm = Util.normalizeHeliDeparture(dep);
+        if (!norm) return false;
+        let aliases = Util.heliDepartureHubAliases()[hubBase];
+        if (!aliases) return false;
+        for (let i = 0; i < aliases.length; i++) {
+          let alias = aliases[i];
+          if (norm === alias) return true;
+          if (norm.indexOf(alias) > -1) return true;
+        }
+        return false;
       }
     };
 

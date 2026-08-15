@@ -572,7 +572,8 @@ export async function firebaseQuery(req,res){
 export async function firebaseDate(req,res){
   let collection=req.body.collection;
   let limit=req.body.limit||150;
-  let date=new Date(req.body.date);
+  let date=req.body.date?new Date(req.body.date):new Date();
+  if (isNaN(date.getTime())) date=new Date();
   const result=await getCollectionDateWithSub(collection,limit,date);
   let array=result;//collectionToArray(result);
   if (res) return res.status(200).json(array);

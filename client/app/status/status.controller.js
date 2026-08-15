@@ -312,6 +312,9 @@ class StatusComponent {
       if (newVal==='next') {
         this.loadMasterAirports();
       }
+      if (newVal==='fuel') {
+        this.buildFuelPageEntries();
+      }
     });
     this.scope.$watch('nav.isFilter',(newVal,oldVal)=>{
       this.isFilter=newVal;
@@ -973,33 +976,48 @@ class StatusComponent {
   }
   
   initHelis(){
-    this.dateString=new Date(this.date).toLocaleDateString();
-    this.http.post('/api/airplanes/firebaseDate',{collection:"flights",date:this.dateString}).then(res=>{
-      console.log(res.data)
-      this.heliFirebaseFlights=res.data;
+    let date=this.date||new Date(window.dateString||Date.now());
+    this.dateString=date.toLocaleDateString();
+    this.http.post('/api/airplanes/firebaseDate',{collection:'flights',date:date.toISOString()}).then(res=>{
+      console.log(res.data);
+      this.heliFirebaseFlights=res.data||[];
       this.syncHelis(this.heliFirebaseFlights);
       this.socket.socket.removeAllListeners('firebaseFlights');
       this.socket.socket.on('firebaseFlights',(firebaseFlights)=>{
-        if (firebaseFlights[0]&&new Date(firebaseFlights[0].dateString).toLocaleDateString()!==this.dateString) return;
+        let selected=this.Util.formatFirebaseDate(this.date||new Date());
+        if (firebaseFlights[0]&&selected&&firebaseFlights[0].dateString!==selected) return;
         console.log(firebaseFlights);
         this.heliFirebaseFlights=firebaseFlights;
         this.syncHelis(firebaseFlights);
       });
+    }).catch(err=>{
+      console.log('firebaseDate failed (check server/firebase.json on dev)', err);
+      this.heliFlights=[];
+      this.buildFuelPageEntries();
     });
   }
   
   syncHelis(firebaseFlights){
     if (!firebaseFlights) firebaseFlights=this.heliFirebaseFlights;
     if (!firebaseFlights) return;
-    let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H",'Huey',"MD500"];
+    let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H",'Huey',"MD500","MD 500","Bell","EC130","H125","407"];
+    let isHeliType=function(acftType){
+      if (!acftType) return false;
+      let t=String(acftType).trim();
+      for (let i=0;i<helis.length;i++) {
+        if (t.indexOf(helis[i])>-1) return true;
+      }
+      return false;
+    };
     if (this.heliFlights) this.heliFlights.forEach(flight=>{
       let index=firebaseFlights.map(e=>e._id).indexOf(flight._id);
       if (index>-1) firebaseFlights[index].extend=flight.extend;
     });
     this.heliFlights=firebaseFlights.filter(flight=>{
-      return helis.indexOf(flight.acftType)>-1&&flight.acftNumber
-        &&flight.acftNumber.substring(0,1).toUpperCase()==="N"
-        &&this.date.toLocaleDateString()===new Date(flight.dateString).toLocaleDateString();
+      let selectedDate=this.Util.formatFirebaseDate(this.date||new Date());
+      return isHeliType(flight.acftType)&&flight.acftNumber
+        &&flight.acftNumber.substring(0,1).toUpperCase()==='N'
+        &&(!selectedDate||flight.dateString===selectedDate);
     }).sort((a,b)=>{
       if (!a.fltPlan||!a.fltPlan.depTime) return 1;
       if (!b.fltPlan||!b.fltPlan.depTime) return -1;
@@ -2147,14 +2165,29 @@ class StatusComponent {
     return t;
   }
 
+  heliDepartureFromFlight(heli){
+    if (!heli) return '';
+    if (heli.fltPlan&&heli.fltPlan.dep) return heli.fltPlan.dep;
+    if (heli.legArray&&heli.legArray[0]) {
+      if (heli.legArray[0].dep) return heli.legArray[0].dep;
+      if (heli.legArray[0].from) return heli.legArray[0].from;
+    }
+    if (heli.departure) return heli.departure;
+    return '';
+  }
+
   heliDepartureMatchesBase(heli){
-    if (!heli||!heli.fltPlan||!heli.fltPlan.dep) return false;
-    let dep=String(heli.fltPlan.dep).trim().toUpperCase();
+    if (!heli) return false;
     let base=window.base&&window.base.base;
-    if (!base||base==='HEL') return false;
-    if (base==='OTZ') return dep==='OTZ'||dep==='PAOT'||dep.indexOf('KOTZEBUE')>-1;
-    if (base==='UNK') return dep==='UNK'||dep==='PAUN'||dep.indexOf('UNALAKLEET')>-1;
-    return dep==='OME'||dep==='PAOM'||dep.indexOf('NOME')>-1;
+    if (!base) return false;
+    if (base==='HEL') return true;
+    let dep=this.heliDepartureFromFlight(heli);
+    if (window.base&&window.base.four) {
+      let norm=this.Util.normalizeHeliDeparture(dep);
+      let four=window.base.four.toUpperCase();
+      if (norm===four||norm.indexOf(four)>-1) return true;
+    }
+    return this.Util.heliDepartureMatchesHub(dep, base);
   }
 
   normalizeHeliFuelEntry(heli){
