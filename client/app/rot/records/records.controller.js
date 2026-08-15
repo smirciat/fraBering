@@ -132,6 +132,7 @@ class RecordsComponent {
     this.RotPilotContext.loadPilots().then(() => {
       let chosen = this.RotPilotContext.getChosenPilot();
       if (chosen) this.queryObj.value = chosen.displayName || chosen.name;
+      this.pilots = this.RotPilotContext.getPilots();
       this.scope.$watch(
         () => this.RotPilotContext.getChosenPilot(),
         (newVal, oldVal) => {
@@ -139,10 +140,10 @@ class RecordsComponent {
           if (oldVal && newVal && oldVal._id !== newVal._id) this.init();
         }
       );
-      return this.http.post('/api/rot/firebase', {collection: 'pilots'});
-    }).then(res => {
-      this.pilots = res.data.filter(p => p.pilotBase && p.pilotBase !== 'none');
       this.init();
+    }).catch(err => {
+      console.error('Records: pilot load failed', err);
+      this.toaster.error('Error', 'Could not load pilot data from Firebase');
     });
     
     this.scope.$watch(() => this.tab, (newVal) => {
@@ -225,10 +226,19 @@ class RecordsComponent {
       let list=JSON.parse(res.data);
       this.files=list.filter(file=>file.startsWith(this.pilot._id.toString()));
       //get records from api for this pilot
-      this.http.post('/api/rot/firebaseQuery',{collection:'records',parameter:'pilotNumber',value:this.pilot._id.toString()}).then(res=>{
-        this.records=res.data;
+      this.http.post('/api/rot/firebaseQuery',{
+        collection:'records',
+        parameter:'pilotNumber',
+        value:this.pilot._id.toString(),
+        limit:5000
+      }).then(res=>{
+        this.records=res.data || [];
         this.refreshRecords();
         this.timeout(()=>{this.getPilotsFiles();},0);
+      }).catch(err=>{
+        console.error('Records: firebaseQuery failed', err);
+        this.records=[];
+        this.toaster.error('Error','Could not load training records from Firebase');
       });
     });
     

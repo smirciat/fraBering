@@ -7,6 +7,12 @@
  */
 
 const admin = require('firebase-admin');
+const serviceAccount = require('../../firebase.json');
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
 const firebase_db = admin.firestore();
 
 async function getCollection(collectionName) {
@@ -25,8 +31,11 @@ async function rotGetCollectionQuery(collectionName, limit, parameter, operator,
   let querySnapshot1;
   if (!value2) {
     let query = collectionRef.where(parameter, operator, value);
-    // Pilots have no `date` field — OME/OTZ filter by pilotBase only (ROT used client runQuery).
-    if (collectionName === 'flights' || collectionName === 'records') {
+    // Pilots have no `date` field — OME/OTZ filter by pilotBase only.
+    // Per-pilot records: skip orderBy so docs missing `date` still return (sort client-side).
+    let useOrderBy = collectionName === 'flights' ||
+      (collectionName === 'records' && parameter !== 'pilotNumber');
+    if (useOrderBy) {
       query = query.orderBy('date', 'desc');
     }
     querySnapshot = await query.limit(limit).get();
@@ -149,7 +158,7 @@ export async function deleteFirebase(req, res) {
 export async function firebaseQuery(req, res) {
   try {
     let collection = req.body.collection || 'pilots';
-    let limit = req.body.limit || 50;
+    let limit = req.body.limit || (req.body.collection === 'records' ? 5000 : 50);
     let parameter = req.body.parameter || 'pilotEmployeeNumber';
     let operator = req.body.operator || '==';
     let value = req.body.value || '933';

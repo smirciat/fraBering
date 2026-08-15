@@ -42,9 +42,10 @@ If pm2 runs from `dist/`, set `ROT_FILE_ROOT` in prod `local.env.js` to the abso
 chmod +x scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh
 chmod +x scripts/rot-backup/*.sh
 
-# optional config
+# optional config (must be readable by your user — chown after sudo cp)
 sudo cp scripts/migrate-rot-training-docs/rot-migrate.env.sample /etc/bering/rot-migrate.env
-sudo chmod 600 /etc/bering/rot-migrate.env
+sudo chown $USER:$USER /etc/bering/rot-migrate.env
+chmod 600 /etc/bering/rot-migrate.env
 # edit ROT_SOURCE_ROOT / FRABERING_ROT_ROOT if needed
 
 ROT_MIGRATE_ENV=/etc/bering/rot-migrate.env \

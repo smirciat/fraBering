@@ -55,10 +55,24 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -f "$ENV_FILE" ]]; then
+load_env_file() {
+  local f="$1"
+  [[ -n "$f" ]] || return 0
+  if [[ ! -f "$f" ]]; then
+    echo "ERROR: env file not found: $f" >&2
+    exit 1
+  fi
+  if [[ ! -r "$f" ]]; then
+    echo "ERROR: cannot read $f" >&2
+    echo "  sudo chown \$USER:\$USER $f   # after sudo cp, file is root-owned" >&2
+    echo "  Or omit ROT_MIGRATE_ENV and use defaults / --source / --target" >&2
+    exit 1
+  fi
   # shellcheck source=/dev/null
-  source "$ENV_FILE"
-fi
+  source "$f"
+}
+
+load_env_file "$ENV_FILE"
 
 [[ -f "$PATHS_FILE" ]] || { echo "Path map not found: $PATHS_FILE" >&2; exit 1; }
 # shellcheck source=/dev/null
