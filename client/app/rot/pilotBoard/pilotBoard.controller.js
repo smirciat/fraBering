@@ -119,11 +119,17 @@ class RotPilotBoardComponent {
   $onInit() {
     window.moment = this.moment;
     window.medicalShortDate = this.medicalShortDate.bind(this);
-    this.init();
+    this.bootstrapped = false;
+    this.Auth.getCurrentUser(user => {
+      if (!user || !user.role) return;
+      this.user = user;
+      this.bootstrapped = true;
+      this.init();
+    });
   }
 
   init() {
-    if (!this.loggedIn()) return;
+    if (!this.bootstrapped) return;
     this.http.post('/api/rot/firebaseQuery', {
       collection: 'pilots',
       parameter: 'pilotBase',
@@ -138,7 +144,7 @@ class RotPilotBoardComponent {
   }
 
   loggedIn() {
-    return this.Auth && this.Auth.isLoggedIn();
+    return !!this.bootstrapped;
   }
 
   processPilots(pilots) {

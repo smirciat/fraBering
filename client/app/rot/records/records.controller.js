@@ -116,10 +116,9 @@ class RecordsComponent {
   }
   
   $onInit(){
-    if (!this.Auth.isLoggedIn()) return;
-    this.user = this.Auth.getCurrentUser() || {};
     this.showTable=true;
     this.showSLEArray=[];
+    this.bootstrapped=false;
     this.date=new Date();
     this.upDate();
     window.categories=this.categories;
@@ -129,21 +128,27 @@ class RecordsComponent {
       if (a==='B190'||a==='C408'||a==='C212') this.assignments.push('SIC / ' + a);
     });
 
-    this.RotPilotContext.loadPilots().then(() => {
-      let chosen = this.RotPilotContext.getChosenPilot();
-      if (chosen) this.queryObj.value = chosen.displayName || chosen.name;
-      this.pilots = this.RotPilotContext.getPilots();
-      this.scope.$watch(
-        () => this.RotPilotContext.getChosenPilot(),
-        (newVal, oldVal) => {
-          if (newVal) this.queryObj.value = newVal.displayName || newVal.name;
-          if (oldVal && newVal && oldVal._id !== newVal._id) this.init();
-        }
-      );
-      this.init();
-    }).catch(err => {
-      console.error('Records: pilot load failed', err);
-      this.toaster.error('Error', 'Could not load pilot data from Firebase');
+    // Wait for User.me — sync isLoggedIn() is false on cold load until profile resolves.
+    this.Auth.getCurrentUser(user => {
+      if (!user || !user.role) return;
+      this.user = user;
+      this.bootstrapped = true;
+      this.RotPilotContext.loadPilots().then(() => {
+        let chosen = this.RotPilotContext.getChosenPilot();
+        if (chosen) this.queryObj.value = chosen.displayName || chosen.name;
+        this.pilots = this.RotPilotContext.getPilots();
+        this.scope.$watch(
+          () => this.RotPilotContext.getChosenPilot(),
+          (newVal, oldVal) => {
+            if (newVal) this.queryObj.value = newVal.displayName || newVal.name;
+            if (oldVal && newVal && oldVal._id !== newVal._id) this.init();
+          }
+        );
+        this.init();
+      }).catch(err => {
+        console.error('Records: pilot load failed', err);
+        this.toaster.error('Error', 'Could not load pilot data from Firebase');
+      });
     });
     
     this.scope.$watch(() => this.tab, (newVal) => {
@@ -157,6 +162,20 @@ class RecordsComponent {
     
   }
   
+  parseRecordFileList(data) {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'string') {
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        console.error('Records: could not parse listRecords response', e);
+        return [];
+      }
+    }
+    return [];
+  }
+
   findSelectedPilot() {
     let chosen = this.RotPilotContext.getChosenPilot();
     if (!chosen) return null;
@@ -222,8 +241,7 @@ class RecordsComponent {
     this.fullFiles=[];
     //get file list from records that start with this.pilot employee number
     this.http.post('/api/rot/listRecords').then(res=>{
-      if (!res.data) return;
-      let list=JSON.parse(res.data);
+      let list = this.parseRecordFileList(res.data);
       this.files=list.filter(file=>file.startsWith(this.pilot._id.toString()));
       //get records from api for this pilot
       this.http.post('/api/rot/firebaseQuery',{
@@ -554,7 +572,7 @@ class RecordsComponent {
   }
   
   loggedIn(){
-    return this.Auth && this.Auth.isLoggedIn();
+    return !!this.bootstrapped;
   }
   
   cleanObject(p){
