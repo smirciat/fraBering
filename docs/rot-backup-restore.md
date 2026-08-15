@@ -71,7 +71,7 @@ REMOTE_KEEP_COUNTS="3 1"
 # Do not set REMOTE_USER if User is already in ~/.ssh/config for each Host
 ```
 
-**Cron note:** Cron does not load your login shell. Without `BACKUP_HOME` and `SSH_CONFIG`, SSH ignores `~/.ssh/config` and falls back to **password** (or hangs). The backup script now sets these explicitly and uses `BatchMode=yes` so it fails fast instead of prompting.
+**Cron note:** Cron does not load your login shell. Set `BACKUP_HOME`, `SSH_CONFIG`, and `SSH_IDENTITY_FILE` in rot-backup.env. The backup uses **`rot-backup-ssh.sh`** (same flags as a manual `ssh -F … -i … bering-vultr` test) for both `ssh` and `rsync -e`, because rsync’s `-e "ssh …"` string often drops config/key options.
 
 At ~10 GB per tar: prod ~10 GB, vultr ~30 GB, dev ~10 GB.
 
@@ -412,7 +412,8 @@ After **3+ daily runs**, vultr should show up to **3** files; dev and prod shoul
 |---------|-----|
 | `Permission denied (publickey)` | Re-run `ssh-copy-id -i ~/.ssh/bering_backup.pub bering-vultr`; check `authorized_keys` perms (600) |
 | Still prompts for password | Cron: add `BACKUP_HOME`, `SSH_CONFIG`, `SSH_IDENTITY_FILE` to rot-backup.env; test with `env -i HOME=/home/andy ssh -F /home/andy/.ssh/config bering-vultr hostname` |
-| Works in shell, fails in cron | Cron missing `BACKUP_HOME` — SSH can't find config |
+| Works in shell, fails in cron / backup script | Use `rot-backup-ssh.sh` wrapper; ensure `chmod +x scripts/rot-backup/rot-backup-ssh.sh` on prod |
+| rsync asks for password but ssh test works | rsync was not using the same ssh flags — fixed by wrapper; test: `rsync -av -e ~/fraBering/scripts/rot-backup/rot-backup-ssh.sh /etc/hosts bering-vultr:/tmp/` |
 | `Could not resolve hostname bering-vultr` | Fix `HostName` in `~/.ssh/config` |
 | `Too many authentication failures` | Add `IdentitiesOnly yes` under each Host |
 | `rsync: connection unexpectedly closed` | Test `ssh bering-vultr` first; check firewall allows SSH from prod IP |

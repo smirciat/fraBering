@@ -15,6 +15,18 @@ if [[ -f "$ENV_FILE" ]]; then
   source "$ENV_FILE"
 fi
 
+# Cron runs with minimal env — set HOME before anything else uses it
+export HOME="${BACKUP_HOME:-${HOME:-}}"
+if [[ -z "$HOME" || "$HOME" == "/" ]]; then
+  echo "ERROR: set BACKUP_HOME=/home/andy in $ENV_FILE" >&2
+  exit 1
+fi
+
+SSH_CONFIG="${SSH_CONFIG:-$HOME/.ssh/config}"
+SSH_IDENTITY_FILE="${SSH_IDENTITY_FILE:-$HOME/.ssh/bering_backup}"
+SSH_WRAPPER="${SSH_WRAPPER:-$SCRIPT_DIR/rot-backup-ssh.sh}"
+export ROT_BACKUP_ENV="$ENV_FILE"
+
 ROT_SERVER_ROOT="${ROT_SERVER_ROOT:-$HOME/ROT/server}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/rot}"
 PROD_KEEP_COUNT="${PROD_KEEP_COUNT:-1}"
@@ -23,11 +35,6 @@ REMOTE_KEEP_COUNTS="${REMOTE_KEEP_COUNTS:-}"
 MIN_FREE_GB="${MIN_FREE_GB:-15}"
 REMOTE_HOSTS="${REMOTE_HOSTS:-bering-vultr bering-dev}"
 REMOTE_DIR="${REMOTE_DIR:-/var/backups/rot}"
-REMOTE_USER="${REMOTE_USER:-}"
-# Cron often has no HOME — set explicitly in rot-backup.env
-BACKUP_HOME="${BACKUP_HOME:-$HOME}"
-SSH_CONFIG="${SSH_CONFIG:-}"
-SSH_IDENTITY_FILE="${SSH_IDENTITY_FILE:-}"
 DATE_TAG="$(date +%Y-%m-%d)"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 WORKDIR="${BACKUP_DIR}/.work-${STAMP}"
@@ -68,15 +75,6 @@ prune_keep_count() {
   done <<< "$to_delete"
 }
 
-prune_remote() {
-  local host="$1"
-  local keep="$2"
-  log "Pruning remote ${host}:${REMOTE_DIR} (keep ${keep} newest)"
-  ssh_remote "$host" \
-    "mkdir -p '${REMOTE_DIR}' && ls -1t '${REMOTE_DIR}'/rot-docs-*.tar.gz 2>/dev/null | tail -n +$((keep + 1)) | xargs -r rm -f" \
-    || log "WARN: remote prune failed on ${host}"
-}
-
 remote_keep_count() {
   local host="$1"
   local idx="${2:-0}"
@@ -91,57 +89,36 @@ remote_keep_count() {
   echo "$REMOTE_KEEP_COUNT"
 }
 
-# Cron runs with minimal env — ensure HOME and SSH config are explicit
-if [[ -n "$BACKUP_HOME" ]]; then
-  export HOME="$BACKUP_HOME"
-fi
-if [[ -z "${HOME:-}" || "$HOME" == "/" ]]; then
-  fail "HOME not set. Add BACKUP_HOME=/home/andy to /etc/bering/rot-backup.env (required for cron)."
-fi
-if [[ -z "$SSH_CONFIG" ]]; then
-  SSH_CONFIG="$HOME/.ssh/config"
-fi
-
-SSH_OPTS=(
-  -F "$SSH_CONFIG"
-  -o BatchMode=yes
-  -o PreferredAuthentications=publickey
-)
-if [[ -n "$SSH_IDENTITY_FILE" ]]; then
-  SSH_OPTS+=(-i "$SSH_IDENTITY_FILE" -o IdentitiesOnly=yes)
-fi
-
-# Build rsync -e "ssh ..." string (host aliases from SSH config, not user@host)
-RSYNC_SSH="ssh"
-for opt in "${SSH_OPTS[@]}"; do
-  RSYNC_SSH+=" $(printf '%q' "$opt")"
-done
+[[ -x "$SSH_WRAPPER" ]] || chmod +x "$SSH_WRAPPER"
+[[ -f "$SSH_CONFIG" ]] || fail "SSH_CONFIG not found: $SSH_CONFIG"
+[[ -f "$SSH_IDENTITY_FILE" ]] || fail "SSH_IDENTITY_FILE not found: $SSH_IDENTITY_FILE"
 
 ssh_remote() {
   local host="$1"
   shift
-  # Use config Host alias (e.g. bering-vultr) — User/IdentityFile come from ~/.ssh/config
-  if [[ -n "$REMOTE_USER" ]]; then
-    ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${host}" "$@"
-  else
-    ssh "${SSH_OPTS[@]}" "$host" "$@"
-  fi
+  "$SSH_WRAPPER" "$host" "$@"
 }
 
 rsync_remote() {
   local host="$1"
-  local dest="${REMOTE_DIR}/"
-  if [[ -n "$REMOTE_USER" ]]; then
-    rsync -av --partial -e "$RSYNC_SSH" "${TAR_PATH}" "${REMOTE_USER}@${host}:${dest}" || return 1
-  else
-    rsync -av --partial -e "$RSYNC_SSH" "${TAR_PATH}" "${host}:${dest}" || return 1
-  fi
+  rsync -av --partial -e "$SSH_WRAPPER" "${TAR_PATH}" "${host}:${REMOTE_DIR}/"
+}
+
+prune_remote() {
+  local host="$1"
+  local keep="$2"
+  log "Pruning remote ${host}:${REMOTE_DIR} (keep ${keep} newest)"
+  ssh_remote "$host" \
+    "mkdir -p '${REMOTE_DIR}' && ls -1t '${REMOTE_DIR}'/rot-docs-*.tar.gz 2>/dev/null | tail -n +$((keep + 1)) | xargs -r rm -f" \
+    || log "WARN: remote prune failed on ${host}"
 }
 
 [[ -d "$ROT_SERVER_ROOT" ]] || fail "ROT_SERVER_ROOT not found: $ROT_SERVER_ROOT"
 
 mkdir -p "$BACKUP_DIR" "$WORKDIR"
 chmod 700 "$BACKUP_DIR" 2>/dev/null || true
+
+log "SSH wrapper=$SSH_WRAPPER HOME=$HOME key=$SSH_IDENTITY_FILE"
 
 FREE_GB="$(free_gb || echo 0)"
 if [[ "$FREE_GB" -lt "$MIN_FREE_GB" ]]; then
@@ -153,7 +130,6 @@ if [[ -f "$TAR_PATH" ]]; then
 else
   log "Building ${TAR_NAME} from ${ROT_SERVER_ROOT}"
 
-  # Document paths only — excludes Office ISO, installers, logs (see docs)
   DOC_PATHS=(
     fileserver/attachments
     records
@@ -186,7 +162,7 @@ fi
 host_idx=0
 for host in $REMOTE_HOSTS; do
   remote_keep="$(remote_keep_count "$host" "$host_idx")"
-  log "Pushing to ${host}:${REMOTE_DIR}/ (keep ${remote_keep} on remote) [HOME=$HOME SSH_CONFIG=$SSH_CONFIG]"
+  log "Pushing to ${host}:${REMOTE_DIR}/ (keep ${remote_keep} on remote)"
   ssh_remote "$host" "mkdir -p '${REMOTE_DIR}'"
   rsync_remote "$host" || fail "rsync to ${host} failed"
   prune_remote "$host" "$remote_keep"
