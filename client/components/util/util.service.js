@@ -211,7 +211,6 @@
         if (String(flight.operation).toLowerCase().indexOf('charter') < 0) return false;
         let airports = flight.airports || [];
         let legCount = airports.length > 0 ? airports.length - 1 : 0;
-        if (legCount > 5) return true;
         if (legCount < 2) return false;
         let standbyAllowance = legCount * 30;
         let scheduled = Util.scheduledBlockMinutes(flight);
