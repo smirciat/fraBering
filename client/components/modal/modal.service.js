@@ -74,7 +74,6 @@ angular.module('workspaceApp')
             var args = Array.prototype.slice.call(arguments),
                 message = args.shift(),
                 flight = args.shift(),
-                nagKey = args.shift(),
                 quickModal;
             quickModal = openModal({
               modal: {
@@ -97,9 +96,9 @@ angular.module('workspaceApp')
               }
             }, 'modal-warning');
             quickModal.result.then(function(result) {
-              cb(result, flight, nagKey);
+              cb(result, flight);
             }).catch(function() {
-              cb('dismiss', flight, nagKey);
+              cb('dismiss', flight);
             });
           };
         },
@@ -480,6 +479,7 @@ angular.module('workspaceApp')
                 standbyCharter:standbyCharter,
                 standbyLegTimes:flight.miscObject.standbyLegTimes,
                 isStandbyCharter:function(){return Util.isStandbyCharter(flight);},
+                standbyLegTimesDisabled:function(){return flight.active==='false';},
                 dismissable: true,
                 show:false,
                 flightModal:true,

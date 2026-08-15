@@ -748,19 +748,23 @@
     <div ng-if="!modal.allDisabled()" style="background-color:red"><h2 style="color:white;font-weight:bold; text-align:center">NOT SIGNED</h2></div>
     <div ng-if="modal.isStandbyCharter() && (modal.flight.dispatchRelease||modal.flight.ocRelease)">
       <div class="orange-line white">
-        <div class="inner-modal">
-          <span class="span-modal" style="padding:5px;font-weight:bold;">Standby charter — record arrival and departure times at intermediate stops (local time, HH:MM).</span>
+        <div class="standby-leg-header">
+          <span style="padding:5px;font-weight:bold;">Standby charter — record arrival and departure times at intermediate stops (local time, HH:MM).</span>
         </div>
       </div>
-      <div class="orange-line white" ng-repeat="leg in modal.standbyLegTimes track by leg.airport">
-        <div class="inner-modal" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:5px;">
-          <span class="span-modal" style="font-weight:bold;">{{leg.airport}}</span>
-          <label style="margin:0;">Arrival</label>
-          <input class="form-control" style="width:5em;display:inline-block;" type="text" placeholder="HH:MM" ng-model="leg.arrival" ng-disabled="modal.flight.flightStatus==='Completed'">
-          <label style="margin:0;">Departure</label>
-          <input class="form-control" style="width:5em;display:inline-block;" type="text" placeholder="HH:MM" ng-model="leg.departure" ng-disabled="modal.flight.flightStatus==='Completed'">
-        </div>
-      </div>
+      <table class="table table-borderless standby-leg-table">
+        <tr ng-repeat="leg in modal.standbyLegTimes track by leg.airport">
+          <td class="standby-leg-airport"><strong>{{leg.airport}}</strong></td>
+          <td class="standby-leg-field">
+            <label>Arrival</label>
+            <input class="form-control standby-leg-input" type="text" placeholder="HH:MM" ng-model="leg.arrival" ng-disabled="modal.standbyLegTimesDisabled()">
+          </td>
+          <td class="standby-leg-field">
+            <label>Departure</label>
+            <input class="form-control standby-leg-input" type="text" placeholder="HH:MM" ng-model="leg.departure" ng-disabled="modal.standbyLegTimesDisabled()">
+          </td>
+        </tr>
+      </table>
       <br>
     </div>
     <div ng-if="true">

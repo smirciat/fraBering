@@ -212,3 +212,42 @@
   color:white;
   font-weight:bold;
 }
+
+.standby-leg-header{
+  padding:6px 8px;
+  text-align:center;
+  font-weight:bold;
+}
+
+.standby-leg-table{
+  margin-bottom:0;
+  background-color:#F2F2F2;
+}
+
+.standby-leg-table td{
+  vertical-align:middle;
+  padding:8px 12px;
+  border-top:1px solid #ddd;
+}
+
+.standby-leg-airport{
+  width:28%;
+  font-weight:bold;
+  text-align:left;
+}
+
+.standby-leg-field{
+  width:36%;
+  text-align:left;
+}
+
+.standby-leg-field label{
+  display:block;
+  margin:0 0 4px;
+  font-weight:normal;
+}
+
+.standby-leg-input{
+  width:6em;
+  display:inline-block;
+}

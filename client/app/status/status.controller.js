@@ -75,13 +75,19 @@ class StatusComponent {
     }
     this.heliFLights=[];
     this.fuelPageEntries=[];
-    this.standbyNagDismissed={};
+    this.standbyNagCounts={};
+    this.standbyNagLastShown={};
     this.standbyNagModalOpen=false;
+    this.standbyNagMax=3;
+    this.standbyNagCooldownMs=5*60*1000;
     try {
-      this.standbyNagDismissed=JSON.parse(sessionStorage.getItem('standbyNagDismissed')||'{}');
+      let nagState=JSON.parse(sessionStorage.getItem('standbyNagState')||'{}');
+      this.standbyNagCounts=nagState.counts||{};
+      this.standbyNagLastShown=nagState.lastShown||{};
     }
     catch (e) {
-      this.standbyNagDismissed={};
+      this.standbyNagCounts={};
+      this.standbyNagLastShown={};
     }
     this.initHelis();
     this.width=document.documentElement.clientWidth;
@@ -139,17 +145,9 @@ class StatusComponent {
     this.initFirebaseData();
     this.metarModal=this.Modal.confirm.metars();
     this.quickModal=this.Modal.confirm.quickMessage(response=>{this.clicked=true;});
-    this.standbyNagModal=this.Modal.confirm.standbyIntermediateNag((result,flight,nagKey)=>{
+    this.standbyNagModal=this.Modal.confirm.standbyIntermediateNag((result,flight)=>{
       this.standbyNagModalOpen=false;
-      if (result==='dismiss'&&nagKey) {
-        this.standbyNagDismissed[nagKey]=true;
-        try {
-          sessionStorage.setItem('standbyNagDismissed',JSON.stringify(this.standbyNagDismissed));
-        }
-        catch (e) { /* ignore */ }
-      }
       if (result==='open'&&flight) this.lookAtFlight(flight);
-      this.timeout(()=>{this.checkStandbyIntermediateNags();},500);
     });
     this.tafDisplay=this.Modal.confirm.quickShow(response=>{});
     this.airportModal=this.Modal.confirm.airport(response=>{
@@ -1587,6 +1585,16 @@ class StatusComponent {
     this.runwayModal(ap,this.user);
   }
 
+  persistStandbyNagState(){
+    try {
+      sessionStorage.setItem('standbyNagState',JSON.stringify({
+        counts:this.standbyNagCounts,
+        lastShown:this.standbyNagLastShown
+      }));
+    }
+    catch (e) { /* ignore */ }
+  }
+
   checkStandbyIntermediateNags(){
     if (!this.Auth.isAdmin()&&!this.Auth.isSuperAdmin()) return;
     if (this.standbyNagModalOpen) return;
@@ -1594,17 +1602,23 @@ class StatusComponent {
     let flights=this.loadFlights||[];
     for (let f=0; f<flights.length; f++) {
       let flight=flights[f];
+      let flightId=flight._id;
+      if ((this.standbyNagCounts[flightId]||0)>=this.standbyNagMax) continue;
+      let lastShown=this.standbyNagLastShown[flightId]||0;
+      if (Date.now()-lastShown<this.standbyNagCooldownMs) continue;
       let nags=this.Util.standbyIntermediateNags(flight);
-      for (let n=0; n<nags.length; n++) {
-        let nag=nags[n];
-        let nagKey=flight._id+':'+nag.airport+':'+nag.field;
-        if (this.standbyNagDismissed[nagKey]) continue;
+      if (!nags.length) continue;
+      let parts=nags.map(nag=>{
         let fieldLabel=nag.field==='arrival'?'arrival':'departure';
-        let msg='<strong>'+nag.flightNum+' ('+nag.aircraft+')</strong> — Enter intermediate '+fieldLabel+' time at <strong>'+nag.airport+'</strong>. Estimated: '+nag.planTime+' (30+ minutes overdue).';
-        this.standbyNagModalOpen=true;
-        this.standbyNagModal(msg,flight,nagKey);
-        return;
-      }
+        return nag.airport+' '+fieldLabel+' (est. '+nag.planTime+')';
+      });
+      let msg='<strong>'+flight.flightNum+' ('+flight.aircraft+')</strong> — Enter intermediate times (30+ minutes overdue):<br>'+parts.join('<br>');
+      this.standbyNagCounts[flightId]=(this.standbyNagCounts[flightId]||0)+1;
+      this.standbyNagLastShown[flightId]=Date.now();
+      this.persistStandbyNagState();
+      this.standbyNagModalOpen=true;
+      this.standbyNagModal(msg,flight);
+      return;
     }
   }
   
