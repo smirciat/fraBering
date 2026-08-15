@@ -8,9 +8,8 @@
  *   ROT_SOURCE_URI='postgres://...' node -r babel-register scripts/migrate-rot-evaluations/index.js
  *   ROT_SOURCE_URI='postgres://...' node -r babel-register scripts/migrate-rot-evaluations/index.js --production
  *
- * Copy eval PDF attachments (run on prod host after DB import):
- *   mkdir -p server/fileserver/rot/attachments
- *   rsync -av ~/ROT/server/fileserver/attachments/ server/fileserver/rot/attachments/
+ * Copy eval PDF attachments (or run the full training-docs migration):
+ *   ./scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh
  *
  * Ongoing PDF backups (prod → vultr + dev): docs/rot-backup-restore.md
  */

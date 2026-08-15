@@ -1,0 +1,37 @@
+.rot-sic-hours-dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 24px;
+  margin-bottom: 1em;
+}
+
+.rot-sic-hours-date-block {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.rot-sic-hours-date-block label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: normal;
+}
+
+.rot-sic-hours-date-block .input-group {
+  width: 200px;
+}
+
+.rot-sic-hours-date-block .input-group .form-control,
+.rot-sic-hours-date-block .input-group input[type="text"] {
+  width: 150px;
+}
+
+.rot-sic-hours-loading {
+  margin: 1em 0;
+  font-style: italic;
+}
+
+.rot-sic-hours-error {
+  margin: 1em 0;
+  color: #a94442;
+}

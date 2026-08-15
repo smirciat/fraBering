@@ -1,0 +1,82 @@
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  margin: 0; /* Clears browser default 8px margin */
+}
+.box {
+  display: inline-block;
+  width: 32%;          /* Adjust width so they fit on one line */
+  vertical-align: top; /* Keeps them aligned at the top */
+  box-sizing: border-box; 
+}
+.points-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+.tight{
+  font-size: 9px; /* or use rem/em for responsiveness */
+  padding: 2px 5px; /* small top/bottom padding for a tight fit */
+  line-height: 1; 
+}
+.f6Input{
+    margin:5px 50px 0px 5px !important;
+    transform: scale(2);
+}
+.navbar {
+    margin-bottom: 0 !important;
+}
+
+.pdf-tooltip {
+    position: fixed;
+    top: 0;
+    right: 50px;
+    z-index: 1000;
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.ui-select-choices {
+  top: 100% !important;
+  bottom: auto !important;
+}
+.event-red {
+    color:red;
+}
+.event-purple {
+    color:purple;
+}
+.event-green {
+    color:#006600;
+}
+.event-yellow {
+    color:#D4AF37;
+}
+.exp-history-table th:first-child,
+.exp-history-table td:first-child {
+    white-space: nowrap;
+    font-weight: bold;
+}
+.exp-history-current {
+    background-color: #ffffcc;
+}
+.exp-history-prev1 {
+    background-color: #e8e8e8;
+    color: #444;
+}
+.exp-history-prev2 {
+  background-color: #f4f4f4;
+  color: #777;
+}
+.exp-history-restorable {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+.exp-history-restorable:hover {
+  background-color: #d6ebff !important;
+}

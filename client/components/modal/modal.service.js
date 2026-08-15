@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('workspaceApp')
-  .factory('Modal', function($rootScope, $uibModal, Util, $timeout) {
+  .factory('Modal', function($rootScope, $uibModal, Util, $timeout, rotAppConfig) {
     /**
      * Opens a modal
      * @param  {Object} scope      - an object to be merged with modal's scope
@@ -99,6 +99,125 @@ angular.module('workspaceApp')
               cb(result, flight);
             }).catch(function() {
               cb('dismiss', flight);
+            });
+          };
+        },
+        radio(cb) {
+          cb = cb || angular.noop;
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                formData = args.shift() || {},
+                theModal;
+            for (let key in formData) {
+              if (formData[key] === 'true' && key !== 'newBaseMonth' && key !== 'includes297G') formData[key] = true;
+              if (formData[key] === 'false' && key !== 'newBaseMonth' && key !== 'includes297G') formData[key] = false;
+            }
+            theModal = openModal({
+              modal: {
+                formData: formData,
+                radio: true,
+                trainingTypes: rotAppConfig.trainingEvents,
+                dismissable: true,
+                title: 'Click Each Training Type Accomplished on this Training Record',
+                buttons: [{
+                  classes: 'btn-primary',
+                  text: 'Confirm/Save',
+                  click: function(event) {
+                    theModal.close(event);
+                  }
+                }, {
+                  classes: 'btn-danger',
+                  text: 'Cancel',
+                  click: function(event) {
+                    theModal.dismiss(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+            if (theModal) theModal.result.then(function(event) {
+              cb.apply(event, [formData]);
+            }).catch(function(err) {
+              console.log(err);
+            });
+          };
+        },
+        pilotData(cb) {
+          cb = cb || angular.noop;
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                pilotData = args.shift() || {},
+                pilotArr = args.shift() || [],
+                theModal;
+            var trainingEvents = rotAppConfig.trainingEvents;
+            let index = pilotArr.map(e => e.name).indexOf('new');
+            if (index > -1) pilotArr.splice(index, 1);
+            index = pilotArr.map(e => e._id).indexOf(undefined);
+            if (index > -1) pilotArr.splice(index, 1);
+            index = pilotArr.map(e => e._id).indexOf('');
+            if (index > -1) pilotArr.splice(index, 1);
+            pilotArr.sort((a, b) => {
+              if (!a.name) a.name = '';
+              if (!b.name) b.name = '';
+              return a.name.localeCompare(b.name);
+            });
+            pilotArr.forEach(pilot => {
+              pilot.combo = pilot._id + ': ' + pilot.name;
+            });
+            pilotArr.unshift({name: 'new', combo: 'new', _id: ''});
+            let aircraftTypes = ['C208', 'C408', 'B190', 'BE20', 'C212'];
+            theModal = openModal({
+              modal: {
+                formData: pilotData,
+                pilotArr: pilotArr,
+                trainingEvents: trainingEvents,
+                pilot: true,
+                dismissable: true,
+                aircraftTypes: aircraftTypes,
+                fixDate: function(key) {
+                  let dateString = this.formData[key];
+                  if (typeof dateString === 'string') {
+                    let arr = dateString.split('/');
+                    if (arr.length >= 3 && arr[2].length === 2) {
+                      this.formData[key] = arr[0] + '/' + arr[1] + '/20' + arr[2];
+                    }
+                  }
+                },
+                title: 'Check or Enter the Pilot`s Information',
+                fill: function() {
+                  if (this.formData.name === 'new' || this.new) {
+                    if (!this.new) this.formData.name = '';
+                    this.new = true;
+                    return;
+                  }
+                  let idx = -1;
+                  if (pilotData._id) idx = pilotArr.map(e => e._id).indexOf(pilotData._id);
+                  if (this.formData._id) idx = pilotArr.map(e => e._id).indexOf(this.formData._id);
+                  if (pilotData.name) idx = pilotArr.map(e => e.name).indexOf(pilotData.name);
+                  if (this.formData.name) idx = pilotArr.map(e => e.name).indexOf(this.formData.name);
+                  if (idx > -1) {
+                    pilotData = pilotArr[idx];
+                    this.formData = pilotData;
+                  }
+                },
+                buttons: [{
+                  classes: 'btn-primary',
+                  text: 'Confirm/Save',
+                  click: function(event) {
+                    theModal.close(event);
+                  }
+                }, {
+                  classes: 'btn-danger',
+                  text: 'Cancel',
+                  click: function(event) {
+                    theModal.dismiss(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+            if (theModal) theModal.result.then(function(event) {
+              cb.apply(event, [pilotData]);
+            }).catch(function(err) {
+              console.log(err);
             });
           };
         },

@@ -9,6 +9,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PATHS_FILE="${ROT_TRAINING_PATHS_FILE:-$SCRIPT_DIR/rot-training-doc-paths.sh}"
 ENV_FILE="${ROT_BACKUP_ENV:-/etc/bering/rot-backup.env}"
 if [[ -f "$ENV_FILE" ]]; then
   # shellcheck source=/dev/null
@@ -128,18 +129,13 @@ fi
 if [[ -f "$TAR_PATH" ]]; then
   log "Today's tarball already exists: $TAR_PATH (skipping create, will still push/prune)"
 else
-  log "Building ${TAR_NAME} from ${ROT_SERVER_ROOT}"
+  log "Building ${TAR_NAME} from ${ROT_SERVER_ROOT} (training PDFs only)"
 
-  DOC_PATHS=(
-    fileserver/attachments
-    records
-    pdfs
-    fileserver/BasicIndoc
-    fileserver/Caravan Initial
-    fileserver/HAZMAT
-  )
+  [[ -f "$PATHS_FILE" ]] || fail "Path map not found: $PATHS_FILE"
+  # shellcheck source=/dev/null
+  source "$PATHS_FILE"
 
-  for rel in "${DOC_PATHS[@]}"; do
+  for rel in "${ROT_TRAINING_SOURCE_PATHS[@]}"; do
     src="${ROT_SERVER_ROOT}/${rel}"
     if [[ -e "$src" ]]; then
       mkdir -p "$WORKDIR/$(dirname "$rel")"

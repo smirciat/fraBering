@@ -4,15 +4,50 @@
 
 **Pilot Evals slice — live on prod (smoke test passed).**
 
+**SIC Hours slice — in repo (Phase 3); deploy with `grunt build` + `grunt babel:server`.**
+
+**Records slice — in repo (Phase 4); deploy with `grunt build` + `grunt babel:server`.**
+
+**Pilot board slice (OME/OTZ) — in repo (Phase 5a); shared `rot-pilot-board` component.**
+
+**Fileserver slice — in repo (Phase 5b); `/rot/files` upload/download browser.**
+
 | Step | Status |
 |------|--------|
 | PDF backup prod → vultr (3) + dev (1) | Done — cron installed |
 | `RotEvaluations` table + API + UI | Deployed |
 | DB import (`migrate-rot-evaluations`) | Done — 24 rows |
 | Eval PDFs → `server/fileserver/rot/attachments/` | Done |
+| `RotPilotContext` + `<rot-pilot-selector>` | Done (in repo) |
+| SIC Hours UI at `/rot/sic-hours` | Done (in repo) |
+| Records UI at `/rot/records` | Done (in repo) |
+| Pilot board OME/OTZ at `/rot/ome`, `/rot/otz` | Done (in repo) — shared component |
+| ROT Fileserver at `/rot/files` | Done (in repo) |
+| `SIC_LOG.pdf` → `server/fileserver/rot/pdfs/` | Copied in repo — deploy to prod |
+| ROT PDF templates → `server/fileserver/rot/pdfs/` | Copied in repo — deploy to prod |
+| Training PDF migration script | `scripts/migrate-rot-training-docs/` — run on prod cutover |
 | Standalone ROT :58786 | Still running (parallel until sign-off) |
 
-**Next when resuming:** Phase 3 — SIC Hours + `<rot-pilot-selector>`.
+**Next when resuming:** Phase 6 — XML import, decommission standalone ROT (:58786).
+
+## Prod deploy + training PDF migration
+
+**Code deploy** (no file moves required for OME/OTZ/SIC UI):
+
+```bash
+grunt build && grunt babel:server && pm2 restart frabering
+```
+
+**Training PDFs** — run once on prod after deploy (`docs/rot-backup-restore.md`):
+
+```bash
+./scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh --dry-run
+./scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh
+```
+
+Copies `attachments/`, `records/`, `pdfs/` from `~/ROT/server` → `~/fraBering/server/fileserver/rot/`.
+
+**Not migrated:** general ROT fileserver browser files — stored elsewhere; `/rot/files` is for new uploads.
 
 See also: `docs/rot-backup-restore.md`.
 
@@ -96,13 +131,29 @@ Management ▼
 
 ### Phase 3 — Pilot selector + SIC Hours
 
-- `RotPilotContext` + `<rot-pilot-selector>`; port `sicHours`.
+- [x] `RotPilotContext` + `<rot-pilot-selector>` (`client/app/rot/rotPilotContext.service.js`, `rotPilotSelector/`)
+- [x] Port `sicHours` → `rot.sicHours` at `/rot/sic-hours`, Management → **SIC Log**
+- [x] `queryOr` on `/api/airplanes/firebaseQuery` (PIC/SIC employee lookup)
+- [x] `pdfform` vendored in `client/vendor/pdfform/`; `SIC_LOG.pdf` in `server/fileserver/rot/pdfs/`
 
 ### Phase 4 — ROT Home + Records
 
-- Port `main` (~1k LOC) and `records` (~1.7k LOC); PDF bower deps.
+- [x] Port `records` (~1.7k LOC) → `rot.records` at `/rot/records`, Management → **Records**
+- [x] ROT Firebase write paths: `/api/rot/updateFirebase`, `/api/rot/deleteFirebase`
+- [x] Record file ops: `/api/rot/{listRecords,uploadRecord,changeFilename,deleteRecord}`
+- [x] `rotAppConfig` training constants; Modal `radio` + `pilotData`; `rot.main` → records redirect
+- [x] PDF templates `ROT.pdf`, `FlightTest.pdf`, `FlightTestINDOC.pdf`, `quarterly.xlsx` in `server/fileserver/rot/pdfs/`
+- [ ] Full `main` ROT home dashboard (deferred — use Records as entry point)
 
 ### Phase 5 — OME/OTZ + Fileserver
+
+- [x] Unified `rot-pilot-board` component (`client/app/rot/pilotBoard/`) — replaces duplicate OME/OTZ controllers
+- [x] `rot.ome` at `/rot/ome` (NOME, split print pages, 85vh grids)
+- [x] `rot.otz` at `/rot/otz` (KOTZEBUE, combined layout, 40vh grids)
+- [x] Firebase via `/api/rot/firebaseQuery` + `/api/rot/updateFirebase` (no client Firestore REST)
+- [x] Management → **Nome (OME)** / **Kotz (OTZ)**
+- [x] ROT Fileserver browser at `/rot/files`
+- [x] Fileserver API: `/api/rot/{listFileserver,uploadFileserver,deleteFileserver}` + `GET /api/rot/files/fileserver`
 
 ### Phase 6 — XML, ROT admin, decommission standalone ROT
 

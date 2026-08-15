@@ -1,0 +1,521 @@
+<div ng-if="rotRecords.loggedIn()" style="background-color:#ffffcc;margin:0;min-height: 100vh;">
+  <rot-pilot-selector></rot-pilot-selector>
+  <div style="width:90%;margin:auto;padding-top:20px;">
+    <div class="box">
+      <h3 ng-click="rotRecords.showUpcomingEvents=!rotRecords.showUpcomingEvents">
+        Upcoming Training Events &nbsp
+        <span ng-if="rotRecords.showUpcomingEvents">
+          <i class="fas fa-caret-square-up"></i>
+        </span>
+        <span ng-if="!rotRecords.showUpcomingEvents">
+          <i class="fas fa-caret-square-down"></i>
+        </span>
+      </h3>
+      <div ng-if="rotRecords.showUpcomingEvents">
+        <div ng-repeat="event in rotRecords.upcomingEvents track by $index">
+          <h4 style="margin-left:20px" ng-if="event.events.length>0">{{event.key}}</h4>
+          <h5 style="margin-left:40px" ng-repeat="pilot in event.events | orderBy: 'grace' track by $index" ng-class="rotRecords.eventClass(pilot.grace)" style="font-weight:bold;">
+            {{pilot.id}}&nbsp{{pilot.name}}&nbsp{{pilot.exp}}&nbsp{{rotRecords.graces[pilot.grace]}}
+          </h5>
+        </div>
+      </div>
+    </div>
+    <div class="box">
+      <h3 ng-click="rotRecords.showUpcomingEvents=!rotRecords.showUpcomingEvents">
+        Upcoming Training Events Stacked &nbsp
+        <span ng-if="rotRecords.showUpcomingEvents">
+          <i class="fas fa-caret-square-up"></i>
+        </span>
+        <span ng-if="!rotRecords.showUpcomingEvents">
+          <i class="fas fa-caret-square-down"></i>
+        </span>
+      </h3>
+      <div ng-if="rotRecords.showUpcomingEvents">
+        <div ng-repeat="pilot in rotRecords.upcomingEventsSorted track by $index">
+          <h5 style="margin-left:40px" ng-class="rotRecords.eventClass(pilot.grace)" style="font-weight:bold;">
+            {{pilot.id}}&nbsp{{pilot.name}}&nbsp{{pilot.event}}&nbsp{{pilot.exp}}&nbsp{{rotRecords.graces[pilot.grace]}}
+          </h5>
+        </div>
+      </div>
+    </div>
+    <div class="box">
+      <h3 ng-click="showQuarterly=!showQuarterly">Check Airman Quarterly Report
+        <span ng-if="showQuarterly">
+          <i class="fas fa-caret-square-up"></i>
+        </span>
+        <span ng-if="!showQuarterly">
+          <i class="fas fa-caret-square-down"></i>
+        </span>
+      </h3>
+      <div ng-if="showQuarterly">
+        Quarter:
+        <ui-select ng-model="rotRecords.quarter" theme="bootstrap" dropdown-position="down">
+          <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
+          <ui-select-choices repeat="item in [1,2,3,4]" >
+            <div ng-bind-html="item | highlight: $select.search"></div>
+          </ui-select-choices>
+        </ui-select>
+        <br>
+        Year:
+        <br>
+        <textarea rows="1" style="width:10em;" ng-model="rotRecords.year"></textarea>
+        <br><br>
+        <button class="btn btn-success" ng-click="rotRecords.quarterlyReport()">Run Report and Download</button>
+      </div>
+    </div>
+    <hr>
+    <!--Nate's Section-->
+    <div ng-if="rotRecords.approvalEmails.indexOf(rotRecords.user.email)>-1">
+      <h3>Select A File to Upload</h3>
+      <h5>Drag and Drop to here, or click 'Choose File' to select from a list</h5>
+      <input class="form-control" style="width:800px;" type="file" id="fileApproval" name="file" />
+      <br>
+      <div class="points-row">
+        <h5>Select Training Record Associated with this Upload</h5>
+        <ui-select ng-model="rotRecords.associated" theme="bootstrap" dropdown-position="down" style="width: 30em !important;" on-select="rotRecords.selectTR()">
+          <ui-select-match placeholder="Choose Tab">{{$select.selected.date + ' - ' + $select.selected.display }}</ui-select-match>
+          <ui-select-choices repeat="item in rotRecords.recordsChoice" >
+            <div ng-bind-html="item.date + ' - ' + item.display | highlight: $select.search"></div>
+          </ui-select-choices>
+        </ui-select>
+        <ui-select ng-model="rotRecords.subtab" theme="bootstrap" dropdown-position="down" ng-if="rotRecords.associated.index<0">
+          <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
+          <ui-select-choices repeat="item in rotRecords.categories" >
+            <div ng-bind-html="item | highlight: $select.search"></div>
+          </ui-select-choices>
+        </ui-select>
+        <button class="btn btn-warning" ng-disabled="rotRecords.isItDisabled('approve')" ng-click="rotRecords.add(true)">Upload and Approve</button>
+      </div>
+    </div>
+    <!--Kaleb's Section-->
+    <div ng-if="rotRecords.user.email==='smirciat@gmail.com'||rotRecords.user.email==='kalebjanke@gmail.com'">
+      <h3>Select A File to Upload</h3>
+      <h5>Drag and Drop to here, or click 'Choose File' to select from a list</h5>
+      <input class="form-control" style="width:800px;" type="file" id="file" name="file" />
+      <br>
+      <div class="points-row">
+        <h5>Select Training Record Associated with this Upload</h5>
+        <ui-select ng-model="rotRecords.associated" theme="bootstrap" dropdown-position="down" style="width: 30em !important;">
+          <ui-select-match placeholder="Choose Tab">{{$select.selected.date + ' - ' + rotRecords.displayArray($select.selected) }}</ui-select-match>
+          <ui-select-choices repeat="item in rotRecords.records" >
+            <div ng-bind-html="item.date + ' - ' + rotRecords.displayArray(item) | highlight: $select.search"></div>
+          </ui-select-choices>
+        </ui-select>
+        <h5>OR:</h5>
+      </div>
+      <div class="points-row" ng-if="!rotRecords.associated||!rotRecords.associated._id">
+        <h5>Select Tab of File From List</h5>
+        <ui-select ng-model="rotRecords.tab" theme="bootstrap" dropdown-position="down">
+          <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
+          <ui-select-choices repeat="item in rotRecords.tabs" >
+            <div ng-bind-html="item | highlight: $select.search"></div>
+          </ui-select-choices>
+        </ui-select>
+        <ui-select ng-model="rotRecords.seat" theme="bootstrap" dropdown-position="down" 
+            ng-if="rotRecords.tab==='C212'||rotRecords.tab==='B190'||rotRecords.tab==='C408'">
+          <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
+          <ui-select-choices repeat="item in ['PIC','SIC']" >
+            <div ng-bind-html="item | highlight: $select.search"></div>
+          </ui-select-choices>
+        </ui-select>
+        <ui-select ng-model="rotRecords.subtab" theme="bootstrap" dropdown-position="down">
+          <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
+          <ui-select-choices repeat="item in rotRecords.subs" >
+            <div ng-bind-html="item | highlight: $select.search"></div>
+          </ui-select-choices>
+        </ui-select>
+        <h5>Document Date</h5>
+        <div style="padding-left:0px;padding-top:0px" class="input-group">
+          <input style="height:35px;width:150px;" type="text" ng-model="rotRecords.dateStringFormatted" 
+              ng-blur="rotRecords.upDate('string')" ng-keydown="rotRecords.handle($event)">
+          <span class="input-group-btn">
+            <button type="button" class="btn btn-primary" ng-click="rotRecords.isDatepickerOpen = !rotRecords.isDatepickerOpen">
+              <i class="glyphicon glyphicon-calendar"></i>
+            </button>
+          </span>
+          <input style="display:none" type="text" class="form-control" uib-datepicker-popup="EEEE MMM d, yyyy" ng-model="rotRecords.date" ng-change="rotRecords.upDate()" 
+             is-open="rotRecords.isDatepickerOpen" datepicker-options="rotRecords.datepickerOptions" ng-required="true" close-text="Close" 
+             alt-input-formats="altInputFormats"/>
+        </div>
+      </div>
+      <div class="points-row">
+        
+        <button class="btn btn-success" ng-click="rotRecords.add()">Upload File</button>
+      </div>
+    </div>
+      
+      
+  </div>
+  <hr>
+  
+  <div style="width:90%;margin:auto;display: flex; gap: 75px;">
+    <h2 ng-click="rotRecords.showTable=!rotRecords.showTable">Enter, Edit, Approve Records (Click to Expand)  &nbsp 
+      <span ng-if="rotRecords.showTable">
+        <i class="fas fa-caret-square-up"></i>
+      </span>
+      <span ng-if="!rotRecords.showTable">
+        <i class="fas fa-caret-square-down"></i>
+      </span>
+    </h2>
+    <h2 ng-click="rotRecords.showApproved=!rotRecords.showApproved">
+      <span ng-if="!rotRecords.showApproved">Include Previously Approved <i class="fas fa-plus"></i></span>
+      <span ng-if="rotRecords.showApproved">Hide Previously Approved <i class="fas fa-minus"></i></span>
+    </h2>
+  </div>
+  <div class="table-responsive" style="overflow-x: auto;" ng-if="rotRecords.showTable">
+    <div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;">
+      <h3 style="margin:0;">All Training Dates for Selected Pilot {{rotRecords.pilot.displayName || rotRecords.pilot.name}}</h3>
+      <button ng-if="rotRecords.isApprover()" class="btn btn-info" ng-click="rotRecords.showPilotTrainingDates()">Edit Pilot Training Dates</button>
+    </div>
+    <p ng-if="rotRecords.isApprover()" style="font-size:12px;color:#666;margin-bottom:8px;">Approvers: click a shaded <em>Previous</em> cell to restore that expiration date.</p>
+    <table class="table table-condensed table-bordered exp-history-table" style="min-width: 1200px;">
+      <thead>
+        <tr>
+          <th></th>
+          <th ng-repeat="key in rotRecords.appConfig.trainingEventKeys" ng-if="rotRecords.hasExpColumn(key)">
+            {{key}}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="rowIndex in rotRecords.expHistoryRowIndexes() track by rowIndex" ng-class="rotRecords.expHistoryRowClass(rowIndex)">
+          <th>{{rotRecords.expHistoryRowLabel(rowIndex)}}</th>
+          <td ng-repeat="key in rotRecords.appConfig.trainingEventKeys" ng-if="rotRecords.hasExpColumn(key)"
+              ng-class="{'exp-history-restorable': rotRecords.canRestoreExpHistory(key, rowIndex)}"
+              ng-click="rotRecords.restoreExpHistory(key, rowIndex)">
+            <span uib-tooltip="{{rotRecords.getExpHistoryTooltip(key, rowIndex)}}" tooltip-enable="rotRecords.getExpHistoryCell(key, rowIndex)">
+              {{ (rotRecords.getExpHistoryCell(key, rowIndex) | monthYear) || '—' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <hr ng-if="rotRecords.showTable">
+  <div flex layout="row" id="content" ng-if="rotRecords.showTable">
+    <div flex layout="column">
+     <md-content flex class="space">
+        <table flex class="table table-responsive table-bordered">
+          <thead>    
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th>Pilot</th>
+                <th>Emp#</th>
+                <th>Date</th>
+                <th>Initial/Recurrent</th>
+                <th>Aircraft</th>
+                <th>Type</th>
+                <th>Base Month</th>
+                <th>New Base</th>
+                <th>Instructor</th>
+                <th>CheckAirman</th>
+                <th>Result</th>
+                <th>Additional Instruction</th>
+                <th>Outcome</th>
+                <th></th>
+                <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="record in rotRecords.records | recordFilter:rotRecords.showApproved track by $index " ng-init="recordIndex=$index" ng-class="rotRecords.newRecordClass(record)">
+                
+                <td>
+                  <button class="btn btn-primary" ng-class="{'disabled': rotRecords.isItLoading()}" ng-click="rotRecords.pdf(record,'ROT')">
+                    <span ng-if="rotRecords.isItLoading()" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+                    ROT
+                  </button>
+                </td>
+                <td>
+                  <button class="btn btn-warning" ng-class="{'disabled': rotRecords.isItLoading()}" ng-click="rotRecords.pdf(record,'FlightTest')">
+                    <span ng-if="rotRecords.isItLoading()" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+                    Flight Test
+                  </button>
+                </td>
+                <td>
+                  <button class="btn btn-success" ng-class="{'disabled': rotRecords.isItLoading()}" ng-click="rotRecords.pdf(record,'FlightTestINDOC')">
+                    <span ng-if="rotRecords.isItLoading()" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+                    INDOC
+                  </button>
+                </td>                
+                <!--<td><input class="form-control" ng-model="record.name" type="text" ng-click="rotRecords.showPilotModal(record.pilotNumber,record)"></td>-->
+                <td style="padding-top:15px;">{{record.name}}</td>
+                <!--<td><input class="form-control" ng-model="record.pilotNumber" type="text" ng-blur="rotRecords.fillPilotData(record,recordIndex)"><!-- style="width:70px;"></td>-->
+                <td style="padding-top:15px;">{{record.pilotNumber}}</td>
+                <td>
+                  <input class="form-control" ng-model="record.date" type="text" ng-blur="rotRecords.checkDate(record)"
+                      style="min-width:7em">
+                </td>
+                <td><ui-select ng-model="record.trainingType" theme="bootstrap" ng-disabled="disabled"><!--ng-change="rotRecords.trainingType(record)">-->
+                  <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+                  <ui-select-choices repeat="combo in rotRecords.trainingTypes" >
+                    <div ng-bind-html="combo | highlight: $select.search"></div>
+                  </ui-select-choices>
+                </ui-select></td>
+                <td><ui-select ng-model="record.aircraft" theme="bootstrap" ng-disabled="disabled">
+                  <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+                  <ui-select-choices repeat="choice in ['none','C208','C408PIC','C408SIC','C212PIC','C212SIC','B190PIC','B190SIC','BE20']" >
+                    <div ng-bind-html="choice | highlight: $select.search"></div>
+                  </ui-select-choices>
+                </ui-select></td>
+                <td ng-click="rotRecords.radioModal(record)" style="padding-top:15px;">
+                  <p tooltip-placement="auto" uib-tooltip="Click to Edit">{{rotRecords.displayArray(record)}}</p>
+                </td>
+                <td><ui-select ng-model="record.baseMonth" theme="bootstrap" ng-disabled="disabled" on-select="rotRecords.onBaseMonthChange(record)">
+                  <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+                  <ui-select-choices repeat="month in rotRecords.months" >
+                    <div ng-bind-html="month | highlight: $select.search"></div>
+                  </ui-select-choices>
+                </ui-select></td>
+                <td><ui-select ng-model="record.newBaseMonth" theme="bootstrap" ng-disabled="disabled">
+                  <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+                  <ui-select-choices repeat="choice in ['true','false']" >
+                    <div ng-bind-html="choice | highlight: $select.search"></div>
+                  </ui-select-choices>
+                </ui-select></td>
+                <td><ui-select ng-model="record.instructor" theme="bootstrap" ng-disabled="disabled" ng-change="rotRecords.fillCert('instructor',record)">
+                  <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+                  <ui-select-choices repeat="instructor in rotRecords.instructors" >
+                    <div ng-bind-html="instructor | highlight: $select.search"></div>
+                  </ui-select-choices>
+                </ui-select></td>
+                
+                <td><ui-select ng-model="record.checkAirman" theme="bootstrap" ng-disabled="disabled" ng-change="rotRecords.fillCert('checkAirman',record)">
+                  <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+                  <ui-select-choices repeat="instructor in rotRecords.instructors" >
+                    <div ng-bind-html="instructor | highlight: $select.search"></div>
+                  </ui-select-choices>
+                </ui-select></td>
+                <td><ui-select ng-model="record.result" theme="bootstrap" ng-disabled="disabled">
+                  <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+                  <ui-select-choices repeat="item in ['Satisfactory','Unsatisfactory','Discontinued']" >
+                    <div ng-bind-html="item | highlight: $select.search"></div>
+                  </ui-select-choices>
+                </ui-select></td>
+                <td><textarea rows="1" style="width:10em;" ng-model="record.additionalInstruction"></textarea></td>
+                <td><textarea rows="1" style="width:4em;" ng-model="record.outcome"></textarea></td>
+                <td><button class="btn btn-success" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.update(record,$index)">Save</button></td>
+                <td><button class="btn btn-danger" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.delete(record,$index)">Delete</button></td>
+                <td ng-if="record.approved"><button class="btn btn-warning" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.approve(record,$index)">Re-Approve</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </md-content>
+    </div>
+  </div>
+  <hr ng-if="rotRecords.showTable">
+  
+  <div style="width:90%;margin:auto;">
+      <h2 ng-click="rotRecords.collapse=!rotRecords.collapse">Pilot Duty Assignment/Qualification &nbsp 
+        <span ng-if="!rotRecords.collapse">
+          <i class="fas fa-caret-square-up"></i>
+        </span>
+        <span ng-if="rotRecords.collapse">
+          <i class="fas fa-caret-square-down"></i>
+        </span>
+      </h2>
+      <div ng-if="!rotRecords.collapse">
+          <table class="table table-bordered">
+            <thead><tr>
+              <th class="tight">Pilot's Name</th>
+              <th class="tight">Certificate Number</th>
+            </tr></thead>
+            <tbody><tr>
+              <td>{{rotRecords.pilot.name}}</td>
+              <td>{{rotRecords.pilot.cert}}</td>
+            </tr></tbody>
+          </table>
+          <table class="table table-bordered">
+            <thead><tr>
+              <th class="tight">Certificate Type(s)</th>
+            </tr></thead>
+            <tbody><tr>
+              <td>
+                  ATP &nbsp
+                  <input class="f6Input" type="checkbox" ng-model="rotRecords.pilot.atp">
+                  Commercial &nbsp
+                  <input class="f6Input" type="checkbox" ng-model="rotRecords.pilot.commercial">
+                  CFI &nbsp
+                  <input class="f6Input" type="checkbox" ng-model="rotRecords.pilot.cfi">
+                  Other &nbsp
+                  <input class="f6Input" type="checkbox" ng-model="rotRecords.pilot.other">
+                  <input style="width:250px;" type="text" ng-model="rotRecords.pilot.otherDescription" ng-if="rotRecords.pilot.other">
+              </td>
+            </tr></tbody>
+          </table>
+          <table class="table table-bordered">
+            <thead><tr>
+              <th class="tight">Ratings</th>
+            </tr></thead>
+            </tbody>
+            <tbody><tr>
+              <td>
+                  <input style="width:100%;" type="text" ng-model="rotRecords.pilot.ratings">
+              </td>
+            </tr></tbody>
+          </table>
+          <table class="table table-bordered">
+            <thead><tr>
+              <th class="tight">High Minimums C208</th>
+              <th class="tight">High Minimums C408</th>
+              <th class="tight">High Minimums C212</th>
+              <th class="tight">High Minimums B190</th>
+              <th class="tight">High Minimums BE20</th>
+            </tr></thead>
+            </tbody>
+            <tbody><tr>
+              <td><input type="checkbox" ng-model="rotRecords.pilot.highMinimumsC208" style="transform: scale(2);margin-left:20px;margin-top:12px"></td>
+              <td><input type="checkbox" ng-model="rotRecords.pilot.highMinimumsC408" style="transform: scale(2);margin-left:20px;margin-top:12px"></td>
+              <td><input type="checkbox" ng-model="rotRecords.pilot.highMinimumsC212" style="transform: scale(2);margin-left:20px;margin-top:12px"></td>
+              <td><input type="checkbox" ng-model="rotRecords.pilot.highMinimumsB190" style="transform: scale(2);margin-left:20px;margin-top:12px"></td>
+              <td><input type="checkbox" ng-model="rotRecords.pilot.highMinimumsBE20" style="transform: scale(2);margin-left:20px;margin-top:12px"></td>
+            </tr></tbody>
+          </table>
+          <table class="table table-bordered">
+            <thead><tr style="font-size:10px;font-weight:bold;height:40px;">
+              <th>POSITION / DUTY ASSIGNMENT</th>
+              <th><div>VFR CHTR 135.293</div><div style="font-weight:normal">Flight Test</div></th>
+              <th>IFR CHTR 135.297 <div style="font-weight:normal">Flight Test</div></th>
+              <th>Commuter 135.244 <div style="font-weight:normal">OE</div></th>
+              <th>Autopilot 135.105 <div style="font-weight:normal">297g + 100hr</div></th>
+              <th>SIC <div style="font-weight:normal">Flight Test</div></th>
+              <th>Company Flight Instructor</th>
+              <th>Check Pilot</th>
+            </tr></thead>
+            <tbody>
+              <tr ng-repeat="row in rotRecords.pilot.quals track by $index">
+                <td>
+                  <ui-select ng-model="row.pda" theme="bootstrap" on-select="rotRecords.selectPda(row,$index)" dropdown-position="down">
+                    <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
+                    <ui-select-choices repeat="item in rotRecords.assignments" >
+                      <div ng-bind-html="item | highlight: $select.search"></div>
+                    </ui-select-choices>
+                  </ui-select>
+                </td>
+                <td><input type="text" ng-model="row.vfr"></td>
+                <td><input type="text" ng-model="row.ifr"></td>
+                <td><input type="text" ng-model="row.oe"></td>
+                <td><input type="text" ng-model="row.autopilot"></td>
+                <td><input type="text" ng-model="row.sic"></td>
+                <td><input type="text" ng-model="row.cfi"></td>
+                <td><input type="text" ng-model="row.checkPilot"></td>
+              </tr>
+              <tr><td><button class="btn btn-info" ng-click="rotRecords.pilot.quals.push({})">Add Row</button></td></tr>
+            </tbody>
+          </table>
+          <div style="background-color:#FFE7E9">
+            <table class="table table-bordered" >
+              <thead><tr style="font-size:10px;font-weight:bold;height:40px;">
+                <th><div>Removed From Duty</div><div style="font-weight:normal">Type of Duty</div></th>
+                <th><div>Permanent</div><div style="font-weight:normal">Uncheck if Temporary</div></th>
+                <th><div>Due To</div><div style="font-weight:normal">Reason</div></th>
+                <th><div>Removed</div><div style="font-weight:normal">Date/Initials</div></th>
+                <th><div>Reinstated</div><div style="font-weight:normal">Date/Initials</div></th>
+                <th></th>
+              </tr></thead>
+              <tbody>
+                <tr ng-repeat="row in rotRecords.pilot.removals track by $index">
+                  <td>
+                    <ui-select ng-model="row.pda" theme="bootstrap" on-select="rotRecords.selectRemoval(row,$index)" dropdown-position="down" ng-disabled="row.locked">
+                      <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
+                      <ui-select-choices repeat="item in rotRecords.assignments" >
+                        <div ng-bind-html="item | highlight: $select.search"></div>
+                      </ui-select-choices>
+                    </ui-select>
+                  </td>
+                  <td><input type="checkbox" ng-model="row.permanent" style="transform: scale(2);margin-left:20px;margin-top:12px" ng-disabled="row.locked"></td>
+                  <td><input type="text" ng-model="row.reason" style="width:100%;margin-top:5px" ng-disabled="row.locked"></td>
+                  <td><input type="text" ng-model="row.removed" style="width:100%;margin-top:5px" ng-disabled="row.locked"></td>
+                  <td><input type="text" ng-model="row.reinstated" style="width:100%;margin-top:5px" ng-disabled="row.locked"></td>
+                  <td><button class="btn btn-warning" ng-click="rotRecords.pilot.removals.splice($index,1)" ng-disabled="row.locked">Delete Row</button></td>
+                </tr>
+                <tr><td><button class="btn btn-info" ng-click="rotRecords.pilot.removals.push({})">Add Row</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display: flex; justify-content:left; margin-bottom:10px;">
+            <span style="margin-top:5px;">Medical Date:</span>&nbsp
+            <input type="text" ng-model="rotRecords.pilot.medicalDate">&nbsp&nbsp&nbsp&nbsp&nbsp
+            <span style="margin-top:5px;">Medical Class:</span>&nbsp
+            <ui-select ng-model="rotRecords.pilot.medicalClass" theme="bootstrap" dropdown-position="down">
+              <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
+              <ui-select-choices repeat="item in ['FIRST','SECOND']" >
+                <div ng-bind-html="item | highlight: $select.search"></div>
+              </ui-select-choices>
+            </ui-select>&nbsp
+            <span style="margin-top:5px;">Custom Medical Interval (In Months):</span>&nbsp
+            <input type="text" ng-model="rotRecords.pilot.medicalInterval">
+          </div>
+          <button class="btn btn-success" ng-click="rotRecords.savePilotAssignment()">Save Pilot Assignment/Removal Data</button>
+      </div>
+  </div>
+  <hr>
+  <div style="width:90%;margin:auto;">
+      <div ng-repeat="cat in rotRecords.tabs track by $index" ng-init="tabIndex=$index">
+        <h2 ng-if="rotRecords.filterCheck(cat)" ng-click="rotRecords.showSLEArray[$index].showTab=!rotRecords.showSLEArray[$index].showTab">
+          {{cat}}&nbsp
+          <span ng-if="rotRecords.showSLEArray[$index].showTab">
+            <i class="fas fa-caret-square-up"></i>
+          </span>
+          <span ng-if="!rotRecords.showSLEArray[$index].showTab">
+            <i class="fas fa-caret-square-down"></i>
+          </span>
+        </h2>
+        <div ng-if="rotRecords.showSLEArray[$index].showTab">
+          <!--Single line entry goes here-->
+          <div ng-if="rotRecords.filterCheck(cat)&&cat!=='CERT'">
+            <h4 style="margin-left:20px" ng-click="rotRecords.showSLEArray[$index].showSLE=!rotRecords.showSLEArray[$index].showSLE">
+              <span ng-if="!rotRecords.showSLEArray[$index].showSLE">Show Single Line Entry Form <i class="fas fa-plus"></i></span>
+              <span ng-if="rotRecords.showSLEArray[$index].showSLE">Hide Single Line Entry Form <i class="fas fa-minus"></i></span>
+            </h4>
+            <div ng-if="rotRecords.showSLEArray[$index].showSLE">
+              <table class="table table-bordered">
+                <thead><tr>
+                  <th class="tight">Pilot's Name</th>
+                  <th class="tight">Certificate Number</th>
+                  <th class="tight">Date</th>
+                  <th class="tight">Training/Test</th>
+                  <th class="tight">Result</th>
+                  <th class="tight">Inst/Check Pilot</th>
+                </tr></thead>
+                <tbody>
+                  <tr ng-repeat="line in rotRecords.singleLineEntry[tabIndex].lines track by $index">
+                    <td>{{line.name}}</td>
+                    <td>{{line.cert}}</td>
+                    <td>{{line.date}}</td>
+                    <td>{{line.type}}</td>
+                    <td>S</td>
+                    <td>{{line.inst}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div ng-repeat="sub in rotRecords.whichSubs(cat) track by $index" ng-init="subIndex = $index">
+            <h4 style="margin-left:20px" ng-if="rotRecords.filterCheck(cat,sub)">{{sub}}</h4>
+            <div ng-repeat="seat in rotRecords.seatArray(cat)">
+              <h5 style="margin-left:40px" ng-if="rotRecords.filterCheck(cat,sub,seat)">{{seat}}</h5>
+            
+              <div ng-repeat="file in rotRecords.fullFiles | categoryFilter:cat:sub:seat | orderBy:'-date' " class="points-row">
+                <div>
+                  <a href="{{file.urlMain}}" target="_blank" ng-mouseenter="file.isPreviewVisible=true" ng-mouseleave="file.isPreviewVisible=false">
+                      <thumbnail file-type="{{file.type}}" source="{{file.urlMain}}" img-url="file.url" max-height="{{file.maxHeight}}" max-width="300"></thumbnail>
+                  </a>
+                  <div ng-if="file.isPreviewVisible" class="pdf-tooltip">
+                      <iframe ng-src="{{ file.urlMain  + '#navpanes=0' | trusted }}" style="height:100vh;width:80vw;" type="application/pdf"></iframe>
+                  </div>
+                </div>
+                <h5 ng-click="rotRecords.filenamePrompt(file.filename)"><a href="#">{{rotRecords.getDate(file.filename)}}&nbsp{{file.filename}}&nbsp</a></h5>
+                <button class="btn btn-primary" ng-click="rotRecords.downloadFile(file.filename)">Download File</button>
+                <button class="btn btn-danger" ng-click="rotRecords.deleteFile(file.filename)">Delete File</button>
+              </div>
+            
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+  <hr>
+</div>
+

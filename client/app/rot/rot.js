@@ -5,6 +5,6 @@ angular.module('workspaceApp')
     $stateProvider.state('rot', {
       abstract: true,
       url: '/rot',
-      template: '<div ui-view></div>'
+      template: '<navbar></navbar><rot-nav></rot-nav><div ui-view></div>'
     });
   });

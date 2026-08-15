@@ -46,7 +46,7 @@ export default function(app) {
   app.use('/api/hazardReports', require('./api/hazardReport'));
   app.use('/api/issues', require('./api/issue'));
   app.use('/api/rot/evaluations', require('./api/rotEvaluation'));
-  app.use('/api/rot/files', require('./api/rot').default);
+  app.use('/api/rot', require('./api/rot').default);
   app.use('/api/flights', require('./api/flight'));
   app.use('/api/pilots', require('./api/pilot'));
   app.use('/api/assessments', require('./api/assessment'));

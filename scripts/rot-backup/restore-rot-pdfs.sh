@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
-# Restore ROT documents from a rot-docs-YYYY-MM-DD.tar.gz backup.
+# Restore ROT training-document PDFs from a rot-docs-YYYY-MM-DD.tar.gz backup.
 # Run on bering-dev, bering-vultr, or bering-prod when recovering files.
+#
+# Scope: attachments, records, pdfs only (not general fileserver browser files).
 #
 # Usage:
 #   ./restore-rot-pdfs.sh /var/backups/rot/rot-docs-2026-08-14.tar.gz
@@ -11,6 +13,9 @@
 # See docs/rot-backup-restore.md
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PATHS_FILE="${ROT_TRAINING_PATHS_FILE:-$SCRIPT_DIR/rot-training-doc-paths.sh}"
 
 TAR_FILE=""
 TARGET_ROOT=""
@@ -33,6 +38,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -f "$TAR_FILE" ]] || { echo "Tar not found: $TAR_FILE"; exit 1; }
+[[ -f "$PATHS_FILE" ]] || { echo "Path map not found: $PATHS_FILE" >&2; exit 1; }
+# shellcheck source=/dev/null
+source "$PATHS_FILE"
 
 if [[ -z "$TARGET_ROOT" ]]; then
   if [[ "$LAYOUT" == "frabering" ]]; then
@@ -59,18 +67,17 @@ sync_tree() {
 }
 
 if [[ "$LAYOUT" == "frabering" ]]; then
-  echo "Restoring into fraBering layout: $TARGET_ROOT"
-  sync_tree "$WORKDIR/fileserver/attachments" "$TARGET_ROOT/attachments"
-  sync_tree "$WORKDIR/records" "$TARGET_ROOT/records"
-  sync_tree "$WORKDIR/pdfs" "$TARGET_ROOT/pdfs"
-  sync_tree "$WORKDIR/fileserver/BasicIndoc" "$TARGET_ROOT/fileserver/BasicIndoc"
-  sync_tree "$WORKDIR/fileserver/Caravan Initial" "$TARGET_ROOT/fileserver/Caravan Initial"
-  sync_tree "$WORKDIR/fileserver/HAZMAT" "$TARGET_ROOT/fileserver/HAZMAT"
+  echo "Restoring training PDFs into fraBering layout: $TARGET_ROOT"
+  for pair in "${ROT_TRAINING_FRABERING_MAP[@]}"; do
+    src_rel="${pair%%:*}"
+    dest_rel="${pair##*:}"
+    sync_tree "$WORKDIR/$src_rel" "$TARGET_ROOT/$dest_rel"
+  done
 else
-  echo "Restoring into standalone ROT tree: $TARGET_ROOT"
-  sync_tree "$WORKDIR/fileserver" "$TARGET_ROOT/fileserver"
-  sync_tree "$WORKDIR/records" "$TARGET_ROOT/records"
-  sync_tree "$WORKDIR/pdfs" "$TARGET_ROOT/pdfs"
+  echo "Restoring training PDFs into standalone ROT tree: $TARGET_ROOT"
+  for rel in "${ROT_TRAINING_SOURCE_PATHS[@]}"; do
+    sync_tree "$WORKDIR/$rel" "$TARGET_ROOT/$rel"
+  done
 fi
 
 if [[ -f "$WORKDIR/rot-evaluations.dump" ]]; then

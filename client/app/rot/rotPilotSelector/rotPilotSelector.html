@@ -1,0 +1,9 @@
+<div class="rot-pilot-selector" style="width:20em;margin-bottom:1em;">
+  <ui-select ng-model="rotPilotSelector.pilot" theme="bootstrap" dropdown-position="down"
+      on-select="rotPilotSelector.onSelect($item)">
+    <ui-select-match placeholder="Choose Pilot">{{$select.selected.name}}</ui-select-match>
+    <ui-select-choices repeat="pilot in rotPilotSelector.pilots | filter: $select.search">
+      <div ng-bind-html="pilot.name | highlight: $select.search"></div>
+    </ui-select-choices>
+  </ui-select>
+</div>

@@ -4,6 +4,9 @@ import path from 'path';
 import express from 'express';
 import * as auth from '../../auth/auth.service';
 import {resolveRotFile, ensureRotDirs} from './rot.storage.js';
+import * as rotFirebase from './rot.firebase.controller';
+import * as rotRecords from './rot.records.controller';
+import * as rotFileserver from './rot.fileserver.controller';
 
 var router = express.Router();
 
@@ -26,9 +29,23 @@ function sendRotFile(subdir) {
 
 router.use(auth.isAuthenticated());
 
-router.get('/attachments', sendRotFile('attachments'));
-router.get('/records', sendRotFile('records'));
-router.get('/pdfs', sendRotFile('pdfs'));
-router.get('/fileserver', sendRotFile('fileserver'));
+router.post('/firebase', rotFirebase.firebase);
+router.post('/firebaseQuery', rotFirebase.firebaseQuery);
+router.post('/updateFirebase', rotFirebase.updateFirebase);
+router.post('/deleteFirebase', rotFirebase.deleteFirebase);
+
+router.post('/listRecords', rotRecords.listRecords);
+router.post('/uploadRecord', rotRecords.uploadRecord);
+router.post('/changeFilename', rotRecords.changeFilename);
+router.post('/deleteRecord', rotRecords.deleteRecord);
+
+router.post('/listFileserver', rotFileserver.listFileserver);
+router.post('/uploadFileserver', rotFileserver.uploadFileserver);
+router.post('/deleteFileserver', rotFileserver.deleteFileserver);
+
+router.get('/files/attachments', sendRotFile('attachments'));
+router.get('/files/records', sendRotFile('records'));
+router.get('/files/pdfs', sendRotFile('pdfs'));
+router.get('/files/fileserver', sendRotFile('fileserver'));
 
 export default router;

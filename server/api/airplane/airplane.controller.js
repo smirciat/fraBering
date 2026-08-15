@@ -211,7 +211,7 @@ async function getDocument(collectionName, documentId) {
   return data;
 }
 
-export async function getCollectionQuery(collectionName,limit,parameter,operator,value,timestampBoolean,parameter2,operator2,value2) {
+export async function getCollectionQuery(collectionName,limit,parameter,operator,value,timestampBoolean,parameter2,operator2,value2,queryOr,minDateParameter,minDateOperator,minDateValue,minDateTimestamp) {
   try {
     for (let s of [collectionName,limit,parameter,operator,value,timestampBoolean]){
       console.log(s);
@@ -219,6 +219,12 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
     if (timestampBoolean) {
       value=admin.firestore.Timestamp.fromDate(new Date(value));
       if (value2) value2=admin.firestore.Timestamp.fromDate(new Date(value2));
+    }
+    let minDateFilter=null;
+    if (minDateParameter && minDateValue) {
+      minDateFilter=minDateTimestamp
+        ? admin.firestore.Timestamp.fromDate(new Date(minDateValue))
+        : minDateValue;
     }
     const collectionRef = firebase_db.collection(collectionName);
     let date1,date2,date3;
@@ -228,6 +234,18 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
     }
     else {
       if (!value2) querySnapshot = await collectionRef.where(parameter, operator , value).orderBy('date', 'desc').limit(limit).get();
+      else if (queryOr) {
+        let q1 = collectionRef.where(parameter, operator , value);
+        let q2 = collectionRef.where(parameter2, operator2 , value2);
+        if (minDateFilter) {
+          q1 = q1.where(minDateParameter, minDateOperator || '>=', minDateFilter);
+          q2 = q2.where(minDateParameter, minDateOperator || '>=', minDateFilter);
+        }
+        [querySnapshot, querySnapshot1] = await Promise.all([
+          q1.limit(limit).get(),
+          q2.limit(limit).get()
+        ]);
+      }
       else querySnapshot = await collectionRef.where(parameter, operator , value).where(parameter2, operator2 , value2).orderBy('date', 'desc').limit(limit).get();
     }
     if (parameter==="false"){//"dateString")  {
@@ -242,21 +260,24 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
       querySnapshot2 = await collectionRef.where(parameter, operator , date2).orderBy('date', 'desc').limit(limit).get();
     }
     let mergedData=[];
+    let seenDocIds={};
+    function pushDoc(doc) {
+      if (queryOr && seenDocIds[doc.id]) return;
+      if (queryOr) seenDocIds[doc.id]=true;
+      mergedData.push(doc);
+    }
     if (querySnapshot1){
       querySnapshot1.forEach((doc1) => {
-        mergedData.push(doc1);
-        //console.log(doc.id, '=>', doc.data());
+        pushDoc(doc1);
       });
     }
     if (querySnapshot2){
       querySnapshot2.forEach((doc2) => {
-        mergedData.push(doc2);
-        //console.log(doc.id, '=>', doc.data());
+        pushDoc(doc2);
       });
     }
     querySnapshot.forEach((doc) => {
-      mergedData.push(doc);
-      //console.log(doc.id, '=>', doc.data());
+      pushDoc(doc);
     });
     return mergedData;
   } catch (error) {
@@ -564,7 +585,7 @@ export async function firebaseQuery(req,res){
   let operator=req.body.operator||'==';
   let value=req.body.value||'933';
   let timestampBoolean=req.body.timestampBoolean||false;
-  const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean,req.body.parameter2,req.body.operator2,req.body.value2);
+  const result=await getCollectionQuery(collection,limit,parameter,operator,value,timestampBoolean,req.body.parameter2,req.body.operator2,req.body.value2,req.body.queryOr,req.body.minDateParameter,req.body.minDateOperator,req.body.minDate,req.body.minDateTimestamp);
   let array=collectionToArray(result);
   return res.status(200).json(array);
 }

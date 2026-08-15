@@ -1,0 +1,33 @@
+<div ng-if="rotPilotBoard.loggedIn()">
+  <div print-section class="paper rot-pilot-board-page">
+    <div class="beringBanner row">
+      <div class="col-sm-2 fourteen"><strong class="bering">BERING AIR</strong></div>
+      <div class="col-sm-2 center fourteen">PILOTBOARD</div>
+      <div class="col-sm-4 center fourteen">{{rotPilotBoard.boardTitle}}</div>
+      <div class="col-sm-4 center fourteen">{{rotPilotBoard.today|date:'EEEE, MMMM d, yyyy'}}</div>
+    </div>
+    <div class="row">
+      <div class="col-sm-3 center ten">CREW INFORMATION</div>
+      <div class="col-sm-2 center ten">DOCUMENTS</div>
+      <div class="col-sm-7 center ten">RECURRENT GROUND</div>
+    </div>
+    <div class="rot-pilot-board-grid" ng-style="{height: rotPilotBoard.gridHeight}"
+         ui-grid="rotPilotBoard.gridOptions" ui-grid-cellnav ui-grid-edit ui-grid-selection ui-grid-exporter></div>
+    <div class="paperFooter" ng-if="rotPilotBoard.splitPages"></div>
+  </div>
+
+  <div print-section class="paper rot-pilot-board-page" ng-class="{'rot-pilot-board-page-combined': !rotPilotBoard.splitPages}">
+    <div class="beringBanner row">
+      <div class="col-sm-2 fourteen"><strong class="bering">BERING AIR</strong></div>
+      <div class="col-sm-2 center fourteen">PILOTBOARD</div>
+      <div class="col-sm-4 center fourteen">{{rotPilotBoard.boardTitle}}</div>
+      <div class="col-sm-4 center fourteen">{{rotPilotBoard.today|date:'EEEE, MMMM d, yyyy'}}</div>
+    </div>
+    <div class="row">
+      <div class="col-sm-3 center ten">CREW INFORMATION</div>
+      <div class="col-sm-9 center ten">FLIGHT TEST</div>
+    </div>
+    <div class="rot-pilot-board-grid" ng-style="{height: rotPilotBoard.gridHeight}"
+         ui-grid="rotPilotBoard.gridOptions2" ui-grid-cellnav ui-grid-edit></div>
+  </div>
+</div>

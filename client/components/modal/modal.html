@@ -5,6 +5,78 @@
 </div>
 <div class="modal-body wheat" ng-class="modal.highMinsClass()">
   <div ng-if="modal.html" ng-bind-html="modal.html"></div>
+  <form ng-if="modal.radio" name="radios">
+    <div ng-repeat="type in modal.trainingTypes">
+      <input type="checkbox" ng-model="modal.formData[type.name]">
+      <label>{{type.label}}</label>
+    </div>
+  </form>
+  <form ng-if="modal.pilot" name="pilotData">
+    <div class="modal-footer">
+      <button ng-repeat="button in modal.buttons" ng-class="button.classes" ng-click="button.click($event)" ng-bind="button.text" class="btn"></button>
+    </div>
+    <label>Pilot Name (Firstname Lastname)</label>
+    <ui-select ng-hide="modal.new" ng-model="modal.formData" theme="bootstrap" ng-disabled="disabled" on-select="modal.fill()" name="name">
+      <ui-select-match placeholder="Choose...">{{$select.selected.name}}</ui-select-match>
+      <ui-select-choices repeat="pilot in modal.pilotArr">
+        <div ng-bind-html="pilot.name | highlight: $select.search"></div>
+      </ui-select-choices>
+    </ui-select>
+    <input ng-show="modal.new" class="form-control" name="name" type="text" ng-model="modal.formData.name">
+    <label>PILOT BASE (OME/OTZ/HEL)</label>
+    <ui-select ng-model="modal.formData.pilotBase" theme="bootstrap" ng-disabled="disabled">
+      <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+      <ui-select-choices repeat="base in ['none','OME','OTZ','HEL']">
+        <div ng-bind-html="base | highlight: $select.search"></div>
+      </ui-select-choices>
+    </ui-select>
+    <label>Date of Hire (MM/DD/YYYY)</label>
+    <input class="form-control" name="oas" type="text" ng-model="modal.formData.dateOfHire" ng-blur="modal.fixDate('dateOfHire')">
+    <label>Employee# (####)</label>
+    <ui-select ng-hide="modal.new" ng-model="modal.formData" theme="bootstrap" ng-disabled="disabled" on-select="modal.fill()" name="empNum">
+      <ui-select-match placeholder="Choose...">{{$select.selected._id}}</ui-select-match>
+      <ui-select-choices repeat="pilot in modal.pilotArr">
+        <div ng-bind-html="pilot.combo | highlight: $select.search"></div>
+      </ui-select-choices>
+    </ui-select>
+    <input ng-show="modal.new" class="form-control" name="emp" type="text" ng-model="modal.formData._id" ng-blur="modal.fill()">
+    <label>Certificate Type (ATP/COMMERCIAL)</label>
+    <ui-select ng-model="modal.formData.certType" theme="bootstrap" ng-disabled="disabled">
+      <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+      <ui-select-choices repeat="class in ['ATP','COMMERCIAL']">
+        <div ng-bind-html="class | highlight: $select.search"></div>
+      </ui-select-choices>
+    </ui-select>
+    <label>Certificate Number (#######)</label>
+    <input class="form-control" name="doh" type="text" ng-model="modal.formData.cert">
+    <label>Medical Class (FIRST/SECOND)</label>
+    <ui-select ng-model="modal.formData.medicalClass" theme="bootstrap" ng-disabled="disabled">
+      <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
+      <ui-select-choices repeat="class in ['FIRST','SECOND']">
+        <div ng-bind-html="class | highlight: $select.search"></div>
+      </ui-select-choices>
+    </ui-select>
+    <label>Medical Date (MM/DD/YYYY)</label>
+    <input class="form-control" name="medicalDate" type="text" ng-model="modal.formData.medicalDate" ng-blur="modal.fixDate('medicalDate')">
+    <label>Date of Birth (MM/DD/YYYY)</label>
+    <input class="form-control" name="dateOfBirth" type="text" ng-model="modal.formData.dateOfBirth">
+    <label>OAS Card Expiration(MM/DD/YYYY)</label>
+    <input class="form-control" name="oas" type="text" ng-model="modal.formData.oas" ng-blur="modal.fixDate('oas')">
+    <label>Passport Expiration(MM/DD/YYYY)</label>
+    <input class="form-control" name="passport" type="text" ng-model="modal.formData.passport" ng-blur="modal.fixDate('passport')">
+    <label>Russian Visa Expiration(MM/DD/YYYY)</label>
+    <input class="form-control" name="rus" type="text" ng-model="modal.formData.rus" ng-blur="modal.fixDate('rus')">
+    <div ng-repeat="event in modal.trainingEvents track by $index">
+      <label>{{event.label+' Base Month (MM/DD/YYYY)'}}</label>
+      <input class="form-control" type="text" ng-model="modal.formData[event.name+'Exp']" ng-blur="modal.fixDate(event.name+'Exp')">
+    </div>
+    <label>293(a) 1,4-8 Expiration (MM/DD/YYYY)</label>
+    <input class="form-control" type="text" ng-model="modal.formData.far293a148" ng-blur="modal.fixDate('far293a148')">
+    <div ng-repeat="t in modal.aircraftTypes">
+      <label>High Minumums Captain for {{t}}</label>
+      <input class="form-control" type="checkbox" ng-model="modal.formData['highMinimums'+t]">
+    </div>
+  </form>
   <div class="modal-footer" ng-if="modal.textModal">
     <button ng-repeat="button in modal.buttons" ng-class="button.classes" ng-click="button.click($event)" ng-bind="button.text" class="btn"></button>
   </div>

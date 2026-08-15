@@ -5,11 +5,96 @@ Two separate concerns when moving ROT into fraBering:
 | Concern | What it is | When you need it |
 |---------|------------|------------------|
 | **`ROT_SOURCE_URI`** | Postgres connection to the **old standalone ROT database** | **One-time** import of `Evaluations` rows into fraBering `RotEvaluations` |
-| **PDF / document backups** | Tarballs of files on disk (`attachments`, `records`, `pdfs`, training folders) | **Ongoing** — prod → vultr + dev |
+| **Training PDF migration** | Copy `attachments`, `records`, `pdfs` from ROT → fraBering | **One-time** prod cutover (script below) |
+| **PDF backups** | Tarballs of those same paths on disk | **Ongoing** — prod → vultr + dev |
 
 They are **not** the same thing. Daily backups do **not** use `ROT_SOURCE_URI`.
 
+**Not migrated:** general ROT fileserver browser files (`~/ROT/server/fileserver/*` except `attachments/`). Those live elsewhere; fraBering `/rot/files` is for new uploads only.
+
 ---
+
+## Prod cutover (deploy + move training PDFs)
+
+Run on **bering-prod** after pulling the fraBering branch with Phases 3–5b.
+
+### 1. Deploy code
+
+```bash
+cd ~/fraBering
+git pull
+grunt build
+grunt babel:server
+pm2 restart frabering   # or your process name
+```
+
+Confirm persistent storage exists (repo root, not `dist/`):
+
+```bash
+mkdir -p ~/fraBering/server/fileserver/rot/{attachments,records,pdfs,fileserver}
+```
+
+If pm2 runs from `dist/`, set `ROT_FILE_ROOT` in prod `local.env.js` to the absolute path above.
+
+### 2. Dry-run file migration
+
+```bash
+chmod +x scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh
+chmod +x scripts/rot-backup/*.sh
+
+# optional config
+sudo cp scripts/migrate-rot-training-docs/rot-migrate.env.sample /etc/bering/rot-migrate.env
+sudo chmod 600 /etc/bering/rot-migrate.env
+# edit ROT_SOURCE_ROOT / FRABERING_ROT_ROOT if needed
+
+ROT_MIGRATE_ENV=/etc/bering/rot-migrate.env \
+  ./scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh --dry-run
+```
+
+### 3. Copy training PDFs
+
+```bash
+ROT_MIGRATE_ENV=/etc/bering/rot-migrate.env \
+  ./scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh
+```
+
+**What moves:**
+
+| ROT source | fraBering target | Used by |
+|------------|------------------|---------|
+| `~/ROT/server/fileserver/attachments/` | `server/fileserver/rot/attachments/` | Pilot Evals |
+| `~/ROT/server/records/` | `server/fileserver/rot/records/` | Records |
+| `~/ROT/server/pdfs/` | `server/fileserver/rot/pdfs/` | SIC log + Records PDF templates |
+
+Safe to re-run (`rsync` merge; does not delete existing fraBering files).
+
+**Alternative** — restore from nightly backup tar instead of live ROT tree:
+
+```bash
+./scripts/rot-backup/restore-rot-pdfs.sh \
+  /var/backups/rot/rot-docs-YYYY-MM-DD.tar.gz \
+  --target ~/fraBering/server/fileserver/rot \
+  --layout frabering
+```
+
+### 4. Smoke test
+
+| Screen | Check |
+|--------|-------|
+| Pilot Evals | Open a known eval PDF |
+| Records | List + download an uploaded record |
+| SIC Log | Generate/fill SIC form |
+| OME / OTZ | Pilot board loads |
+| Fileserver | Empty is OK — new uploads only |
+
+### 5. Evaluations DB (if not already done)
+
+```bash
+ROT_SOURCE_URI='postgres://…' node -r babel-register scripts/migrate-rot-evaluations/index.js --production
+```
+
+---
+
 
 ## `ROT_SOURCE_URI` — database migration only
 
@@ -31,7 +116,7 @@ Find the real URI on **bering-prod** in `~/ROT/server/config/local.env.js` → `
 
 **After migration:** fraBering reads/writes `RotEvaluations` in `metar` only. You can leave `ROT_SOURCE_URI` unset unless you re-run the import.
 
-**PDF filenames** in `RotEvaluations.filename` must exist on disk under `server/fileserver/rot/attachments/` (or legacy ROT paths until cutover). The migration script does **not** copy files — use the backup/restore flow below.
+**PDF filenames** in `RotEvaluations.filename` must exist on disk under `server/fileserver/rot/attachments/`. The migration script does **not** copy files — run `scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh` or restore from backup (below).
 
 ---
 
@@ -39,16 +124,13 @@ Find the real URI on **bering-prod** in `~/ROT/server/config/local.env.js` → `
 
 ### What gets backed up
 
-From `~/ROT/server/` on **bering-prod** (document paths only):
+From `~/ROT/server/` on **bering-prod** — **training document PDFs only**:
 
 - `fileserver/attachments/` — eval PDFs linked from DB
-- `records/`
-- `pdfs/`
-- `fileserver/BasicIndoc/`
-- `fileserver/Caravan Initial/`
-- `fileserver/HAZMAT/`
+- `records/` — per-pilot training record uploads
+- `pdfs/` — form templates (`ROT.pdf`, `FlightTest.pdf`, `SIC_LOG.pdf`, …)
 
-**Excluded** (not training docs): `*.ISO`, `*.exe`, `*.msi`, `*.7z`, logs, scripts.
+**Excluded:** general fileserver browser files (misc docs, installers, course folders at `fileserver/*` other than `attachments/`). Also excluded: `*.ISO`, `*.exe`, `*.msi`, `*.7z`, logs, scripts.
 
 **Not included:** Postgres — ROT / `metar` DB is backed up separately on dev (and vultr when you add that). PDF tarballs are files only.
 
@@ -79,7 +161,6 @@ Check prod before first run:
 
 ```bash
 du -sh ~/ROT/server/fileserver/attachments ~/ROT/server/records ~/ROT/server/pdfs
-du -sh ~/ROT/server/fileserver/BasicIndoc ~/ROT/server/fileserver/HAZMAT
 df -h /var/backups
 ```
 
@@ -87,9 +168,11 @@ df -h /var/backups
 
 | Script | Run on | Purpose |
 |--------|--------|---------|
+| `scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh` | **bering-prod** (cutover) | One-time ROT → fraBering copy of training PDFs |
 | `scripts/rot-backup/backup-rot-pdfs.sh` | **bering-prod** (cron) | Create `rot-docs-YYYY-MM-DD.tar.gz`, rsync to vultr + dev, prune by count |
 | `scripts/rot-backup/restore-rot-pdfs.sh` | any host | Extract tar into ROT or fraBering layout |
 | `scripts/rot-backup/rot-backup.env.sample` | copy to prod | Paths, remotes, retention |
+| `scripts/migrate-rot-training-docs/rot-migrate.env.sample` | copy to prod | Source/target paths for migration |
 
 ---
 
@@ -100,7 +183,7 @@ This section is the operator checklist: what to run on each machine, in order, a
 ### Overview (what happens every night)
 
 1. **bering-prod** (cron, ~02:15) runs `backup-rot-pdfs.sh`.
-2. Script copies document folders from `~/ROT/server/` into a temp dir (not the whole 1.2 GB junk fileserver — only training/eval paths).
+2. Script copies **training PDF paths only** from `~/ROT/server/` into a temp dir.
 3. Script builds **`/var/backups/rot/rot-docs-YYYY-MM-DD.tar.gz`** (~10 GB on prod).
 4. Script **rsync**s that file to **bering-vultr** and **bering-dev** → `/var/backups/rot/`.
 5. Script **deletes old tars**:
@@ -310,10 +393,7 @@ nano /etc/bering/rot-backup.env
 ```bash
 du -sh ~/ROT/server/fileserver/attachments \
        ~/ROT/server/records \
-       ~/ROT/server/pdfs \
-       ~/ROT/server/fileserver/BasicIndoc \
-       ~/ROT/server/fileserver/"Caravan Initial" \
-       ~/ROT/server/fileserver/HAZMAT
+       ~/ROT/server/pdfs
 
 df -h /var/backups
 ```
@@ -421,14 +501,15 @@ After **3+ daily runs**, vultr should show up to **3** files; dev and prod shoul
 
 ---
 
-### Step 8 — when fraBering ROT integration is live
+### Step 8 — after fraBering ROT cutover
 
-PDFs for Pilot Evals will live under **`~/fraBering/server/fileserver/rot/`** (not `dist/`).
+Training PDFs for Pilot Evals, Records, and SIC/Records templates live under **`~/fraBering/server/fileserver/rot/`** (not `dist/`).
 
-Until cutover, backups still read **`~/ROT/server`** (`ROT_SERVER_ROOT`). When you move files to fraBering:
+Until standalone ROT is decommissioned, nightly backup still reads **`~/ROT/server`** (`ROT_SERVER_ROOT`). After cutover:
 
-1. Update `ROT_SERVER_ROOT` or add a second backup path (future script change), **or**
-2. Keep copying/syncing ROT → fraBering rot dir and back up from whichever is canonical.
+1. Run `migrate-rot-training-docs.sh` so fraBering has the live files, **or**
+2. Point `ROT_SERVER_ROOT` at `~/fraBering/server/fileserver/rot` parent layout (future script change), **or**
+3. Keep syncing ROT → fraBering when new records/evals are uploaded on standalone ROT during parallel run.
 
 Restore into fraBering layout:
 
@@ -548,7 +629,7 @@ cd ~/fraBering
   --layout rot
 ```
 
-This merges tar contents into `~/ROT/server/fileserver/`, `records/`, `pdfs/` without deleting unrelated files already there.
+This merges tar contents into `~/ROT/server/fileserver/attachments/`, `records/`, `pdfs/` without deleting unrelated files already there.
 
 Then:
 
@@ -583,6 +664,7 @@ Use your existing Postgres backups on dev/vultr (not the PDF tar). For fraBering
 | Question | Answer |
 |----------|--------|
 | What is `ROT_SOURCE_URI`? | One-time ROT **Postgres** URL for evaluation **rows** import |
+| How do I move training PDFs to fraBering? | `scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh` |
 | Where do PDFs live in fraBering? | `server/fileserver/rot/` (repo root, not `dist/`) |
 | Where are daily backups? | `/var/backups/rot/rot-docs-YYYY-MM-DD.tar.gz` on prod, vultr, dev |
 | How long kept? | **1** prod, **3** vultr, **1** dev (`REMOTE_KEEP_COUNTS="3 1"`) |

@@ -1,0 +1,87 @@
+<div style="margin-left:10px">
+  <rot-pilot-selector></rot-pilot-selector>
+  <h3>Pilot Flight Log</h3>
+  <h4>Flights Since April 2021</h4>
+  <p ng-if="rotSicHours.pilot">Pilot Name: {{rotSicHours.pilot.displayName}} , Certificate Number: {{rotSicHours.pilot.cert}}</p>
+  <p ng-if="rotSicHours.loading" class="rot-sic-hours-loading">Loading flights…</p>
+  <p ng-if="rotSicHours.loadError" class="rot-sic-hours-error">{{rotSicHours.loadError}}</p>
+  <button class="btn btn-success" ng-click="rotSicHours.openPdf()" ng-disabled="rotSicHours.loading">Create and Fill SIC PDF Form(s) for 408</button>
+  <button class="btn btn-primary" ng-repeat="fileURL in rotSicHours.fileURLs track by $index" ng-click="rotSicHours.viewPage($index)">
+    View Page {{$index+1}}
+  </button>
+  <br><br>
+  <p>Select Aircraft:</p>
+  <div style="width: 300px;">
+    <ui-select ng-model="rotSicHours.aircraftSelected" theme="bootstrap" dropdown-position="down" on-select="rotSicHours.filterFlights()">
+      <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
+      <ui-select-choices repeat="item in rotSicHours.aircraft">
+        <div ng-bind-html="item | highlight: $select.search"></div>
+      </ui-select-choices>
+    </ui-select>
+  </div>
+  <br>
+  <div class="rot-sic-hours-dates">
+    <div class="rot-sic-hours-date-block">
+      <label>Start Date:</label>
+      <div class="input-group">
+        <input type="text" class="form-control" ng-model="rotSicHours.startDateStringFormatted"
+            ng-blur="rotSicHours.upDate('string','start')" ng-keydown="rotSicHours.handle($event,'start')">
+        <span class="input-group-btn">
+          <button type="button" class="btn btn-primary" ng-click="isStartDatepickerOpen = !isStartDatepickerOpen">
+            <i class="glyphicon glyphicon-calendar"></i>
+          </button>
+        </span>
+        <input style="display:none" type="text" class="form-control" uib-datepicker-popup="EEEE MMM d, yyyy" ng-model="rotSicHours.startDate"
+           ng-change="rotSicHours.upDate('','start')" is-open="isStartDatepickerOpen" datepicker-options="rotSicHours.datepickerOptions"
+           close-text="Close" alt-input-formats="altInputFormats"/>
+      </div>
+    </div>
+    <div class="rot-sic-hours-date-block">
+      <label>End Date:</label>
+      <div class="input-group">
+        <input type="text" class="form-control" ng-model="rotSicHours.endDateStringFormatted"
+            ng-blur="rotSicHours.upDate('string','end')" ng-keydown="rotSicHours.handle($event,'end')">
+        <span class="input-group-btn">
+          <button type="button" class="btn btn-primary" ng-click="isEndDatepickerOpen = !isEndDatepickerOpen">
+            <i class="glyphicon glyphicon-calendar"></i>
+          </button>
+        </span>
+        <input style="display:none" type="text" class="form-control" uib-datepicker-popup="EEEE MMM d, yyyy" ng-model="rotSicHours.endDate"
+           ng-change="rotSicHours.upDate('','end')" is-open="isEndDatepickerOpen" datepicker-options="rotSicHours.datepickerOptions"
+           close-text="Close" alt-input-formats="altInputFormats"/>
+      </div>
+    </div>
+    <div class="rot-sic-hours-date-block">
+      <button class="btn btn-warning" ng-click="rotSicHours.clearDates()">Clear Dates</button>
+    </div>
+  </div>
+  <hr>
+  <table class="table table-bordered">
+    <tr>
+      <th>Date</th>
+      <th>Type</th>
+      <th>Registration</th>
+      <th>Flt#</th>
+      <th>Route</th>
+      <th>PIC</th>
+      <th>PIC TO & Land</th>
+      <th>SIC</th>
+      <th>SIC TO & Land</th>
+      <th>Flt Hours</th>
+      <th>Cum Hours</th>
+    </tr>
+    <tr ng-repeat="flight in rotSicHours.flights | orderBy:'-' track by $index">
+      <td>{{flight.dateString}}</td>
+      <td>{{flight.acftType}}</td>
+      <td>{{flight.acftNumber}}</td>
+      <td>{{flight.flightNumber}}</td>
+      <td>{{flight.route.toString()}}</td>
+      <td>{{flight.pilot}}</td>
+      <td>{{flight.picTO + ' / ' + flight.picLND}}</td>
+      <td>{{flight.coPilot}}</td>
+      <td>{{flight.sicTO + ' / ' + flight.sicLND}}</td>
+      <td>{{(flight.flightTime/60).toFixed(1)}}</td>
+      <td>{{flight.cumHours}}</td>
+    </tr>
+  </table>
+</div>

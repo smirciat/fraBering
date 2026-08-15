@@ -1,0 +1,18 @@
+<div ng-if="rotFileserver.loggedIn()" class="rot-fileserver-page">
+  <div style="margin-left:50px;padding-top:20px;">
+    <h3>Select One or More Files to Upload</h3>
+    <input class="form-control" style="width:800px;" type="file" multiple id="rot-fileserver-input" name="file" />
+    <br>
+    <h3>Click on File to Download</h3>
+    <table class="table table-responsive" style="width:600px;">
+      <tr ng-repeat="filename in rotFileserver.fileList track by $index">
+        <td>
+          <a href="#" ng-click="rotFileserver.download(filename)">{{filename}}</a>
+        </td>
+        <td>
+          <button class="btn btn-danger" ng-click="rotFileserver.delete(filename)">Delete</button>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
