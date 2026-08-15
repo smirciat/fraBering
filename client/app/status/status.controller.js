@@ -1323,6 +1323,7 @@ class StatusComponent {
     if (metarObj.Freezing) color='airport-pink';
     //wind
     tempColor=this.returnWindColor(metarObj.aircraft,metarObj['Wind-Gust'],metarObj['Wind-Direction'],metarObj.airport);
+    metarObj.windColor=tempColor;
     if (colors.indexOf(tempColor)>colors.indexOf(color)) color=tempColor.toString();
     //Visibility
     if (!metarObj.Visibility||metarObj.Visibility==='99'||metarObj.Visibility===99) {
@@ -1404,17 +1405,25 @@ class StatusComponent {
       });
     }
     crosswind = Math.round(gust*Math.sin(xwindAngle*(Math.PI/180)));
-    if (airportObj.icao==='PAGM'){
-      if (direction>=40&&direction<=100){
-        equipment.wind-=5;
-        equipment.xwind-=10;
-      }
+    let specialWind={};
+    if (airportObj.specialWind) {
+      specialWind=typeof airportObj.specialWind==='string'?JSON.parse(airportObj.specialWind):airportObj.specialWind;
+    }
+    if (equipment.name==='Caravan'&&specialWind.directionLow<=direction&&specialWind.directionHigh>=direction) {
+      equipment.wind-=specialWind.reduction;
+      equipment.xwind-=specialWind.reduction;
     }
     if (airportObj.icao==="PADG") {
       let limits=this.Util.redDogWindLimitsForDirection(direction);
       if (gust>limits.oc) return 'airport-pink';
       if (gust>limits.dispatch) return 'airport-orange';
       if (gust>limits.dispatch-5) return 'airport-yellow';
+      return 'airport-green';
+    }
+    if (airportObj.icao==='PAGM'&&equipment.name==='Casa') {
+      let limits=this.Util.gambellCasaCrosswindLimits();
+      if (crosswind>=limits.orange) return 'airport-orange';
+      if (crosswind>=limits.yellow) return 'airport-yellow';
       return 'airport-green';
     }
     if (gust>equipment.wind) return 'airport-pink';

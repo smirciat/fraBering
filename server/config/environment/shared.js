@@ -230,6 +230,11 @@ exports = module.exports = {
     return { dispatch: 25, oc: 30 };
   },
 
+  // Gambell (PAGM) Casa crosswind limits (kts)
+  gambellCasaCrosswindLimits() {
+    return { yellow: 20, orange: 25 };
+  },
+
   testSky: function testSky(str) {
     str=str.toUpperCase();
     var skyArr=["VV","CL","FE","BK","OV","SC"];

@@ -88,6 +88,11 @@
         if (d >= 151 && d <= 270) return { dispatch: 25, oc: 30 };
         if (d >= 271 && d <= 329) return { dispatch: 15, oc: 20 };
         return { dispatch: 25, oc: 30 };
+      },
+
+      /** Gambell (PAGM) Casa crosswind limits (kts). */
+      gambellCasaCrosswindLimits() {
+        return { yellow: 20, orange: 25 };
       }
     };
 

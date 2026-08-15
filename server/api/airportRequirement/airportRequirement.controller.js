@@ -724,12 +724,6 @@ function overallRiskClass(airport){
     }
     let windLimit=35;
     let xwindLimit=25;
-    if (airportObj.icao==='PAGM'){
-      if (direction>=40&&direction<=100){
-        //wind-=5;
-        //equipment.xwind-=10;
-      }
-    }
     if (gust>windLimit) return 'airport-pink';
     if (crosswind>xwindLimit) return 'airport-pink';
     if (gust>windLimit-5) return 'airport-yellow';

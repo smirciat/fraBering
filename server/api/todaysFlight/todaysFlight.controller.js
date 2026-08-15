@@ -1138,7 +1138,7 @@ function overallRiskClass(metarObj,aircraft){
       });
     }
     crosswind = Math.round(gust*Math.sin(xwindAngle*(Math.PI/180)));
-    if (specialWind.directionLow<=direction&&specialWind.directionHigh>=direction) {
+    if (specialWind.directionLow<=direction&&specialWind.directionHigh>=direction&&equipment.name==='Caravan') {
       equipment.wind-=specialWind.reduction;
       equipment.xwind-=specialWind.reduction;
     }
@@ -1153,6 +1153,12 @@ function overallRiskClass(metarObj,aircraft){
       if (gust>limits.oc) return 'airport-pink';
       if (gust>limits.dispatch) return 'airport-orange';
       if (gust>limits.dispatch-5) return 'airport-yellow';
+      return 'airport-green';
+    }
+    if (airportObj.icao==='PAGM'&&equipment.name==='Casa') {
+      let limits=config.gambellCasaCrosswindLimits();
+      if (crosswind>=limits.orange) return 'airport-orange';
+      if (crosswind>=limits.yellow) return 'airport-yellow';
       return 'airport-green';
     }
     //if (aircraft==="N701BA") console.log(equipment.wind+' '+equipment.xwind);

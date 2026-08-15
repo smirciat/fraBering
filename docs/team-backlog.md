@@ -6,14 +6,18 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #11 Blue flight after release
+## #12 Casa Yellow with light wind
 
 - **Type:** bug · medium · open
 - **Reporter:** Andy Smircich
 
 **Original report:**
 
-Both airports were green when signed, flight stayed blue 844 8/8/26
+13 kts xwind in GAM, why is Casa yellow?
+
+**Attachments:**
+- ![screenshot-1786737149452.png](team-backlog/attachments/issue-12-att-8-screenshot-1786737149452.png)
+- ![screenshot-1786737188400.png](team-backlog/attachments/issue-12-att-9-screenshot-1786737188400.png)
 
 ## #10 Move ROT into FRAT app
 
