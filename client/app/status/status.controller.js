@@ -74,6 +74,7 @@ class StatusComponent {
       this.scope.$apply();
     }
     this.heliFLights=[];
+    this.fuelPageEntries=[];
     this.initHelis();
     this.width=document.documentElement.clientWidth;
     if (this.width<768) this.mobile=true;
@@ -334,6 +335,7 @@ class StatusComponent {
             this.setPilotList();
             this.setAirplaneList();
             this.availablePilots();
+            this.buildFuelPageEntries();
           },200);
       },0);
     });
@@ -1059,6 +1061,7 @@ class StatusComponent {
         if (value) flight.fltPlanElements.push({label:this.camelToTitle(key),value:value.toString()});
       }
     });
+    this.buildFuelPageEntries();
   }
   
   fltStatus(status){
@@ -1207,6 +1210,35 @@ class StatusComponent {
   }
   
   getFuel(flight,kind){
+    if (flight.isHeli) {
+      if (kind) flight.fueled=true;
+      this.timeout(()=>{
+        let heli=flight.heliSource||flight;
+        if (!heli.release) heli.release=[{}];
+        if (!heli.release[0]) heli.release[0]={};
+        if (!flight.fueled) {
+          flight.fueledBy=null;
+          flight.fueledTimestamp=null;
+          heli.release[0].fueled=false;
+          heli.release[0].fueledBy=null;
+          heli.release[0].fueledTimestamp=null;
+        }
+        else {
+          flight.fueledBy=this.user.name;
+          flight.fueledTimestamp=new Date().toLocaleTimeString('en-US', { timeStyle: 'short' });
+          heli.release[0].fueled=true;
+          heli.release[0].fueledBy=flight.fueledBy;
+          heli.release[0].fueledTimestamp=flight.fueledTimestamp;
+        }
+        this.http.post('/api/airplanes/updateFirebaseHeli',{flight:{
+          _id:heli._id,
+          fueled:flight.fueled,
+          fueledBy:flight.fueledBy,
+          fueledTimestamp:flight.fueledTimestamp
+        }}).then(res=>{console.log(res.data);});
+      },0);
+      return;
+    }
     if (kind) flight.fueled=true;
     this.timeout(()=>{
       if (!flight.fueled) {
@@ -1226,6 +1258,11 @@ class StatusComponent {
   }
   
   fuelFlightColor(flight){
+    if (flight.isHeli) {
+      if (this.heliFuelLbs(flight.heliSource||flight)<100) return 'fuel-gray';
+      if (flight.fueled) return 'fuel-green';
+      return;
+    }
     if (!flight.pfr||!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100) return "fuel-gray";
     if (flight.fueled) return "fuel-green";
   }
@@ -1235,6 +1272,15 @@ class StatusComponent {
   }
   
   fuelRequest(flight){
+    if (flight.isHeli) {
+      let heli=flight.heliSource||flight;
+      let lbs=this.heliFuelLbs(heli);
+      if (lbs<100) return 'WAITING ON PILOT';
+      let response='HELICOPTER\n';
+      if (heli.fuelRequestString) response+=heli.fuelRequestString;
+      else response+='FILL TO: '+Math.round(lbs/2)+' LBS/side ('+Math.round(lbs)+' lbs total)';
+      return response;
+    }
     if (!flight.pfr||!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100) return "WAITING ON PILOT";
     let response='';
     if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"||flight.equipment.name==="Casa"){
@@ -2082,7 +2128,83 @@ class StatusComponent {
     return;
   }
   
+  heliFuelLbs(heli){
+    if (!heli) return 0;
+    if (heli.legArray&&heli.legArray[0]&&heli.legArray[0].fuel) return heli.legArray[0].fuel*1;
+    if (heli.pfr&&heli.pfr.legArray&&heli.pfr.legArray[0]&&heli.pfr.legArray[0].fuel) return heli.pfr.legArray[0].fuel*1;
+    return 0;
+  }
+
+  normalizeHeliDepTime(depTime){
+    if (!depTime) return '99:99';
+    let t=String(depTime).trim();
+    if (t.indexOf(':')>-1) {
+      let parts=t.split(':');
+      return String(parts[0]).padStart(2,'0')+':'+String(parts[1]||'0').padStart(2,'0');
+    }
+    if (t.length===3) t='0'+t;
+    if (t.length===4) return t.substring(0,2)+':'+t.substring(2);
+    return t;
+  }
+
+  heliDepartureMatchesBase(heli){
+    if (!heli||!heli.fltPlan||!heli.fltPlan.dep) return false;
+    let dep=String(heli.fltPlan.dep).trim().toUpperCase();
+    let base=window.base&&window.base.base;
+    if (!base||base==='HEL') return false;
+    if (base==='OTZ') return dep==='OTZ'||dep==='PAOT'||dep.indexOf('KOTZEBUE')>-1;
+    if (base==='UNK') return dep==='UNK'||dep==='PAUN'||dep.indexOf('UNALAKLEET')>-1;
+    return dep==='OME'||dep==='PAOM'||dep.indexOf('NOME')>-1;
+  }
+
+  normalizeHeliFuelEntry(heli){
+    let depTime=this.normalizeHeliDepTime(heli.fltPlan&&heli.fltPlan.depTime);
+    let lbs=this.heliFuelLbs(heli);
+    let rel=heli.release&&heli.release[0]?heli.release[0]:{};
+    return {
+      isHeli:true,
+      heliSource:heli,
+      _id:'heli-'+heli._id,
+      active:'true',
+      aircraft:heli.acftNumber,
+      acftType:heli.acftType,
+      pilot:heli.pilot,
+      pilotObject:{displayName:heli.pilot},
+      coPilot:'',
+      coPilotObject:{displayName:''},
+      flightNum:heli.flightNumber||heli.acftNumber,
+      departTimes:[depTime],
+      fuelSortTime:depTime,
+      color:'airport-green',
+      fltPlan:heli.fltPlan,
+      release:heli.release,
+      fueled:!!rel.fueled,
+      fueledBy:rel.fueledBy,
+      fueledTimestamp:rel.fueledTimestamp,
+      localStatus:heli.localStatus||'Planned',
+      pfr:{legArray:[{fuel:lbs}]},
+      equipment:{name:heli.acftType}
+    };
+  }
+
+  buildFuelPageEntries(){
+    let entries=[];
+    (this.loadFlights||[]).forEach(flight=>{
+      if (!this.todaysFlightDisplayFilter(flight)) return;
+      flight.isHeli=false;
+      flight.fuelSortTime=flight.departTimes&&flight.departTimes[0]?flight.departTimes[0].substring(0,5):'99:99';
+      entries.push(flight);
+    });
+    (this.heliFlights||[]).forEach(heli=>{
+      if (!this.heliDepartureMatchesBase(heli)) return;
+      entries.push(this.normalizeHeliFuelEntry(heli));
+    });
+    entries.sort((a,b)=>(a.fuelSortTime||'99:99').localeCompare(b.fuelSortTime||'99:99'));
+    this.fuelPageEntries=entries;
+  }
+
   laCalc(flight){
+    if (flight.isHeli) return '—';
     if (!flight.pfr||!flight.pfr.legArray[0]) return;
     let mgtow=flight.pfr.legArray[0].mgtow*1;
     let owe=flight.pfr.legArray[0].operatingWeightEmpty*1;
@@ -2099,6 +2221,11 @@ class StatusComponent {
   }
   
   getFlightNum(flight){
+    if (flight.isHeli) {
+      if (flight.flightNum&&flight.flightNum.length<=4&&flight.flightNum!=='HELI') return 'BRG'+flight.flightNum;
+      return flight.aircraft;
+    }
+    if (!flight.flightNum) return flight.aircraft||'';
     if (flight.flightNum.length===3||flight.flightNum.length===4) return 'BRG'+flight.flightNum;
     if (flight.pfr&&flight.pfr.flightNumber) return 'BRG'+flight.pfr.flightNumber;
     return 'ID# ' +flight.flightNum;
@@ -2271,6 +2398,7 @@ class StatusComponent {
           this.allTodaysFlights=res.data;
           this.todaysFlights=this.filterTodaysFlights(res.data);
           this.loadFlights=JSON.parse(JSON.stringify(this.todaysFlights));
+          this.buildFuelPageEntries();
           this.scroll();
           this.timeout(()=>{
             this.spinner=false;
@@ -2319,6 +2447,7 @@ class StatusComponent {
               }
               //else we don't want it!
             }
+            this.buildFuelPageEntries();
           });
         })
         .catch(err=>{
