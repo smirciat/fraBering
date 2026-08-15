@@ -121,8 +121,8 @@
       /** Accepted spellings per fuel-page hub (OME / OTZ / UNK). */
       heliDepartureHubAliases() {
         return {
-          OME: ['OME', 'PAOM', 'NOME', 'NOME AIRPORT', 'NOME FIELD'],
-          OTZ: ['OTZ', 'PAOT', 'KOTZEBUE', 'KOTZ', 'RALPH WIEN MEMORIAL'],
+          OME: ['OME', 'PAOM', 'NOME', 'NOME AIRPORT', 'NOME FIELD','OMEBA'],
+          OTZ: ['OTZ', 'PAOT', 'KOTZEBUE', 'KOTZ', 'KOTZEBUE AK', 'KOTZEBUE AIRPORT', 'OTZBA', 'RALPH WIEN', 'RALPH WIEN MEMORIAL', 'RALPH WIEN MEM AIRPORT', 'KOTZEBUE, AK'],
           UNK: ['UNK', 'PAUN', 'UNALAKLEET', 'UNALAKLEET AIRPORT']
         };
       },
@@ -139,6 +139,166 @@
           if (norm.indexOf(alias) > -1) return true;
         }
         return false;
+      },
+
+      cruiseSpeedKts(equipmentName) {
+        if (!equipmentName) return 160;
+        if (equipmentName === 'King Air' || equipmentName === 'Beech 1900') return 250;
+        if (equipmentName === 'Casa') return 200;
+        if (equipmentName === 'Sky Courier') return 200;
+        return 160;
+      },
+
+      minutesFromTimeString(timeStr) {
+        if (!timeStr) return 0;
+        let parts = String(timeStr).trim().split(':');
+        if (parts.length < 2) return 0;
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      },
+
+      scheduledBlockMinutes(flight) {
+        if (!flight || !flight.departTimes || !flight.departTimes.length) return 0;
+        let start = Util.minutesFromTimeString(flight.departTimes[0]);
+        let end = Util.minutesFromTimeString(flight.departTimes[flight.departTimes.length - 1]);
+        let mins = end - start;
+        if (mins < 0) mins += 24 * 60;
+        return mins;
+      },
+
+      haversineNm(lat1, lon1, lat2, lon2) {
+        let R = 3443.8;
+        let dLat = (lat2 - lat1) * Math.PI / 180;
+        let dLon = (lon2 - lon1) * Math.PI / 180;
+        let a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      },
+
+      findAirportCoords(airportName, flight) {
+        if (!airportName || !flight) return null;
+        let objs = flight.airportObjs || flight.airportObjsLocked || [];
+        let target = String(airportName).trim().toUpperCase();
+        for (let i = 0; i < objs.length; i++) {
+          let ap = objs[i].airport;
+          if (!ap) continue;
+          let name = String(ap.name || '').toUpperCase();
+          let three = String(ap.threeLetter || '').toUpperCase();
+          if (name === target || three === target || name.indexOf(target) > -1 || target.indexOf(name) > -1) {
+            let lat = parseFloat(ap.latitude);
+            let lon = parseFloat(ap.longitude);
+            if (!isNaN(lat) && !isNaN(lon)) return { lat: lat, lon: lon };
+          }
+        }
+        return null;
+      },
+
+      estimatedRouteMinutes(flight) {
+        if (!flight || !flight.airports || flight.airports.length < 2) return 0;
+        let speed = Util.cruiseSpeedKts(flight.equipment && flight.equipment.name);
+        let total = 0;
+        for (let i = 0; i < flight.airports.length - 1; i++) {
+          let c1 = Util.findAirportCoords(flight.airports[i], flight);
+          let c2 = Util.findAirportCoords(flight.airports[i + 1], flight);
+          if (!c1 || !c2) continue;
+          total += 60 * Util.haversineNm(c1.lat, c1.lon, c2.lat, c2.lon) / speed + 10;
+        }
+        return Math.round(total);
+      },
+
+      isStandbyCharter(flight) {
+        if (!flight || !flight.operation) return false;
+        if (String(flight.operation).toLowerCase().indexOf('charter') < 0) return false;
+        let airports = flight.airports || [];
+        let legCount = airports.length > 0 ? airports.length - 1 : 0;
+        if (legCount > 5) return true;
+        if (legCount < 2) return false;
+        let standbyAllowance = legCount * 30;
+        let scheduled = Util.scheduledBlockMinutes(flight);
+        let routeMins = Util.estimatedRouteMinutes(flight);
+        if (!routeMins) {
+          routeMins = legCount * 45;
+        }
+        return scheduled > routeMins + standbyAllowance;
+      },
+
+      operationDisplay(flight) {
+        if (!flight || !flight.operation) return '';
+        if (Util.isStandbyCharter(flight)) return 'Standby Charter';
+        return flight.operation;
+      },
+
+      initStandbyLegTimes(flight) {
+        if (!flight) return [];
+        if (!flight.miscObject) flight.miscObject = {};
+        if (!flight.miscObject.standbyLegTimes) flight.miscObject.standbyLegTimes = [];
+        let airports = flight.airports || [];
+        for (let i = 1; i < airports.length - 1; i++) {
+          let airport = airports[i];
+          let row = flight.miscObject.standbyLegTimes.find(e => e.airport === airport);
+          if (!row) {
+            row = { airport: airport, arrival: '', departure: '' };
+            flight.miscObject.standbyLegTimes.push(row);
+          }
+        }
+        return flight.miscObject.standbyLegTimes;
+      },
+
+      minutesNowLocal() {
+        let d = new Date();
+        return d.getHours() * 60 + d.getMinutes();
+      },
+
+      minutesToHHMM(totalMinutes) {
+        let mins = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+        let h = Math.floor(mins / 60);
+        let m = mins % 60;
+        return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+      },
+
+      actualDepartOffsetMinutes(flight) {
+        if (!flight || !flight.tfliteDepart || !flight.departTimes || !flight.departTimes.length) return 0;
+        return Util.minutesFromTimeString(flight.tfliteDepart) - Util.minutesFromTimeString(flight.departTimes[0]);
+      },
+
+      /** Standby intermediate times overdue by 30+ min (actual depart vs plan). */
+      standbyIntermediateNags(flight) {
+        let nags = [];
+        if (!Util.isStandbyCharter(flight)) return nags;
+        if (!flight.tfliteDepart) return nags;
+        if (!(flight.dispatchRelease || flight.ocRelease)) return nags;
+        if (!flight.airports || flight.airports.length < 3) return nags;
+        let offset = Util.actualDepartOffsetMinutes(flight);
+        let now = Util.minutesNowLocal();
+        Util.initStandbyLegTimes(flight);
+        let rows = flight.miscObject.standbyLegTimes || [];
+        for (let i = 1; i < flight.airports.length - 1; i++) {
+          let airport = flight.airports[i];
+          let row = rows.find(e => e.airport === airport) || { airport: airport, arrival: '', departure: '' };
+          let planArrive = Util.minutesFromTimeString((flight.arriveTimes && flight.arriveTimes[i]) || flight.departTimes[i]);
+          let planDepart = Util.minutesFromTimeString(flight.departTimes[i]);
+          let estArrive = planArrive + offset;
+          let estDepart = planDepart + offset;
+          if ((!row.arrival || !String(row.arrival).trim()) && now > estArrive + 30) {
+            nags.push({
+              airport: airport,
+              field: 'arrival',
+              planTime: Util.minutesToHHMM(estArrive),
+              flightNum: flight.flightNum,
+              aircraft: flight.aircraft
+            });
+          }
+          if ((!row.departure || !String(row.departure).trim()) && now > estDepart + 30) {
+            nags.push({
+              airport: airport,
+              field: 'departure',
+              planTime: Util.minutesToHHMM(estDepart),
+              flightNum: flight.flightNum,
+              aircraft: flight.aircraft
+            });
+          }
+        }
+        return nags;
       }
     };
 

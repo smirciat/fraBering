@@ -75,6 +75,14 @@ class StatusComponent {
     }
     this.heliFLights=[];
     this.fuelPageEntries=[];
+    this.standbyNagDismissed={};
+    this.standbyNagModalOpen=false;
+    try {
+      this.standbyNagDismissed=JSON.parse(sessionStorage.getItem('standbyNagDismissed')||'{}');
+    }
+    catch (e) {
+      this.standbyNagDismissed={};
+    }
     this.initHelis();
     this.width=document.documentElement.clientWidth;
     if (this.width<768) this.mobile=true;
@@ -122,11 +130,27 @@ class StatusComponent {
       this.scroll();
       this.renewFirebase();
       this.timeout(()=>{this.makeFutureCharters()},20*1000);
+      this.checkStandbyIntermediateNags();
     },60*60*1000);
+    this.standbyNagInterval=this.interval(()=>{
+      this.checkStandbyIntermediateNags();
+    },5*60*1000);
     
     this.initFirebaseData();
     this.metarModal=this.Modal.confirm.metars();
     this.quickModal=this.Modal.confirm.quickMessage(response=>{this.clicked=true;});
+    this.standbyNagModal=this.Modal.confirm.standbyIntermediateNag((result,flight,nagKey)=>{
+      this.standbyNagModalOpen=false;
+      if (result==='dismiss'&&nagKey) {
+        this.standbyNagDismissed[nagKey]=true;
+        try {
+          sessionStorage.setItem('standbyNagDismissed',JSON.stringify(this.standbyNagDismissed));
+        }
+        catch (e) { /* ignore */ }
+      }
+      if (result==='open'&&flight) this.lookAtFlight(flight);
+      this.timeout(()=>{this.checkStandbyIntermediateNags();},500);
+    });
     this.tafDisplay=this.Modal.confirm.quickShow(response=>{});
     this.airportModal=this.Modal.confirm.airport(response=>{
       if (response.requestMetarList) {
@@ -1562,6 +1586,27 @@ class StatusComponent {
     ap.signature=null;
     this.runwayModal(ap,this.user);
   }
+
+  checkStandbyIntermediateNags(){
+    if (!this.Auth.isAdmin()&&!this.Auth.isSuperAdmin()) return;
+    if (this.standbyNagModalOpen) return;
+    if (!this.dateString||this.dateString!==new Date().toLocaleDateString()) return;
+    let flights=this.loadFlights||[];
+    for (let f=0; f<flights.length; f++) {
+      let flight=flights[f];
+      let nags=this.Util.standbyIntermediateNags(flight);
+      for (let n=0; n<nags.length; n++) {
+        let nag=nags[n];
+        let nagKey=flight._id+':'+nag.airport+':'+nag.field;
+        if (this.standbyNagDismissed[nagKey]) continue;
+        let fieldLabel=nag.field==='arrival'?'arrival':'departure';
+        let msg='<strong>'+nag.flightNum+' ('+nag.aircraft+')</strong> — Enter intermediate '+fieldLabel+' time at <strong>'+nag.airport+'</strong>. Estimated: '+nag.planTime+' (30+ minutes overdue).';
+        this.standbyNagModalOpen=true;
+        this.standbyNagModal(msg,flight,nagKey);
+        return;
+      }
+    }
+  }
   
   lookAtFlight(flight){
     try{
@@ -2432,6 +2477,7 @@ class StatusComponent {
           this.todaysFlights=this.filterTodaysFlights(res.data);
           this.loadFlights=JSON.parse(JSON.stringify(this.todaysFlights));
           this.buildFuelPageEntries();
+          this.timeout(()=>{this.checkStandbyIntermediateNags();},800);
           this.scroll();
           this.timeout(()=>{
             this.spinner=false;
@@ -2481,6 +2527,7 @@ class StatusComponent {
               //else we don't want it!
             }
             this.buildFuelPageEntries();
+            this.timeout(()=>{this.checkStandbyIntermediateNags();},800);
           });
         })
         .catch(err=>{

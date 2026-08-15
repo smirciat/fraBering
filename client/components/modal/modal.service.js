@@ -68,6 +68,41 @@ angular.module('workspaceApp')
             });
           };
         },
+        standbyIntermediateNag(cb) {
+          cb = cb || angular.noop;
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                message = args.shift(),
+                flight = args.shift(),
+                nagKey = args.shift(),
+                quickModal;
+            quickModal = openModal({
+              modal: {
+                dismissable: true,
+                title: 'Standby Charter — Times Needed',
+                html: '<p>' + message + '</p>',
+                buttons: [{
+                  classes: 'btn-primary',
+                  text: 'Open Flight Release',
+                  click: function(event) {
+                    quickModal.close('open');
+                  }
+                }, {
+                  classes: 'btn-default',
+                  text: 'Dismiss',
+                  click: function(event) {
+                    quickModal.close('dismiss');
+                  }
+                }]
+              }
+            }, 'modal-warning');
+            quickModal.result.then(function(result) {
+              cb(result, flight, nagKey);
+            }).catch(function() {
+              cb('dismiss', flight, nagKey);
+            });
+          };
+        },
         quickShow(del = angular.noop) {
           /**
            * Open a delete confirmation modal
@@ -387,6 +422,10 @@ angular.module('workspaceApp')
               if (!flight.airportObjsLocked||!flight.airportObjsLocked.length) snapshotReleaseWeather(false);
             }
             else snapshotReleaseWeather(false);
+            let standbyCharter=Util.isStandbyCharter(flight);
+            if (!flight.miscObject) flight.miscObject={};
+            flight.miscObject.standbyCharter=standbyCharter;
+            Util.initStandbyLegTimes(flight);
             quickModal = openModal({
               modal: {
                 Math:Math,
@@ -396,7 +435,7 @@ angular.module('workspaceApp')
                             {title:'Time',val:flight.departTimes[0].substring(0,5)+' - '+flight.departTimes[flight.departTimes.length-1].substring(0,5)},
                             {title:'Est Flight Time',val:flight.block},
                             {title:'Flight ID',val:'BRG'+flight.flightNum},
-                            {title:'Operation',val:flight.operation},
+                            {title:'Operation',val:Util.operationDisplay(flight)},
                             {title:'Rule',val:'VFR/IFR. Altitude per GOM 06.19'},
                             {title:'Route',val:flight.airports.toString()}
                             ],
@@ -438,6 +477,9 @@ angular.module('workspaceApp')
                 },
                 getWidth:window.getWidth,
                 flight:flight,
+                standbyCharter:standbyCharter,
+                standbyLegTimes:flight.miscObject.standbyLegTimes,
+                isStandbyCharter:function(){return Util.isStandbyCharter(flight);},
                 dismissable: true,
                 show:false,
                 flightModal:true,
