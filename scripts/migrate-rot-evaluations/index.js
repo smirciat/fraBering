@@ -59,7 +59,7 @@ if (!fs.existsSync(envFile)) {
 require('babel-register');
 
 const Sequelize = require('sequelize');
-const envConfig = require('../../server/config/environment');
+const sqldb = require('../../server/sqldb');
 const sourceUri = process.env.ROT_SOURCE_URI;
 
 if (!sourceUri) {
@@ -67,13 +67,15 @@ if (!sourceUri) {
   process.exit(1);
 }
 
-const targetUri = envConfig.sequelize.uri;
 const source = new Sequelize(sourceUri, {logging: false});
-const target = new Sequelize(targetUri, envConfig.sequelize.options);
+const target = sqldb.sequelize;
 
 async function main() {
-  const [rows] = await source.query('SELECT * FROM "Evaluations" ORDER BY "_id" ASC');
   console.log('NODE_ENV=' + process.env.NODE_ENV);
+  console.log('Ensuring RotEvaluations table exists...');
+  await sqldb.RotEvaluation.sync();
+
+  const [rows] = await source.query('SELECT * FROM "Evaluations" ORDER BY "_id" ASC');
   console.log('Source Evaluations rows:', rows.length);
 
   const [existing] = await target.query('SELECT COUNT(*)::int AS count FROM "RotEvaluations"');
