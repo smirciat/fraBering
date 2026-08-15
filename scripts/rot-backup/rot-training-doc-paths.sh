@@ -24,3 +24,11 @@ ROT_TRAINING_FRABERING_MAP=(
   "records:records"
   "pdfs:pdfs"
 )
+
+# Map fraBering rot/ subdir → tarball path (for ROT_BACKUP_SOURCE=frabering)
+# shellcheck disable=SC2034
+ROT_TRAINING_FRABERING_BACKUP_MAP=(
+  "attachments:fileserver/attachments"
+  "records:records"
+  "pdfs:pdfs"
+)

@@ -502,15 +502,26 @@ After **3+ daily runs**, vultr should show up to **3** files; dev and prod shoul
 
 ---
 
-### Step 8 — after fraBering ROT cutover
+### Step 8 — fraBering is canonical (post Phase 6)
 
-Training PDFs for Pilot Evals, Records, and SIC/Records templates live under **`~/fraBering/server/fileserver/rot/`** (not `dist/`).
+Training PDFs live under **`~/fraBering/server/fileserver/rot/`** (not `dist/`).
 
-Until standalone ROT is decommissioned, nightly backup still reads **`~/ROT/server`** (`ROT_SERVER_ROOT`). After cutover:
+Nightly backup reads fraBering when `/etc/bering/rot-backup.env` has:
 
-1. Run `migrate-rot-training-docs.sh` so fraBering has the live files, **or**
-2. Point `ROT_SERVER_ROOT` at `~/fraBering/server/fileserver/rot` parent layout (future script change), **or**
-3. Keep syncing ROT → fraBering when new records/evals are uploaded on standalone ROT during parallel run.
+```bash
+ROT_BACKUP_SOURCE=frabering
+FRABERING_ROT_ROOT=/home/andy/fraBering/server/fileserver/rot
+```
+
+Apply on prod:
+
+```bash
+~/fraBering/scripts/rot-decommission/apply-frabering-backup-source.sh
+ROT_BACKUP_ENV=/etc/bering/rot-backup.env \
+  ~/fraBering/scripts/rot-backup/backup-rot-pdfs.sh
+```
+
+Standalone `~/ROT` is stopped per **`docs/rot-decommission.md`**. Keep the tree as archive; do not delete immediately.
 
 Restore into fraBering layout:
 
@@ -665,7 +676,9 @@ Use your existing Postgres backups on dev/vultr (not the PDF tar). For fraBering
 | Question | Answer |
 |----------|--------|
 | What is `ROT_SOURCE_URI`? | One-time ROT **Postgres** URL for evaluation **rows** import |
-| How do I move training PDFs to fraBering? | `scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh` |
+| How do I move training PDFs to fraBering? | `scripts/migrate-rot-training-docs/migrate-rot-training-docs.sh` (one-time; done) |
+| How do I stop standalone ROT? | `docs/rot-decommission.md` |
+| Where does nightly backup read from? | `ROT_BACKUP_SOURCE=frabering` → `server/fileserver/rot/` |
 | Where do PDFs live in fraBering? | `server/fileserver/rot/` (repo root, not `dist/`) |
 | Where are daily backups? | `/var/backups/rot/rot-docs-YYYY-MM-DD.tar.gz` on prod, vultr, dev |
 | How long kept? | **1** prod, **3** vultr, **1** dev (`REMOTE_KEEP_COUNTS="3 1"`) |

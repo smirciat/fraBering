@@ -25,10 +25,13 @@
 | ROT Fileserver at `/rot/files` | Done (in repo) |
 | `SIC_LOG.pdf` → `server/fileserver/rot/pdfs/` | Copied in repo — deploy to prod |
 | ROT PDF templates → `server/fileserver/rot/pdfs/` | Copied in repo — deploy to prod |
-| Training PDF migration script | `scripts/migrate-rot-training-docs/` — run on prod cutover |
-| Standalone ROT :58786 | Still running (parallel until sign-off) |
+| Training PDF migration script | `scripts/migrate-rot-training-docs/` — done on prod |
+| Standalone ROT :58786 | **Decommission in progress** — see `docs/rot-decommission.md` |
+| Nightly backup source | Switch to `ROT_BACKUP_SOURCE=frabering` on prod |
 
-**Next when resuming:** Phase 6 — XML import, decommission standalone ROT (:58786).
+**Phase 6 (decommission):** XML import skipped (unused); ROT admin skipped (fraBering admin). Stop `:58786`, point backups at fraBering.
+
+See: `docs/rot-decommission.md`
 
 ## Prod deploy + training PDF migration
 
@@ -155,7 +158,13 @@ Management ▼
 - [x] ROT Fileserver browser at `/rot/files`
 - [x] Fileserver API: `/api/rot/{listFileserver,uploadFileserver,deleteFileserver}` + `GET /api/rot/files/fileserver`
 
-### Phase 6 — XML, ROT admin, decommission standalone ROT
+### Phase 6 — Decommission standalone ROT
+
+- [x] XML import — **skipped** (unused)
+- [x] ROT admin — **skipped** (fraBering user admin)
+- [ ] Stop standalone ROT `:58786` on bering-prod — `docs/rot-decommission.md`
+- [ ] Nightly backup: `ROT_BACKUP_SOURCE=frabering` in `/etc/bering/rot-backup.env`
+- [ ] Team uses Management → ROT links on frat.beringair.com only
 
 ## Auth migration
 
@@ -174,6 +183,6 @@ Management ▼
 ## References
 
 - ROT agent guide: `~/ROT/AGENTS.md`
-- **ROT PDF backups & `ROT_SOURCE_URI` explained:** `docs/rot-backup-restore.md`
+- ROT decommission runbook: `docs/rot-decommission.md`
 - fraBering roster Postgres pattern: `docs/roster-postgres.md`
 - Issue attachment storage (repo-root fileserver): `docs/issues-workflow.md`

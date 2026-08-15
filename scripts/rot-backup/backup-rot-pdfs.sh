@@ -28,6 +28,8 @@ SSH_IDENTITY_FILE="${SSH_IDENTITY_FILE:-$HOME/.ssh/bering_backup}"
 SSH_WRAPPER="${SSH_WRAPPER:-$SCRIPT_DIR/rot-backup-ssh.sh}"
 export ROT_BACKUP_ENV="$ENV_FILE"
 
+ROT_BACKUP_SOURCE="${ROT_BACKUP_SOURCE:-frabering}"
+FRABERING_ROT_ROOT="${FRABERING_ROT_ROOT:-$HOME/fraBering/server/fileserver/rot}"
 ROT_SERVER_ROOT="${ROT_SERVER_ROOT:-$HOME/ROT/server}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/rot}"
 PROD_KEEP_COUNT="${PROD_KEEP_COUNT:-1}"
@@ -114,7 +116,17 @@ prune_remote() {
     || log "WARN: remote prune failed on ${host}"
 }
 
-[[ -d "$ROT_SERVER_ROOT" ]] || fail "ROT_SERVER_ROOT not found: $ROT_SERVER_ROOT"
+[[ -f "$PATHS_FILE" ]] || fail "Path map not found: $PATHS_FILE"
+# shellcheck source=/dev/null
+source "$PATHS_FILE"
+
+if [[ "$ROT_BACKUP_SOURCE" == "frabering" ]]; then
+  [[ -d "$FRABERING_ROT_ROOT" ]] || fail "FRABERING_ROT_ROOT not found: $FRABERING_ROT_ROOT"
+  BACKUP_LABEL="$FRABERING_ROT_ROOT (fraBering)"
+else
+  [[ -d "$ROT_SERVER_ROOT" ]] || fail "ROT_SERVER_ROOT not found: $ROT_SERVER_ROOT"
+  BACKUP_LABEL="$ROT_SERVER_ROOT (standalone ROT)"
+fi
 
 mkdir -p "$BACKUP_DIR" "$WORKDIR"
 chmod 700 "$BACKUP_DIR" 2>/dev/null || true
@@ -129,21 +141,35 @@ fi
 if [[ -f "$TAR_PATH" ]]; then
   log "Today's tarball already exists: $TAR_PATH (skipping create, will still push/prune)"
 else
-  log "Building ${TAR_NAME} from ${ROT_SERVER_ROOT} (training PDFs only)"
+  log "Building ${TAR_NAME} from ${BACKUP_LABEL} (training PDFs only)"
 
   [[ -f "$PATHS_FILE" ]] || fail "Path map not found: $PATHS_FILE"
   # shellcheck source=/dev/null
   source "$PATHS_FILE"
 
-  for rel in "${ROT_TRAINING_SOURCE_PATHS[@]}"; do
-    src="${ROT_SERVER_ROOT}/${rel}"
-    if [[ -e "$src" ]]; then
-      mkdir -p "$WORKDIR/$(dirname "$rel")"
-      cp -a "$src" "$WORKDIR/$rel"
-    else
-      log "WARN: missing path (skipped): $src"
-    fi
-  done
+  if [[ "$ROT_BACKUP_SOURCE" == "frabering" ]]; then
+    for pair in "${ROT_TRAINING_FRABERING_BACKUP_MAP[@]}"; do
+      src_rel="${pair%%:*}"
+      dest_rel="${pair##*:}"
+      src="${FRABERING_ROT_ROOT}/${src_rel}"
+      if [[ -e "$src" ]]; then
+        mkdir -p "$WORKDIR/$(dirname "$dest_rel")"
+        cp -a "$src" "$WORKDIR/$dest_rel"
+      else
+        log "WARN: missing path (skipped): $src"
+      fi
+    done
+  else
+    for rel in "${ROT_TRAINING_SOURCE_PATHS[@]}"; do
+      src="${ROT_SERVER_ROOT}/${rel}"
+      if [[ -e "$src" ]]; then
+        mkdir -p "$WORKDIR/$(dirname "$rel")"
+        cp -a "$src" "$WORKDIR/$rel"
+      else
+        log "WARN: missing path (skipped): $src"
+      fi
+    done
+  fi
 
   echo "$DATE_TAG" > "$WORKDIR/BACKUP_DATE.txt"
   hostname > "$WORKDIR/BACKUP_HOST.txt"
