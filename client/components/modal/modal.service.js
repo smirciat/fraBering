@@ -625,6 +625,7 @@ angular.module('workspaceApp')
                 getLbs:function(lbHigh,lbLow){return Math.floor(lbHigh-lbLow)},
                 getGals:function(lbHigh,lbLow){return Math.floor((lbHigh-lbLow)/6.7)},
                 getRequest(totalTaxi,fob){
+                  if (fob===undefined||fob===null||fob==='') fob=flight.autoOnboard||0;
                   let main=(totalTaxi*1-fob*1)/2;
                   let aux=0;
                   if (false){//flight.equipment.maxMain){

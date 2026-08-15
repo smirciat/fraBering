@@ -410,7 +410,8 @@ angular.module('workspaceApp')
     if (scope.flight.pfr && scope.flight.pfr.coPilotData && scope.flight.pfr.coPilotData.weight) {
       scope.load.firstOfficerWeight = scope.load.firstOfficerWeight || scope.flight.pfr.coPilotData.weight * 1;
     }
-    if (scope.flight.fuelPreviouslyOnboard) scope.load.fob = scope.load.fob || scope.flight.fuelPreviouslyOnboard * 1;
+    var fobSrc = scope.flight.fuelPreviouslyOnboard || scope.flight.autoOnboard;
+    if (fobSrc) scope.load.fob = scope.load.fob || fobSrc * 1;
     if (scope.flight.airportObjs && scope.flight.airportObjs[0] && scope.flight.airportObjs[0].airport && scope.flight.airportObjs[0].airport.threeLetter) {
       scope.load.departure = scope.load.departure || scope.flight.airportObjs[0].airport.threeLetter;
     }

@@ -529,6 +529,108 @@ function deg2rad(deg) {
   return deg * (Math.PI/180);
 }
 
+function firestoreSeconds(ts) {
+  if (ts===undefined||ts===null||ts==='') return 0;
+  if (typeof ts==='number'&&isFinite(ts)) {
+    if (ts>1e12) return ts/1000;
+    if (ts>1e9) return ts;
+    return 0;
+  }
+  if (typeof ts.toDate==='function') {
+    let d=ts.toDate();
+    if (d&&!isNaN(d.getTime())) return d.getTime()/1000;
+  }
+  if (typeof ts._seconds==='number') return ts._seconds;
+  if (typeof ts.seconds==='number') return ts.seconds;
+  if (ts instanceof Date&&!isNaN(ts.getTime())) return ts.getTime()/1000;
+  let parsed=new Date(ts);
+  if (!isNaN(parsed.getTime())) return parsed.getTime()/1000;
+  return 0;
+}
+
+function pfrMmDdYy(pfr) {
+  if (!pfr||!pfr.dateString) return '';
+  return String(pfr.dateString);
+}
+
+function flightMmDdYy(flight) {
+  if (!flight||!flight.date) return '';
+  let d=new Date(flight.date);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+}
+
+function pfrLastOnSeconds(pfr) {
+  if (!pfr||!pfr.legArray||!pfr.legArray.length) return 0;
+  let last=pfr.legArray[pfr.legArray.length-1];
+  if (!last) return 0;
+  let sec=firestoreSeconds(last.onTime);
+  if (sec) return sec;
+  if (last.onTimeString&&pfr.dateString) {
+    let d=new Date(pfr.dateString+' '+last.onTimeString);
+    if (!isNaN(d.getTime())) return d.getTime()/1000;
+  }
+  return 0;
+}
+
+function pfrRemainingFuel(pfr) {
+  if (!pfr||!pfr.legArray||!pfr.legArray.length) return null;
+  let last=pfr.legArray[pfr.legArray.length-1];
+  if (!last) return null;
+  let fuel=Number(last.fuel);
+  let burn=Number(last.burn);
+  if (!isFinite(fuel)||!isFinite(burn)) return null;
+  let remain=Math.round(fuel-burn);
+  if (remain<0||remain>15000) return null;
+  return remain;
+}
+
+function flightSchedSeconds(flight) {
+  if (!flight||!flight.date) return 0;
+  let d=new Date(flight.date);
+  if (isNaN(d.getTime())) return 0;
+  let t='';
+  if (flight.tfliteDepart) t=String(flight.tfliteDepart);
+  else if (flight.departTimes&&flight.departTimes[0]) t=String(flight.departTimes[0]);
+  let parts=t.split(':');
+  let hours=parseInt(parts[0],10);
+  let mins=parseInt(parts[1],10);
+  if (!isFinite(hours)) return Date.now()/1000;
+  d.setHours(hours, isFinite(mins)?mins:0, parseInt(parts[2],10)||0, 0);
+  return d.getTime()/1000;
+}
+
+function isSamePfrAsFlight(pfr, flight) {
+  if (!pfr||!flight) return false;
+  if (String(pfr.acftNumber||'')!==String(flight.aircraft||'')) return false;
+  if (pfrMmDdYy(pfr)!==flightMmDdYy(flight)) return false;
+  if (pfr.flightNumber===undefined||pfr.flightNumber===null||flight.flightNum===undefined||flight.flightNum===null) return false;
+  return String(pfr.flightNumber)===String(flight.flightNum);
+}
+
+/** Last completed Firebase PFR for this aircraft before scheduled departure; remaining fuel = last-leg fuel − burn. */
+function computeAutoOnboard(flight, aircraftPfrs) {
+  if (!flight||!flight.aircraft||!aircraftPfrs||!aircraftPfrs.length) return null;
+  let cutoff=flightSchedSeconds(flight);
+  let bestRemain=null;
+  let bestOn=0;
+  for (let i=0;i<aircraftPfrs.length;i++) {
+    let pfr=aircraftPfrs[i];
+    if (!pfr||pfr.isArchived) continue;
+    if (isSamePfrAsFlight(pfr, flight)) continue;
+    let onSec=pfrLastOnSeconds(pfr);
+    if (!onSec) continue;
+    if (cutoff&&onSec>=cutoff) continue;
+    let remain=pfrRemainingFuel(pfr);
+    if (remain===null) continue;
+    if (onSec>=bestOn) {
+      bestOn=onSec;
+      bestRemain=remain;
+    }
+  }
+  return bestRemain;
+}
+
 export async function tf(req,res) {
   const memoryUsage = process.memoryUsage();
   console.log('Memory Usage:');
@@ -554,6 +656,12 @@ export async function tf(req,res) {
       });
     }
     pfrs=previousPfrs.concat(firebaseFlights);
+    let pfrsByAircraft={};
+    pfrs.forEach(pfr=>{
+      if (!pfr||!pfr.acftNumber) return;
+      if (!pfrsByAircraft[pfr.acftNumber]) pfrsByAircraft[pfr.acftNumber]=[];
+      pfrsByAircraft[pfr.acftNumber].push(pfr);
+    });
     let d=new Date();
     let month = String(d.getMonth() + 1).padStart(2, '0');
     let day = String(d.getDate()).padStart(2, '0');
@@ -773,21 +881,7 @@ export async function tf(req,res) {
           flight.taxiFuel=equipmentArr[eqIndex].taxiFuel;
         }
       }
-      let acPfrs=pfrs.filter((pfr)=>{return pfr.acftNumber===flight.aircraft});
-      if (acPfrs.length>0){
-        acPfrs.sort((a,b)=>{
-          let aTime, bTime;
-          if (!a.legArray[a.legArray.length-1]) aTime='1/1/1979';
-          else aTime=a.legArray[a.legArray.length-1].onTime||'1/1/1979';
-          if (!b.legArray[b.legArray.length-1]) bTime='1/1/1979';
-          else bTime=b.legArray[b.legArray.length-1].onTime||'1/1/1979';
-          return new Date(aTime)-new Date(bTime);
-        });
-        acPfrs=acPfrs.filter(pfr=>{return pfr.legArray&&pfr.legArray[pfr.legArray.length-1]&&pfr.legArray[pfr.legArray.length-1].onTime&&pfr.legArray[pfr.legArray.length-1].onTime._seconds});
-        if (acPfrs&&acPfrs[0]){
-          flight.autoOnboard=acPfrs[0].legArray[acPfrs[0].legArray.length-1].fuel-acPfrs[0].legArray[acPfrs[0].legArray.length-1].burn;
-        }
-      }
+      flight.autoOnboard=computeAutoOnboard(flight, pfrsByAircraft[flight.aircraft]||[]);
       
      //map flights array(from getManifests API) to todaysFlights array (from postgresql database)
       let matchedFA=todaysFlights.filter(f=>{return flight.date===f.date&&f.flightNum===flight.flightNum}).sort((a,b)=>{return b._id-a._id});

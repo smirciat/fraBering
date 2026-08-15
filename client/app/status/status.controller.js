@@ -1324,7 +1324,7 @@ class StatusComponent {
     if (!flight.pfr||!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100) return "WAITING ON PILOT";
     let response='';
     if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"||flight.equipment.name==="Casa"){
-      let fob=flight.fuelPreviouslyOnboard||flight.autoOnboard;
+      let fob=flight.fuelPreviouslyOnboard||flight.autoOnboard||0;
       let main=(flight.pfr.legArray[0].fuel*1-fob*1)/2;
       let aux=0;
       if (flight.pfr.legArray[0].fuel*1>flight.equipment.maxMain*2){
