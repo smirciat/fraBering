@@ -1,4 +1,4 @@
-<div ng-if="rotRecords.loggedIn()" style="background-color:#ffffcc;margin:0;min-height: 100vh;">
+<div ng-if="rotRecords.loggedIn() && rotRecords.canAccessRecords()" style="background-color:#ffffcc;margin:0;min-height: 100vh;">
   <rot-pilot-selector></rot-pilot-selector>
   <div style="width:90%;margin:auto;padding-top:20px;">
     <div class="box">
@@ -517,5 +517,9 @@
       </div>
   </div>
   <hr>
+</div>
+<div ng-if="rotRecords.loggedIn() && !rotRecords.canAccessRecords()" style="width:90%;margin:40px auto;">
+  <h3>Training Records</h3>
+  <p>Access is restricted to company instructors, Kaleb, Andy, and Nate.</p>
 </div>
 

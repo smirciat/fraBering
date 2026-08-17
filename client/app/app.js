@@ -2,7 +2,7 @@
 
 angular.module('workspaceApp', ['workspaceApp.auth', 'workspaceApp.admin', 'workspaceApp.constants',
     'ngCookies', 'ngResource', 'ngSanitize', 'btford.socket-io', 'ngMaterial', 'ui.router','ui.select', 'ui.bootstrap',
-    'validation.match','angularMoment','AngularPrint','ui.grid','ui.grid.edit', 'ui.grid.cellNav','ui.grid.selection','ui.grid.exporter'
+    'validation.match','angularMoment','AngularPrint','angular-thumbnails','ui.grid','ui.grid.edit', 'ui.grid.cellNav','ui.grid.selection','ui.grid.exporter'
   ])
   .config(function($urlRouterProvider, $locationProvider, $compileProvider) {
     $urlRouterProvider.otherwise('/login');
@@ -10,6 +10,7 @@ angular.module('workspaceApp', ['workspaceApp.auth', 'workspaceApp.admin', 'work
     $locationProvider.html5Mode(true);
     
     $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|tel|file|blob):/);
+    $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|blob|data):/);
   })
   .run(function($document) {
     $document.on('contextmenu', function(event) {

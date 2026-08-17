@@ -3,10 +3,11 @@
 (function(){
 
 class RecordsComponent {
-  constructor($scope,$timeout,$interval,$http,rotAppConfig,Modal,categoryFilterFilter,$state,Auth,RotPilotContext) {
+  constructor($scope,$timeout,$interval,$http,rotAppConfig,Modal,categoryFilterFilter,$state,Auth,RotPilotContext,RotAccess) {
     this.categoryFilter=categoryFilterFilter;
     this.appConfig=rotAppConfig;
     this.Auth=Auth;
+    this.RotAccess=RotAccess;
     this.RotPilotContext=RotPilotContext;
     this.Modal=Modal;
     this.http=$http;
@@ -133,6 +134,7 @@ class RecordsComponent {
       if (!user || !user.role) return;
       this.user = user;
       this.bootstrapped = true;
+      if (!this.canAccessRecords()) return;
       this.RotPilotContext.loadPilots().then(() => {
         let chosen = this.RotPilotContext.getChosenPilot();
         if (chosen) this.queryObj.value = chosen.displayName || chosen.name;
@@ -573,6 +575,10 @@ class RecordsComponent {
   
   loggedIn(){
     return !!this.bootstrapped;
+  }
+
+  canAccessRecords(){
+    return this.RotAccess.canAccessRecords(this.user);
   }
   
   cleanObject(p){

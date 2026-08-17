@@ -13,8 +13,9 @@ class NavbarController {
   isCollapsed = true;
   //end-non-standard
 
-  constructor(Auth,$interval,$http,$scope,$timeout,$window,Modal,socket,$state) {
+  constructor(Auth,$interval,$http,$scope,$timeout,$window,Modal,socket,$state,RotAccess) {
     this.Auth=Auth;
+    this.RotAccess=RotAccess;
     this.Modal=Modal;
     this.socket=socket;
     this.$state=$state;
@@ -657,9 +658,13 @@ class NavbarController {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 5);
     this.textModal(this.textMessages.filter(item=>{return new Date(item.sent) >= sevenDaysAgo;}));
   }
+
+  canAccessRotRecords(){
+    return this.RotAccess.canAccessRecords(this.Auth.getCurrentUser());
+  }
 }
 
 angular.module('workspaceApp')
   .controller('NavbarController', NavbarController);
 
-NavbarController.$inject = ['Auth', '$interval', '$http', '$scope', '$timeout', '$window', 'Modal', 'socket', '$state'];
+NavbarController.$inject = ['Auth', '$interval', '$http', '$scope', '$timeout', '$window', 'Modal', 'socket', '$state', 'RotAccess'];
