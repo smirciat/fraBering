@@ -1311,6 +1311,90 @@ class StatusComponent {
     if (!fueled) return;// "fuel-red";
   }
   
+  fuelTruckOptions() {
+    let base = window.base && window.base.base;
+    if (base === 'UNK') return ['Truck 1'];
+    if (base === 'OME' || base === 'OTZ') return ['AVGAS Truck', 'Truck 1', 'Truck 2'];
+    return [];
+  }
+
+  updateFuelMeterGallons(flight) {
+    let start = parseFloat(String(flight.startFuel || '').replace(/[^\d.]/g, ''));
+    let stop = parseFloat(String(flight.stopFuel || '').replace(/[^\d.]/g, ''));
+    if (!isNaN(start) && !isNaN(stop) && stop >= start) {
+      flight.gallonsUplifted = String(Math.round((stop - start) * 10) / 10);
+    }
+    else if (!flight.startFuel && !flight.stopFuel) {
+      flight.gallonsUplifted = null;
+    }
+  }
+
+  saveFuelFields(flight) {
+    if (flight.isHeli) return;
+    this.updateFuelMeterGallons(flight);
+    this.http.patch('/api/todaysFlights/' + flight._id, {
+      truck: flight.truck || null,
+      startFuel: flight.startFuel || null,
+      stopFuel: flight.stopFuel || null,
+      gallonsUplifted: flight.gallonsUplifted || null
+    }).then(res => { console.log(res.data); }).catch(err => { console.log(err); });
+  }
+
+  fuelDisplay(flight) {
+    if (flight.isHeli) {
+      let heli = flight.heliSource || flight;
+      let lbs = this.heliFuelLbs(heli);
+      if (lbs < 100) return { ready: false };
+      if (heli.fuelRequestString) {
+        return { ready: true, rows: [{ label: 'Fuel', value: heli.fuelRequestString, multiline: true }] };
+      }
+      return {
+        ready: true,
+        rows: [
+          { label: 'Fill To', value: Math.round(lbs / 2) + ' lbs/side', highlight: true },
+          { label: '', value: '(' + Math.round(lbs) + ' lbs total)' }
+        ]
+      };
+    }
+    if (!flight.pfr || !flight.pfr.legArray[0].fuel || flight.pfr.legArray[0].fuel < 100) {
+      return { ready: false };
+    }
+    let fillTo = Math.round(flight.pfr.legArray[0].fuel * 1);
+    let fob = Math.round((flight.fuelPreviouslyOnboard || flight.autoOnboard || 0) * 1);
+    let eq = flight.equipment && flight.equipment.name;
+    let rows = [];
+    if (eq === 'Beech 1900' || eq === 'King Air' || eq === 'Casa') {
+      let main = (fillTo - fob) / 2;
+      let aux = 0;
+      if (fillTo > flight.equipment.maxMain * 2) {
+        aux = (fillTo - flight.equipment.maxMain * 2 - fob) / 2;
+        main = flight.equipment.maxMain;
+      }
+      if (aux > flight.equipment.maxAux) {
+        return { ready: true, rows: [{ label: '', value: 'Main + Aux request exceeds capacity', error: true }] };
+      }
+      rows.push({ label: 'FOB', value: fob + ' lbs' });
+      rows.push({ label: 'Fill To', value: fillTo + ' lbs', highlight: true });
+      let addMain = Math.round(main / 6.7);
+      if (addMain < 0) {
+        rows.push({ label: '', value: 'DOUBLE CHECK FUEL REQUEST', error: true });
+      }
+      else {
+        rows.push({ label: 'ADD', value: addMain + ' gal/side Mains', highlight: true });
+        if (aux > 0) rows.push({ label: 'ADD Aux', value: Math.round(aux / 6.7) + ' gal/side', highlight: true });
+      }
+    }
+    else if (flight.pfr.fuelRequestString) {
+      rows.push({ label: 'Fuel', value: String(flight.pfr.fuelRequestString).trim(), multiline: true });
+    }
+    else {
+      rows.push({ label: 'FOB', value: fob + ' lbs' });
+      rows.push({ label: 'Fill To', value: fillTo + ' lbs', highlight: true });
+      rows.push({ label: 'ADD', value: Math.round((fillTo - fob) / 6.7) + ' gal', highlight: true });
+    }
+    return { ready: true, rows: rows };
+  }
+
   fuelRequest(flight){
     if (flight.isHeli) {
       let heli=flight.heliSource||flight;

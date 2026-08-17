@@ -839,6 +839,24 @@
       </table>
       <br>
     </div>
+    <div class="eta-update-section">
+      <label>Updated ETA (local time, HH:MM)</label>
+      <p class="eta-hint" ng-if="modal.plannedFinalEta()">Planned final arrival: {{modal.plannedFinalEta()}}</p>
+      <input class="form-control standby-leg-input" type="text" placeholder="HH:MM" ng-model="modal.flight.miscObject.updatedEta" ng-disabled="modal.enrouteFieldsDisabled()">
+      <label class="eta-terminated-check">
+        <input type="checkbox" ng-model="modal.flight.miscObject.terminatedAwayFromBase" ng-disabled="modal.enrouteFieldsDisabled()">
+        Flight terminated away from base
+      </label>
+      <div ng-if="modal.flight.miscObject.terminatedAwayFromBase" class="eta-terminated-fields">
+        <label>Termination location</label>
+        <input class="form-control" type="text" ng-model="modal.flight.miscObject.terminationLocation" ng-disabled="modal.enrouteFieldsDisabled()">
+        <label>Completion time (local HH:MM)</label>
+        <input class="form-control standby-leg-input" type="text" placeholder="HH:MM" ng-model="modal.flight.miscObject.terminationCompletionTime" ng-disabled="modal.enrouteFieldsDisabled()">
+        <label>Reason</label>
+        <textarea class="form-control eta-terminated-reason" ng-model="modal.flight.miscObject.terminationReason" ng-disabled="modal.enrouteFieldsDisabled()"></textarea>
+      </div>
+    </div>
+    <br>
     <div ng-if="true">
       <label>Changes While Enroute/After Release</label>
       <textarea class="form-control" style="height:76px;" ng-model="modal.flight.enrouteChanges" ng-disabled="modal.flight.flightStatus==='Completed'"></textarea>

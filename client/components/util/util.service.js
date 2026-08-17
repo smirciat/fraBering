@@ -243,6 +243,26 @@
         return flight.miscObject.standbyLegTimes;
       },
 
+      initFlightEtaFields(flight) {
+        if (!flight) return;
+        if (!flight.miscObject) flight.miscObject = {};
+        let m = flight.miscObject;
+        if (m.updatedEta === undefined) m.updatedEta = '';
+        if (m.terminatedAwayFromBase === undefined) m.terminatedAwayFromBase = false;
+        if (m.terminationLocation === undefined) m.terminationLocation = '';
+        if (m.terminationCompletionTime === undefined) m.terminationCompletionTime = '';
+        if (m.terminationReason === undefined) m.terminationReason = '';
+      },
+
+      plannedFinalEta(flight) {
+        if (!flight) return '';
+        let times = flight.arriveTimes && flight.arriveTimes.length ? flight.arriveTimes : flight.departTimes;
+        if (!times || !times.length) return '';
+        let t = times[times.length - 1];
+        if (!t) return '';
+        return String(t).substring(0, 5);
+      },
+
       minutesNowLocal() {
         let d = new Date();
         return d.getHours() * 60 + d.getMinutes();

@@ -544,6 +544,7 @@ angular.module('workspaceApp')
             if (!flight.miscObject) flight.miscObject={};
             flight.miscObject.standbyCharter=standbyCharter;
             Util.initStandbyLegTimes(flight);
+            Util.initFlightEtaFields(flight);
             quickModal = openModal({
               modal: {
                 Math:Math,
@@ -599,6 +600,8 @@ angular.module('workspaceApp')
                 standbyLegTimes:flight.miscObject.standbyLegTimes,
                 isStandbyCharter:function(){return Util.isStandbyCharter(flight);},
                 standbyLegTimesDisabled:function(){return flight.active==='false';},
+                enrouteFieldsDisabled:function(){return flight.flightStatus==='Completed';},
+                plannedFinalEta:function(){return Util.plannedFinalEta(flight);},
                 dismissable: true,
                 show:false,
                 flightModal:true,

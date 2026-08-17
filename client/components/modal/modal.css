@@ -251,3 +251,35 @@
   width:6em;
   display:inline-block;
 }
+
+.eta-update-section label{
+  display:block;
+  margin-top:8px;
+  font-weight:bold;
+}
+
+.eta-hint{
+  font-size:12px;
+  color:#666;
+  margin:4px 0 6px;
+}
+
+.eta-terminated-check{
+  margin-top:12px;
+  font-weight:bold;
+}
+
+.eta-terminated-check input{
+  margin-right:8px;
+}
+
+.eta-terminated-fields{
+  margin-left:1em;
+  padding:8px 0 4px;
+  border-left:3px solid #f0ad4e;
+  padding-left:12px;
+}
+
+.eta-terminated-reason{
+  height:76px;
+}
