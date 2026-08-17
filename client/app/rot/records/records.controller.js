@@ -29,7 +29,6 @@ class RecordsComponent {
     this.graces=['Uncurrent','Late Grace','In Base Month','Early Grace'];
     this.tab='CERT';
     this.dateString=new Date().toLocaleDateString();
-    this.maxHeight=70;
     this.newPilot={};
     this.year=new Date().getFullYear();
     this.quarter=1;
@@ -1061,11 +1060,16 @@ class RecordsComponent {
   		    let arr=filename.split('.');
   		    let type='image';
   		    if (arr[arr.length-1]==='pdf') type='pdf';
-  		    this.fullFiles.push({maxHeight:this.maxHeight,filename:filename,date:new Date(this.getDate(filename)),type:type,urlMain:URL.createObjectURL(blob)});
+  		    this.fullFiles.push({filename:filename,date:new Date(this.getDate(filename)),type:type,urlMain:URL.createObjectURL(blob)});
         });
     });  
   }
   
+  filePreviewUrl(file) {
+    if (!file || !file.urlMain) return '';
+    return file.type === 'pdf' ? file.urlMain + '#navpanes=0' : file.urlMain;
+  }
+
   filenamePrompt(filename){
     let newName = prompt('What would you like to change the filename to for ' + filename + '?',filename);
     if (newName&&newName!==filename) {

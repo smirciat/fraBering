@@ -18,6 +18,33 @@ body {
     gap: 8px;
     flex-wrap: nowrap;
 }
+.points-row-thumb {
+    position: relative;
+    flex-shrink: 0;
+}
+.points-row-thumb a {
+    display: inline-block;
+    line-height: 0;
+}
+.file-thumb-link {
+    display: inline-block;
+    line-height: 0;
+}
+.file-thumb {
+    display: block;
+    max-height: 70px;
+    max-width: 120px;
+}
+.file-thumb-pdf {
+    line-height: 1.2;
+    padding: 8px 12px;
+    border: 1px solid #999;
+    background: #f5f5f5;
+    color: #333;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+}
 .tight{
   font-size: 9px; /* or use rem/em for responsiveness */
   padding: 2px 5px; /* small top/bottom padding for a tight fit */
@@ -31,14 +58,25 @@ body {
     margin-bottom: 0 !important;
 }
 
-.pdf-tooltip {
+.file-preview-tooltip {
     position: fixed;
-    top: 0;
-    right: 50px;
+    top: 80px;
+    right: 40px;
     z-index: 1000;
     background: #fff;
     border: 1px solid #ccc;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.file-preview-img {
+    display: block;
+    max-height: 90vh;
+    max-width: 80vw;
+}
+.file-preview-frame {
+    display: block;
+    height: 90vh;
+    width: 80vw;
+    border: 0;
 }
 .ui-select-choices {
   top: 100% !important;

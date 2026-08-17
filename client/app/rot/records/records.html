@@ -497,13 +497,16 @@
             <div ng-repeat="seat in rotRecords.seatArray(cat)">
               <h5 style="margin-left:40px" ng-if="rotRecords.filterCheck(cat,sub,seat)">{{seat}}</h5>
             
-              <div ng-repeat="file in rotRecords.fullFiles | categoryFilter:cat:sub:seat | orderBy:'-date' " class="points-row">
-                <div>
-                  <a href="{{file.urlMain}}" target="_blank" ng-mouseenter="file.isPreviewVisible=true" ng-mouseleave="file.isPreviewVisible=false">
-                      <thumbnail file-type="{{file.type}}" source="{{file.urlMain}}" img-url="file.url" max-height="{{file.maxHeight}}" max-width="300"></thumbnail>
+              <div ng-repeat="file in rotRecords.fullFiles | categoryFilter:cat:sub:seat | orderBy:'-date' " class="points-row"
+                   ng-mouseenter="file.isPreviewVisible=true" ng-mouseleave="file.isPreviewVisible=false">
+                <div class="points-row-thumb">
+                  <a href="{{file.urlMain}}" target="_blank" class="file-thumb-link">
+                    <img ng-if="file.type === 'image'" ng-src="{{file.urlMain}}" class="file-thumb" alt="">
+                    <span ng-if="file.type === 'pdf'" class="file-thumb file-thumb-pdf">PDF</span>
                   </a>
-                  <div ng-if="file.isPreviewVisible" class="pdf-tooltip">
-                      <iframe ng-src="{{ file.urlMain  + '#navpanes=0' | trusted }}" style="height:100vh;width:80vw;" type="application/pdf"></iframe>
+                  <div ng-if="file.isPreviewVisible" class="file-preview-tooltip">
+                    <img ng-if="file.type === 'image'" ng-src="{{file.urlMain}}" class="file-preview-img" alt="">
+                    <iframe ng-if="file.type === 'pdf'" ng-src="{{ rotRecords.filePreviewUrl(file) | trusted }}" class="file-preview-frame" title="PDF preview"></iframe>
                   </div>
                 </div>
                 <h5 ng-click="rotRecords.filenamePrompt(file.filename)"><a href="#">{{rotRecords.getDate(file.filename)}}&nbsp{{file.filename}}&nbsp</a></h5>

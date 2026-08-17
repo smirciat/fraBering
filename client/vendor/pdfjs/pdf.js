@@ -789,11 +789,6 @@ var Util = PDFJS.Util = (function UtilClosure() {
   };
 
   Util.loadScript = function Util_loadScript(src, callback) {
-    if (src.slice(-9)==='worker.js') {
-      let arr=src.split('/');
-      let base=arr.slice(0, 3).join("/");
-      src=base+'/bower_components/pdfjs-dist/build/pdf.worker.js';
-    }
     var script = document.createElement('script');
     var loaded = false;
     script.setAttribute('src', src);
