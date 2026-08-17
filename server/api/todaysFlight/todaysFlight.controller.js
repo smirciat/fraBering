@@ -955,7 +955,7 @@ export async function tf(req,res) {
         todaysFlights[index].nonRevFlight=flight.nonRevFlight;
         todaysFlights[index].runScroll=false;
         todaysFlights[index].status=flight.status;
-        todaysFlights[index].color=flight.color;
+        todaysFlights[index].color=applyLockedFlightColor(todaysFlights[index], flight.color, flight.aircraft);
         todaysFlights[index].airplaneObj=flight.airplaneObj;
         todaysFlights[index].equipment=flight.equipment;
         todaysFlights[index].autoOnboard=flight.autoOnboard;
@@ -1279,6 +1279,33 @@ function overallRiskClass(metarObj,aircraft){
     if (score===2) return "airport-yellow";
     return "airport-green";
   }
+
+function isFlightReleased(flight) {
+  if (!flight) return false;
+  return Boolean(
+    (flight.dispatchRelease && String(flight.dispatchRelease).trim()) ||
+    (flight.ocRelease && String(flight.ocRelease).trim())
+  );
+}
+
+function applyLockedFlightColor(existing, computedColor, aircraft) {
+  if (!existing || !isFlightReleased(existing)) return computedColor;
+  if (!existing.colorLock) {
+    if (existing.airportObjsLocked && existing.airportObjsLocked.length) {
+      existing.colorLock=flightRiskClass(
+        JSON.parse(JSON.stringify(existing.airportObjsLocked)),
+        aircraft
+      );
+    }
+    else if (existing.color) {
+      existing.colorLock=existing.color;
+    }
+    else {
+      existing.colorLock=computedColor;
+    }
+  }
+  return existing.colorLock;
+}
 
 function flightRiskClass(airportObjs,aircraft){
   let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];

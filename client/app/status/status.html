@@ -77,7 +77,7 @@
     </div>
    </div>
    <div ng-if="!status.fixedWing()" class="todays-flights">
-     <div ng-repeat="flight in status.heliFlights" ng-click="status.consoleLog(flight)">
+     <div ng-repeat="flight in status.heliFlights track by flight._id" ng-click="status.consoleLog(flight)">
       <div class="chat-body" ng-style="status.getChatFontSize()">
         <div class="chat-card">
       
@@ -475,7 +475,7 @@
 </section>
 <section class="ground-services-view" ng-if="status.view==='fuel'&&status.Auth.isUser()">
   <h3>Ground Services</h3>
-  <div ng-repeat="flight in status.fuelPageEntries" class="gs-flight-card" ng-class="status.fuelFlightColor(flight)" ng-init="flightIndex=$index">
+  <div ng-repeat="flight in status.fuelPageEntries track by flight._id" class="gs-flight-card" ng-class="status.fuelFlightColor(flight)" ng-init="flightIndex=$index">
     <div ng-show="flight.active==='true'" class="gs-flight-inner" ng-class="status.activeClass(flight.active)">
       <div class="gs-flight-header">
         <div class="gs-tail">{{flight.aircraft}}</div>
@@ -504,16 +504,16 @@
         </p>
         <p class="gs-route" ng-if="flight.isHeli">{{flight.fltPlan.dep}} - {{flight.fltPlan.arr}}</p>
       </div>
-      <div class="gs-fuel-summary" ng-if="status.fuelDisplay(flight).ready">
-        <div class="gs-fuel-row" ng-repeat="row in status.fuelDisplay(flight).rows" ng-class="{'gs-fuel-error': row.error}">
+      <div class="gs-fuel-summary" ng-if="flight.gsFuelDisplay.ready">
+        <div class="gs-fuel-row" ng-repeat="row in flight.gsFuelDisplay.rows track by $index" ng-class="{'gs-fuel-error': row.error}">
           <span class="gs-fuel-label" ng-if="row.label">{{row.label}}:</span>
           <span class="gs-fuel-value" ng-class="{'gs-fuel-highlight': row.highlight, 'gs-fuel-multiline': row.multiline}">{{row.value}}</span>
         </div>
       </div>
-      <div class="gs-not-ready" ng-if="!status.fuelDisplay(flight).ready">NOT READY — waiting on pilot</div>
-      <div class="gs-meter-section" ng-if="!flight.isHeli && status.fuelTruckOptions().length">
+      <div class="gs-not-ready" ng-if="!flight.gsFuelDisplay || !flight.gsFuelDisplay.ready">NOT READY — waiting on pilot</div>
+      <div class="gs-meter-section" ng-if="!flight.isHeli && status.fuelTruckOptionsList.length">
         <label class="gs-field-label">Fuel truck</label>
-        <select class="form-control gs-truck-select" ng-model="flight.truck" ng-options="t for t in status.fuelTruckOptions()" ng-change="status.saveFuelFields(flight)" ng-disabled="!flight.pfr">
+        <select class="form-control gs-truck-select" ng-model="flight.truck" ng-options="t for t in status.fuelTruckOptionsList" ng-change="status.saveFuelFields(flight)" ng-disabled="!flight.pfr">
           <option value=""></option>
         </select>
         <div class="gs-meter-grid">

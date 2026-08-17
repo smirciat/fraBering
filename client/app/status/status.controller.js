@@ -37,6 +37,7 @@ class StatusComponent {
     this.baseRunwayOverrideBusy=false;
     this.baseClosureComment='';
     this.flightsRequestId=0;
+    this.lastAutoScrollId=null;
     this.masterAirports=[];
     this.airportSocketReady=false;
     this.northWest=['PHO','KVL','WTK','RDG','TNC','WAA','SHH','TLA','KTS'];
@@ -55,8 +56,14 @@ class StatusComponent {
     this.captainPlusMinus="+";
     this.copilotPlusMinus="+";
     this.showLoadSheet=[];
-    $scope.$on('$destroy', function() {
-        socket.socket.removeAllListeners('firebaseFlights');
+    this.heliRequestId=0;
+    this.onFirebaseFlightsUpdate=(firebaseFlights)=>{
+      this.handleFirebaseFlightsSocket(firebaseFlights);
+    };
+    $scope.$on('$destroy', ()=> {
+        if (this.onFirebaseFlightsUpdate) {
+          socket.socket.removeListener('firebaseFlights', this.onFirebaseFlightsUpdate);
+        }
         socket.unsyncUpdates('todaysFlight');
         socket.unsyncUpdates('calendar');
         socket.unsyncUpdates('airplane');
@@ -73,8 +80,9 @@ class StatusComponent {
       this.cookies.put('token',storage);
       this.scope.$apply();
     }
-    this.heliFLights=[];
+    this.heliFlights=[];
     this.fuelPageEntries=[];
+    this.fuelTruckOptionsList=[];
     this.standbyNagCounts={};
     this.standbyNagLastShown={};
     this.standbyNagModalOpen=false;
@@ -132,6 +140,7 @@ class StatusComponent {
     
     this.isFilter=window.isFilter;
     this.toggleAssigned=window.toggleAssigned;
+    this.refreshFuelTruckOptions();
     this.scrollInterval=this.interval(()=>{
       this.scroll();
       this.renewFirebase();
@@ -193,10 +202,8 @@ class StatusComponent {
         flight.newlyReleased=true;
       }
       if (flight.ocRelease||flight.dispatchRelease) {
-        if (!flight.airportObjsLocked||!flight.airportObjsLocked.length) {
-          this.lockReleaseWeatherSnapshot(flight);
-        }
         if (!flight.colorLock) {
+          this.lockReleaseWeatherSnapshot(flight);
           this.lockFlightColorFromLegs(flight);
         }
       }
@@ -348,6 +355,7 @@ class StatusComponent {
       this.timeout(()=>{
         this.scope.nav.isCollapsed=true;
         this.base=newVal;
+        this.refreshFuelTruckOptions();
         if (!oldVal) {
           this.spinner=false;
           return;
@@ -366,7 +374,8 @@ class StatusComponent {
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
       this.spinner=true;
-      this.heliFLights=[];
+      this.lastAutoScrollId=null;
+      this.heliFlights=[];
       if (!newVal||newVal==='') return;
       this.timeoutVal=0;
       if (!oldVal||oldVal==='') this.timeoutVal=300;
@@ -566,6 +575,7 @@ class StatusComponent {
         //this.setAirplaneList();
       //},0);
       
+      array.forEach(flight=>this.reapplyFlightColorLock(flight));
       return array;// array.sort((a,b)=>{return a.departTimes[0].localeCompare(b.departTimes[0])});
     }
   }
@@ -867,6 +877,10 @@ class StatusComponent {
     this.applyUnofficialColorSuffix(metarObj);
   }
 
+  reapplyFlightColorLock(flight){
+    if (flight&&flight.colorLock) flight.color=flight.colorLock;
+  }
+
   lockFlightColorFromLegs(flight){
     if (!flight) return;
     let objs=flight.airportObjsLocked;
@@ -932,7 +946,8 @@ class StatusComponent {
         }
         else airportObjs.push({airport:{threeLetter:a}});
       });
-      if (!flight.colorLock) flight.color=this.flightRiskClass(airportObjs);
+      if (flight.colorLock) flight.color=flight.colorLock;
+      else flight.color=this.flightRiskClass(airportObjs);
     });
   }
 
@@ -1000,28 +1015,56 @@ class StatusComponent {
   initHelis(){
     let date=this.date||new Date(window.dateString||Date.now());
     this.dateString=date.toLocaleDateString();
+    const requestId=++this.heliRequestId;
     this.http.post('/api/airplanes/firebaseDate',{collection:'flights',date:date.toISOString()}).then(res=>{
+      if (requestId!==this.heliRequestId) return;
       console.log(res.data);
       this.heliFirebaseFlights=res.data||[];
       this.syncHelis(this.heliFirebaseFlights);
-      this.socket.socket.removeAllListeners('firebaseFlights');
-      this.socket.socket.on('firebaseFlights',(firebaseFlights)=>{
-        let selected=this.Util.formatFirebaseDate(this.date||new Date());
-        if (firebaseFlights[0]&&selected&&firebaseFlights[0].dateString!==selected) return;
-        console.log(firebaseFlights);
-        this.heliFirebaseFlights=firebaseFlights;
-        this.syncHelis(firebaseFlights);
-      });
+      if (this.onFirebaseFlightsUpdate) {
+        this.socket.socket.removeListener('firebaseFlights', this.onFirebaseFlightsUpdate);
+        this.socket.socket.on('firebaseFlights', this.onFirebaseFlightsUpdate);
+      }
     }).catch(err=>{
+      if (requestId!==this.heliRequestId) return;
       console.log('firebaseDate failed (check server/firebase.json on dev)', err);
       this.heliFlights=[];
       this.buildFuelPageEntries();
     });
   }
+
+  handleFirebaseFlightsSocket(firebaseFlights){
+    let selected=this.Util.formatFirebaseDate(this.date||new Date());
+    if (!firebaseFlights||!firebaseFlights.length) return;
+    if (selected) {
+      firebaseFlights=firebaseFlights.filter(flight=>!flight.dateString||flight.dateString===selected);
+    }
+    if (!firebaseFlights.length) return;
+    console.log(firebaseFlights);
+    this.heliFirebaseFlights=firebaseFlights;
+    this.syncHelis(firebaseFlights);
+  }
+
+  dedupeHeliList(flights){
+    let byId={};
+    let byMission={};
+    let out=[];
+    (flights||[]).forEach(flight=>{
+      if (!flight||!flight._id||byId[flight._id]) return;
+      let depTime=flight.fltPlan&&flight.fltPlan.depTime?flight.fltPlan.depTime:'';
+      let missionKey=(flight.acftNumber||'')+'|'+(flight.dateString||'')+'|'+depTime;
+      if (byMission[missionKey]) return;
+      byId[flight._id]=true;
+      byMission[missionKey]=true;
+      out.push(flight);
+    });
+    return out;
+  }
   
   syncHelis(firebaseFlights){
     if (!firebaseFlights) firebaseFlights=this.heliFirebaseFlights;
     if (!firebaseFlights) return;
+    firebaseFlights=angular.copy(firebaseFlights);
     let helis=["Robinson","Astar","AStar","R-44","R44","UH-1H",'Huey',"MD500","MD 500","Bell","EC130","H125","407"];
     let isHeliType=function(acftType){
       if (!acftType) return false;
@@ -1051,6 +1094,7 @@ class StatusComponent {
       if (arr2.length>1&&b.fltPlan.depTime.length===4) b.fltPlan.depTime='0'+b.fltPlan.depTime;
       return a.fltPlan.depTime-b.fltPlan.depTime;
     });
+    this.heliFlights=this.dedupeHeliList(this.heliFlights);
     this.heliFlights.forEach(flight=>{
       if (!flight.release) flight.release=[{}];
       if (!Array.isArray(flight.release)||flight.release.length===0) flight.release=[{}];
@@ -1209,6 +1253,7 @@ class StatusComponent {
       console.log('check scope');
       return;
     }
+    if (this.view&&this.view!=='board') return;
     //this.timeout(()=>{
       if (!this.todaysFlights) return;
       let scrollDate=new Date();
@@ -1231,16 +1276,10 @@ class StatusComponent {
         if (!scrollId&&fSplit.length===3&&new Date()<scrollDate.setHours(fSplit[0],fSplit[1],fSplit[2])) scrollId=flight._id;
       });
       if (!scrollId) scrollId=filteredFlights.at(-1)._id;
-      //if (this.mobile) return;
-      //this.$location.hash(scrollId);
-      //this.anchorScroll.yOffset=500;
-      //this.anchorScroll();
-      console.log('auto scrolling');
-      console.log(scrollId)
+      if (scrollId===this.lastAutoScrollId) return;
+      this.lastAutoScrollId=scrollId;
       let element = document.getElementById(scrollId);
-      console.log(element)
       if (element) element.scrollIntoView({ behavior: 'smooth' });
-      //document.body.scrollTop = document.documentElement.scrollTop = 0;
     //},0);
   }
   
@@ -1311,11 +1350,15 @@ class StatusComponent {
     if (!fueled) return;// "fuel-red";
   }
   
-  fuelTruckOptions() {
+  refreshFuelTruckOptions() {
     let base = window.base && window.base.base;
-    if (base === 'UNK') return ['Truck 1'];
-    if (base === 'OME' || base === 'OTZ') return ['AVGAS Truck', 'Truck 1', 'Truck 2'];
-    return [];
+    if (base === 'UNK') this.fuelTruckOptionsList = ['Truck 1'];
+    else if (base === 'OME' || base === 'OTZ') this.fuelTruckOptionsList = ['AVGAS Truck', 'Truck 1', 'Truck 2'];
+    else this.fuelTruckOptionsList = [];
+  }
+
+  fuelTruckOptions() {
+    return this.fuelTruckOptionsList || [];
   }
 
   updateFuelMeterGallons(flight) {
@@ -1340,7 +1383,11 @@ class StatusComponent {
     }).then(res => { console.log(res.data); }).catch(err => { console.log(err); });
   }
 
-  fuelDisplay(flight) {
+  syncGsFuelDisplay(flight) {
+    flight.gsFuelDisplay = this.computeFuelDisplay(flight);
+  }
+
+  computeFuelDisplay(flight) {
     if (flight.isHeli) {
       let heli = flight.heliSource || flight;
       let lbs = this.heliFuelLbs(heli);
@@ -2099,7 +2146,7 @@ class StatusComponent {
         if (this.heliFlights[index].offAt) this.heliFlights[index].localStatus="En Route";
         if (this.heliFlights[index].onAt) this.heliFlights[index].localStatus="Completed";
       }
-      if (this.heliFlights[0]&&new Date(this.heliFlights[0].dateString).toLocaleDateString()!==new Date().toLocaleDateString()) this.syncHelis(this.heliFlights);
+      if (this.heliFlights[0]&&new Date(this.heliFlights[0].dateString).toLocaleDateString()!==new Date().toLocaleDateString()) this.initHelis();
     }).catch(err=>{
       console.log(err);
       this.quickModal("Flight Plan Signature and/or Time has Failed For Some Strange Reason! Thanks Obama.","Failure!",true);
@@ -2364,16 +2411,25 @@ class StatusComponent {
   }
 
   buildFuelPageEntries(){
+    if (this.view !== 'fuel') return;
     let entries=[];
+    let seen={};
     (this.loadFlights||[]).forEach(flight=>{
       if (!this.todaysFlightDisplayFilter(flight)) return;
+      if (flight._id&&seen[flight._id]) return;
+      if (flight._id) seen[flight._id]=true;
       flight.isHeli=false;
       flight.fuelSortTime=flight.departTimes&&flight.departTimes[0]?flight.departTimes[0].substring(0,5):'99:99';
+      this.syncGsFuelDisplay(flight);
       entries.push(flight);
     });
     (this.heliFlights||[]).forEach(heli=>{
       if (!this.heliDepartureMatchesBase(heli)) return;
-      entries.push(this.normalizeHeliFuelEntry(heli));
+      let entry=this.normalizeHeliFuelEntry(heli);
+      if (seen[entry._id]) return;
+      seen[entry._id]=true;
+      this.syncGsFuelDisplay(entry);
+      entries.push(entry);
     });
     entries.sort((a,b)=>(a.fuelSortTime||'99:99').localeCompare(b.fuelSortTime||'99:99'));
     this.fuelPageEntries=entries;
@@ -2588,6 +2644,7 @@ class StatusComponent {
             this.allTodaysFlights=array;
             //no need to run the socket update if its just a color patch!  Runaway conndition with multiple clients ensues!
             if (item.colorPatch&&item.colorPatch==='true') return;
+            if (item) this.reapplyFlightColorLock(item);
             if (item.runScroll||(item.date===this.dateString&&event==="created")) {
               this.spinner=true;
               console.log(array)
@@ -2615,6 +2672,7 @@ class StatusComponent {
               if (i>-1) {
                 if (item.active) {
                   this.deepMerge(this.loadFlights[i],item);
+                  if (this.view==='fuel') this.syncGsFuelDisplay(this.loadFlights[i]);
                 }
                 else{
                   //delete it
