@@ -575,7 +575,10 @@ class StatusComponent {
         //this.setAirplaneList();
       //},0);
       
-      array.forEach(flight=>this.reapplyFlightColorLock(flight));
+      array.forEach(flight=>{
+        this.ensureFlightColorLock(flight);
+        this.reapplyFlightColorLock(flight);
+      });
       return array;// array.sort((a,b)=>{return a.departTimes[0].localeCompare(b.departTimes[0])});
     }
   }
@@ -881,11 +884,56 @@ class StatusComponent {
     if (flight&&flight.colorLock) flight.color=flight.colorLock;
   }
 
+  stampLockedLegColors(objs){
+    if (!objs||!objs.length) return;
+    objs.forEach(leg=>{
+      if (leg&&leg.color) leg.lockedLegColor=leg.color;
+    });
+  }
+
+  aggregateLegColors(airportObjs, frozen){
+    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
+    let color=colors[0];
+    let night=false;
+    let colorIndex=0;
+    if (!airportObjs) return color;
+    for (let i=0;i<airportObjs.length;i++) {
+      let leg=airportObjs[i];
+      let myClass=frozen?(leg.lockedLegColor||leg.color):(leg.color||this.overallRiskClass(leg));
+      if (!myClass) continue;
+      let arr=myClass.split(' ');
+      arr.forEach(a=>{
+        if (a==='night') night=true;
+        if (colors.indexOf(a)>colorIndex) {
+          color=a;
+          colorIndex=colors.indexOf(a);
+        }
+      });
+    }
+    if (night) return 'night '+color;
+    return color;
+  }
+
+  ensureFlightColorLock(flight){
+    if (!flight) return;
+    if (flight.colorLock) {
+      this.reapplyFlightColorLock(flight);
+      return;
+    }
+    if (!(flight.dispatchRelease||flight.ocRelease)) return;
+    if (!flight.airportObjsLocked||!flight.airportObjsLocked.length) return;
+    let locked=this.aggregateLegColors(flight.airportObjsLocked, true);
+    if (!locked) return;
+    flight.colorLock=locked;
+    flight.color=locked;
+  }
+
   lockFlightColorFromLegs(flight){
     if (!flight) return;
     let objs=flight.airportObjsLocked;
     if (!objs||!objs.length) return;
-    let locked=this.flightRiskClass(objs);
+    this.stampLockedLegColors(objs);
+    let locked=this.aggregateLegColors(objs, true);
     flight.colorLock=locked;
     flight.color=locked;
   }
@@ -901,10 +949,13 @@ class StatusComponent {
         if (!metarObj.airport) metarObj.airport=angular.copy(airportRecord);
         metarObj.aircraft=flight.aircraft;
         this.applyManualObservationIfNeeded(metarObj,airportRecord,flight.aircraft);
+        if (metarObj.color) metarObj.lockedLegColor=metarObj.color;
         flight.airportObjsLocked.push(metarObj);
       }
       else if (flight.airportObjs&&flight.airportObjs[listIndex]) {
-        flight.airportObjsLocked.push(angular.copy(flight.airportObjs[listIndex]));
+        let legCopy=angular.copy(flight.airportObjs[listIndex]);
+        if (legCopy.color) legCopy.lockedLegColor=legCopy.color;
+        flight.airportObjsLocked.push(legCopy);
       }
     });
   }
@@ -948,6 +999,7 @@ class StatusComponent {
       });
       if (flight.colorLock) flight.color=flight.colorLock;
       else flight.color=this.flightRiskClass(airportObjs);
+      this.ensureFlightColorLock(flight);
     });
   }
 
@@ -1483,26 +1535,7 @@ class StatusComponent {
   }
   
   flightRiskClass(airportObjs){
-    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
-    let color=colors[0];
-    let night=false;
-    let colorIndex=0;
-    if (!airportObjs) return color;
-    for (let i=0;i<airportObjs.length;i++) {
-    //airportObjs.forEach(metarObj=>{
-      let myClass=airportObjs[i].color;
-      if (!myClass) myClass=this.overallRiskClass(airportObjs[i]);
-      let arr=myClass.split(' ');
-      arr.forEach(a=>{
-        if (a==='night') night=true;
-        if (colors.indexOf(a)>colorIndex) {
-          color=a;
-          colorIndex=colors.indexOf(a);
-        }
-      });
-    }
-    if (night) return 'night '+color;
-    return color;
+    return this.aggregateLegColors(airportObjs, false);
   }
   
   overallRiskClass(metarObj){
@@ -2644,7 +2677,10 @@ class StatusComponent {
             this.allTodaysFlights=array;
             //no need to run the socket update if its just a color patch!  Runaway conndition with multiple clients ensues!
             if (item.colorPatch&&item.colorPatch==='true') return;
-            if (item) this.reapplyFlightColorLock(item);
+            if (item) {
+              this.ensureFlightColorLock(item);
+              this.reapplyFlightColorLock(item);
+            }
             if (item.runScroll||(item.date===this.dateString&&event==="created")) {
               this.spinner=true;
               console.log(array)

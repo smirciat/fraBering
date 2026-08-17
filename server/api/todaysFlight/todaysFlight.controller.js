@@ -1288,11 +1288,45 @@ function isFlightReleased(flight) {
   );
 }
 
+function stampLockedLegColors(objs) {
+  if (!objs || !objs.length) return;
+  objs.forEach(leg=>{
+    if (leg && leg.color) leg.lockedLegColor = leg.color;
+  });
+}
+
+function aggregateLegColors(airportObjs, frozen, aircraft) {
+  let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
+  let color=colors[0];
+  let night=false;
+  let colorIndex=0;
+  if (!airportObjs) return color;
+  for (let i=0;i<airportObjs.length;i++) {
+    let leg=airportObjs[i];
+    let myClass=frozen ? (leg.lockedLegColor || leg.color) : (leg.color || overallRiskClass(leg, aircraft));
+    if (!myClass) continue;
+    let arr=myClass.split(' ');
+    arr.forEach(a=>{
+      if (a==='night') night=true;
+      if (colors.indexOf(a)>colorIndex) {
+        color=a;
+        colorIndex=colors.indexOf(a);
+      }
+    });
+  }
+  if (night) return 'night '+color;
+  return color;
+}
+
+function flightRiskClassFromLockedLegs(airportObjs, aircraft) {
+  return aggregateLegColors(airportObjs, true, aircraft);
+}
+
 function applyLockedFlightColor(existing, computedColor, aircraft) {
   if (!existing || !isFlightReleased(existing)) return computedColor;
   if (!existing.colorLock) {
     if (existing.airportObjsLocked && existing.airportObjsLocked.length) {
-      existing.colorLock=flightRiskClass(
+      existing.colorLock=flightRiskClassFromLockedLegs(
         JSON.parse(JSON.stringify(existing.airportObjsLocked)),
         aircraft
       );
@@ -1308,26 +1342,7 @@ function applyLockedFlightColor(existing, computedColor, aircraft) {
 }
 
 function flightRiskClass(airportObjs,aircraft){
-  let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
-  let color=colors[0];
-  let night=false;
-  let colorIndex=0;
-  if (!airportObjs) return color;
-  for (let i=0;i<airportObjs.length;i++) {
-  //airportObjs.forEach(metarObj=>{
-    let myClass=overallRiskClass(airportObjs[i],aircraft);
-    
-    let arr=myClass.split(' ');
-    arr.forEach(a=>{
-      if (a==='night') night=true;
-      if (colors.indexOf(a)>colorIndex) {
-        color=a;
-        colorIndex=colors.indexOf(a);
-      }
-    });
-  }
-  if (night) return 'night '+color;
-  return color;
+  return aggregateLegColors(airportObjs, false, aircraft);
 }
 
 function isLessThanOneHourAgo(date) {

@@ -400,8 +400,9 @@ angular.module('workspaceApp')
                   let night=false;
                   let colorIndex=0;
                   for (let i=0;i<objs.length;i++) {
-                    let myClass=objs[i].color;
+                    let myClass=objs[i].lockedLegColor||objs[i].color;
                     if (!myClass) continue;
+                    if (objs[i].color) objs[i].lockedLegColor=objs[i].color;
                     myClass.split(' ').forEach(a=>{
                       if (a==='night') night=true;
                       if (colors.indexOf(a)>colorIndex) {
@@ -495,7 +496,10 @@ angular.module('workspaceApp')
                   let source=flight.airportObjs;
                   if (!source||!source.length) return;
                   flight.airportObjsLocked=angular.copy(source);
-                  flight.airportObjsLocked.forEach(metarObj=>enrichMetarWithManualObs(metarObj));
+                  flight.airportObjsLocked.forEach(metarObj=>{
+                    enrichMetarWithManualObs(metarObj);
+                    if (metarObj.color) metarObj.lockedLegColor=metarObj.color;
+                  });
                   if (lockColor&&!flight.colorLock) lockFlightColorFromLegs(flight.airportObjsLocked);
                 },
                 ocRequired=function(){
