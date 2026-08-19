@@ -14,14 +14,14 @@
 import _ from 'lodash';
 import fs from 'fs';
 import './issue.events';
-import {Issue, IssueComment, IssueAttachment} from '../../sqldb';
+import {Issue, IssueComment, IssueAttachment, User} from '../../sqldb';
 import {
   writeAttachmentFiles,
   resolveAttachmentPath,
   safeOriginalName
 } from './issue.storage';
 import {buildAgentSummaryMarkdown, buildAgentExportBundle} from './issue.agentSummary';
-import {notifyNewIssue} from './issue.notify';
+import {notifyNewIssue, notifyIssueComment} from './issue.notify';
 
 var ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -279,6 +279,9 @@ export function addComment(req, res) {
     res.status(400).send({message: 'body is required'});
     return null;
   }
+  var emailReporter = !!(req.body && req.body.emailReporter);
+  var emailDeveloper = !!(req.body && req.body.emailDeveloper);
+
   return Issue.findOne({
     where: {
       _id: issueId
@@ -292,8 +295,25 @@ export function addComment(req, res) {
       return IssueComment.create({
         issueId: issue._id,
         body: body,
-        authorName: (req.body.authorName || req.user.name),
+        authorName: req.user.name,
         authorUserId: req.user._id
+      }).then(function(comment) {
+        if (!emailReporter && !emailDeveloper) {
+          return comment;
+        }
+        return Promise.resolve().then(function() {
+          if (!emailReporter || !issue.reporterUserId) {
+            return null;
+          }
+          return User.findOne({where: {_id: issue.reporterUserId}});
+        }).then(function(reporterUser) {
+          notifyIssueComment(issue, comment, {
+            emailReporter: emailReporter,
+            emailDeveloper: emailDeveloper,
+            reporterEmail: reporterUser && reporterUser.email
+          });
+          return comment;
+        });
       });
     })
     .then(respondWithResult(res, 201))

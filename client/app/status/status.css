@@ -376,6 +376,19 @@ div.airport-pink h1{
   margin-bottom:10px;
 }
 
+.gs-tail-block{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.gs-flight-date{
+  font-size:0.85rem;
+  font-weight:normal;
+  color:#555;
+  line-height:1.2;
+}
+
 .gs-tail{
   font-size:2rem;
   font-weight:bold;
@@ -450,6 +463,12 @@ div.airport-pink h1{
   font-size:1.65rem;
   font-weight:bold;
   line-height:1.2;
+}
+
+.gs-fuel-hint{
+  font-size:12px;
+  color:#666;
+  margin-left:6px;
 }
 
 .gs-fuel-multiline{

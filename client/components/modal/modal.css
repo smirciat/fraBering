@@ -213,6 +213,35 @@
   font-weight:bold;
 }
 
+.amendments-after-release{
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid #ccc;
+}
+
+.amendments-after-release-title{
+  display:block;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.amendments-enroute-text{
+  height:76px;
+  margin-bottom:12px;
+}
+
+.standby-leg-block{
+  margin:12px 0;
+  padding:10px;
+  background-color:#F2F2F2;
+  border:1px solid #ddd;
+}
+
+.standby-leg-intro{
+  margin:0 0 10px;
+  font-weight:bold;
+}
+
 .standby-leg-header{
   padding:6px 8px;
   text-align:center;

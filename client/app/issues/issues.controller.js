@@ -26,6 +26,8 @@ class IssuesComponent {
     this.savingComment = false;
     this.uploading = false;
     this.newComment = '';
+    this.emailReporter = false;
+    this.emailDeveloper = false;
     this.pendingNewFiles = [];
     this.pasteFeedback = '';
     this.kinds = ['bug', 'feature', 'question'];
@@ -344,9 +346,16 @@ class IssuesComponent {
       return;
     }
     this.savingComment = true;
-    this.http.post('/api/issues/' + this.selected._id + '/comments', {body: body})
+    var payload = {
+      body: body,
+      emailReporter: !!this.emailReporter,
+      emailDeveloper: !!this.emailDeveloper
+    };
+    this.http.post('/api/issues/' + this.selected._id + '/comments', payload)
       .then(function() {
         self.newComment = '';
+        self.emailReporter = false;
+        self.emailDeveloper = false;
         self.savingComment = false;
         self.refreshSelected(self.selected._id);
       }, function() {

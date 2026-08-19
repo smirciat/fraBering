@@ -81,6 +81,7 @@ class StatusComponent {
       this.scope.$apply();
     }
     this.heliFlights=[];
+    this.heliPfrPool=[];
     this.fuelPageEntries=[];
     this.fuelTruckOptionsList=[];
     this.standbyNagCounts={};
@@ -218,6 +219,7 @@ class StatusComponent {
       if (flight.ocRelease&&flight.ocRelease!==""&&!flight.ocReleaseTimestamp) flight.ocReleaseTimestamp=new Date();
       if (flight.dispatchRelease&&flight.dispatchRelease!==""&&!flight.dispatchReleaseTimestamp) flight.dispatchReleaseTimestamp=new Date();
       flight.runScroll=true;
+      this.Util.recomputeUpdatedEtaFromStandby(flight);
       //update flight in database
       flight.updated=new Date();
       flight.updatedBy=this.user.name;
@@ -1073,6 +1075,7 @@ class StatusComponent {
       console.log(res.data);
       this.heliFirebaseFlights=res.data||[];
       this.syncHelis(this.heliFirebaseFlights);
+      this.loadHeliPfrPool();
       if (this.onFirebaseFlightsUpdate) {
         this.socket.socket.removeListener('firebaseFlights', this.onFirebaseFlightsUpdate);
         this.socket.socket.on('firebaseFlights', this.onFirebaseFlightsUpdate);
@@ -1082,6 +1085,16 @@ class StatusComponent {
       console.log('firebaseDate failed (check server/firebase.json on dev)', err);
       this.heliFlights=[];
       this.buildFuelPageEntries();
+    });
+  }
+
+  loadHeliPfrPool(){
+    this.http.post('/api/airplanes/firebaseInterval').then(res=>{
+      this.heliPfrPool=res.data||[];
+      this.buildFuelPageEntries();
+    }).catch(err=>{
+      console.log('firebaseInterval failed for heli FOB', err);
+      this.heliPfrPool=this.heliPfrPool||[];
     });
   }
 
@@ -1191,10 +1204,17 @@ class StatusComponent {
       if (flight.release[0].onAt) flight.localStatus='Completed';
       //fltPlan Elements
       flight.fltPlanElements=[];
-      let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray','altitude','flightRules','flightID','acftType','color','tas'];
-      if (flight.fltPlan&&this.isPlainObject(flight.fltPlan)) for (const [key, value] of Object.entries(flight.fltPlan)) {
-        if (excludedKeys.indexOf(key)>-1) continue;
-        if (value) flight.fltPlanElements.push({label:this.camelToTitle(key),value:value.toString()});
+      let excludedKeys=['arr','arrTime','dep','depTime','date','emailArray','altitude','flightRules','flightID','acftType','color','tas','paxMission'];
+      if (flight.fltPlan&&this.isPlainObject(flight.fltPlan)) {
+        let manifestNames=this.heliManifestNames(flight);
+        if (manifestNames.length&&(!Array.isArray(flight.fltPlan.paxManifest)||!flight.fltPlan.paxManifest.length)) {
+          flight.fltPlan.paxManifest=manifestNames;
+        }
+        for (const [key, value] of Object.entries(flight.fltPlan)) {
+          if (excludedKeys.indexOf(key)>-1) continue;
+          let display=this.formatFltPlanElementValue(key, value);
+          if (display) flight.fltPlanElements.push({label:this.camelToTitle(key), value:display});
+        }
       }
     });
     this.buildFuelPageEntries();
@@ -1213,6 +1233,49 @@ class StatusComponent {
       // 2. Capitalize the first letter
       .replace(/^./, (match) => match.toUpperCase())
       .trim();
+  }
+
+  heliManifestNames(flight) {
+    let names=[];
+    let addName=(name)=>{
+      name=name&&String(name).trim();
+      if (name&&names.indexOf(name)<0) names.push(name);
+    };
+    let pm=flight.fltPlan&&flight.fltPlan.paxManifest;
+    if (Array.isArray(pm)) {
+      pm.forEach(item=>{
+        if (typeof item==='string') addName(item);
+        else if (item&&item.name) addName(item.name);
+      });
+    }
+    if (names.length) return names;
+    (flight.legArray||[]).forEach(leg=>{
+      if (!leg) return;
+      ['isOnBoardManifest', 'runningManifest'].forEach(key=>{
+        let list=leg[key];
+        if (!Array.isArray(list)) return;
+        list.forEach(entry=>addName(entry&&entry.name));
+      });
+    });
+    return names;
+  }
+
+  formatFltPlanElementValue(key, value) {
+    if (value==null) return null;
+    if (Array.isArray(value)) {
+      if (!value.length) return null;
+      let parts=value.map(item=>{
+        if (item==null) return '';
+        if (typeof item==='string'||typeof item==='number'||typeof item==='boolean') return String(item).trim();
+        if (item.name) return String(item.name).trim();
+        return '';
+      }).filter(Boolean);
+      return parts.length?parts.join(', '):null;
+    }
+    if (typeof value==='object') return null;
+    if (typeof value==='boolean') return value?'Yes':null;
+    let text=String(value).trim();
+    return text||null;
   }
   
   isPlainObject(val) {
@@ -1390,7 +1453,7 @@ class StatusComponent {
   
   fuelFlightColor(flight){
     if (flight.isHeli) {
-      if (this.heliFuelLbs(flight.heliSource||flight)<100) return 'fuel-gray';
+      if (!this.heliFuelReady(flight.heliSource||flight)) return 'fuel-gray';
       if (flight.fueled) return 'fuel-green';
       return;
     }
@@ -1442,17 +1505,31 @@ class StatusComponent {
   computeFuelDisplay(flight) {
     if (flight.isHeli) {
       let heli = flight.heliSource || flight;
-      let lbs = this.heliFuelLbs(heli);
-      if (lbs < 100) return { ready: false };
+      if (!this.heliFuelReady(heli)) return { ready: false };
       if (heli.fuelRequestString) {
         return { ready: true, rows: [{ label: 'Fuel', value: heli.fuelRequestString, multiline: true }] };
       }
+      let fillTo = Math.round(this.heliFillToGal(heli));
+      if (fillTo > 0) {
+        let rows = [];
+        let fobInfo = this.heliFobInfo(heli);
+        if (fobInfo !== null) {
+          rows.push({ label: 'FOB', value: fobInfo.value + ' gal', hint: fobInfo.hint });
+        }
+        else {
+          rows.push({ label: 'FOB', value: 'missing', hint: 'no prior burn or Flight Report entry', error: true });
+        }
+        rows.push({ label: 'Fill To', value: fillTo + ' gal', highlight: true, hint: 'Flight Report start fuel' });
+        if (fobInfo !== null) {
+          let add = Math.round((fillTo - fobInfo.value) * 10) / 10;
+          rows.push({ label: 'ADD', value: add + ' gal', highlight: true });
+        }
+        return { ready: true, rows: rows };
+      }
+      let hrs = heli.fltPlan && heli.fltPlan.fuel;
       return {
         ready: true,
-        rows: [
-          { label: 'Fill To', value: Math.round(lbs / 2) + ' lbs/side', highlight: true },
-          { label: '', value: '(' + Math.round(lbs) + ' lbs total)' }
-        ]
+        rows: [{ label: 'Fuel', value: String(hrs).trim() + ' hrs (flight plan)', highlight: true }]
       };
     }
     if (!flight.pfr || !flight.pfr.legArray[0].fuel || flight.pfr.legArray[0].fuel < 100) {
@@ -1472,8 +1549,8 @@ class StatusComponent {
       if (aux > flight.equipment.maxAux) {
         return { ready: true, rows: [{ label: '', value: 'Main + Aux request exceeds capacity', error: true }] };
       }
-      rows.push({ label: 'FOB', value: fob + ' lbs' });
-      rows.push({ label: 'Fill To', value: fillTo + ' lbs', highlight: true });
+      rows.push({ label: 'FOB', value: fob + ' lbs', hint: 'previous block in' });
+      rows.push({ label: 'Fill To', value: fillTo + ' lbs', highlight: true, hint: 'Flight Report start fuel' });
       let addMain = Math.round(main / 6.7);
       if (addMain < 0) {
         rows.push({ label: '', value: 'DOUBLE CHECK FUEL REQUEST', error: true });
@@ -1487,8 +1564,8 @@ class StatusComponent {
       rows.push({ label: 'Fuel', value: String(flight.pfr.fuelRequestString).trim(), multiline: true });
     }
     else {
-      rows.push({ label: 'FOB', value: fob + ' lbs' });
-      rows.push({ label: 'Fill To', value: fillTo + ' lbs', highlight: true });
+      rows.push({ label: 'FOB', value: fob + ' lbs', hint: 'previous block in' });
+      rows.push({ label: 'Fill To', value: fillTo + ' lbs', highlight: true, hint: 'Flight Report start fuel' });
       rows.push({ label: 'ADD', value: Math.round((fillTo - fob) / 6.7) + ' gal', highlight: true });
     }
     return { ready: true, rows: rows };
@@ -1497,11 +1574,23 @@ class StatusComponent {
   fuelRequest(flight){
     if (flight.isHeli) {
       let heli=flight.heliSource||flight;
-      let lbs=this.heliFuelLbs(heli);
-      if (lbs<100) return 'WAITING ON PILOT';
+      if (!this.heliFuelReady(heli)) return 'WAITING ON PILOT';
       let response='HELICOPTER\n';
       if (heli.fuelRequestString) response+=heli.fuelRequestString;
-      else response+='FILL TO: '+Math.round(lbs/2)+' LBS/side ('+Math.round(lbs)+' lbs total)';
+      else {
+        let fillTo=Math.round(this.heliFillToGal(heli));
+        if (fillTo>0) {
+          let fobInfo=this.heliFobInfo(heli);
+          if (fobInfo!==null) response+='FOB: '+fobInfo.value+' gal\n';
+          else response+='FOB: missing\n';
+          response+='Fill To: '+fillTo+' gal';
+          if (fobInfo!==null) {
+            let add=Math.round((fillTo-fobInfo.value)*10)/10;
+            response+='\nADD: '+add+' gal';
+          }
+        }
+        else response+='FUEL: '+(heli.fltPlan&&heli.fltPlan.fuel?heli.fltPlan.fuel:'')+' hrs (flight plan)';
+      }
       return response;
     }
     if (!flight.pfr||!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100) return "WAITING ON PILOT";
@@ -2369,11 +2458,198 @@ class StatusComponent {
     return;
   }
   
-  heliFuelLbs(heli){
+  gsFlightDate(flight){
+    if (!flight) return '';
+    if (flight.isHeli) {
+      let heli=flight.heliSource||flight;
+      return heli.dateString||'';
+    }
+    return flight.date||'';
+  }
+
+  heliFillToGal(heli){
     if (!heli) return 0;
     if (heli.legArray&&heli.legArray[0]&&heli.legArray[0].fuel) return heli.legArray[0].fuel*1;
     if (heli.pfr&&heli.pfr.legArray&&heli.pfr.legArray[0]&&heli.pfr.legArray[0].fuel) return heli.pfr.legArray[0].fuel*1;
     return 0;
+  }
+
+  heliFobInfo(heli){
+    let reported=this.heliReportedFobGal(heli);
+    if (reported!==null) return { value: reported, hint: 'Flight Report' };
+    let previous=this.heliPreviousEndFuelGal(heli);
+    if (previous!==null) return { value: previous, hint: 'previous block in' };
+    return null;
+  }
+
+  heliReportedFobGal(heli){
+    if (!heli) return null;
+    let leg=heli.legArray&&heli.legArray[0];
+    let candidates=[
+      leg&&leg.fob,
+      leg&&leg.FOB,
+      leg&&leg.fuelOnBoard,
+      leg&&leg.fuelPreviouslyOnboard,
+      heli.fob,
+      heli.FOB,
+      heli.fuelOnBoard,
+      heli.fuelPreviouslyOnboard,
+      heli.pfr&&heli.pfr.legArray&&heli.pfr.legArray[0]&&heli.pfr.legArray[0].fob
+    ];
+    for (let i=0;i<candidates.length;i++) {
+      let v=candidates[i];
+      if (v!==undefined&&v!==null&&String(v).trim()!==''&&!isNaN(parseFloat(v))) {
+        return Math.round(parseFloat(v)*10)/10;
+      }
+    }
+    return null;
+  }
+
+  heliPfrSearchPool(){
+    let pool=(this.heliPfrPool||[]).slice();
+    let seen={};
+    pool.forEach(pfr=>{ if (pfr&&pfr._id) seen[pfr._id]=true; });
+    (this.heliFirebaseFlights||[]).forEach(pfr=>{
+      if (!pfr) return;
+      if (pfr._id&&seen[pfr._id]) return;
+      if (pfr._id) seen[pfr._id]=true;
+      pool.push(pfr);
+    });
+    return pool;
+  }
+
+  heliFirestoreSeconds(ts){
+    if (ts===undefined||ts===null||ts==='') return 0;
+    if (typeof ts==='number'&&isFinite(ts)) {
+      if (ts>1e12) return ts/1000;
+      if (ts>1e9) return ts;
+      return 0;
+    }
+    if (ts&&typeof ts.toDate==='function') {
+      let d=ts.toDate();
+      if (d&&!isNaN(d.getTime())) return d.getTime()/1000;
+    }
+    if (ts&&typeof ts._seconds==='number') return ts._seconds;
+    if (ts&&typeof ts.seconds==='number') return ts.seconds;
+    if (ts instanceof Date&&!isNaN(ts.getTime())) return ts.getTime()/1000;
+    let parsed=new Date(ts);
+    if (!isNaN(parsed.getTime())) return parsed.getTime()/1000;
+    return 0;
+  }
+
+  heliTimeStringSeconds(dateString,timeStr){
+    if (!dateString||!timeStr) return 0;
+    let t=String(timeStr).trim();
+    if (t.length===3) t='0'+t;
+    if (t.length===4&&t.indexOf(':')<0) t=t.substring(0,2)+':'+t.substring(2);
+    let d=new Date(dateString+' '+t);
+    if (isNaN(d.getTime())) return 0;
+    return d.getTime()/1000;
+  }
+
+  heliFlightSchedSeconds(heli){
+    if (!heli||!heli.dateString) return 0;
+    let depTime=heli.fltPlan&&heli.fltPlan.depTime;
+    if (!depTime) return 0;
+    return this.heliTimeStringSeconds(heli.dateString,this.normalizeHeliDepTime(depTime));
+  }
+
+  heliPfrLastOnSeconds(pfr){
+    if (!pfr||!pfr.legArray||!pfr.legArray.length) {
+      if (pfr&&pfr.release&&pfr.release[0]&&pfr.release[0].onAt) {
+        return this.heliTimeStringSeconds(pfr.dateString,pfr.release[0].onAt);
+      }
+      return 0;
+    }
+    let last=pfr.legArray[pfr.legArray.length-1];
+    let sec=this.heliFirestoreSeconds(last&&last.onTime);
+    if (sec) return sec;
+    if (last&&last.onTimeString&&pfr.dateString) {
+      return this.heliTimeStringSeconds(pfr.dateString,last.onTimeString);
+    }
+    if (pfr.release&&pfr.release[0]&&pfr.release[0].onAt) {
+      return this.heliTimeStringSeconds(pfr.dateString,pfr.release[0].onAt);
+    }
+    return 0;
+  }
+
+  heliPfrIsComplete(pfr){
+    if (!pfr) return false;
+    if (this.heliPfrLastOnSeconds(pfr)>0) return true;
+    if (pfr.release&&pfr.release[0]&&pfr.release[0].onAt) return true;
+    if (pfr.legArray&&pfr.legArray.length) {
+      let last=pfr.legArray[pfr.legArray.length-1];
+      if (last&&last.onTimeString) return true;
+    }
+    return false;
+  }
+
+  heliPfrHasBurn(pfr){
+    if (!pfr||!pfr.legArray||!pfr.legArray.length) return false;
+    let last=pfr.legArray[pfr.legArray.length-1];
+    if (!last) return false;
+    let burn=last.burn;
+    if (burn===undefined||burn===null||String(burn).trim()==='') return false;
+    return isFinite(Number(burn));
+  }
+
+  heliPfrRemainingFuelGal(pfr){
+    if (!pfr||!pfr.legArray||!pfr.legArray.length) return null;
+    let last=pfr.legArray[pfr.legArray.length-1];
+    if (!last) return null;
+    if (!this.heliPfrHasBurn(pfr)) return null;
+    let fuel=Number(last.fuel);
+    let burn=Number(last.burn);
+    if (!isFinite(fuel)) return null;
+    let remain=Math.round((fuel-burn)*10)/10;
+    if (remain<0||remain>500) return null;
+    return remain;
+  }
+
+  heliPreviousEndFuelGal(heli){
+    if (!heli||!heli.acftNumber) return null;
+    let pool=this.heliPfrSearchPool();
+    let cutoff=this.heliFlightSchedSeconds(heli);
+    let bestOn=0;
+    let bestRemain=null;
+    for (let i=0;i<pool.length;i++) {
+      let pfr=pool[i];
+      if (!pfr||String(pfr.acftNumber)!==String(heli.acftNumber)) continue;
+      if (pfr._id&&heli._id&&String(pfr._id)===String(heli._id)) continue;
+      if (!this.heliPfrIsComplete(pfr)) continue;
+      let onSec=this.heliPfrLastOnSeconds(pfr);
+      if (!onSec) continue;
+      if (cutoff&&onSec>=cutoff) continue;
+      let remain=this.heliPfrRemainingFuelGal(pfr);
+      if (remain===null) continue;
+      if (onSec>=bestOn) {
+        bestOn=onSec;
+        bestRemain=remain;
+      }
+    }
+    return bestRemain;
+  }
+
+  heliFobGal(heli){
+    let info=this.heliFobInfo(heli);
+    return info?info.value:null;
+  }
+
+  heliFuelLbs(heli){
+    return this.heliFillToGal(heli);
+  }
+
+  heliFuelReady(heli){
+    if (!heli) return false;
+    if (heli.fuelRequestString && String(heli.fuelRequestString).trim()) return true;
+    if (this.heliFillToGal(heli) > 0) return true;
+    let hrs = heli.fltPlan && heli.fltPlan.fuel;
+    if (hrs !== undefined && hrs !== null && String(hrs).trim() !== '' && !isNaN(parseFloat(hrs))) return true;
+    return false;
+  }
+
+  displayFinalEta(flight){
+    return this.Util.displayFinalEta(flight);
   }
 
   normalizeHeliDepTime(depTime){
@@ -2415,7 +2691,7 @@ class StatusComponent {
 
   normalizeHeliFuelEntry(heli){
     let depTime=this.normalizeHeliDepTime(heli.fltPlan&&heli.fltPlan.depTime);
-    let lbs=this.heliFuelLbs(heli);
+    let fillToGal=this.heliFillToGal(heli);
     let rel=heli.release&&heli.release[0]?heli.release[0]:{};
     return {
       isHeli:true,
@@ -2438,7 +2714,7 @@ class StatusComponent {
       fueledBy:rel.fueledBy,
       fueledTimestamp:rel.fueledTimestamp,
       localStatus:heli.localStatus||'Planned',
-      pfr:{legArray:[{fuel:lbs}]},
+      pfr:{legArray:[{fuel:fillToGal}]},
       equipment:{name:heli.acftType}
     };
   }

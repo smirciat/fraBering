@@ -212,6 +212,7 @@
         let airports = flight.airports || [];
         let legCount = airports.length > 0 ? airports.length - 1 : 0;
         if (legCount < 2) return false;
+        if (legCount > 5) return true;
         let standbyAllowance = legCount * 30;
         let scheduled = Util.scheduledBlockMinutes(flight);
         let routeMins = Util.estimatedRouteMinutes(flight);
@@ -318,6 +319,48 @@
           }
         }
         return nags;
+      },
+
+      /**
+       * When enroute on a standby charter, shift updated ETA from the latest
+       * intermediate departure time entered vs plan.
+       */
+      recomputeUpdatedEtaFromStandby(flight) {
+        if (!flight || !Util.isStandbyCharter(flight)) return;
+        if (!flight.tfliteDepart) return;
+        if (!flight.miscObject) flight.miscObject = {};
+        Util.initStandbyLegTimes(flight);
+        let rows = flight.miscObject.standbyLegTimes || [];
+        if (!flight.airports || flight.airports.length < 3) return;
+        let lastDelta = null;
+        for (let i = 1; i < flight.airports.length - 1; i++) {
+          let airport = flight.airports[i];
+          let row = rows.find(e => e.airport === airport);
+          if (!row || !row.departure || !String(row.departure).trim()) continue;
+          let planDepart = Util.minutesFromTimeString(flight.departTimes[i]);
+          let actualDepart = Util.minutesFromTimeString(row.departure);
+          if (!planDepart && !actualDepart) continue;
+          lastDelta = actualDepart - planDepart;
+        }
+        if (lastDelta === null) return;
+        let finalIdx = flight.airports.length - 1;
+        let planFinal = Util.minutesFromTimeString(
+          (flight.arriveTimes && flight.arriveTimes[finalIdx]) || flight.departTimes[finalIdx]
+        );
+        if (!planFinal && planFinal !== 0) return;
+        flight.miscObject.updatedEta = Util.minutesToHHMM(planFinal + lastDelta);
+      },
+
+      displayFinalEta(flight) {
+        if (!flight) return '';
+        if (flight.miscObject && flight.miscObject.updatedEta && String(flight.miscObject.updatedEta).trim()) {
+          return String(flight.miscObject.updatedEta).trim();
+        }
+        if (flight.pfr && flight.pfr.legArray && flight.pfr.legArray.length) {
+          let leg = flight.pfr.legArray[flight.pfr.legArray.length - 1];
+          if (leg && leg.onTimeString) return leg.onTimeString;
+        }
+        return '';
       }
     };
 

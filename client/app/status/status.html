@@ -39,8 +39,8 @@
               <span style="float:left;margin-right:5px;">
                  &nbsp{{flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot||"") + '/ ' + 
                    (flight.coPilotObject.displayName||flight.coPilot||"")}}&nbsp
-                 <strong ng-style="status.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong>
-                 <strong ng-style="status.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)" 
+                 <strong ng-style="status.getFontColor(flight.tfliteDepart,status.displayFinalEta(flight))">{{flight.flightStatus}}</strong>
+                 <strong ng-style="status.getFontColor(flight.tfliteDepart,status.displayFinalEta(flight))" 
                     ng-if="flight.flightStatus==='En Route'">, ETA: {{flight.tfliteArrive}}</strong>
               </span>
               <span style="float:right;margin-left:5px;margin-right:5px;">
@@ -60,7 +60,7 @@
                 &nbsp
                 <strong style="color:green">{{flight.tfliteDepart}}</strong>&nbsp-&nbsp
                 <!--tfliteArrive for updated ETA-->
-                <strong style="color:purple"> {{flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString}}</strong>
+                <strong style="color:purple"> {{status.displayFinalEta(flight)}}</strong>
               </p>
             </div>
             <div class="airport-card" ng-repeat="metarObj in flight.airportObjs track by $index">
@@ -475,10 +475,13 @@
 </section>
 <section class="ground-services-view" ng-if="status.view==='fuel'&&status.Auth.isUser()">
   <h3>Ground Services</h3>
-  <div ng-repeat="flight in status.fuelPageEntries track by flight._id" class="gs-flight-card" ng-class="status.fuelFlightColor(flight)" ng-init="flightIndex=$index">
+  <div ng-repeat="flight in status.fuelPageEntries track by flight._id" class="gs-flight-card" ng-class="status.fuelFlightColor(flight)" ng-init="flightIndex=$index" ng-click="status.consoleLog(flight)">
     <div ng-show="flight.active==='true'" class="gs-flight-inner" ng-class="status.activeClass(flight.active)">
       <div class="gs-flight-header">
-        <div class="gs-tail">{{flight.aircraft}}</div>
+        <div class="gs-tail-block">
+          <div class="gs-tail">{{flight.aircraft}}</div>
+          <div class="gs-flight-date" ng-if="status.gsFlightDate(flight)">{{status.gsFlightDate(flight)}}</div>
+        </div>
         <div class="gs-flight-num" ng-class="flight.colorLock||flight.color">{{status.getFlightNum(flight)}}</div>
         <p ng-if="flight.isHeli" class="gs-heli-badge">HELICOPTER</p>
       </div>
@@ -486,13 +489,13 @@
         <p class="gs-crew">
           {{(flight.pilotObject.displayName||flight.pilot)}}
           <span ng-if="!flight.isHeli"> / {{(flight.coPilotObject.displayName||flight.coPilot)}}</span>
-          <strong ng-if="!flight.isHeli" ng-style="status.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)"> — {{flight.flightStatus}}</strong>
+          <strong ng-if="!flight.isHeli" ng-style="status.getFontColor(flight.tfliteDepart,status.displayFinalEta(flight))"> — {{flight.flightStatus}}</strong>
           <strong ng-if="flight.isHeli" ng-class="status.fltStatus(flight.localStatus)"> — {{flight.localStatus||'Planned'}}</strong>
         </p>
         <p class="gs-times" ng-if="!flight.isHeli">
           {{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}
           <span class="gs-tflite">{{flight.tfliteDepart}}</span>
-          <span class="gs-ontime"> {{flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString}}</span>
+          <span class="gs-ontime"> {{status.displayFinalEta(flight)}}</span>
         </p>
         <p class="gs-times" ng-if="flight.isHeli">
           {{flight.fltPlan.depTime}} - {{flight.fltPlan.arrTime}}
@@ -508,6 +511,7 @@
         <div class="gs-fuel-row" ng-repeat="row in flight.gsFuelDisplay.rows track by $index" ng-class="{'gs-fuel-error': row.error}">
           <span class="gs-fuel-label" ng-if="row.label">{{row.label}}:</span>
           <span class="gs-fuel-value" ng-class="{'gs-fuel-highlight': row.highlight, 'gs-fuel-multiline': row.multiline}">{{row.value}}</span>
+          <span class="gs-fuel-hint" ng-if="row.hint">({{row.hint}})</span>
         </div>
       </div>
       <div class="gs-not-ready" ng-if="!flight.gsFuelDisplay || !flight.gsFuelDisplay.ready">NOT READY — waiting on pilot</div>
@@ -533,7 +537,7 @@
       </div>
       <div class="gs-fueled-row">
         <label class="gs-fueled-check">
-          <input type="checkbox" ng-model="flight.fueled" ng-click="status.getFuel(flight)" ng-disabled="flight.isHeli ? status.heliFuelLbs(flight.heliSource)<100 : !flight.pfr">
+          <input type="checkbox" ng-model="flight.fueled" ng-click="status.getFuel(flight)" ng-disabled="flight.isHeli ? !status.heliFuelReady(flight.heliSource) : !flight.pfr">
           <span>Fueled</span>
         </label>
         <span class="gs-fueled-by" ng-if="flight.fueled">{{flight.fueledBy}} / {{flight.fueledTimestamp||''}}</span>
@@ -554,13 +558,13 @@
         </div>
         <div style="padding-left:0.3em;">
           <p style="margin:0px; border:none; display:inline-block;font-weight:bold">{{' ' + flight.aircraft + ', ' + (flight.pilotObject.displayName||flight.pilot) + '/ ' + 
-               (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong ng-style="status.getFontColor(flight.tfliteDepart,flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString)">{{flight.flightStatus}}</strong></p>
+               (flight.coPilotObject.displayName||flight.coPilot)+', '}}<strong ng-style="status.getFontColor(flight.tfliteDepart,status.displayFinalEta(flight))">{{flight.flightStatus}}</strong></p>
                
           <br>
           <div style="display:inline-block;">
             <p style="margin:0px; border:none; display:inline-block;font-weight:bold">
               {{flight.departTimes[0].substring(0,5) + ' - ' + flight.departTimes[flight.departTimes.length-1].substring(0,5)}}
-              &nbsp<strong style="color:green">{{flight.tfliteDepart}}</strong>&nbsp-&nbsp<strong style="color:purple"> {{flight.pfr.legArray[flight.pfr.legArray.length-1].onTimeString}}</strong>
+              &nbsp<strong style="color:green">{{flight.tfliteDepart}}</strong>&nbsp-&nbsp<strong style="color:purple"> {{status.displayFinalEta(flight)}}</strong>
             </p>
           </div>
           <div>

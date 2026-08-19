@@ -123,6 +123,14 @@
               <label>Add comment</label>
               <textarea class="form-control" rows="3" ng-model="issues.newComment" required></textarea>
             </div>
+            <div class="form-group issue-meta">
+              <label class="checkbox-inline">
+                <input type="checkbox" ng-model="issues.emailReporter"> Email reporter
+              </label>
+              <label class="checkbox-inline" style="margin-left: 1em;">
+                <input type="checkbox" ng-model="issues.emailDeveloper"> Email developer
+              </label>
+            </div>
             <button type="submit" class="btn btn-primary btn-sm" ng-disabled="issues.savingComment">Post comment</button>
           </form>
         </div>
