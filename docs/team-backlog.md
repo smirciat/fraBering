@@ -41,11 +41,17 @@ Add a fuel truck name selector (ask Adam for Fuel truck names at bases with more
 
 **Progress (changed, not resolved):**
 
-Benjamin Rowe: This is looking very good. The caravan and all aircraft should have the FOB, FILL TO, and ADD display like the King Air and 1900 have. Clear, easy to read, gives good information.  
+Andy Smircich: Further update shipped in dev — ready for your review.
 
-Also, since it is now Ground Services, please display the Load Available. 
+Per your latest comment:
 
-Testing the email developer button. Do you want this checked also or not normally?  Or just for high priority?
+• Caravan and all other fixed-wing types now show FOB, Fill To, and ADD on Ground Services cards (same labeled layout as King Air/1900 — lbs for FOB/Fill To, gal for ADD). Caravan no longer replaces that with only the raw fuel request string.
+
+• Load Available is now on each Ground Services card (fixed-wing) when Flight Report has weight data — same calculation as the main status board / Load view.
+
+Helicopter cards unchanged. Date under tail and truck/meter fields as before.
+
+Please verify on phone at your base — especially a Caravan with fuel entered.
 
 **Comments:**
 - Benjamin Rowe: On the Fuel Request middle section, I think a clean, complete display would be to show, for example:
@@ -90,6 +96,17 @@ Please verify at OME/OTZ/UNK (and HEL for helis): toggle the date picker away fr
 Also, since it is now Ground Services, please display the Load Available. 
 
 Testing the email developer button. Do you want this checked also or not normally?  Or just for high priority?
+- Andy Smircich: Further update shipped in dev — ready for your review.
+
+Per your latest comment:
+
+• Caravan and all other fixed-wing types now show FOB, Fill To, and ADD on Ground Services cards (same labeled layout as King Air/1900 — lbs for FOB/Fill To, gal for ADD). Caravan no longer replaces that with only the raw fuel request string.
+
+• Load Available is now on each Ground Services card (fixed-wing) when Flight Report has weight data — same calculation as the main status board / Load view.
+
+Helicopter cards unchanged. Date under tail and truck/meter fields as before.
+
+Please verify on phone at your base — especially a Caravan with fuel entered.
 
 ## #23 Trying to rebase when not told to do so
 
@@ -102,8 +119,17 @@ Uploading and approving is trying to rebase regardless of being told not to.
 
 **Progress (changed, not resolved):**
 
-Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
-- rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
+Andy Smircich: Shipped in dev — ready for your review.
+
+Upload and Approve was rebasing expiration even when New Base was false. It calculated from the training record date instead of extending the pilot’s current expiration.
+
+Fix:
+• New Base = false → extend current exp by the training interval (e.g. Aug 2027 → Aug 2028). Training date is only used when there is no prior exp.
+• New Base = true → rebase from base month / training date (same as before, with confirm if you’re within the normal window).
+
+Removed the misleading “set a new base month?” prompt that could rebase even when New Base was false.
+
+Please retry your Sara Cubbage / 8/17 B190SIC upload with New Base false and confirm the exp confirm shows an extension from current Aug 2027, not 8/17/2027.
 
 **Latest screenshot:**
 
@@ -113,6 +139,17 @@ Andy Smircich: -make sure we read the follow up comment and the screenshot to un
 - NATHANIEL OLSON: Looking at it now, I hit save when I built the ROT and it appears it didn't save, but if you look at the training record I was trying to attach it to, it was dated 8/17/26.  Looks like I hit "save" and it disappears but still available to associate with for upload.
 - Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
 - rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Upload and Approve was rebasing expiration even when New Base was false. It calculated from the training record date instead of extending the pilot’s current expiration.
+
+Fix:
+• New Base = false → extend current exp by the training interval (e.g. Aug 2027 → Aug 2028). Training date is only used when there is no prior exp.
+• New Base = true → rebase from base month / training date (same as before, with confirm if you’re within the normal window).
+
+Removed the misleading “set a new base month?” prompt that could rebase even when New Base was false.
+
+Please retry your Sara Cubbage / 8/17 B190SIC upload with New Base false and confirm the exp confirm shows an extension from current Aug 2027, not 8/17/2027.
 
 **Attachments:**
 - ![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)

@@ -82,6 +82,7 @@ class StatusComponent {
     }
     this.heliFlights=[];
     this.heliPfrPool=[];
+    this.showInactiveHeliFlights=false;
     this.fuelPageEntries=[];
     this.fuelTruckOptionsList=[];
     this.standbyNagCounts={};
@@ -1125,6 +1126,110 @@ class StatusComponent {
     });
     return out;
   }
+
+  isHeliInactive(flight){
+    return !!(flight&&(flight.inactive===true||flight.inactive==='true'));
+  }
+
+  heliPilotMatchesUser(flight){
+    if (!flight||!this.user||!this.user.name) return false;
+    let userName=this.user.name.toLowerCase().trim();
+    let pilotName=String(flight.pilot||'').toLowerCase().trim();
+    if (!pilotName) return false;
+    if (pilotName===userName) return true;
+    let userParts=userName.split(/\s+/).filter(Boolean);
+    let pilotParts=pilotName.split(/\s+/).filter(Boolean);
+    if (userParts.length>=2&&pilotParts.length>=2) {
+      if (userParts[0]===pilotParts[0]&&userParts[userParts.length-1]===pilotParts[pilotParts.length-1]) return true;
+    }
+    return pilotName.indexOf(userName)>=0||userName.indexOf(pilotName)>=0;
+  }
+
+  canCancelHeliFlight(flight){
+    if (!this.Auth.isUser()||!flight||!flight._id||this.isHeliInactive(flight)) return false;
+    return this.Auth.isAdmin()||this.heliPilotMatchesUser(flight);
+  }
+
+  canRestoreHeliFlight(flight){
+    if (!this.Auth.isUser()||!flight||!flight._id||!this.isHeliInactive(flight)) return false;
+    return this.Auth.isAdmin()||this.heliPilotMatchesUser(flight);
+  }
+
+  heliFlightVisible(flight){
+    if (!this.isHeliInactive(flight)) return true;
+    if (!this.showInactiveHeliFlights) return false;
+    if (this.Auth.isAdmin()) return true;
+    return this.heliPilotMatchesUser(flight);
+  }
+
+  refreshHeliFlightLists(){
+    this.syncHelis(this.heliFirebaseFlights);
+    this.buildFuelPageEntries();
+  }
+
+  toggleShowInactiveHeliFlights(){
+    this.refreshHeliFlightLists();
+  }
+
+  patchHeliFirebaseFlight(flightId, fields){
+    if (!this.heliFirebaseFlights||!flightId) return;
+    let index=this.heliFirebaseFlights.map(e=>e._id).indexOf(flightId);
+    if (index>-1) Object.assign(this.heliFirebaseFlights[index], fields);
+  }
+
+  inactivateHeliFlight(flight, $event){
+    if ($event) {
+      $event.stopPropagation();
+      $event.preventDefault();
+    }
+    if (!flight||!flight._id||!this.canCancelHeliFlight(flight)) return;
+    if (this.isHeliInactive(flight)) return;
+    if (!confirm('Cancel this flight plan on the status board? The record is kept inactive, not deleted.')) return;
+    let reason=window.prompt('Cancellation reason (optional):');
+    if (reason===null) return;
+    reason=String(reason).trim();
+    let user=this.user||this.Auth.getCurrentUser();
+    let doc={
+      _id:flight._id,
+      inactive:true,
+      inactiveBy:(user&&user.name)||(user&&user.email)||'unknown',
+      inactiveAt:new Date().toISOString(),
+      inactiveReason:reason||null
+    };
+    this.http.post('/api/airplanes/updateFirebase',{collection:'flights',doc:doc}).then(()=>{
+      this.patchHeliFirebaseFlight(flight._id, doc);
+      this.refreshHeliFlightLists();
+    }).catch(err=>{console.log(err);});
+  }
+
+  reactivateHeliFlight(flight, $event){
+    if ($event) {
+      $event.stopPropagation();
+      $event.preventDefault();
+    }
+    if (!flight||!flight._id||!this.canRestoreHeliFlight(flight)) return;
+    if (!this.isHeliInactive(flight)) return;
+    if (!confirm('Restore this flight plan to the active status board?')) return;
+    let user=this.user||this.Auth.getCurrentUser();
+    let doc={
+      _id:flight._id,
+      inactive:false,
+      reactivatedBy:(user&&user.name)||(user&&user.email)||'unknown',
+      reactivatedAt:new Date().toISOString()
+    };
+    this.http.post('/api/airplanes/updateFirebase',{collection:'flights',doc:doc}).then(()=>{
+      this.patchHeliFirebaseFlight(flight._id, doc);
+      this.refreshHeliFlightLists();
+    }).catch(err=>{console.log(err);});
+  }
+
+  heliInactiveLabel(flight){
+    if (!this.isHeliInactive(flight)) return '';
+    let parts=['Canceled'];
+    if (flight.inactiveBy) parts.push('by '+flight.inactiveBy);
+    if (flight.inactiveReason) parts.push('— '+flight.inactiveReason);
+    return parts.join(' ');
+  }
   
   syncHelis(firebaseFlights){
     if (!firebaseFlights) firebaseFlights=this.heliFirebaseFlights;
@@ -1147,7 +1252,8 @@ class StatusComponent {
       let selectedDate=this.Util.formatFirebaseDate(this.date||new Date());
       return isHeliType(flight.acftType)&&flight.acftNumber
         &&flight.acftNumber.substring(0,1).toUpperCase()==='N'
-        &&(!selectedDate||flight.dateString===selectedDate);
+        &&(!selectedDate||flight.dateString===selectedDate)
+        &&this.heliFlightVisible(flight);
     }).sort((a,b)=>{
       if (!a.fltPlan||!a.fltPlan.depTime) return 1;
       if (!b.fltPlan||!b.fltPlan.depTime) return -1;

@@ -344,9 +344,19 @@ class RecordsComponent {
       newBaseMonth: record.newBaseMonth,
       source: 'approval',
     };
+    const prior=this.fullPilot[expKey];
+    if (prior&&prior!==expValue) {
+      this.prependExpHistory(expKey,this.buildExpHistoryEntry(prior,{source:'superseded',checkDate:record.date}));
+    }
     const entry=this.buildExpHistoryEntry(expValue,context);
     this.prependExpHistory(expKey,entry);
-    if (expKeyAlt) this.prependExpHistory(expKeyAlt,entry);
+    if (expKeyAlt) {
+      const priorAlt=this.fullPilot[expKeyAlt];
+      if (priorAlt&&priorAlt!==expValue) {
+        this.prependExpHistory(expKeyAlt,this.buildExpHistoryEntry(priorAlt,{source:'superseded',checkDate:record.date}));
+      }
+      this.prependExpHistory(expKeyAlt,entry);
+    }
   }
 
   logManualExpHistoryChanges(updatedPilot){
@@ -354,8 +364,8 @@ class RecordsComponent {
     const context={source:'manual'};
     const fields=this.getTrackedExpFields();
     fields.forEach(field=>{
-      if (updatedPilot[field]&&updatedPilot[field]!==this.fullPilot[field]) {
-        this.prependExpHistory(field,this.buildExpHistoryEntry(updatedPilot[field],context));
+      if (this.fullPilot[field]&&updatedPilot[field]!==this.fullPilot[field]) {
+        this.prependExpHistory(field,this.buildExpHistoryEntry(this.fullPilot[field],context));
       }
     });
   }
@@ -539,6 +549,43 @@ class RecordsComponent {
     let year=parseInt(parts[2],10);
     if (year<100) year+=2000;
     return new Date(year,parseInt(parts[0],10)-1,parseInt(parts[1],10));
+  }
+
+  isNewBaseMonth(record){
+    return record.newBaseMonth===true||record.newBaseMonth==='true';
+  }
+
+  computeExpDate(record, expKey, timeframe){
+    let recordDate=new Date(record.date);
+    let existingRaw=this.fullPilot[expKey];
+    let existingDate=existingRaw?new Date(existingRaw):null;
+    let hasExisting=existingDate&&!isNaN(existingDate.getTime());
+
+    if (this.isNewBaseMonth(record)) {
+      if (hasExisting&&this.isWithinOneMonth(recordDate, existingDate)) {
+        if (!confirm('Are you sure you want to create a new base month? It appears you are within the window.')) {
+          return null;
+        }
+      }
+      if (record.baseMonth) {
+        let expFromBase=this.getExp(record.baseMonth,record.date,String(timeframe),1);
+        let parsedBaseExp=this.parseShortExpDate(expFromBase);
+        if (parsedBaseExp) return parsedBaseExp;
+      }
+      let rebased=new Date(recordDate);
+      rebased.setMonth(rebased.getMonth()+timeframe);
+      return rebased;
+    }
+
+    // Standard recurrent — extend from current expiration, do not rebase from training date.
+    if (hasExisting) {
+      let extended=new Date(existingDate);
+      extended.setMonth(extended.getMonth()+timeframe);
+      return extended;
+    }
+    let initial=new Date(recordDate);
+    initial.setMonth(initial.getMonth()+timeframe);
+    return initial;
   }
 
   snapshotPriorExpDates(record){
@@ -765,44 +812,13 @@ class RecordsComponent {
       //timeframe and expKey are set
       //if this timeframe and its not zero, update the pilot record exp date
       if (timeframe&&expKey) {
-        //find existing exp date, if rebasing
-        let date=new Date(record.date);
-        let existingDate;
-        let dateexists=this.fullPilot[expKey];
-        if (dateexists) existingDate=new Date(dateexists);
-        //if early or late grace, and rebase is false
-        if (this.isWithinOneMonth(date,existingDate)) {
-          //in base month for the event
-          if (!record.newBaseMonth||record.newBaseMonth==='false') date=existingDate;
-          else if (!confirm('Are you sure you want to create a new base month?  It appears you are within the window.')) {
-            this.toaster.error('Error','Expiration date not updated');
-            return;
-          }
-          else {
-            //new base month anyway
-          }
-        }
-        else {
-          //not in base month for the event
-          if ((!record.newBaseMonth||record.newBaseMonth==='false')&&dateexists) {
-            if (confirm('Do you want to set a new base month for ' + expKey + '? Currently, it is ' + new Date(existingDate).toLocaleDateString() )){
-              //new base month will apply
-            }
-            else {
-              this.toaster.error('Error','You are not within the window for this event, you will have to rebase to save a new Exp date. Expiration date not updated');
-              return;
-            }
-          }
-        }
-        
-        let newDate = new Date(new Date(date).setMonth(date.getMonth() + timeframe));
-        if (record.newBaseMonth==='true'&&record.baseMonth) {
-          let expFromBase=this.getExp(record.baseMonth,record.date,String(timeframe),1);
-          let parsedBaseExp=this.parseShortExpDate(expFromBase);
-          if (parsedBaseExp) newDate=parsedBaseExp;
-        }
-        if (existingDate&&newDate<existingDate) {
-          let allowEarlier=record.newBaseMonth==='true'||this.isApprover();
+        let newDate=this.computeExpDate(record, expKey, timeframe);
+        if (!newDate||isNaN(newDate.getTime())) return;
+
+        let existingRaw=this.fullPilot[expKey];
+        let existingDate=existingRaw?new Date(existingRaw):null;
+        if (existingDate&&!isNaN(existingDate.getTime())&&newDate<existingDate) {
+          let allowEarlier=this.isNewBaseMonth(record)||this.isApprover();
           if (!allowEarlier||!confirm('New expiration ('+newDate.toLocaleDateString()+') is earlier than the current one ('+existingDate.toLocaleDateString()+'). Proceed with this correction?')) {
             this.toaster.error('Error','New expiration date should not be earlier than the existing one! Expiration date not updated');
             return;

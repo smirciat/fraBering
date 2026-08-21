@@ -34,13 +34,7 @@ class NavbarController {
     //this.base=this.bases[0];
     //window.base=this.base;
     this.date=new Date();
-    this.dateString=this.date.toLocaleDateString();
-    this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        year: 'numeric', 
-        month: 'numeric',//''long', 
-        day: 'numeric' 
-    });
+    this.setNavDate(this.date);
     //this.isToggleAssigned=true;
     //window.toggleAssigned=true;
     this.pairs=[{v:'ST MICHAEL',c:'PAMK'},
@@ -81,7 +75,39 @@ class NavbarController {
     });
     $scope.$on('$destroy', ()=> {
       this.socket.unsyncUpdates('sm');
+      if (this.stoppedInterval) this.interval.cancel(this.stoppedInterval);
+      if (this.dateRolloverInterval) this.interval.cancel(this.dateRolloverInterval);
+      if (this.fileWatchInterval) this.interval.cancel(this.fileWatchInterval);
+      if (this.onVisibilityChange) {
+        document.removeEventListener('visibilitychange', this.onVisibilityChange);
+      }
     });
+  }
+
+  formatDateStringFormatted(date) {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric'
+    });
+  }
+
+  setNavDate(date) {
+    this.date = new Date(date);
+    this.dateString = this.date.toLocaleDateString();
+    this.dateStringFormatted = this.formatDateStringFormatted(this.date);
+    window.dateString = this.dateString;
+  }
+
+  checkDateRollover() {
+    const now = new Date();
+    const todayStr = now.toLocaleDateString();
+    if (this.dateString === todayStr) return;
+    const hour = now.getHours();
+    if (hour === 1 || hour === 2) {
+      this.setNavDate(now);
+    }
   }
   
   $onInit() {
@@ -111,33 +137,33 @@ class NavbarController {
     });
     window.dateString=this.dateString;
     if (window.stoppedInterval) this.interval.cancel(window.stoppedInterval);
-    window.stoppedInterval=this.interval(()=>{
+    this.stoppedInterval=this.interval(()=>{
       this.stoppedFunction();
     },1*60*1000);
+    window.stoppedInterval=this.stoppedInterval;
     this.timeout(()=>{this.stoppedFunction()},200);
-    this.interval(()=>{
-      const hour=new Date().getHours();
-      if (hour===1||hour===2) {
-        this.date=new Date();
-        this.dateString=this.date.toLocaleDateString();
-        window.dateString=this.dateString;
-      }
+    this.dateRolloverInterval=this.interval(()=>{
+      this.checkDateRollover();
     },60*60*1000);
-    this.dateString=this.date.toLocaleDateString();
-    this.myInterval=this.interval(()=>{
+    this.onVisibilityChange=()=>{
+      if (!document.hidden) this.checkDateRollover();
+    };
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+    this.timeout(()=>{this.checkDateRollover()},0);
+    this.fileWatchInterval=this.interval(()=>{
       let fileWatch;
       let d=document.getElementById('file');
       if (d) fileWatch=d.files;
       if (fileWatch&&fileWatch.length>0) {
         this.fileExists=true;
-        this.interval.cancel(this.myInterval);
+        this.interval.cancel(this.fileWatchInterval);
       }
     },1000);
     this.initTextMessages();
   }
   
   stoppedFunction(){
-    let version='144';
+    let version='145';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
@@ -164,41 +190,22 @@ class NavbarController {
 
   minusDate(){
     //this.isCollapsed=true;
-    this.date.setDate(this.date.getDate() - 1);
-    this.dateString=this.date.toLocaleDateString();
-    this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        year: 'numeric', 
-        month: 'numeric',//''long', 
-        day: 'numeric' 
-    });
-    window.dateString=this.dateString;
+    const next=new Date(this.date);
+    next.setDate(next.getDate() - 1);
+    this.setNavDate(next);
   }
   
   plusDate() {
     //this.isCollapsed=true;
-    this.date.setDate(this.date.getDate() + 1);
-    this.dateString=this.date.toLocaleDateString();
-    this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        year: 'numeric', 
-        month: 'numeric',//''long', 
-        day: 'numeric' 
-    });
-    window.dateString=this.dateString;
+    const next=new Date(this.date);
+    next.setDate(next.getDate() + 1);
+    this.setNavDate(next);
   }
   
   upDate(key){
     //this.isCollapsed=true;
-    if (key==='string') this.date=new Date(this.dateStringFormatted);
-    this.dateString=this.date.toLocaleDateString();
-    this.dateStringFormatted=this.date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        year: 'numeric', 
-        month: 'numeric',//''long', 
-        day: 'numeric' 
-    });
-    window.dateString=this.dateString;
+    if (key==='string') this.setNavDate(new Date(this.dateStringFormatted));
+    else this.setNavDate(this.date);
   }
   
   updateBase(){

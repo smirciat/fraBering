@@ -77,8 +77,15 @@
     </div>
    </div>
    <div ng-if="!status.fixedWing()" class="todays-flights">
+    <div ng-if="status.Auth.isUser()" class="heli-board-toolbar">
+      <label class="heli-show-inactive">
+        <input type="checkbox" ng-model="status.showInactiveHeliFlights" ng-change="status.toggleShowInactiveHeliFlights()">
+        <span ng-if="status.Auth.isAdmin()">Show canceled flight plans</span>
+        <span ng-if="!status.Auth.isAdmin()">Show my canceled flight plans</span>
+      </label>
+    </div>
      <div ng-repeat="flight in status.heliFlights track by flight._id" ng-click="status.consoleLog(flight)">
-      <div class="chat-body" ng-style="status.getChatFontSize()">
+      <div class="chat-body" ng-style="status.getChatFontSize()" ng-class="{'heli-flight-inactive': status.isHeliInactive(flight)}">
         <div class="chat-card">
       
           <!-- Header -->
@@ -89,12 +96,17 @@
               <div class="chat-top-row">
                 <span>{{flight.acftType}}, {{flight.pilot}}, <strong class="chat-status" 
                     ng-class="status.fltStatus(flight.localStatus)">{{flight.localStatus}}</strong></span>
+                <span class="heli-inactive-badge" ng-if="status.isHeliInactive(flight)">{{status.heliInactiveLabel(flight)}}</span>
                 <span class="points-row">
                   OC  
-                  <input style="transform: scale(1.5);margin:3px;padding:0" type="checkbox" ng-disabled="!status.Auth.isAdmin()"
+                  <input style="transform: scale(1.5);margin:3px;padding:0" type="checkbox" ng-disabled="!status.Auth.isAdmin()||status.isHeliInactive(flight)"
                     ng-model="flight.release[0].ocCheck" ng-change="status.updateFirebase('ocRelease',flight,false)">
                   <span>{{flight.release[0].ocRelease}}</span>
-                  <button class="btn btn-success" ng-style="status.getInputWidth()" style="padding-top:0px;">Save</button>
+                  <button class="btn btn-success" ng-style="status.getInputWidth()" style="padding-top:0px;" ng-if="!status.isHeliInactive(flight)">Save</button>
+                  <button type="button" class="btn btn-danger btn-xs heli-cancel-plan" ng-if="status.canCancelHeliFlight(flight)"
+                    ng-click="status.inactivateHeliFlight(flight, $event)">Cancel plan</button>
+                  <button type="button" class="btn btn-warning btn-xs heli-cancel-plan" ng-if="status.canRestoreHeliFlight(flight)"
+                    ng-click="status.reactivateHeliFlight(flight, $event)">Restore</button>
                 </span>
                 <span style="margin-left:auto;">
                   <i ng-if="flight.release[0].ocRelease" class="fa fa-solid fa-thumbs-up fa-autosize"></i>

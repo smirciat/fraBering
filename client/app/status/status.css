@@ -751,6 +751,41 @@ div.airport-pink h1{
   margin:5px;
 }
 
+.heli-board-toolbar{
+  margin:4px 5px 8px;
+  font-size:0.95rem;
+}
+
+.heli-show-inactive{
+  font-weight:bold;
+  margin:0;
+  cursor:pointer;
+}
+
+.heli-flight-inactive{
+  opacity:0.72;
+}
+
+.heli-flight-inactive .chat-flight-id{
+  background:#666;
+}
+
+.heli-inactive-badge{
+  display:inline-block;
+  margin-left:8px;
+  padding:2px 6px;
+  background:#f2dede;
+  color:#a94442;
+  border:1px solid #ebccd1;
+  border-radius:3px;
+  font-size:0.85em;
+  font-weight:bold;
+}
+
+.heli-cancel-plan{
+  margin-left:6px;
+}
+
 .chat-header {
   display: flex;
   gap: 5px;
