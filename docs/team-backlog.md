@@ -6,85 +6,30 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #19 Email reporter option
+## #21 VFR fiki quick option
 
-- **Type:** feature · medium · open
-- **Reporter:** Bering Air
+- **Type:** feature · critical · open
+- **Reporter:** Lil Buddy
 
 **Original report:**
 
-Add two checkboxes near the follow up comment box for email reporter and email developer, to send an email notice of new comment instead of having to do an additional email to flag the new comment
+Due to extreme demand I am requesting a VFR quick option for the fiki remark.
+
+Just simply "VFR" no other words
+Thanks Andy I will by you an ice cream sandwich
 
 **Progress (changed, not resolved):**
 
-Andy Smircich: The initial reporter for a new issue, it is working correctly in the follow up comment
+Andy Smircich: -simple change for 1 extra option to quick paste into fiki comment
 
 **Comments:**
-- Andy Smircich: Additionally, when I was logged in as Bering Air, did work here, then re-logged in as Andy, comment still records that it is posted by Bering Air
-- Andy Smircich: The initial reporter for a new issue, it is working correctly in the follow up comment
-
-## #18 Helicopter pax manifest
-
-- **Type:** bug · medium · in_progress
-- **Reporter:** Benjamin Rowe
-
-**Original report:**
-
-Pax manifest is done on the legs page, after a flight plan is filed. Looking at my flight plan ok the status board, the pax manifest line is empty, even though I've added 3 pax and refreshed both apps with internet connectivity.
-
-**Progress (changed, not resolved):**
-
-Andy Smircich: -on 955ah on Monday morning flight, pax manifest does show a name in the flight plan expansion, not sure how there is a name in this but yours was empty
-
-**Comments:**
-- Bering Air: -double check import of passenger count from helicopter flight plan
-- Andy Smircich: -This may be an issue with flight report.  The field called "paxManifest" imported from the pfr on the flight plan is showing a value of [] which is an empty array.  If it has any content, it should display on the release page as expected.
-- Andy Smircich: -on 955ah on Monday morning flight, pax manifest does show a name in the flight plan expansion, not sure how there is a name in this but yours was empty
-
-## Ready for review (shipped — reporter verify, do not build)
-
-_Waiting for reporter sign-off in the app._
-
-## #16 Update ETA
-
-- **Type:** feature · high · ready_for_review
-- **Reporter:** Benjamin Rowe
-- **Status:** ready for review
-
-**Original report:**
-
-For all flights, we need the ability to enter an updated ETA.  If you are flying a regular schedule and experience a substantial delay, we need a way to record this info and new ETA.  
-
-Similarly, if a flight will terminate in a village due to mechanical for example, we need a way to record completion time, location, and reason in the flight release and or takeflite or new solution.  Once again, a streamlined "one entry per user" focus to make gathering and recording this data easy and complete.
-
-**Comments:**
-- Andy Smircich: - In flight Release Modal, an updated ETA input near the bottom where other post-departure comments live
-- A flight terminated away from base checkbox can reveal inputs for the other requested data points
-- Data persists on flight row
-- Andy Smircich: Shipped in dev — ready for your review.
-
-Flight Release modal (bottom section, above “Changes While Enroute/After Release”):
-
-• Updated ETA — local HH:MM; shows planned final arrival for reference
-• “Flight terminated away from base” checkbox — when checked, reveals:
-  - Termination location
-  - Completion time (local HH:MM)
-  - Reason
-
-All fields save on the flight row (miscObject) with the existing release save — no separate save button. Disabled when flight status is Completed.
-
-Please verify on /status: open a released/enroute flight → Flight Release → enter ETA and/or termination details → save → reopen modal and confirm values persisted.
-- Andy Smircich: Small follow-up shipped in dev.
-
-Updated ETA and “flight terminated away from base” fields are now grouped inside “Changes While Enroute / After Release (Amendments)” in Flight Release — same fields, same save on miscObject, layout aligned with #13 standby feedback.
-
-Please confirm save/reload still works as on your prior test.
+- Bering Air: I second this
+- Andy Smircich: -simple change for 1 extra option to quick paste into fiki comment
 
 ## #15 Ground Services View
 
-- **Type:** bug · high · ready_for_review
+- **Type:** bug · high · in_progress
 - **Reporter:** Benjamin Rowe
-- **Status:** ready for review
 
 **Original report:**
 
@@ -93,6 +38,14 @@ I think we can delete the Loads Available view and simply rename the Fuel Reques
 Also, please enhance the Fuel Request/Ground Services view for optimal use on a phone.  Tail numbers should be large.  FILL TO lbs. and ADD gal. numbers should be large, clear and easy to read.  
 
 Add a fuel truck name selector (ask Adam for Fuel truck names at bases with more than one truck) and then provide a space to enter a meter start/stop entry, which after entered will automatically calculate the actual uplifted amount for pilot review, plus will eventually help us migrate away from a paper/pencil fuel log.
+
+**Progress (changed, not resolved):**
+
+Benjamin Rowe: This is looking very good. The caravan and all aircraft should have the FOB, FILL TO, and ADD display like the King Air and 1900 have. Clear, easy to read, gives good information.  
+
+Also, since it is now Ground Services, please display the Load Available. 
+
+Testing the email developer button. Do you want this checked also or not normally?  Or just for high priority?
 
 **Comments:**
 - Benjamin Rowe: On the Fuel Request middle section, I think a clean, complete display would be to show, for example:
@@ -132,6 +85,121 @@ Helicopter fuel display improvements are in this build too (details on #17) — 
 Debug: left-click a Ground Services card logs the flight object to the browser console. Helicopter rows include heliSource if you need to inspect the PFR.
 
 Please verify at OME/OTZ/UNK (and HEL for helis): toggle the date picker away from today, confirm the date under the tail matches the flight, and that FOB/Fill To/ADD still read clearly on phone or narrow browser.
+- Benjamin Rowe: This is looking very good. The caravan and all aircraft should have the FOB, FILL TO, and ADD display like the King Air and 1900 have. Clear, easy to read, gives good information.  
+
+Also, since it is now Ground Services, please display the Load Available. 
+
+Testing the email developer button. Do you want this checked also or not normally?  Or just for high priority?
+
+## #23 Trying to rebase when not told to do so
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Uploading and approving is trying to rebase regardless of being told not to.
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
+- rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
+
+**Latest screenshot:**
+
+![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
+
+**Comments:**
+- NATHANIEL OLSON: Looking at it now, I hit save when I built the ROT and it appears it didn't save, but if you look at the training record I was trying to attach it to, it was dated 8/17/26.  Looks like I hit "save" and it disappears but still available to associate with for upload.
+- Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
+- rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
+
+**Attachments:**
+- ![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
+
+## #22 Training Records Dates not logging in previous dates
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Just added a new training record for Dawson.  It did not update the dates automatically in the training record date.  So I "edited the dates."  After doing this the date updated, but it did not update the "previous dates" with the date that was just overridden.
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: -working through the new and fairly untested feature to show the history of an exp data.  seems like in this case it didn't work as expected, we will try again
+
+**Latest screenshot:**
+
+![screenshot-1787267338543.png](team-backlog/attachments/issue-22-att-13-screenshot-1787267338543.png)
+
+**Comments:**
+- Andy Smircich: -working through the new and fairly untested feature to show the history of an exp data.  seems like in this case it didn't work as expected, we will try again
+
+**Attachments:**
+- ![screenshot-1787267338543.png](team-backlog/attachments/issue-22-att-13-screenshot-1787267338543.png)
+
+## #20 Delete flight plan
+
+- **Type:** feature · medium · open
+- **Reporter:** Patrik Toerdal
+
+**Original report:**
+
+a feature to delete a flight plan that was sent by misstake or canceled.
+
+Ad reason for cancelation and a record of who deleted it.
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: -this is helicopter specific request
+-the hel flights are direct reflection of firebase flights
+-instead of delete, we can mark inactive and filter the view by default to active only.  Logging of reason to inactivate logs user, reason is optional to save time
+
+**Comments:**
+- Andy Smircich: -this is helicopter specific request
+-the hel flights are direct reflection of firebase flights
+-instead of delete, we can mark inactive and filter the view by default to active only.  Logging of reason to inactivate logs user, reason is optional to save time
+
+## Ready for review (shipped — reporter verify, do not build)
+
+_Waiting for reporter sign-off in the app._
+
+## #16 Update ETA
+
+- **Type:** feature · high · ready_for_review
+- **Reporter:** Benjamin Rowe
+- **Status:** ready for review
+
+**Original report:**
+
+For all flights, we need the ability to enter an updated ETA.  If you are flying a regular schedule and experience a substantial delay, we need a way to record this info and new ETA.  
+
+Similarly, if a flight will terminate in a village due to mechanical for example, we need a way to record completion time, location, and reason in the flight release and or takeflite or new solution.  Once again, a streamlined "one entry per user" focus to make gathering and recording this data easy and complete.
+
+**Comments:**
+- Andy Smircich: - In flight Release Modal, an updated ETA input near the bottom where other post-departure comments live
+- A flight terminated away from base checkbox can reveal inputs for the other requested data points
+- Data persists on flight row
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Flight Release modal (bottom section, above “Changes While Enroute/After Release”):
+
+• Updated ETA — local HH:MM; shows planned final arrival for reference
+• “Flight terminated away from base” checkbox — when checked, reveals:
+  - Termination location
+  - Completion time (local HH:MM)
+  - Reason
+
+All fields save on the flight row (miscObject) with the existing release save — no separate save button. Disabled when flight status is Completed.
+
+Please verify on /status: open a released/enroute flight → Flight Release → enter ETA and/or termination details → save → reopen modal and confirm values persisted.
+- Andy Smircich: Small follow-up shipped in dev.
+
+Updated ETA and “flight terminated away from base” fields are now grouped inside “Changes While Enroute / After Release (Amendments)” in Flight Release — same fields, same save on miscObject, layout aligned with #13 standby feedback.
+
+Please confirm save/reload still works as on your prior test.
 
 ## #14 Helicopter fuel request
 
@@ -244,6 +312,29 @@ Please verify on an active enroute standby (or next BRG703-style round-robin): e
 
 **Attachments:**
 - ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
+
+## #18 Helicopter pax manifest
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** Benjamin Rowe
+- **Status:** ready for review
+
+**Original report:**
+
+Pax manifest is done on the legs page, after a flight plan is filed. Looking at my flight plan ok the status board, the pax manifest line is empty, even though I've added 3 pax and refreshed both apps with internet connectivity.
+
+**Comments:**
+- Bering Air: -double check import of passenger count from helicopter flight plan
+- Andy Smircich: -This may be an issue with flight report.  The field called "paxManifest" imported from the pfr on the flight plan is showing a value of [] which is an empty array.  If it has any content, it should display on the release page as expected.
+- Andy Smircich: -on 955ah on Monday morning flight, pax manifest does show a name in the flight plan expansion, not sure how there is a name in this but yours was empty
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Pax manifest on the HEL status board flight plan expand:
+• Shows names when fltPlan.paxManifest has content (comma-separated)
+• If paxManifest is empty but legs have manifest data (isOnBoardManifest / runningManifest), we pull names from there
+• Empty manifest no longer shows a blank “Pax Manifest” line
+
+If you still see empty after refresh: left-click the card on Ground Services and check console — fltPlan.paxManifest and legArray[0].isOnBoardManifest. If legs have pax but both are empty, it’s likely Flight Report not syncing to Firebase yet.
 
 ## #17 Helicopter fuel and LA
 

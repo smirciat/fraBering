@@ -1500,6 +1500,12 @@ class StatusComponent {
 
   syncGsFuelDisplay(flight) {
     flight.gsFuelDisplay = this.computeFuelDisplay(flight);
+    if (flight.isHeli) {
+      flight.gsLoadAvailable = null;
+      return;
+    }
+    let la = this.laCalc(flight);
+    flight.gsLoadAvailable = (la !== undefined && la !== null && !isNaN(la)) ? la : null;
   }
 
   computeFuelDisplay(flight) {
@@ -1560,13 +1566,16 @@ class StatusComponent {
         if (aux > 0) rows.push({ label: 'ADD Aux', value: Math.round(aux / 6.7) + ' gal/side', highlight: true });
       }
     }
-    else if (flight.pfr.fuelRequestString) {
-      rows.push({ label: 'Fuel', value: String(flight.pfr.fuelRequestString).trim(), multiline: true });
-    }
     else {
       rows.push({ label: 'FOB', value: fob + ' lbs', hint: 'previous block in' });
       rows.push({ label: 'Fill To', value: fillTo + ' lbs', highlight: true, hint: 'Flight Report start fuel' });
-      rows.push({ label: 'ADD', value: Math.round((fillTo - fob) / 6.7) + ' gal', highlight: true });
+      let addGal = Math.round((fillTo - fob) / 6.7);
+      if (addGal < 0) {
+        rows.push({ label: '', value: 'DOUBLE CHECK FUEL REQUEST', error: true });
+      }
+      else {
+        rows.push({ label: 'ADD', value: addGal + ' gal', highlight: true });
+      }
     }
     return { ready: true, rows: rows };
   }

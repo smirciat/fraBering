@@ -618,6 +618,7 @@ angular.module('workspaceApp')
                   return allDisabled() || !!flight.pilotAgree;
                 },
                 fikiRemarkSnippets:[
+                  {label:'VFR', text:'VFR'},
                   {label:'Below icing forecast', text:'Planned flight altitude below icing forecast.'},
                   {label:'Recent PIREP — no icing', text:'Recent PIREP indicates no icing.'}
                 ],

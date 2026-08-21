@@ -487,6 +487,22 @@ div.airport-pink h1{
   margin-bottom:12px;
 }
 
+.gs-load-available{
+  background:#fff;
+  border:2px solid #2e7d32;
+  border-radius:6px;
+  padding:12px 14px;
+  margin-bottom:12px;
+}
+
+.gs-load-available .gs-fuel-label{
+  color:#1b5e20;
+}
+
+.gs-load-available .gs-fuel-highlight{
+  color:#1b5e20;
+}
+
 .gs-meter-section{
   background:#f7f7f7;
   border:1px solid #ccc;

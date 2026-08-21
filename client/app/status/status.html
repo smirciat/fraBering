@@ -515,6 +515,12 @@
         </div>
       </div>
       <div class="gs-not-ready" ng-if="!flight.gsFuelDisplay || !flight.gsFuelDisplay.ready">NOT READY — waiting on pilot</div>
+      <div class="gs-load-available" ng-if="!flight.isHeli && flight.gsLoadAvailable != null">
+        <div class="gs-fuel-row">
+          <span class="gs-fuel-label">Load Available:</span>
+          <span class="gs-fuel-value gs-fuel-highlight">{{flight.gsLoadAvailable}} lbs</span>
+        </div>
+      </div>
       <div class="gs-meter-section" ng-if="!flight.isHeli && status.fuelTruckOptionsList.length">
         <label class="gs-field-label">Fuel truck</label>
         <select class="form-control gs-truck-select" ng-model="flight.truck" ng-options="t for t in status.fuelTruckOptionsList" ng-change="status.saveFuelFields(flight)" ng-disabled="!flight.pfr">
