@@ -910,9 +910,9 @@ angular.module('workspaceApp')
                   if (webcam===false) return "webcam-bad";
                 },
                 webcamEnabled=['ELI','GAM','SMK','SVA','SHH','WAA'],
-                quickModal;
-            quickModal = openModal({
-              modal: {
+                quickModal,
+                weatherModalApi;
+            weatherModalApi={
                 getWidth:window.getWidth,
                 airport:airport,
                 manualObs:manualObs,
@@ -961,12 +961,33 @@ angular.module('workspaceApp')
                   manualObs.signature=user.name;
                   airport.manualTimestamp=new Date();
                 },
+                parseManualWeatherNumber:function(val){
+                  if (val===null||val===undefined||val==='') return val;
+                  if (typeof val==='number'&&!isNaN(val)) return val;
+                  let s=String(val).trim();
+                  if (!s) return '';
+                  let m=s.match(/\d+/);
+                  if (!m) return val;
+                  return Number(m[0]);
+                },
+                normalizeManualObsField:function(field){
+                  if (!manualObs||!field||field==='altimeter') return;
+                  if (manualObs[field]!==null&&manualObs[field]!==undefined&&manualObs[field]!=='') {
+                    manualObs[field]=weatherModalApi.parseManualWeatherNumber(manualObs[field]);
+                  }
+                },
+                normalizeManualObs:function(){
+                  ['windDirection','windSpeed','visibility','ceiling'].forEach((field)=>{
+                    weatherModalApi.normalizeManualObsField(field);
+                  });
+                },
                 getTimestamp:function(){if (airport.manualTimestamp) return new Date(airport.manualTimestamp).toLocaleString()},
                 title: 'Enter the Weather Observation for: ' +airport.name,
                 buttons: [ {//this is where you define you buttons and their appearances
                   classes: 'btn-primary',
                   text: 'Confirm/Save',
                   click: function(event) {
+                    weatherModalApi.normalizeManualObs();
                     if (!manualObs.signature){
                       manualObs.signature=user.name;
                       airport.manualTimestamp=new Date();
@@ -980,7 +1001,9 @@ angular.module('workspaceApp')
                     quickModal.dismiss(event);
                   }
                 }]
-              }
+              };
+            quickModal = openModal({
+              modal: weatherModalApi
             }, 'modal-success');
 
             quickModal.result.then(function(event) {

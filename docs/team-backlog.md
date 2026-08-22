@@ -6,30 +6,80 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #21 VFR fiki quick option
+## #24 Manual weather input
 
-- **Type:** feature · critical · open
-- **Reporter:** Lil Buddy
+- **Type:** bug · medium · open
+- **Reporter:** Tim K
 
 **Original report:**
 
-Due to extreme demand I am requesting a VFR quick option for the fiki remark.
-
-Just simply "VFR" no other words
-Thanks Andy I will by you an ice cream sandwich
+Can we have the manual weather entry inputs match the order it reads it off? That way dispatch can just input weather and push tab to go to the next input. Thanks!
 
 **Progress (changed, not resolved):**
 
-Andy Smircich: -simple change for 1 extra option to quick paste into fiki comment
+Andy Smircich: -wind direction
+-wind speed
+-visibility
+-ceiling
+-altimeter
+
+Additionally, make it a form so keypress tab moves between the inputs
+Parse out numbers to match expected data type if user enters any description like 1000BKN should be 1000 (wind speed, direction, vis and ceiling: (altimeter is handled as plain text )
 
 **Comments:**
-- Bering Air: I second this
-- Andy Smircich: -simple change for 1 extra option to quick paste into fiki comment
+- Andy Smircich: -wind direction
+-wind speed
+-visibility
+-ceiling
+-altimeter
+
+Additionally, make it a form so keypress tab moves between the inputs
+Parse out numbers to match expected data type if user enters any description like 1000BKN should be 1000 (wind speed, direction, vis and ceiling: (altimeter is handled as plain text )
+
+## Ready for review (shipped — reporter verify, do not build)
+
+_Waiting for reporter sign-off in the app._
+
+## #16 Update ETA
+
+- **Type:** feature · high · ready_for_review
+- **Reporter:** Benjamin Rowe
+- **Status:** ready for review
+
+**Original report:**
+
+For all flights, we need the ability to enter an updated ETA.  If you are flying a regular schedule and experience a substantial delay, we need a way to record this info and new ETA.  
+
+Similarly, if a flight will terminate in a village due to mechanical for example, we need a way to record completion time, location, and reason in the flight release and or takeflite or new solution.  Once again, a streamlined "one entry per user" focus to make gathering and recording this data easy and complete.
+
+**Comments:**
+- Andy Smircich: - In flight Release Modal, an updated ETA input near the bottom where other post-departure comments live
+- A flight terminated away from base checkbox can reveal inputs for the other requested data points
+- Data persists on flight row
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Flight Release modal (bottom section, above “Changes While Enroute/After Release”):
+
+• Updated ETA — local HH:MM; shows planned final arrival for reference
+• “Flight terminated away from base” checkbox — when checked, reveals:
+  - Termination location
+  - Completion time (local HH:MM)
+  - Reason
+
+All fields save on the flight row (miscObject) with the existing release save — no separate save button. Disabled when flight status is Completed.
+
+Please verify on /status: open a released/enroute flight → Flight Release → enter ETA and/or termination details → save → reopen modal and confirm values persisted.
+- Andy Smircich: Small follow-up shipped in dev.
+
+Updated ETA and “flight terminated away from base” fields are now grouped inside “Changes While Enroute / After Release (Amendments)” in Flight Release — same fields, same save on miscObject, layout aligned with #13 standby feedback.
+
+Please confirm save/reload still works as on your prior test.
 
 ## #15 Ground Services View
 
-- **Type:** bug · high · in_progress
+- **Type:** bug · high · ready_for_review
 - **Reporter:** Benjamin Rowe
+- **Status:** ready for review
 
 **Original report:**
 
@@ -38,20 +88,6 @@ I think we can delete the Loads Available view and simply rename the Fuel Reques
 Also, please enhance the Fuel Request/Ground Services view for optimal use on a phone.  Tail numbers should be large.  FILL TO lbs. and ADD gal. numbers should be large, clear and easy to read.  
 
 Add a fuel truck name selector (ask Adam for Fuel truck names at bases with more than one truck) and then provide a space to enter a meter start/stop entry, which after entered will automatically calculate the actual uplifted amount for pilot review, plus will eventually help us migrate away from a paper/pencil fuel log.
-
-**Progress (changed, not resolved):**
-
-Andy Smircich: Further update shipped in dev — ready for your review.
-
-Per your latest comment:
-
-• Caravan and all other fixed-wing types now show FOB, Fill To, and ADD on Ground Services cards (same labeled layout as King Air/1900 — lbs for FOB/Fill To, gal for ADD). Caravan no longer replaces that with only the raw fuel request string.
-
-• Load Available is now on each Ground Services card (fixed-wing) when Flight Report has weight data — same calculation as the main status board / Load view.
-
-Helicopter cards unchanged. Date under tail and truck/meter fields as before.
-
-Please verify on phone at your base — especially a Caravan with fuel entered.
 
 **Comments:**
 - Benjamin Rowe: On the Fuel Request middle section, I think a clean, complete display would be to show, for example:
@@ -107,136 +143,6 @@ Per your latest comment:
 Helicopter cards unchanged. Date under tail and truck/meter fields as before.
 
 Please verify on phone at your base — especially a Caravan with fuel entered.
-
-## #23 Trying to rebase when not told to do so
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Uploading and approving is trying to rebase regardless of being told not to.
-
-**Progress (changed, not resolved):**
-
-Andy Smircich: Shipped in dev — ready for your review.
-
-Upload and Approve was rebasing expiration even when New Base was false. It calculated from the training record date instead of extending the pilot’s current expiration.
-
-Fix:
-• New Base = false → extend current exp by the training interval (e.g. Aug 2027 → Aug 2028). Training date is only used when there is no prior exp.
-• New Base = true → rebase from base month / training date (same as before, with confirm if you’re within the normal window).
-
-Removed the misleading “set a new base month?” prompt that could rebase even when New Base was false.
-
-Please retry your Sara Cubbage / 8/17 B190SIC upload with New Base false and confirm the exp confirm shows an extension from current Aug 2027, not 8/17/2027.
-
-**Latest screenshot:**
-
-![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
-
-**Comments:**
-- NATHANIEL OLSON: Looking at it now, I hit save when I built the ROT and it appears it didn't save, but if you look at the training record I was trying to attach it to, it was dated 8/17/26.  Looks like I hit "save" and it disappears but still available to associate with for upload.
-- Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
-- rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
-- Andy Smircich: Shipped in dev — ready for your review.
-
-Upload and Approve was rebasing expiration even when New Base was false. It calculated from the training record date instead of extending the pilot’s current expiration.
-
-Fix:
-• New Base = false → extend current exp by the training interval (e.g. Aug 2027 → Aug 2028). Training date is only used when there is no prior exp.
-• New Base = true → rebase from base month / training date (same as before, with confirm if you’re within the normal window).
-
-Removed the misleading “set a new base month?” prompt that could rebase even when New Base was false.
-
-Please retry your Sara Cubbage / 8/17 B190SIC upload with New Base false and confirm the exp confirm shows an extension from current Aug 2027, not 8/17/2027.
-
-**Attachments:**
-- ![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
-
-## #22 Training Records Dates not logging in previous dates
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Just added a new training record for Dawson.  It did not update the dates automatically in the training record date.  So I "edited the dates."  After doing this the date updated, but it did not update the "previous dates" with the date that was just overridden.
-
-**Progress (changed, not resolved):**
-
-Andy Smircich: -working through the new and fairly untested feature to show the history of an exp data.  seems like in this case it didn't work as expected, we will try again
-
-**Latest screenshot:**
-
-![screenshot-1787267338543.png](team-backlog/attachments/issue-22-att-13-screenshot-1787267338543.png)
-
-**Comments:**
-- Andy Smircich: -working through the new and fairly untested feature to show the history of an exp data.  seems like in this case it didn't work as expected, we will try again
-
-**Attachments:**
-- ![screenshot-1787267338543.png](team-backlog/attachments/issue-22-att-13-screenshot-1787267338543.png)
-
-## #20 Delete flight plan
-
-- **Type:** feature · medium · open
-- **Reporter:** Patrik Toerdal
-
-**Original report:**
-
-a feature to delete a flight plan that was sent by misstake or canceled.
-
-Ad reason for cancelation and a record of who deleted it.
-
-**Progress (changed, not resolved):**
-
-Andy Smircich: -this is helicopter specific request
--the hel flights are direct reflection of firebase flights
--instead of delete, we can mark inactive and filter the view by default to active only.  Logging of reason to inactivate logs user, reason is optional to save time
-
-**Comments:**
-- Andy Smircich: -this is helicopter specific request
--the hel flights are direct reflection of firebase flights
--instead of delete, we can mark inactive and filter the view by default to active only.  Logging of reason to inactivate logs user, reason is optional to save time
-
-## Ready for review (shipped — reporter verify, do not build)
-
-_Waiting for reporter sign-off in the app._
-
-## #16 Update ETA
-
-- **Type:** feature · high · ready_for_review
-- **Reporter:** Benjamin Rowe
-- **Status:** ready for review
-
-**Original report:**
-
-For all flights, we need the ability to enter an updated ETA.  If you are flying a regular schedule and experience a substantial delay, we need a way to record this info and new ETA.  
-
-Similarly, if a flight will terminate in a village due to mechanical for example, we need a way to record completion time, location, and reason in the flight release and or takeflite or new solution.  Once again, a streamlined "one entry per user" focus to make gathering and recording this data easy and complete.
-
-**Comments:**
-- Andy Smircich: - In flight Release Modal, an updated ETA input near the bottom where other post-departure comments live
-- A flight terminated away from base checkbox can reveal inputs for the other requested data points
-- Data persists on flight row
-- Andy Smircich: Shipped in dev — ready for your review.
-
-Flight Release modal (bottom section, above “Changes While Enroute/After Release”):
-
-• Updated ETA — local HH:MM; shows planned final arrival for reference
-• “Flight terminated away from base” checkbox — when checked, reveals:
-  - Termination location
-  - Completion time (local HH:MM)
-  - Reason
-
-All fields save on the flight row (miscObject) with the existing release save — no separate save button. Disabled when flight status is Completed.
-
-Please verify on /status: open a released/enroute flight → Flight Release → enter ETA and/or termination details → save → reopen modal and confirm values persisted.
-- Andy Smircich: Small follow-up shipped in dev.
-
-Updated ETA and “flight terminated away from base” fields are now grouped inside “Changes While Enroute / After Release (Amendments)” in Flight Release — same fields, same save on miscObject, layout aligned with #13 standby feedback.
-
-Please confirm save/reload still works as on your prior test.
 
 ## #14 Helicopter fuel request
 
@@ -349,6 +255,87 @@ Please verify on an active enroute standby (or next BRG703-style round-robin): e
 
 **Attachments:**
 - ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
+
+## #23 Trying to rebase when not told to do so
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Uploading and approving is trying to rebase regardless of being told not to.
+
+**Comments:**
+- NATHANIEL OLSON: Looking at it now, I hit save when I built the ROT and it appears it didn't save, but if you look at the training record I was trying to attach it to, it was dated 8/17/26.  Looks like I hit "save" and it disappears but still available to associate with for upload.
+- Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
+- rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Upload and Approve was rebasing expiration even when New Base was false. It calculated from the training record date instead of extending the pilot’s current expiration.
+
+Fix:
+• New Base = false → extend current exp by the training interval (e.g. Aug 2027 → Aug 2028). Training date is only used when there is no prior exp.
+• New Base = true → rebase from base month / training date (same as before, with confirm if you’re within the normal window).
+
+Removed the misleading “set a new base month?” prompt that could rebase even when New Base was false.
+
+Please retry your Sara Cubbage / 8/17 B190SIC upload with New Base false and confirm the exp confirm shows an extension from current Aug 2027, not 8/17/2027.
+
+**Attachments:**
+- ![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
+
+## #22 Training Records Dates not logging in previous dates
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Just added a new training record for Dawson.  It did not update the dates automatically in the training record date.  So I "edited the dates."  After doing this the date updated, but it did not update the "previous dates" with the date that was just overridden.
+
+**Comments:**
+- Andy Smircich: -working through the new and fairly untested feature to show the history of an exp data.  seems like in this case it didn't work as expected, we will try again
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Previous exp dates were not logging when you edited training dates manually — the history was storing the new value instead of the one you replaced.
+
+Fix:
+• Edit Pilot Training Dates now pushes the overridden date into the Previous row(s)
+• Upload and Approve does the same when an exp changes (prior value logged as superseded before the new approval entry)
+
+Please retry on Dawson or another pilot: change a current exp, save, and confirm Previous shows what you had before.
+
+**Attachments:**
+- ![screenshot-1787267338543.png](team-backlog/attachments/issue-22-att-13-screenshot-1787267338543.png)
+
+## #20 Delete flight plan
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** Patrik Toerdal
+- **Status:** ready for review
+
+**Original report:**
+
+a feature to delete a flight plan that was sent by misstake or canceled.
+
+Ad reason for cancelation and a record of who deleted it.
+
+**Comments:**
+- Andy Smircich: -this is helicopter specific request
+-the hel flights are direct reflection of firebase flights
+-instead of delete, we can mark inactive and filter the view by default to active only.  Logging of reason to inactivate logs user, reason is optional to save time
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Helicopter flight plans can be canceled from the HEL status board without deleting the Firebase record.
+
+• Any logged-in pilot sees Cancel plan on their own heli card (admins can cancel any plan). Optional reason; logs who/when/reason on the flight doc.
+• Canceled plans drop off the board and Ground Services by default.
+• Show my canceled flight plans (pilots) / Show canceled flight plans (admin) reveals inactive rows with a canceled badge.
+• Restore is available on your own canceled plan (admins can restore any).
+
+Please verify on HEL: post a plan by mistake, cancel it as the pilot, confirm it disappears, toggle show canceled, and restore if needed.
 
 ## #18 Helicopter pax manifest
 

@@ -92,29 +92,30 @@
     <p>Previous Timestamp: {{modal.getTimestamp()}}</p>
     <p>Previous Signature: {{modal.manualObs.previousSignature}}</p>
     
-    <div class="modal-timestamp-layout" style="align-items: center;" ng-hide="modal.manualObs.webcam||modal.manualObs.webcamIFR">
-      <div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.visibility"></div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.ceiling"></div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.altimeter"></div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windDirection"></div>
-        <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windSpeed"></div>
-        <div style="height:44px">
-          <span style="float:right">
-            <input class="form-control" style="width:44px;" type="checkbox" ng-model="modal.manualObs.isOfficial">
-          </span>
+    <form name="manualWeatherForm" class="manual-weather-form" ng-hide="modal.manualObs.webcam||modal.manualObs.webcamIFR">
+      <div class="modal-timestamp-layout" style="align-items: center;">
+        <div>
+          <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windDirection" ng-blur="modal.normalizeManualObsField('windDirection')" tabindex="1"></div>
+          <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windSpeed" ng-blur="modal.normalizeManualObsField('windSpeed')" tabindex="2"></div>
+          <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.visibility" ng-blur="modal.normalizeManualObsField('visibility')" tabindex="3"></div>
+          <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.ceiling" ng-blur="modal.normalizeManualObsField('ceiling')" tabindex="4"></div>
+          <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.altimeter" tabindex="5"></div>
+          <div style="height:44px">
+            <span style="float:right">
+              <input class="form-control" style="width:44px;" type="checkbox" ng-model="modal.manualObs.isOfficial" tabindex="6">
+            </span>
+          </div>
         </div>
-        
+        <div style="margin-top:12px">
+          <div style="height:44px"><label>&nbsp Wind Direction (0-360)</label></div>
+          <div style="height:44px"><label>&nbsp Wind Speed (kts)</label></div>
+          <div style="height:44px"><label>&nbsp Visibility (10 for unlimited)</label></div>
+          <div style="height:44px"><label>&nbsp Ceiling (10000 for Clear)</label></div>
+          <div style="height:44px"><label>&nbsp Altimeter Setting</label></div>
+          <div style="height:44px"><label>&nbsp Official Weather Source?</label></div>
+        </div>
       </div>
-      <div style="margin-top:12px">
-        <div style="height:44px"><label>&nbsp Visibility (10 for unlimited)</label></div>
-        <div style="height:44px"><label>&nbsp Ceiling (10000 for Clear)</label></div>
-        <div style="height:44px"><label>&nbsp Altimeter Setting</label></div>
-        <div style="height:44px"><label>&nbsp Wind Direction (0-360)</label></div>
-        <div style="height:44px"><label>&nbsp Wind Speed (kts)</label></div>
-        <div style="height:44px"><label>&nbsp Official Weather Source?</label></div>
-      </div>
-    </div>
+    </form>
     <div><p><strong>Uncheck any 'WebCam' boxes to input a manual observation</strong></p></div>
     <div class="modal-timestamp-layout" style="align-items: center;">
       <div>
