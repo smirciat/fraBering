@@ -497,9 +497,9 @@
             <div ng-repeat="seat in rotRecords.seatArray(cat)">
               <h5 style="margin-left:40px" ng-if="rotRecords.filterCheck(cat,sub,seat)">{{seat}}</h5>
             
-              <div ng-repeat="file in rotRecords.fullFiles | categoryFilter:cat:sub:seat | orderBy:'-date' " class="points-row"
-                   ng-mouseenter="file.isPreviewVisible=true" ng-mouseleave="file.isPreviewVisible=false">
-                <div class="points-row-thumb">
+              <div ng-repeat="file in rotRecords.fullFiles | categoryFilter:cat:sub:seat | orderBy:'-date' " class="points-row">
+                <div class="points-row-thumb"
+                     ng-mouseenter="file.isPreviewVisible=true" ng-mouseleave="file.isPreviewVisible=false">
                   <a href="{{file.urlMain}}" target="_blank" class="file-thumb-link">
                     <img ng-if="file.type === 'image'" ng-src="{{file.urlMain}}" class="file-thumb" alt="">
                     <span ng-if="file.type === 'pdf'" class="file-thumb file-thumb-pdf">PDF</span>
