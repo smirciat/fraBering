@@ -151,9 +151,18 @@
 
       minutesFromTimeString(timeStr) {
         if (!timeStr) return 0;
-        let parts = String(timeStr).trim().split(':');
-        if (parts.length < 2) return 0;
-        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        let s = String(timeStr).trim();
+        if (s.indexOf(':') >= 0) {
+          let parts = s.split(':');
+          if (parts.length < 2) return 0;
+          return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        }
+        let digits = s.replace(/\D/g, '');
+        if (digits.length === 3) digits = '0' + digits;
+        if (digits.length === 4) {
+          return parseInt(digits.substring(0, 2), 10) * 60 + parseInt(digits.substring(2, 4), 10);
+        }
+        return 0;
       },
 
       scheduledBlockMinutes(flight) {
@@ -163,6 +172,24 @@
         let mins = end - start;
         if (mins < 0) mins += 24 * 60;
         return mins;
+      },
+
+      /** Min scheduled ground time at an intermediate stop to count as standby charter. */
+      STANDBY_GROUND_MINUTES: 45,
+
+      /**
+       * Scheduled minutes on the ground at an intermediate airport (arrival of inbound leg
+       * to departure of outbound leg). airportIndex is the index in flight.airports.
+       */
+      intermediateGroundMinutes(flight, airportIndex) {
+        if (!flight || !flight.departTimes || !flight.airports) return 0;
+        if (airportIndex < 1 || airportIndex >= flight.airports.length - 1) return 0;
+        let arrive = (flight.arriveTimes && flight.arriveTimes[airportIndex - 1]) || flight.departTimes[airportIndex];
+        let depart = flight.departTimes[airportIndex];
+        if (!arrive || !depart) return 0;
+        let ground = Util.minutesFromTimeString(depart) - Util.minutesFromTimeString(arrive);
+        if (ground < 0) ground += 24 * 60;
+        return ground;
       },
 
       haversineNm(lat1, lon1, lat2, lon2) {
@@ -209,17 +236,12 @@
       isStandbyCharter(flight) {
         if (!flight || !flight.operation) return false;
         if (String(flight.operation).toLowerCase().indexOf('charter') < 0) return false;
-        let airports = flight.airports || [];
-        let legCount = airports.length > 0 ? airports.length - 1 : 0;
-        if (legCount < 2) return false;
-        if (legCount > 5) return true;
-        let standbyAllowance = legCount * 30;
-        let scheduled = Util.scheduledBlockMinutes(flight);
-        let routeMins = Util.estimatedRouteMinutes(flight);
-        if (!routeMins) {
-          routeMins = legCount * 45;
+        if (!flight.airports || flight.airports.length < 3) return false;
+        if (!flight.departTimes || flight.departTimes.length < 2) return false;
+        for (let i = 1; i < flight.airports.length - 1; i++) {
+          if (Util.intermediateGroundMinutes(flight, i) >= Util.STANDBY_GROUND_MINUTES) return true;
         }
-        return scheduled > routeMins + standbyAllowance;
+        return false;
       },
 
       operationDisplay(flight) {
@@ -235,12 +257,21 @@
         let airports = flight.airports || [];
         for (let i = 1; i < airports.length - 1; i++) {
           let airport = airports[i];
+          let qualifies = Util.intermediateGroundMinutes(flight, i) >= Util.STANDBY_GROUND_MINUTES;
           let row = flight.miscObject.standbyLegTimes.find(e => e.airport === airport);
+          let hasData = row && ((row.arrival && String(row.arrival).trim()) || (row.departure && String(row.departure).trim()));
+          if (!qualifies && !hasData) continue;
           if (!row) {
             row = { airport: airport, arrival: '', departure: '' };
             flight.miscObject.standbyLegTimes.push(row);
           }
         }
+        flight.miscObject.standbyLegTimes = flight.miscObject.standbyLegTimes.filter(row => {
+          let idx = airports.indexOf(row.airport);
+          if (idx < 1 || idx >= airports.length - 1) return false;
+          if (Util.intermediateGroundMinutes(flight, idx) >= Util.STANDBY_GROUND_MINUTES) return true;
+          return (row.arrival && String(row.arrival).trim()) || (row.departure && String(row.departure).trim());
+        });
         return flight.miscObject.standbyLegTimes;
       },
 
@@ -281,11 +312,12 @@
         return Util.minutesFromTimeString(flight.tfliteDepart) - Util.minutesFromTimeString(flight.departTimes[0]);
       },
 
-      /** Standby intermediate times overdue by 30+ min (actual depart vs plan). */
+      /** Standby intermediate times overdue by 45+ min (actual depart vs plan). */
       standbyIntermediateNags(flight) {
         let nags = [];
         if (!Util.isStandbyCharter(flight)) return nags;
         if (!flight.tfliteDepart) return nags;
+        if (flight.flightStatus !== 'En Route') return nags;
         if (!(flight.dispatchRelease || flight.ocRelease)) return nags;
         if (!flight.airports || flight.airports.length < 3) return nags;
         let offset = Util.actualDepartOffsetMinutes(flight);
@@ -293,13 +325,14 @@
         Util.initStandbyLegTimes(flight);
         let rows = flight.miscObject.standbyLegTimes || [];
         for (let i = 1; i < flight.airports.length - 1; i++) {
+          if (Util.intermediateGroundMinutes(flight, i) < Util.STANDBY_GROUND_MINUTES) continue;
           let airport = flight.airports[i];
           let row = rows.find(e => e.airport === airport) || { airport: airport, arrival: '', departure: '' };
-          let planArrive = Util.minutesFromTimeString((flight.arriveTimes && flight.arriveTimes[i]) || flight.departTimes[i]);
+          let planArrive = Util.minutesFromTimeString((flight.arriveTimes && flight.arriveTimes[i - 1]) || flight.departTimes[i]);
           let planDepart = Util.minutesFromTimeString(flight.departTimes[i]);
           let estArrive = planArrive + offset;
           let estDepart = planDepart + offset;
-          if ((!row.arrival || !String(row.arrival).trim()) && now > estArrive + 30) {
+          if ((!row.arrival || !String(row.arrival).trim()) && now > estArrive + 45) {
             nags.push({
               airport: airport,
               field: 'arrival',
@@ -308,7 +341,7 @@
               aircraft: flight.aircraft
             });
           }
-          if ((!row.departure || !String(row.departure).trim()) && now > estDepart + 30) {
+          if ((!row.departure || !String(row.departure).trim()) && now > estDepart + 45) {
             nags.push({
               airport: airport,
               field: 'departure',
@@ -334,6 +367,7 @@
         if (!flight.airports || flight.airports.length < 3) return;
         let lastDelta = null;
         for (let i = 1; i < flight.airports.length - 1; i++) {
+          if (Util.intermediateGroundMinutes(flight, i) < Util.STANDBY_GROUND_MINUTES) continue;
           let airport = flight.airports[i];
           let row = rows.find(e => e.airport === airport);
           if (!row || !row.departure || !String(row.departure).trim()) continue;
@@ -355,6 +389,9 @@
         if (!flight) return '';
         if (flight.miscObject && flight.miscObject.updatedEta && String(flight.miscObject.updatedEta).trim()) {
           return String(flight.miscObject.updatedEta).trim();
+        }
+        if (flight.tfliteArrive && String(flight.tfliteArrive).trim()) {
+          return String(flight.tfliteArrive).trim();
         }
         if (flight.pfr && flight.pfr.legArray && flight.pfr.legArray.length) {
           let leg = flight.pfr.legArray[flight.pfr.legArray.length - 1];

@@ -87,17 +87,20 @@ class StatusComponent {
     this.fuelTruckOptionsList=[];
     this.standbyNagCounts={};
     this.standbyNagLastShown={};
+    this.standbyNagDismissed={};
     this.standbyNagModalOpen=false;
-    this.standbyNagMax=3;
-    this.standbyNagCooldownMs=5*60*1000;
+    this.standbyNagMax=2;
+    this.standbyNagCooldownMs=15*60*1000;
     try {
       let nagState=JSON.parse(sessionStorage.getItem('standbyNagState')||'{}');
       this.standbyNagCounts=nagState.counts||{};
       this.standbyNagLastShown=nagState.lastShown||{};
+      this.standbyNagDismissed=nagState.dismissed||{};
     }
     catch (e) {
       this.standbyNagCounts={};
       this.standbyNagLastShown={};
+      this.standbyNagDismissed={};
     }
     this.initHelis();
     this.width=document.documentElement.clientWidth;
@@ -156,9 +159,13 @@ class StatusComponent {
     this.initFirebaseData();
     this.metarModal=this.Modal.confirm.metars();
     this.quickModal=this.Modal.confirm.quickMessage(response=>{this.clicked=true;});
-    this.standbyNagModal=this.Modal.confirm.standbyIntermediateNag((result,flight)=>{
+    this.standbyNagModal=this.Modal.confirm.standbyIntermediateNag((result,flight,nagKeys)=>{
       this.standbyNagModalOpen=false;
       if (result==='open'&&flight) this.lookAtFlight(flight);
+      if (result==='dismiss'&&nagKeys&&nagKeys.length) {
+        nagKeys.forEach(key=>{ this.standbyNagDismissed[key]=true; });
+        this.persistStandbyNagState();
+      }
     });
     this.tafDisplay=this.Modal.confirm.quickShow(response=>{});
     this.airportModal=this.Modal.confirm.airport(response=>{
@@ -1957,10 +1964,15 @@ class StatusComponent {
     try {
       sessionStorage.setItem('standbyNagState',JSON.stringify({
         counts:this.standbyNagCounts,
-        lastShown:this.standbyNagLastShown
+        lastShown:this.standbyNagLastShown,
+        dismissed:this.standbyNagDismissed
       }));
     }
     catch (e) { /* ignore */ }
+  }
+
+  standbyNagKey(flight, nag) {
+    return flight._id + '-' + nag.airport + '-' + nag.field;
   }
 
   checkStandbyIntermediateNags(){
@@ -1974,18 +1986,25 @@ class StatusComponent {
       if ((this.standbyNagCounts[flightId]||0)>=this.standbyNagMax) continue;
       let lastShown=this.standbyNagLastShown[flightId]||0;
       if (Date.now()-lastShown<this.standbyNagCooldownMs) continue;
-      let nags=this.Util.standbyIntermediateNags(flight);
+      let nags=this.Util.standbyIntermediateNags(flight).filter(nag=>{
+        return !this.standbyNagDismissed[this.standbyNagKey(flight, nag)];
+      });
       if (!nags.length) continue;
       let parts=nags.map(nag=>{
-        let fieldLabel=nag.field==='arrival'?'arrival':'departure';
+        let fieldLabel=nag.field==='arrival'?'arrival':'departure (OFF)';
         return nag.airport+' '+fieldLabel+' (est. '+nag.planTime+')';
       });
-      let msg='<strong>'+flight.flightNum+' ('+flight.aircraft+')</strong> — Enter intermediate times (30+ minutes overdue):<br>'+parts.join('<br>');
+      let nagKeys=nags.map(nag=>this.standbyNagKey(flight, nag));
+      let msg='<strong>BRG'+flight.flightNum+' ('+flight.aircraft+')</strong><br>'+
+        'Standby charter — enter <em>intermediate village</em> times in Flight Release → Amendments.<br>'+
+        'Takeflite OFF/land times import automatically when available.<br><br>'+
+        'Still needed (45+ min past estimate):<br>'+parts.join('<br>')+
+        '<br><br><small>Dismiss hides this stop for today. Up to '+this.standbyNagMax+' reminders per flight.</small>';
       this.standbyNagCounts[flightId]=(this.standbyNagCounts[flightId]||0)+1;
       this.standbyNagLastShown[flightId]=Date.now();
       this.persistStandbyNagState();
       this.standbyNagModalOpen=true;
-      this.standbyNagModal(msg,flight);
+      this.standbyNagModal(msg,flight,nagKeys);
       return;
     }
   }
@@ -2308,6 +2327,7 @@ class StatusComponent {
     let baseTest;
     this.displayedAircraft=this.allAircraft.filter(a=>{
       if (a._id&&a._id.substring(0,1).toUpperCase()!=="N") return false;
+      if (a.isInactive) return false;
       a.acftType=a.acftType.trim();
       if (a.acftType==="Sky Courier") a.acftType="Courier";
       baseTest=false;
@@ -2327,6 +2347,7 @@ class StatusComponent {
     });
     if (this.base.base==="HEL") this.displayedAircraft=this.allAircraft.filter(a=>{
       if (a._id&&a._id.substring(0,1).toUpperCase()!=="N") return false;
+      if (a.isInactive) return false;
       return aircraftTypes.indexOf(a.acftType)>-1;
     });
     this.displayedAircraft.sort((a,b)=>{
@@ -2761,6 +2782,32 @@ class StatusComponent {
     let hrs = heli.fltPlan && heli.fltPlan.fuel;
     if (hrs !== undefined && hrs !== null && String(hrs).trim() !== '' && !isNaN(parseFloat(hrs))) return true;
     return false;
+  }
+
+  heliStatusFuelSummary(heli) {
+    if (!heli) return '—';
+    if (!this.heliFuelReady(heli)) return '—';
+    if (heli.fuelRequestString && String(heli.fuelRequestString).trim()) {
+      return String(heli.fuelRequestString).trim();
+    }
+    let fillTo = Math.round(this.heliFillToGal(heli));
+    if (fillTo > 0) return fillTo + ' gal';
+    let hrs = heli.fltPlan && heli.fltPlan.fuel;
+    if (hrs !== undefined && hrs !== null && String(hrs).trim() !== '') {
+      return String(hrs).trim() + ' hrs';
+    }
+    return '—';
+  }
+
+  heliStatusLoadAvailable(heli) {
+    if (!heli) return '—';
+    let leg = heli.legArray && heli.legArray[0];
+    let mgtow = leg && (leg.mgtow || leg.MGTOW);
+    let owe = (leg && (leg.operatingWeightEmpty || leg.operatingWeight || leg.owe || leg.OWE)) ||
+      heli.owe || heli.OWE;
+    if (!mgtow || !owe) return '—';
+    let fuel = this.heliFillToGal(heli) || 0;
+    return Math.round(mgtow * 1 - owe * 1 - fuel);
   }
 
   displayFinalEta(flight){

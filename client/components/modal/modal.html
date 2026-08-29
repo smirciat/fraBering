@@ -823,7 +823,7 @@
       <label class="amendments-after-release-title">Changes While Enroute / After Release (Amendments)</label>
       <textarea class="form-control amendments-enroute-text" ng-model="modal.flight.enrouteChanges" ng-disabled="modal.flight.flightStatus==='Completed'"></textarea>
       <div ng-if="modal.isStandbyCharter() && (modal.flight.dispatchRelease||modal.flight.ocRelease)" class="standby-leg-block">
-        <p class="standby-leg-intro">Standby charter — record arrival and departure times at intermediate stops (local time, HH:MM). Entering a departure while enroute updates the final ETA on save.</p>
+        <p class="standby-leg-intro">Standby charter — this flight has 45+ minutes scheduled on the ground at the village(s) below. Record intermediate arrival and departure (local HH:MM). Quick turnarounds and multi-leg flights without ground standby are not tracked here. Takeflite OFF times import automatically when available. Entering a departure while enroute updates the final ETA on save.</p>
         <table class="table table-borderless standby-leg-table">
           <tr ng-repeat="leg in modal.standbyLegTimes track by leg.airport">
             <td class="standby-leg-airport"><strong>{{leg.airport}}</strong></td>
@@ -839,21 +839,9 @@
         </table>
       </div>
       <div class="eta-update-section">
-        <label>Updated ETA (local time, HH:MM)</label>
-        <p class="eta-hint" ng-if="modal.plannedFinalEta()">Planned final arrival: {{modal.plannedFinalEta()}}</p>
+        <p class="eta-hint" ng-if="modal.plannedFinalEta()">ETA {{modal.plannedFinalEta()}}</p>
+        <label>Update the ETA?</label>
         <input class="form-control standby-leg-input" type="text" placeholder="HH:MM" ng-model="modal.flight.miscObject.updatedEta" ng-disabled="modal.enrouteFieldsDisabled()">
-        <label class="eta-terminated-check">
-          <input type="checkbox" ng-model="modal.flight.miscObject.terminatedAwayFromBase" ng-disabled="modal.enrouteFieldsDisabled()">
-          Flight terminated away from base
-        </label>
-        <div ng-if="modal.flight.miscObject.terminatedAwayFromBase" class="eta-terminated-fields">
-          <label>Termination location</label>
-          <input class="form-control" type="text" ng-model="modal.flight.miscObject.terminationLocation" ng-disabled="modal.enrouteFieldsDisabled()">
-          <label>Completion time (local HH:MM)</label>
-          <input class="form-control standby-leg-input" type="text" placeholder="HH:MM" ng-model="modal.flight.miscObject.terminationCompletionTime" ng-disabled="modal.enrouteFieldsDisabled()">
-          <label>Reason</label>
-          <textarea class="form-control eta-terminated-reason" ng-model="modal.flight.miscObject.terminationReason" ng-disabled="modal.enrouteFieldsDisabled()"></textarea>
-        </div>
       </div>
     </div>
   </div>

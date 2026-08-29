@@ -74,12 +74,13 @@ angular.module('workspaceApp')
             var args = Array.prototype.slice.call(arguments),
                 message = args.shift(),
                 flight = args.shift(),
+                nagKeys = args.shift() || [],
                 quickModal;
             quickModal = openModal({
               modal: {
                 dismissable: true,
-                title: 'Standby Charter — Times Needed',
-                html: '<p>' + message + '</p>',
+                title: 'Standby Charter — Intermediate Times',
+                html: '<div class="standby-nag-body">' + message + '</div>',
                 buttons: [{
                   classes: 'btn-primary',
                   text: 'Open Flight Release',
@@ -88,7 +89,7 @@ angular.module('workspaceApp')
                   }
                 }, {
                   classes: 'btn-default',
-                  text: 'Dismiss',
+                  text: 'Dismiss for today',
                   click: function(event) {
                     quickModal.close('dismiss');
                   }
@@ -96,9 +97,9 @@ angular.module('workspaceApp')
               }
             }, 'modal-warning');
             quickModal.result.then(function(result) {
-              cb(result, flight);
+              cb(result, flight, nagKeys);
             }).catch(function() {
-              cb('dismiss', flight);
+              cb('dismiss', flight, nagKeys);
             });
           };
         },

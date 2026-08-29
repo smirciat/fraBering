@@ -609,6 +609,138 @@ function isSamePfrAsFlight(pfr, flight) {
   return String(pfr.flightNumber)===String(flight.flightNum);
 }
 
+function minutesFromTimeString(timeStr) {
+  if (!timeStr) return 0;
+  let s = String(timeStr).trim();
+  if (s.indexOf(':') >= 0) {
+    let parts = s.split(':');
+    if (parts.length < 2) return 0;
+    return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  }
+  let digits = s.replace(/\D/g, '');
+  if (digits.length === 3) digits = '0' + digits;
+  if (digits.length === 4) {
+    return parseInt(digits.substring(0, 2), 10) * 60 + parseInt(digits.substring(2, 4), 10);
+  }
+  return 0;
+}
+
+function scheduledBlockMinutes(flight) {
+  if (!flight || !flight.departTimes || !flight.departTimes.length) return 0;
+  let start = minutesFromTimeString(flight.departTimes[0]);
+  let end = minutesFromTimeString(flight.departTimes[flight.departTimes.length - 1]);
+  let mins = end - start;
+  if (mins < 0) mins += 24 * 60;
+  return mins;
+}
+
+const STANDBY_GROUND_MINUTES = 45;
+
+function intermediateGroundMinutes(flight, airportIndex) {
+  if (!flight || !flight.departTimes || !flight.airports) return 0;
+  if (airportIndex < 1 || airportIndex >= flight.airports.length - 1) return 0;
+  let arrive = (flight.arriveTimes && flight.arriveTimes[airportIndex - 1]) || flight.departTimes[airportIndex];
+  let depart = flight.departTimes[airportIndex];
+  if (!arrive || !depart) return 0;
+  let ground = minutesFromTimeString(depart) - minutesFromTimeString(arrive);
+  if (ground < 0) ground += 24 * 60;
+  return ground;
+}
+
+function isStandbyCharterFlight(flight) {
+  if (!flight || !flight.operation) return false;
+  if (String(flight.operation).toLowerCase().indexOf('charter') < 0) return false;
+  if (!flight.airports || flight.airports.length < 3) return false;
+  if (!flight.departTimes || flight.departTimes.length < 2) return false;
+  for (let i = 1; i < flight.airports.length - 1; i++) {
+    if (intermediateGroundMinutes(flight, i) >= STANDBY_GROUND_MINUTES) return true;
+  }
+  return false;
+}
+
+function tfliteAirportMatches(point, airportName) {
+  if (!point || !airportName) return false;
+  let target = String(airportName).trim().toUpperCase();
+  let names = [point.name, point.code].filter(Boolean).map(s => String(s).trim().toUpperCase());
+  for (let i = 0; i < names.length; i++) {
+    let n = names[i];
+    if (n === target || target.indexOf(n) > -1 || n.indexOf(target) > -1) return true;
+  }
+  return false;
+}
+
+function flightLogLocalDate(log) {
+  if (!log || !log.departureDate) return '';
+  let logArr = String(log.departureDate).split('T');
+  if (logArr.length < 1) return '';
+  let logDate = logArr[0].split('-');
+  if (logDate.length < 3) return '';
+  return new Date(logDate[1] + '/' + logDate[2] + '/' + logDate[0]).toLocaleDateString();
+}
+
+function tfliteTimeToHHMM(isoString) {
+  if (!isoString) return '';
+  let d = new Date(isoString);
+  if (isNaN(d.getTime())) return '';
+  let h = d.getHours();
+  let m = d.getMinutes();
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+
+function flightRouteHasSegment(flight, origin, destination) {
+  let airports = flight.airports || [];
+  for (let i = 0; i < airports.length - 1; i++) {
+    if (tfliteAirportMatches(origin, airports[i]) && tfliteAirportMatches(destination, airports[i + 1])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function flightLogsForAircraft(flight, logs) {
+  if (!flight || !flight.aircraft || !logs || !logs.length) return [];
+  return logs.filter(log => {
+    if (log.registration !== flight.aircraft) return false;
+    return flightLogLocalDate(log) === flight.date;
+  });
+}
+
+function syncStandbyLegTimesFromTflite(flight, logs) {
+  if (!isStandbyCharterFlight(flight)) return false;
+  if (!flight.airports || flight.airports.length < 3) return false;
+  if (!flight.miscObject) flight.miscObject = {};
+  if (!flight.miscObject.standbyLegTimes) flight.miscObject.standbyLegTimes = [];
+  let aircraftLogs = flightLogsForAircraft(flight, logs).filter(log => {
+    return flightRouteHasSegment(flight, log.origin, log.destination);
+  });
+  if (!aircraftLogs.length) return false;
+  let changed = false;
+  for (let i = 1; i < flight.airports.length - 1; i++) {
+    if (intermediateGroundMinutes(flight, i) < STANDBY_GROUND_MINUTES) continue;
+    let airport = flight.airports[i];
+    let row = flight.miscObject.standbyLegTimes.find(e => e.airport === airport);
+    if (!row) {
+      row = { airport: airport, arrival: '', departure: '' };
+      flight.miscObject.standbyLegTimes.push(row);
+    }
+    if (!row.arrival || !String(row.arrival).trim()) {
+      let arriveLeg = aircraftLogs.find(log => tfliteAirportMatches(log.destination, airport) && log.land);
+      if (arriveLeg) {
+        row.arrival = tfliteTimeToHHMM(arriveLeg.land);
+        changed = true;
+      }
+    }
+    if (!row.departure || !String(row.departure).trim()) {
+      let departLeg = aircraftLogs.find(log => tfliteAirportMatches(log.origin, airport) && log.takeOff);
+      if (departLeg) {
+        row.departure = tfliteTimeToHHMM(departLeg.takeOff);
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
 /** Last completed Firebase PFR for this aircraft before scheduled departure; remaining fuel = last-leg fuel − burn. */
 function computeAutoOnboard(flight, aircraftPfrs) {
   if (!flight||!flight.aircraft||!aircraftPfrs||!aircraftPfrs.length) return null;
@@ -961,10 +1093,22 @@ export async function tf(req,res) {
         todaysFlights[index].autoOnboard=flight.autoOnboard;
         todaysFlights[index].operation=flight.operation;
         todaysFlights[index].flightLegs=flight.flightLegs;
+        if (!todaysFlights[index].miscObject) todaysFlights[index].miscObject = {};
+        if (syncStandbyLegTimesFromTflite(todaysFlights[index], flightLog)) {
+          TodaysFlight.update(
+            { miscObject: todaysFlights[index].miscObject },
+            { where: { _id: todaysFlights[index]._id } }
+          ).catch(err => console.log('standbyLegTimes sync save failed', err));
+        }
         //find arrival time if same depart and dest
-        if (flight.airports[0]===flight.airports[1]&&flight.departTimes.length===2){
-          let i=flightLog.map(e=>e.flightId).indexOf(flight.flightNum);
-          if (i>-1) flight.departTimes[1]=flightLog[i].arrTime;
+        if (flight.airports[0]===flight.airports[flight.airports.length-1]&&flight.departTimes.length>=2){
+          let tailLogs=flightLogsForAircraft(flight, flightLog);
+          let returnLeg=tailLogs.find(log=>{
+            return flightRouteHasSegment(flight, log.origin, log.destination)&&log.land;
+          });
+          if (returnLeg&&returnLeg.land) {
+            flight.departTimes[flight.departTimes.length-1]=tfliteTimeToHHMM(returnLeg.land);
+          }
         }
         todaysFlights[index].flightStatus=flight.flightStatus;
         if (flight.tfliteDepart) {
@@ -1401,32 +1545,36 @@ function createETA(flight){
     const startTime=flight.departTimes[0];
     const endTime=flight.departTimes[flight.departTimes.length-1];
     const targetTime=flight.tfliteDepart;
-    // Helper function to convert "hh:mm" string to total minutes
     const toMinutes = (timeStr) => {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        return (hours * 60) + minutes;
+        if (!timeStr) return 0;
+        let s = String(timeStr).trim();
+        if (s.indexOf(':') >= 0) {
+            let parts = s.split(':');
+            if (parts.length < 2) return 0;
+            return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        }
+        let digits = s.replace(/\D/g, '');
+        if (digits.length === 3) digits = '0' + digits;
+        if (digits.length === 4) {
+            return parseInt(digits.substring(0, 2), 10) * 60 + parseInt(digits.substring(2, 4), 10);
+        }
+        return 0;
     };
-
-    // Helper function to convert total minutes back to "hh:mm" string
     const toHHMM = (totalMinutes) => {
-        // Use Math.floor to handle potential negative time differences gracefully
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        
-        // Pad with leading zeros to maintain "hh:mm" format
+        let mins = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+        const hours = Math.floor(mins / 60);
+        const minutes = mins % 60;
         const paddedHours = String(hours).padStart(2, '0');
         const paddedMinutes = String(minutes).padStart(2, '0');
-        
         return `${paddedHours}:${paddedMinutes}`;
     };
 
-    // 1. Calculate the difference between the first two times
-    const diffMinutes = toMinutes(endTime) - toMinutes(startTime);
+    let diffMinutes = toMinutes(endTime) - toMinutes(startTime);
+    if (diffMinutes < 0) diffMinutes += 24 * 60;
 
-    // 2. Add that difference to the target time
-    const finalMinutes = toMinutes(targetTime) + diffMinutes;
+    let finalMinutes = toMinutes(targetTime) + diffMinutes;
+    finalMinutes = ((finalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);
 
-    // 3. Return formatted result
     return toHHMM(finalMinutes);
 }
 

@@ -6,51 +6,43 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #24 Manual weather input
+## #25 Overdue aircraft time pop ups
 
-- **Type:** bug · medium · open
-- **Reporter:** Tim K
+- **Type:** bug · high · open
+- **Reporter:** AGNAQIN SCHAEFFER
 
 **Original report:**
 
-Can we have the manual weather entry inputs match the order it reads it off? That way dispatch can just input weather and push tab to go to the next input. Thanks!
+Is there a way to pull flight off times from takeflight in order to reduce excess amounts of overdue aircraft time pop ups?
 
 **Progress (changed, not resolved):**
 
-Andy Smircich: -wind direction
--wind speed
--visibility
--ceiling
--altimeter
-
-Additionally, make it a form so keypress tab moves between the inputs
-Parse out numbers to match expected data type if user enters any description like 1000BKN should be 1000 (wind speed, direction, vis and ceiling: (altimeter is handled as plain text )
+Andy Smircich: -Look into if the popups are necessaray as often as they come in (Maybe too much)
+-Is it obvious what to do to prevent repeated popups same message?
+-THey definitely have accounts 
+- Times requested should only be intermediate times, which are normally not recorded in takeflite.  Make this clear, and if that's not what the popups are asking for, fix it
 
 **Comments:**
-- Andy Smircich: -wind direction
--wind speed
--visibility
--ceiling
--altimeter
-
-Additionally, make it a form so keypress tab moves between the inputs
-Parse out numbers to match expected data type if user enters any description like 1000BKN should be 1000 (wind speed, direction, vis and ceiling: (altimeter is handled as plain text )
-
-## Ready for review (shipped — reporter verify, do not build)
-
-_Waiting for reporter sign-off in the app._
+- NATHANIEL OLSON: To add on to this, when building charters in AndyNet, could you build a block for "standby time" for each village that defaults to 0 but obviously could be modified for estimated standby time for both Flight Release tracking and quoting purposes?  So, Flight Release currently needs to pull dispatcher input off times from takeflight and in the future needs to mirror that in AndyNet.  Also, I recommend that you get Lynn and Star setup with AndyNet accounts so that they can get up-to-speed on AndyNet and provide you the creator with valuable input from OTZ.  Nice work Andy.
+- Andy Smircich: -Look into if the popups are necessaray as often as they come in (Maybe too much)
+-Is it obvious what to do to prevent repeated popups same message?
+-THey definitely have accounts 
+- Times requested should only be intermediate times, which are normally not recorded in takeflite.  Make this clear, and if that's not what the popups are asking for, fix it
 
 ## #16 Update ETA
 
-- **Type:** feature · high · ready_for_review
+- **Type:** feature · high · in_progress
 - **Reporter:** Benjamin Rowe
-- **Status:** ready for review
 
 **Original report:**
 
 For all flights, we need the ability to enter an updated ETA.  If you are flying a regular schedule and experience a substantial delay, we need a way to record this info and new ETA.  
 
 Similarly, if a flight will terminate in a village due to mechanical for example, we need a way to record completion time, location, and reason in the flight release and or takeflite or new solution.  Once again, a streamlined "one entry per user" focus to make gathering and recording this data easy and complete.
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: look into this
 
 **Comments:**
 - Andy Smircich: - In flight Release Modal, an updated ETA input near the bottom where other post-departure comments live
@@ -74,6 +66,203 @@ Please verify on /status: open a released/enroute flight → Flight Release → 
 Updated ETA and “flight terminated away from base” fields are now grouped inside “Changes While Enroute / After Release (Amendments)” in Flight Release — same fields, same save on miscObject, layout aligned with #13 standby feedback.
 
 Please confirm save/reload still works as on your prior test.
+- Benjamin Rowe: Cool thanks.  
+
+I would suggest this new area instead of saying "final planned arrival" to instead say "ETA 10:50" for example.  Below that, a prompt "Update the ETA?" and box to enter the new ETA HH:MM.  
+
+The check box for flight terminated away from base is probably not necessary as this is so infrequent.  There must be a Takeflite user entry for this in the same list with Boarding, Taxiing, Enroute, Cancelled, WxDelay?  Or use one of those that makes most sense and user should close the flight and type a note into Amendments after Release box.  Probably just some user training on expectations.  Main point is to be able to keep good track of all flights with reference to the system, be able to look in here and see accurate info to help with dispatch SA.  Thanks
+- Benjamin Rowe: On flight 702 on 8/25, if I enter a WBB departure time of 1150, it auto-populates an incorrect arrival time of 0047.  I think that is supposed to be 1247?  Please update times prob 24hr local time is best practice.
+- Andy Smircich: look into this
+
+## #13 standby flights
+
+- **Type:** feature · high · in_progress
+- **Reporter:** Benjamin Rowe
+
+**Original report:**
+
+Flights with long standby time such as BRG703 8/14/26 need a method to record more detail.  
+1.  In the flight info section, it is a charter, but it should say "Standby Charter" or similar.  
+2.  In the amendments after release, dispatchers should note the arrival time and departure times.  For example on this flight, we need to have the UNK arrival time recorded somewhere, and the UNK departure time recorded somewhere, if we are going to keep the flight plan open on a round-robin, standby charter.
+
+**Progress (changed, not resolved):**
+
+Benjamin Rowe: Added 703 times. Arrival time prediction messed up at 0303..
+
+**Latest screenshot:**
+
+![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
+
+**Comments:**
+- Andy Smircich: - How to identify a standby charter: Number of flight legs times 30 minutes per leg is reasonable standby time. If the ETA for the flight is more than calculated flight time (from the routing and estimated aircraft speed for type)  for the route added to this reasonable standby time, it is a standby charter.
+- Internal flag that turns true when this condition is met
+- Flight Info section reflects type of flight in accordance with the flag
+- Notice to dispatchers help them annotate arrival and departure times for standby charters in the amendments area
+- Andy Smircich: Shipped for review — standby charter detection, intermediate time fields, and dispatcher nag.
+
+**Standby charter detection**
+Charter flights are flagged as Standby Charter when either:
+- Scheduled block time exceeds estimated route time + (flight legs × 30 min), using aircraft-type cruise speed for route estimate, OR
+- The route has more than 5 flight legs (e.g. OME-WMO-GLV-ELI-KKA-SKK-OME).
+
+**Flight release UI**
+- Flight Info shows **Standby Charter** instead of Charter when flagged.
+- After dispatch or OC release, the amendments area shows arrival/departure time fields (HH:MM, local) for each intermediate stop.
+- Times are saved on the flight in `miscObject.standbyLegTimes` via the existing flight save/PATCH.
+
+**Dispatcher nag (admin / superadmin only)**
+- On today’s status board, if a standby charter is released, has an actual departure logged, and an intermediate arrival or departure is still blank 30+ minutes after the estimated time (plan times adjusted for actual vs planned first departure), a warning modal appears.
+- **Open Flight Release** opens the flight to enter times; **Dismiss** hides that specific nag for the browser session.
+
+**Please verify**
+1. BRG703-style round-robin (e.g. Nome → UNK → Nome): shows Standby Charter, intermediate fields appear after release, times save and reload.
+2. Long multi-leg charter (6+ legs): flags as Standby Charter even if block time is normal.
+3. Short charter that does not meet either rule: still shows Charter only; no intermediate fields.
+4. As admin/superadmin on a live standby flight past an overdue intermediate time: nag appears; Open Flight Release works; Dismiss does not re-nag that stop this session.
+5. Non-admin users do not see the nag.
+- Benjamin Rowe: I entered UNK arrival and departure times on BRG703/14th, UI seems to work good. Suggest moving the field down into the Amendments After Release section, since that is what it is.  
+
+Since the flight was already completed, I could not test this:  If a UNK departure time is entered while the flight plan is still open (Enroute), will that update the final ETA?
+- Andy Smircich: -let's try once more to get this formatted correctly
+- Andy Smircich: Update shipped in dev — ready for your review.
+
+Your formatting feedback:
+• Standby charter arrival/departure times are now inside “Changes While Enroute / After Release (Amendments)” — grouped with the amendments textarea and updated ETA fields, not above the release signatures
+
+Your ETA question — yes, for an enroute standby charter: saving an intermediate departure time (e.g. UNK) recalculates Updated ETA from the delay vs plan and saves on the flight (miscObject.updatedEta). Status board and Ground Services show updated ETA when set.
+
+Also restored 6+ leg standby-charter detection from the original spec.
+
+Please verify on an active enroute standby (or next BRG703-style round-robin): enter intermediate arrival/departure, save Flight Release, reopen modal and confirm times and Updated ETA persist. Board ETA should reflect updated ETA when enroute.
+- Benjamin Rowe: I updated 702 ETA just now, it added the new time (1240) to the lower part of the display but not the upper part of the FPL strip, see screenshot attached.
+- Benjamin Rowe: 594 today erroneously flagging as a standby charter.
+- Benjamin Rowe: Added 703 times. Arrival time prediction messed up at 0303..
+
+**Attachments:**
+- ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
+- ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
+- ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
+
+## #23 Trying to rebase when not told to do so
+
+- **Type:** bug · medium · in_progress
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Uploading and approving is trying to rebase regardless of being told not to.
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: Lets work on this
+
+**Latest screenshot:**
+
+![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
+
+**Comments:**
+- NATHANIEL OLSON: Looking at it now, I hit save when I built the ROT and it appears it didn't save, but if you look at the training record I was trying to attach it to, it was dated 8/17/26.  Looks like I hit "save" and it disappears but still available to associate with for upload.
+- Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
+- rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Upload and Approve was rebasing expiration even when New Base was false. It calculated from the training record date instead of extending the pilot’s current expiration.
+
+Fix:
+• New Base = false → extend current exp by the training interval (e.g. Aug 2027 → Aug 2028). Training date is only used when there is no prior exp.
+• New Base = true → rebase from base month / training date (same as before, with confirm if you’re within the normal window).
+
+Removed the misleading “set a new base month?” prompt that could rebase even when New Base was false.
+
+Please retry your Sara Cubbage / 8/17 B190SIC upload with New Base false and confirm the exp confirm shows an extension from current Aug 2027, not 8/17/2027.
+- NATHANIEL OLSON: I'll give it a shot but to build off of your "it might take a rethink of the approach."  I agree.  This approach works well for hard copies and binders, but doesn't translate well to the current training records program.  It is almost more work than paper and seems far less efficient.  If you could guide AI to build a completely new, streamlined approach or system, I'd definitely be open to options.  Maybe that is asking too much, but at this point, the current method with paper and binders seems preferable.
+- Andy Smircich: Lets work on this
+
+**Attachments:**
+- ![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
+
+## #17 Helicopter fuel and LA
+
+- **Type:** bug · medium · in_progress
+- **Reporter:** Benjamin Rowe
+
+**Original report:**
+
+Helicopter fuel not displaying on status board. Mine displayed today but it was from the duplicate from yesterday, since when duplicating Flight Report didn't allow me to enter a fuel, also a bug i sen to Ryan. 
+
+Load Available not displaying. 
+
+Would like to see developers do more testing rather than relying on AI and employees for all the feedback. Many of these issue seem like no testing was done by development and lack of coordination between systems. Or was it fully tested and performed correctly?
+
+Can not “click here and paste a screenshot” from iPad.
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: Check on this
+
+**Latest screenshot:**
+
+![screenshot-1787680008941.png](team-backlog/attachments/issue-17-att-15-screenshot-1787680008941.png)
+
+**Comments:**
+- Andy Smircich: Approach is unchanged, just sped up.  Everything worked after the update, it was fully tested. A user has identified a problem and it will be addressed as always.  Before AI flow, many errors could not and were not caught by developers.  This includes especially all developers on staff.  Many examples available to cite.
+- Andy Smircich: The only helicopter flight I see in the HEL status view departing Nome today is yours this evening, and I see that on the ground services view. Screenshot attached here. Other two flights in the system are not departing Nome, so they won't appear here.  Is there a helicopter flight you added that is not appearing on status view with HEL as base?  That code is untouched so not sure what may have changed there.  Give me a pfr number that is not appearing and I'll track it down.
+- Andy Smircich: Departure for the morning flight says "Twin Peaks", added screenshot for clarity.  This won't show up on the fueler view.
+- Benjamin Rowe: Looks good so far. I see 725 in thr Helicopter list and fueled myself.  For that helicopter, instead of Fill to 62gal/side, can it say Fill To 123gal?  There is only one fuel tank. It should always include the previous FOB when that is captured in Flight Report and the ADD amount also, in this case 0.
+- Bering Air: -let's look into this last comment and see if we can improve the results
+- Andy Smircich: Update shipped in dev — ready for your review.
+
+Per your N725AH comment — Ground Services helicopter fuel:
+
+• Single tank — Fill To shows total gallons (e.g. “Fill To: 123 gal”), not per-side
+• FOB — from Flight Report when entered (fob / fuel on board fields), OR from the previous completed flight on that tail: last leg fuel minus burn
+• ADD — Fill To minus FOB (e.g. 0 gal when FOB equals fill-to)
+• If the previous PFR has no burn recorded, we do not assume full tanks — FOB shows as “missing” until burn or an explicit FOB is on the PFR. (That was the 140 gal / full-tank false read.)
+
+Left-click the helicopter card on Ground Services to console.log the flight / heliSource for troubleshooting.
+
+Load Available on the heli status board — not changed in this pass; still on the list separately.
+
+Please verify N725AH or similar on Ground Services: total gallons fill-to, FOB/ADD when prior flight has burn or FR FOB entry, and “FOB: missing” when prior flight completed without burn.
+- Benjamin Rowe: Thank you.  This may be a Flight Report issue.  Fuel and Load Available are showing blank on the status board for most helicopter flights.
+- Benjamin Rowe: Helicopter Load Available is never showing.  Fuel is often not showing, I think it's either a pilots Flight Report app version and/or use of "Duplicate" flight plan.
+- Andy Smircich: Check on this
+
+**Attachments:**
+- ![screenshot-1786985583805.png](team-backlog/attachments/issue-17-att-11-screenshot-1786985583805.png)
+- ![screenshot-1786986829260.png](team-backlog/attachments/issue-17-att-12-screenshot-1786986829260.png)
+- ![screenshot-1787680008941.png](team-backlog/attachments/issue-17-att-15-screenshot-1787680008941.png)
+
+## #26 remove aircraft
+
+- **Type:** bug · low · open
+- **Reporter:** Benjamin Rowe
+
+**Original report:**
+
+Can we remove a couple aircraft from this list? 
+N62AR - sold
+N644CH - out for overhaul til probably May 2027.  
+
+Thanks!
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: Update aircraft list
+
+**Latest screenshot:**
+
+![screenshot-1787871954738.png](team-backlog/attachments/issue-26-att-18-screenshot-1787871954738.png)
+
+**Comments:**
+- Andy Smircich: Update aircraft list
+
+**Attachments:**
+- ![screenshot-1787871954738.png](team-backlog/attachments/issue-26-att-18-screenshot-1787871954738.png)
+
+## Ready for review (shipped — reporter verify, do not build)
+
+_Waiting for reporter sign-off in the app._
 
 ## #15 Ground Services View
 
@@ -143,6 +332,7 @@ Per your latest comment:
 Helicopter cards unchanged. Date under tail and truck/meter fields as before.
 
 Please verify on phone at your base — especially a Caravan with fuel entered.
+- Benjamin Rowe: This is looking good.  Need to see some more use by ground crew, testing and feedback.
 
 ## #14 Helicopter fuel request
 
@@ -199,91 +389,34 @@ If a row is still NOT READY: left-click the card on Ground Services and check th
 
 Please re-check the flights that were NOT READY on your last look.
 
-## #13 standby flights
-
-- **Type:** feature · high · ready_for_review
-- **Reporter:** Benjamin Rowe
-- **Status:** ready for review
-
-**Original report:**
-
-Flights with long standby time such as BRG703 8/14/26 need a method to record more detail.  
-1.  In the flight info section, it is a charter, but it should say "Standby Charter" or similar.  
-2.  In the amendments after release, dispatchers should note the arrival time and departure times.  For example on this flight, we need to have the UNK arrival time recorded somewhere, and the UNK departure time recorded somewhere, if we are going to keep the flight plan open on a round-robin, standby charter.
-
-**Comments:**
-- Andy Smircich: - How to identify a standby charter: Number of flight legs times 30 minutes per leg is reasonable standby time. If the ETA for the flight is more than calculated flight time (from the routing and estimated aircraft speed for type)  for the route added to this reasonable standby time, it is a standby charter.
-- Internal flag that turns true when this condition is met
-- Flight Info section reflects type of flight in accordance with the flag
-- Notice to dispatchers help them annotate arrival and departure times for standby charters in the amendments area
-- Andy Smircich: Shipped for review — standby charter detection, intermediate time fields, and dispatcher nag.
-
-**Standby charter detection**
-Charter flights are flagged as Standby Charter when either:
-- Scheduled block time exceeds estimated route time + (flight legs × 30 min), using aircraft-type cruise speed for route estimate, OR
-- The route has more than 5 flight legs (e.g. OME-WMO-GLV-ELI-KKA-SKK-OME).
-
-**Flight release UI**
-- Flight Info shows **Standby Charter** instead of Charter when flagged.
-- After dispatch or OC release, the amendments area shows arrival/departure time fields (HH:MM, local) for each intermediate stop.
-- Times are saved on the flight in `miscObject.standbyLegTimes` via the existing flight save/PATCH.
-
-**Dispatcher nag (admin / superadmin only)**
-- On today’s status board, if a standby charter is released, has an actual departure logged, and an intermediate arrival or departure is still blank 30+ minutes after the estimated time (plan times adjusted for actual vs planned first departure), a warning modal appears.
-- **Open Flight Release** opens the flight to enter times; **Dismiss** hides that specific nag for the browser session.
-
-**Please verify**
-1. BRG703-style round-robin (e.g. Nome → UNK → Nome): shows Standby Charter, intermediate fields appear after release, times save and reload.
-2. Long multi-leg charter (6+ legs): flags as Standby Charter even if block time is normal.
-3. Short charter that does not meet either rule: still shows Charter only; no intermediate fields.
-4. As admin/superadmin on a live standby flight past an overdue intermediate time: nag appears; Open Flight Release works; Dismiss does not re-nag that stop this session.
-5. Non-admin users do not see the nag.
-- Benjamin Rowe: I entered UNK arrival and departure times on BRG703/14th, UI seems to work good. Suggest moving the field down into the Amendments After Release section, since that is what it is.  
-
-Since the flight was already completed, I could not test this:  If a UNK departure time is entered while the flight plan is still open (Enroute), will that update the final ETA?
-- Andy Smircich: -let's try once more to get this formatted correctly
-- Andy Smircich: Update shipped in dev — ready for your review.
-
-Your formatting feedback:
-• Standby charter arrival/departure times are now inside “Changes While Enroute / After Release (Amendments)” — grouped with the amendments textarea and updated ETA fields, not above the release signatures
-
-Your ETA question — yes, for an enroute standby charter: saving an intermediate departure time (e.g. UNK) recalculates Updated ETA from the delay vs plan and saves on the flight (miscObject.updatedEta). Status board and Ground Services show updated ETA when set.
-
-Also restored 6+ leg standby-charter detection from the original spec.
-
-Please verify on an active enroute standby (or next BRG703-style round-robin): enter intermediate arrival/departure, save Flight Release, reopen modal and confirm times and Updated ETA persist. Board ETA should reflect updated ETA when enroute.
-
-**Attachments:**
-- ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
-
-## #23 Trying to rebase when not told to do so
+## #24 Manual weather input
 
 - **Type:** bug · medium · ready_for_review
-- **Reporter:** NATHANIEL OLSON
+- **Reporter:** Tim K
 - **Status:** ready for review
 
 **Original report:**
 
-Uploading and approving is trying to rebase regardless of being told not to.
+Can we have the manual weather entry inputs match the order it reads it off? That way dispatch can just input weather and push tab to go to the next input. Thanks!
 
 **Comments:**
-- NATHANIEL OLSON: Looking at it now, I hit save when I built the ROT and it appears it didn't save, but if you look at the training record I was trying to attach it to, it was dated 8/17/26.  Looks like I hit "save" and it disappears but still available to associate with for upload.
-- Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
-- rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
+- Andy Smircich: -wind direction
+-wind speed
+-visibility
+-ceiling
+-altimeter
+
+Additionally, make it a form so keypress tab moves between the inputs
+Parse out numbers to match expected data type if user enters any description like 1000BKN should be 1000 (wind speed, direction, vis and ceiling: (altimeter is handled as plain text )
 - Andy Smircich: Shipped in dev — ready for your review.
 
-Upload and Approve was rebasing expiration even when New Base was false. It calculated from the training record date instead of extending the pilot’s current expiration.
+Manual weather entry inputs are now in dispatch read-off order so you can tab straight through:
 
-Fix:
-• New Base = false → extend current exp by the training interval (e.g. Aug 2027 → Aug 2028). Training date is only used when there is no prior exp.
-• New Base = true → rebase from base month / training date (same as before, with confirm if you’re within the normal window).
+• Wind direction → wind speed → visibility → ceiling → altimeter
+• Wrapped in a form for normal Tab navigation between fields
+• Wind, vis, and ceiling accept shorthand (e.g. 1000BKN becomes 1000); altimeter stays as entered
 
-Removed the misleading “set a new base month?” prompt that could rebase even when New Base was false.
-
-Please retry your Sara Cubbage / 8/17 B190SIC upload with New Base false and confirm the exp confirm shows an extension from current Aug 2027, not 8/17/2027.
-
-**Attachments:**
-- ![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
+Please verify: open manual weather for an airport, tab through the fields, paste typical METAR fragments, save, and confirm the observation displays correctly.
 
 ## #22 Training Records Dates not logging in previous dates
 
@@ -359,47 +492,7 @@ Pax manifest on the HEL status board flight plan expand:
 • Empty manifest no longer shows a blank “Pax Manifest” line
 
 If you still see empty after refresh: left-click the card on Ground Services and check console — fltPlan.paxManifest and legArray[0].isOnBoardManifest. If legs have pax but both are empty, it’s likely Flight Report not syncing to Firebase yet.
-
-## #17 Helicopter fuel and LA
-
-- **Type:** bug · medium · ready_for_review
-- **Reporter:** Benjamin Rowe
-- **Status:** ready for review
-
-**Original report:**
-
-Helicopter fuel not displaying on status board. Mine displayed today but it was from the duplicate from yesterday, since when duplicating Flight Report didn't allow me to enter a fuel, also a bug i sen to Ryan. 
-
-Load Available not displaying. 
-
-Would like to see developers do more testing rather than relying on AI and employees for all the feedback. Many of these issue seem like no testing was done by development and lack of coordination between systems. Or was it fully tested and performed correctly?
-
-Can not “click here and paste a screenshot” from iPad.
-
-**Comments:**
-- Andy Smircich: Approach is unchanged, just sped up.  Everything worked after the update, it was fully tested. A user has identified a problem and it will be addressed as always.  Before AI flow, many errors could not and were not caught by developers.  This includes especially all developers on staff.  Many examples available to cite.
-- Andy Smircich: The only helicopter flight I see in the HEL status view departing Nome today is yours this evening, and I see that on the ground services view. Screenshot attached here. Other two flights in the system are not departing Nome, so they won't appear here.  Is there a helicopter flight you added that is not appearing on status view with HEL as base?  That code is untouched so not sure what may have changed there.  Give me a pfr number that is not appearing and I'll track it down.
-- Andy Smircich: Departure for the morning flight says "Twin Peaks", added screenshot for clarity.  This won't show up on the fueler view.
-- Benjamin Rowe: Looks good so far. I see 725 in thr Helicopter list and fueled myself.  For that helicopter, instead of Fill to 62gal/side, can it say Fill To 123gal?  There is only one fuel tank. It should always include the previous FOB when that is captured in Flight Report and the ADD amount also, in this case 0.
-- Bering Air: -let's look into this last comment and see if we can improve the results
-- Andy Smircich: Update shipped in dev — ready for your review.
-
-Per your N725AH comment — Ground Services helicopter fuel:
-
-• Single tank — Fill To shows total gallons (e.g. “Fill To: 123 gal”), not per-side
-• FOB — from Flight Report when entered (fob / fuel on board fields), OR from the previous completed flight on that tail: last leg fuel minus burn
-• ADD — Fill To minus FOB (e.g. 0 gal when FOB equals fill-to)
-• If the previous PFR has no burn recorded, we do not assume full tanks — FOB shows as “missing” until burn or an explicit FOB is on the PFR. (That was the 140 gal / full-tank false read.)
-
-Left-click the helicopter card on Ground Services to console.log the flight / heliSource for troubleshooting.
-
-Load Available on the heli status board — not changed in this pass; still on the list separately.
-
-Please verify N725AH or similar on Ground Services: total gallons fill-to, FOB/ADD when prior flight has burn or FR FOB entry, and “FOB: missing” when prior flight completed without burn.
-
-**Attachments:**
-- ![screenshot-1786985583805.png](team-backlog/attachments/issue-17-att-11-screenshot-1786985583805.png)
-- ![screenshot-1786986829260.png](team-backlog/attachments/issue-17-att-12-screenshot-1786986829260.png)
+- Benjamin Rowe: Patrik or heli pilots please follow up with this one.
 
 ## Needs clarification (radar — do not build)
 
