@@ -179,12 +179,11 @@ class NavbarController {
     })
     .catch(err=>{
       console.log(err);
-      if (err.status===403||err.status===404) {
-        window.localStorage.setItem('stopped','false');
-        this.window.location.reload();
+      if (err.status===401) {
+        window.localStorage.setItem('stopped','true');
+        return;
       }
       window.localStorage.setItem('stopped','false');
-      if (err.status===401) window.localStorage.setItem('stopped','true');
     });
   }
 
