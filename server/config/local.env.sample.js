@@ -34,6 +34,7 @@ module.exports = {
   // Optional: shared secret for GET /api/issues/agent-summary (scripts/export-team-backlog)
   ISSUES_EXPORT_TOKEN: '',
   // Optional: shared secret for GET /api/todaysFlights/ops-export (reservations daily board)
+  // Also used by resBering POST /api/sms/incoming (Spidertracks helicopter alerts)
   FRAT_OPS_EXPORT_TOKEN: '',
   // Optional: override issue screenshot storage (default: <repo>/server/fileserver/issue-attachments)
   ISSUE_ATTACHMENT_ROOT: '',
