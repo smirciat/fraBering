@@ -669,6 +669,23 @@ function tfliteAirportMatches(point, airportName) {
   return false;
 }
 
+/** Resolve Takeflite airport object to master airport name (or code fallback). */
+function tfliteAirportLabel(point) {
+  if (!point) return '';
+  let name = point.name && String(point.name).trim();
+  if (name) return name;
+  let code = point.code && String(point.code).trim();
+  if (!code) return '';
+  let codeUpper = code.toUpperCase();
+  for (let i = 0; i < allAirports.length; i++) {
+    let a = allAirports[i];
+    if (!a) continue;
+    if (a.icao && String(a.icao).toUpperCase() === codeUpper) return a.name;
+    if (a.threeLetter && String(a.threeLetter).toUpperCase() === codeUpper) return a.name;
+  }
+  return code;
+}
+
 function flightLogLocalDate(log) {
   if (!log || !log.departureDate) return '';
   let logArr = String(log.departureDate).split('T');
@@ -824,6 +841,11 @@ export async function tf(req,res) {
           flight.departureDate=tempDate.toLocaleDateString();
         }
         
+        let departFrom = '';
+        if (flight.flightLegs && flight.flightLegs[0] && flight.flightLegs[0].origin) {
+          departFrom = tfliteAirportLabel(flight.flightLegs[0].origin);
+        }
+
         if (flight.flightLegs[0]&&flight.flightLegs[0].crew.length===0&&flight.flightLegs[1]&&flight.flightLegs[1].crew.length>0){
           flight.flightLegs=flight.flightLegs.filter((leg,i)=>{return (leg.crew&&leg.crew.length>0)||i===flight.flightLegs.length-1});//weird empty routing from api on 4/13/25 for 844 and 846
         }
@@ -855,10 +877,12 @@ export async function tf(req,res) {
           if (leg.registration) flight.aircraft=leg.registration;
           flight.departTimes.push(new Date(leg.departureTime).toTimeString().slice(0,8));
           flight.arriveTimes.push(new Date(leg.arrivalTime).toTimeString().slice(0,8));
-          flight.airports.push(leg.origin.name);
+          let originLabel = tfliteAirportLabel(leg.origin);
+          if (originLabel) flight.airports.push(originLabel);
           if (i===flight.flightLegs.length-1) {
             //add final destination to flight.airports
-            flight.airports.push(leg.destination.name);
+            let destLabel = tfliteAirportLabel(leg.destination);
+            if (destLabel) flight.airports.push(destLabel);
             //calculate last time for flight.departTImes (need aircraft type first!)
             let speed=160;
             let airplanesIndex=airplanes.map(e=>e.registration).indexOf(flight.aircraft);
@@ -879,6 +903,10 @@ export async function tf(req,res) {
           }
           
         });
+        if (departFrom && (!flight.airports[0] || !String(flight.airports[0]).trim())) {
+          if (!flight.airports.length) flight.airports.push(departFrom);
+          else flight.airports[0] = departFrom;
+        }
         let tempArr=flightLog.filter(log=>{
           let logArr=log.departureDate.split('T');
           if (logArr.length<2) return false;
@@ -941,7 +969,7 @@ export async function tf(req,res) {
         let airport={name:a, threeLetter:a, metarObj:{airport:{name:a,threeLetter:a}}};
         if (!a) {
           flight.airportObjs.push({airport:airport});
-          return;
+          continue;
         }
         if (a&&typeof a === "string"&&a.substring(0,9)==="Fairbanks") a="Fairbanks";
         if (a&&typeof a === "string"&&a.substring(0,9)==="Anchorage") a="Anchorage";

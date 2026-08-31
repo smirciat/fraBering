@@ -554,7 +554,10 @@ angular.module('workspaceApp')
               modal: {
                 Math:Math,
                 highMinsClass:highMinsClass,
-                flightInfo:[{title:'Origin',val:flight.pfr.flightOrigin},
+                flightInfo:[{title:'Origin',val:flight.pfr.flightOrigin
+                            || (flight.airportObjs && flight.airportObjs[0] && flight.airportObjs[0].airport && flight.airportObjs[0].airport.threeLetter)
+                            || (flight.airports && flight.airports[0])
+                            || ''},
                             {title:'Date',val:flight.date},
                             {title:'Time',val:flight.departTimes[0].substring(0,5)+' - '+flight.departTimes[flight.departTimes.length-1].substring(0,5)},
                             {title:'Est Flight Time',val:flight.block},

@@ -6,7 +6,21 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-_No approved backlog items right now._
+## #28 Blank flight origin
+
+- **Type:** bug · high · open
+- **Reporter:** Benjamin Rowe
+
+**Original report:**
+
+Why is the origin of flight 704/31Aug26 blank?  The flight is showing up on the OTZ flight board.  Either station is fine, but a Kawerak charter from Nome is probably Nome origin.  And the origin station needs to be populated. Thanks. Can’t attach screenshot from phone.
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: Investigate this
+
+**Comments:**
+- Andy Smircich: Investigate this
 
 ## Ready for review (shipped — reporter verify, do not build)
 
