@@ -163,8 +163,10 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='150';
+    let version='151';
+    const reloadGuardKey='fratStoppedReload';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
+      window.sessionStorage.removeItem(reloadGuardKey);
       window.localStorage.setItem('stopped','true');
       console.log('Stopped Value ('+version+') is '+res.data.stopped);
       if (res.data.stopped) {
@@ -179,6 +181,16 @@ class NavbarController {
     })
     .catch(err=>{
       console.log(err);
+      if (err.status===403||err.status===404) {
+        if (window.sessionStorage.getItem(reloadGuardKey)===version) {
+          console.warn('App release probe ('+version+') still stale after reload; hard refresh (Ctrl+Shift+R) may be needed.');
+          return;
+        }
+        window.sessionStorage.setItem(reloadGuardKey,version);
+        window.localStorage.setItem('stopped','false');
+        this.window.location.reload();
+        return;
+      }
       if (err.status===401) {
         window.localStorage.setItem('stopped','true');
         return;

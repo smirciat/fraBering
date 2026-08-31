@@ -1,0 +1,35 @@
+---
+description: stopped{N} deploy reload — do not remove 404 reload logic when fixing loops or other bugs
+alwaysApply: true
+---
+
+# `stopped` version deploy reload (fraBering)
+
+**Read `docs/stopped-version-deploy.md` before editing.**
+
+Andy bumps an integer **`stopped{N}`** in **two places** to force open browser tabs to reload after deploy:
+
+1. `client/components/navbar/navbar.controller.js` — `stoppedFunction()` → `let version='N'`
+2. `server/api/todaysFlight/index.js` — `router.post('/stoppedN', controller.returnStopped)`
+
+Old tabs POST the old route → **404** → **`location.reload()`** in the `.catch` block. This has worked for hundreds of versions.
+
+## Do not break (Aug 29, 2026 regression)
+
+Commit `7526667` removed 404/403 → `location.reload()` while “fixing” a `stopped148` reload loop. That **broke all deploy reloads** until restored.
+
+**Never do this when fixing reload loops, 404s, or Takeflite staleness:**
+
+- Remove or bypass `location.reload()` on **403/404** in `stoppedFunction()`
+- “Simplify” the catch block to only handle **401**
+- Disable the stopped poll or delete the versioned route without user approval
+
+**If reload loops:** align N in both files, run `grunt build`, `pm2 restart fraBering`. Use the `fratStoppedReload` sessionStorage guard — do not delete reload-on-404.
+
+## Deploy checklist
+
+1. Increment N in **both** files (same number)
+2. `grunt build` (not source-only — prod serves `dist/`)
+3. `pm2 restart fraBering`
+
+`returnStopped` / `doubleFail` = Takeflite CSV stale indicator — separate from deploy version bump.

@@ -19,7 +19,7 @@ This app runs live flight operations. Default to conservative edits.
 - If something is broken, **find the last working caller pattern in this repo** and align with it before inventing a new approach.
 - When tempted to refactor “while you’re here”: **stop**. Ask the user or document the risk; do not ship drive-by modernization.
 
-Violating these rules has caused real regressions (e.g. empty audit flight lists after unrelated field work).
+Violating these rules has caused real regressions (e.g. empty audit flight lists after unrelated field work; **Aug 2026 `stopped149` — agent removed 404 → `location.reload()` in `stoppedFunction()` and broke prod deploy reload for all open tabs** — see `docs/stopped-version-deploy.md`).
 
 ## Scope
 

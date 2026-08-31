@@ -164,7 +164,7 @@ Sustained **>90%** heap after a few minutes suggests GC pressure; check concurre
 
 ## `/status` data flow (for further debugging)
 
-1. Navbar sets `window.dateString`, `window.base`; polls `stopped122` every 60s.
+1. Navbar sets `window.dateString`, `window.base`; polls `stopped{N}` every 60s (deploy version — see `docs/stopped-version-deploy.md`).
 2. Status `$watch('nav.dateString')` → `resetFlights()` → `POST /api/todaysFlights/dayFlights` (auth, **slim column list**).
 3. Template: `todaysFlights | filter:todaysFlightDisplayFilter` — uses `window.dateString`, `window.base`, `window.toggle`, `flight.active === 'true'`, aircraft prefix `N`, base airport names (`Nome`, `Kotzebue`, `Unalakleet`).
 4. Socket `todaysFlight:save` updates `allTodaysFlights`; re-filter on `runScroll` or `created` (skips `colorPatch === 'true'`).
@@ -192,7 +192,7 @@ If flights disappear after refresh, check: **My flights filter** (`nav.isFilter`
 | `server/app.js` | Scheduled METAR/TAF/Takeflite intervals |
 | `client/app/status/status.controller.js` | Ops board flight load/filter/socket |
 | `client/app/public/public.controller.js` | Public board 60s poll |
-| `client/components/navbar/navbar.controller.js` | `firebaseGrab`, `stopped122` poll |
+| `client/components/navbar/navbar.controller.js` | `firebaseGrab`, `stopped{N}` poll (deploy reload) |
 
 ## Deploy checklist (bering-dev → prod)
 

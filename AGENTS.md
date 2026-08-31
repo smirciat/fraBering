@@ -38,6 +38,7 @@ npm start            # Production server from dist/
 3. **`server/config/environment/shared.js`** — flight schedules, pilot roster, equipment limits
 4. **`server/auth/`** — authentication and authorization middleware
 5. **Database** — no destructive SQL, drops, or `sequelize.sync({ force: true })`
+6. **`stopped{N}` deploy reload** — `navbar.controller.js` `stoppedFunction()` + `server/api/todaysFlight/index.js` route. **Do not remove 404 → `location.reload()`** when fixing loops. See `docs/stopped-version-deploy.md` and `.cursor/rules/stopped-version-deploy.mdc` (Aug 2026 agent regression).
 
 ## Change discipline
 
@@ -62,6 +63,7 @@ See `README.md` for full install steps (npm, bower, node version quirks).
 
 ## Related docs
 
+- `docs/stopped-version-deploy.md` — **`stopped{N}` prod deploy reload (do not break)**
 - `docs/roster-acro-status.md` — `/roster` feature status and user-feedback targets
 - `docs/roster-postgres.md` — Local roster Postgres deploy, migration, smoke tests
 - `docs/legacy-development.md` — do not replace working legacy patterns

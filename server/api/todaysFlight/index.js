@@ -32,7 +32,7 @@ router.post('/public/dayFlights', controller.dayFlightsPublic);
 router.use(auth.hasRole('user'));
 
 router.get('/', controller.index);
-router.post('/stopped150', controller.returnStopped);
+router.post('/stopped151', controller.returnStopped);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.post('/tf', controller.tf);
