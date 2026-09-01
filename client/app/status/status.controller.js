@@ -2971,9 +2971,31 @@ class StatusComponent {
     return targetTime<now;
   }
 
+  hasLoggedDepartureTime(flight){
+    return !!(flight&&flight.tfliteDepart&&String(flight.tfliteDepart).trim());
+  }
+
+  hasDepartedStatus(flight){
+    if (!flight||!flight.flightStatus) return false;
+    let status=String(flight.flightStatus).trim().toLowerCase();
+    if (!status) return false;
+    if (status.indexOf('depart')>-1) return true;
+    return status==='en route'||status==='completed'||status==='arrived';
+  }
+
+  isFullyReleased(flight){
+    if (!flight||!flight.pilotAgree||flight.pilotAgree==='') return false;
+    return !!(flight.ocRelease&&flight.ocRelease!=='')||!!(flight.dispatchRelease&&flight.dispatchRelease!=='');
+  }
+
+  flightDepartWarningBlocked(flight){
+    if (flight&&flight.ocRelease&&flight.ocRelease!=='') return true;
+    return this.isFullyReleased(flight)||this.hasDepartedStatus(flight)||this.hasLoggedDepartureTime(flight);
+  }
+
   flightNeedsDepartWarning(flight){
     if (!flight||flight.active!=='true') return false;
-    if (flight.ocRelease&&flight.ocRelease!=='') return false;
+    if (this.flightDepartWarningBlocked(flight)) return false;
     return this.flightHasBlueOrPurpleLeg(flight)&&this.isWithinOneHourOfDeparture(flight);
   }
   

@@ -163,7 +163,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='154';
+    let version='155';
     const reloadGuardKey='fratStoppedReload';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.sessionStorage.removeItem(reloadGuardKey);
