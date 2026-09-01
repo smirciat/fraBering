@@ -64,6 +64,8 @@ class StatusComponent {
         if (this.onFirebaseFlightsUpdate) {
           socket.socket.removeListener('firebaseFlights', this.onFirebaseFlightsUpdate);
         }
+        if (this.scrollInterval) this.interval.cancel(this.scrollInterval);
+        if (this.standbyNagInterval) this.interval.cancel(this.standbyNagInterval);
         socket.unsyncUpdates('todaysFlight');
         socket.unsyncUpdates('calendar');
         socket.unsyncUpdates('airplane');
@@ -147,7 +149,7 @@ class StatusComponent {
     this.toggleAssigned=window.toggleAssigned;
     this.refreshFuelTruckOptions();
     this.scrollInterval=this.interval(()=>{
-      this.scroll();
+      this.scroll(true);
       this.renewFirebase();
       this.timeout(()=>{this.makeFutureCharters()},20*1000);
       this.checkStandbyIntermediateNags();
@@ -370,7 +372,7 @@ class StatusComponent {
           this.spinner=false;
           return;
         }
-        this.scroll();
+        this.scroll(true);
           this.timeout(()=>{
             this.spinner=false;
             if (this.masterAirports) this.setBase(this.masterAirports);
@@ -1476,7 +1478,7 @@ class StatusComponent {
     return `${mm}/${dd}/${yy}`;
   };
   
-  scroll(){
+  scroll(autoScroll){
     if (!this) {
       console.log('check scope');
       return;
@@ -1495,6 +1497,7 @@ class StatusComponent {
       });
       this.spinner=false;
       angular.copy(filteredFlights,this.filteredFlights);
+      if (!autoScroll) return;
       //return;
       if (filteredFlights.length===0) return;
       let scrollId;
@@ -2933,9 +2936,50 @@ class StatusComponent {
     if (flight.pfr&&flight.pfr.flightNumber) return 'BRG'+flight.pfr.flightNumber;
     return 'ID# ' +flight.flightNum;
   }
+
+  worstRiskColorIndex(colorStr){
+    let colors=['airport-green','airport-blue','airport-purple','airport-yellow','airport-orange','airport-pink'];
+    let max=0;
+    if (!colorStr) return max;
+    String(colorStr).replace(/\s+unofficial/g,'').split(/\s+/).forEach(c=>{
+      if (colors.indexOf(c)===-1) return;
+      let i=colors.indexOf(c);
+      if (i>max) max=i;
+    });
+    return max;
+  }
+
+  flightHasBlueOrPurpleLeg(flight){
+    if (!flight) return false;
+    let objs=flight.airportObjs||flight.airportObjsLocked;
+    if (!objs||!objs.length) return false;
+    for (let i=0;i<objs.length;i++) {
+      let idx=this.worstRiskColorIndex(objs[i].lockedLegColor||objs[i].color);
+      if (idx===1||idx===2) return true;
+    }
+    return false;
+  }
+
+  isWithinOneHourOfDeparture(flight){
+    if (!flight||!flight.departTimes||!flight.departTimes[0]) return false;
+    let targetTime=new Date(flight.date||this.dateString||Date.now());
+    const parts=flight.departTimes[0].split(':').map(Number);
+    if (parts.some(n=>isNaN(n))) return false;
+    targetTime.setHours(parts[0],parts[1],parts[2]||0,0);
+    let now=new Date();
+    now.setHours(now.getHours()+1);
+    return targetTime<now;
+  }
+
+  flightNeedsDepartWarning(flight){
+    if (!flight||flight.active!=='true') return false;
+    if (flight.ocRelease&&flight.ocRelease!=='') return false;
+    return this.flightHasBlueOrPurpleLeg(flight)&&this.isWithinOneHourOfDeparture(flight);
+  }
   
   getFlightColor(flight){
     if (flight.ocRelease&&flight.ocRelease!=="") return "oc";
+    if (this.flightNeedsDepartWarning(flight)) return "flight-depart-warning";
     return;
   }
   
@@ -3103,7 +3147,7 @@ class StatusComponent {
           this.loadFlights=JSON.parse(JSON.stringify(this.todaysFlights));
           this.buildFuelPageEntries();
           this.timeout(()=>{this.checkStandbyIntermediateNags();},800);
-          this.scroll();
+          this.scroll(true);
           this.timeout(()=>{
             this.spinner=false;
             this.setPilotList();
