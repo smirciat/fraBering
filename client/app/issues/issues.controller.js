@@ -100,6 +100,28 @@ class IssuesComponent {
     return issue && issue.reporterName ? issue.reporterName : '';
   }
 
+  reporterRepliedIssue(issue) {
+    if (!issue) {
+      return false;
+    }
+    if (issue.reporterRepliedLast) {
+      return true;
+    }
+    if (issue.status !== 'needs_clarification' && issue.status !== 'ready_for_review') {
+      return false;
+    }
+    var comments = issue.comments;
+    if (!comments || !comments.length) {
+      return false;
+    }
+    var reporter = String(issue.reporterName || '').trim().toLowerCase();
+    if (!reporter) {
+      return false;
+    }
+    var last = comments[comments.length - 1];
+    return String(last.authorName || '').trim().toLowerCase() === reporter;
+  }
+
   toggleNewForm() {
     this.showNewForm = !this.showNewForm;
     if (!this.showNewForm) {
@@ -150,6 +172,7 @@ class IssuesComponent {
       var plain = angular.copy(res.data);
       delete plain.comments;
       delete plain.attachments;
+      plain.reporterRepliedLast = self.reporterRepliedIssue(res.data);
       self.upsertIssueInList(plain);
     });
   }

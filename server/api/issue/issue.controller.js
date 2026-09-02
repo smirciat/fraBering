@@ -13,6 +13,7 @@
 
 import _ from 'lodash';
 import fs from 'fs';
+import {Op} from 'sequelize';
 import './issue.events';
 import {Issue, IssueComment, IssueAttachment, User} from '../../sqldb';
 import {
@@ -121,6 +122,43 @@ function decodeUploadPayload(body) {
   return out;
 }
 
+function reporterRepliedLast(issue, lastComment) {
+  if (!issue || !lastComment) {
+    return false;
+  }
+  if (issue.status !== 'needs_clarification' && issue.status !== 'ready_for_review') {
+    return false;
+  }
+  var reporter = String(issue.reporterName || '').trim().toLowerCase();
+  if (!reporter) {
+    return false;
+  }
+  return String(lastComment.authorName || '').trim().toLowerCase() === reporter;
+}
+
+function enrichIssuesWithReplyFlags(issues) {
+  if (!issues.length) {
+    return Promise.resolve([]);
+  }
+  var ids = issues.map(function(issue) {
+    return issue._id;
+  });
+  return IssueComment.findAll({
+    where: {issueId: {[Op.in]: ids}},
+    order: [['_id', 'ASC']]
+  }).then(function(comments) {
+    var lastByIssueId = {};
+    comments.forEach(function(comment) {
+      lastByIssueId[comment.issueId] = comment;
+    });
+    return issues.map(function(issue) {
+      var json = issue.toJSON();
+      json.reporterRepliedLast = reporterRepliedLast(json, lastByIssueId[json._id]);
+      return json;
+    });
+  });
+}
+
 function loadIssueDetail(issueId) {
   return Issue.findOne({
     where: {
@@ -147,6 +185,9 @@ function loadIssueDetail(issueId) {
       json.attachments = results[1].map(function(a) {
         return a.toJSON();
       });
+      json.reporterRepliedLast = reporterRepliedLast(json, json.comments.length
+        ? json.comments[json.comments.length - 1]
+        : null);
       return json;
     });
   });
@@ -154,6 +195,7 @@ function loadIssueDetail(issueId) {
 
 export function index(req, res) {
   return Issue.findAll({order: [['_id', 'DESC']]})
+    .then(enrichIssuesWithReplyFlags)
     .then(respondWithResult(res))
     .catch(handleError(res));
 }

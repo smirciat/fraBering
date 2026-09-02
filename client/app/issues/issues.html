@@ -50,6 +50,9 @@
               ng-class="{active: issues.selected && issues.selected._id === issue._id}"
               ng-click="issues.selectIssue(issue)">
             <span class="label label-default status-label pull-right">{{issues.statusLabel(issue.status)}}</span>
+            <span class="label issue-reporter-replied-badge pull-right"
+                  ng-if="issues.reporterRepliedIssue(issue)"
+                  title="Reporter commented last — read the thread">Reporter replied</span>
             <strong>#{{issue._id}} {{issue.title}}</strong>
             <div class="issue-meta">{{issue.kind}} · {{issues.reporterName(issue)}}</div>
           </li>

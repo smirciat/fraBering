@@ -30,6 +30,14 @@
   text-transform: capitalize;
 }
 
+.issues-page .issue-reporter-replied-badge {
+  background: #f3e8ff;
+  color: #3d1a6e;
+  font-weight: 600;
+  margin-right: 6px;
+  text-transform: none;
+}
+
 .issues-paste-zone {
   display: block;
   width: 100%;
