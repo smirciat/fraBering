@@ -64,44 +64,20 @@
       </div>
     </div>
     <hr>
-    <!--Nate's Section-->
-    <div ng-if="rotRecords.approvalEmails.indexOf(rotRecords.user.email)>-1">
-      <h3>Select A File to Upload</h3>
-      <h5>Drag and Drop to here, or click 'Choose File' to select from a list</h5>
-      <input class="form-control" style="width:800px;" type="file" id="fileApproval" name="file" />
+    <div ng-if="rotRecords.canUploadRecords()">
+      <h3>Upload Training Record PDF</h3>
+      <h5>Drag and drop here, or click Choose File</h5>
+      <input class="form-control" style="width:800px;" type="file" id="recordUploadFile" name="file" />
       <br>
       <div class="points-row">
         <h5>Select Training Record Associated with this Upload</h5>
         <ui-select ng-model="rotRecords.associated" theme="bootstrap" dropdown-position="down" style="width: 30em !important;" on-select="rotRecords.selectTR()">
-          <ui-select-match placeholder="Choose Tab">{{$select.selected.date + ' - ' + $select.selected.display }}</ui-select-match>
-          <ui-select-choices repeat="item in rotRecords.recordsChoice" >
-            <div ng-bind-html="item.date + ' - ' + item.display | highlight: $select.search"></div>
+          <ui-select-match placeholder="Choose record">{{$select.selected.date + ' - ' + ($select.selected.display || rotRecords.displayArray($select.selected)) }}</ui-select-match>
+          <ui-select-choices repeat="item in rotRecords.uploadRecordChoices" >
+            <div ng-bind-html="item.date + ' - ' + (item.display || rotRecords.displayArray(item)) | highlight: $select.search"></div>
           </ui-select-choices>
         </ui-select>
-        <ui-select ng-model="rotRecords.subtab" theme="bootstrap" dropdown-position="down" ng-if="rotRecords.associated.index<0">
-          <ui-select-match placeholder="Choose Tab">{{$select.selected}}</ui-select-match>
-          <ui-select-choices repeat="item in rotRecords.categories" >
-            <div ng-bind-html="item | highlight: $select.search"></div>
-          </ui-select-choices>
-        </ui-select>
-        <button class="btn btn-warning" ng-disabled="rotRecords.isItDisabled('approve')" ng-click="rotRecords.add(true)">Upload and Approve</button>
-      </div>
-    </div>
-    <!--Kaleb's Section-->
-    <div ng-if="rotRecords.user.email==='smirciat@gmail.com'||rotRecords.user.email==='kalebjanke@gmail.com'">
-      <h3>Select A File to Upload</h3>
-      <h5>Drag and Drop to here, or click 'Choose File' to select from a list</h5>
-      <input class="form-control" style="width:800px;" type="file" id="file" name="file" />
-      <br>
-      <div class="points-row">
-        <h5>Select Training Record Associated with this Upload</h5>
-        <ui-select ng-model="rotRecords.associated" theme="bootstrap" dropdown-position="down" style="width: 30em !important;">
-          <ui-select-match placeholder="Choose Tab">{{$select.selected.date + ' - ' + rotRecords.displayArray($select.selected) }}</ui-select-match>
-          <ui-select-choices repeat="item in rotRecords.records" >
-            <div ng-bind-html="item.date + ' - ' + rotRecords.displayArray(item) | highlight: $select.search"></div>
-          </ui-select-choices>
-        </ui-select>
-        <h5>OR:</h5>
+        <h5 ng-if="!rotRecords.associated||!rotRecords.associated._id">OR:</h5>
       </div>
       <div class="points-row" ng-if="!rotRecords.associated||!rotRecords.associated._id">
         <h5>Select Tab of File From List</h5>
@@ -139,8 +115,8 @@
         </div>
       </div>
       <div class="points-row">
-        
-        <button class="btn btn-success" ng-click="rotRecords.add()">Upload File</button>
+        <button class="btn btn-success" ng-if="rotRecords.isUserUploader()" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.add()">Upload File</button>
+        <button class="btn btn-warning" ng-if="rotRecords.isApprover()" ng-disabled="rotRecords.isItDisabled('approve')" ng-click="rotRecords.add(true)">Upload and Approve</button>
       </div>
     </div>
       
@@ -148,8 +124,8 @@
   </div>
   <hr>
   
-  <div style="width:90%;margin:auto;display: flex; gap: 75px;">
-    <h2 ng-click="rotRecords.showTable=!rotRecords.showTable">Enter, Edit, Approve Records (Click to Expand)  &nbsp 
+  <div style="width:90%;margin:auto;display: flex; gap: 75px; align-items: center;">
+    <h2 ng-click="rotRecords.showTable=!rotRecords.showTable" style="margin:0;">Enter, Edit, Approve Records (Click to Expand)  &nbsp 
       <span ng-if="rotRecords.showTable">
         <i class="fas fa-caret-square-up"></i>
       </span>
@@ -157,10 +133,15 @@
         <i class="fas fa-caret-square-down"></i>
       </span>
     </h2>
-    <h2 ng-click="rotRecords.showApproved=!rotRecords.showApproved">
-      <span ng-if="!rotRecords.showApproved">Include Previously Approved <i class="fas fa-plus"></i></span>
-      <span ng-if="rotRecords.showApproved">Hide Previously Approved <i class="fas fa-minus"></i></span>
-    </h2>
+    <div>
+      <p ng-if="!rotRecords.showApproved" style="margin:0 0 4px 0;font-size:13px;color:#555;">
+        Showing <strong>pending</strong> records only ({{rotRecords.pendingRecordCount()}} saved draft<span ng-if="rotRecords.pendingRecordCount()!==1">s</span>). Saved rows stay visible here until approved.
+      </p>
+      <h2 ng-click="rotRecords.showApproved=!rotRecords.showApproved" style="margin:0;">
+        <span ng-if="!rotRecords.showApproved">Show approved records <i class="fas fa-plus"></i></span>
+        <span ng-if="rotRecords.showApproved">Hide approved records <i class="fas fa-minus"></i></span>
+      </h2>
+    </div>
   </div>
   <div class="table-responsive" style="overflow-x: auto;" ng-if="rotRecords.showTable">
     <div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;">
@@ -216,6 +197,7 @@
                 <th>Outcome</th>
                 <th></th>
                 <th></th>
+                <th ng-if="rotRecords.isApprover()"></th>
             </tr>
           </thead>
           <tbody>
@@ -297,7 +279,11 @@
                 <td><textarea rows="1" style="width:4em;" ng-model="record.outcome"></textarea></td>
                 <td><button class="btn btn-success" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.update(record,$index)">Save</button></td>
                 <td><button class="btn btn-danger" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.delete(record,$index)">Delete</button></td>
-                <td ng-if="record.approved"><button class="btn btn-warning" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.approve(record,$index)">Re-Approve</button></td>
+                <td ng-if="rotRecords.isApprover()">
+                  <button ng-if="rotRecords.canApproveRecord(record) && rotRecords.recordHasPdf(record)" class="btn btn-warning" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.approve(record,$index)">Approve</button>
+                  <span ng-if="rotRecords.canApproveRecord(record) && !rotRecords.recordHasPdf(record)" style="font-size:11px;color:#888;">Upload PDF first</span>
+                  <button ng-if="record.approved" class="btn btn-warning" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.approve(record,$index)">Re-Approve</button>
+                </td>
             </tr>
           </tbody>
         </table>

@@ -62,7 +62,18 @@ Also: **Save** seemed to disappear on 8/17 Sara Cubbage row — actually hidden 
 
 ## Draft reply to Nate (post on #23 next)
 
-Use `node scripts/issue-comment/index.js 23` (body from stdin or `ISSUE_COMMENT_BODY`). Suggest `--no-email` until Andy reviews, or email if Nate should see it in inbox.
+```sh
+# Preview body only
+node scripts/post-issue-23-reply/index.js --dry-run
+
+# Post on #23 (emails Nate)
+node scripts/post-issue-23-reply/index.js
+
+# Post without email
+node scripts/post-issue-23-reply/index.js --no-email
+```
+
+Body is extracted automatically from the `markdown` code block below — do not paste placeholders or the whole doc.
 
 ```markdown
 Nate — thanks again for the straight talk. We're treating this as product direction, not just a one-off bug.
@@ -292,9 +303,12 @@ Add **above** legacy table on `/rot/records` (parallel run; legacy table stays u
 ```sh
 cd ~/fraBering
 
-# Post comment on #23
-ISSUE_COMMENT_BODY="$(cat docs/issues-23-records-redesign.md)"  # or paste draft section only
-node scripts/issue-comment/index.js 23 --no-email
+# Post Nate reply on #23 (extracts draft from this doc automatically)
+node scripts/post-issue-23-reply/index.js --dry-run   # preview
+node scripts/post-issue-23-reply/index.js             # post + email
+
+# Other issue comments
+node scripts/issue-comment/index.js <id> [--status STATUS] [--no-email]
 
 # Refresh backlog export after issue updates
 node scripts/export-team-backlog/index.js

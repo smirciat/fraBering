@@ -91,6 +91,9 @@ class RecordsComponent {
         this.enrichRecords();
         this.buildRecordsChoice();
       });
+      this.expPreviewModal = this.Modal.confirm.expPreview((record, rows) => {
+        this.finalizeApproval(record, rows);
+      });
       this.pilotModal = this.Modal.confirm.pilotData(formData =>{
         if (!formData||!formData.name) {
           this.quickModal('Try again to enter the pilot data');
@@ -117,6 +120,7 @@ class RecordsComponent {
   
   $onInit(){
     this.showTable=true;
+    this.showApproved=false;
     this.showSLEArray=[];
     this.bootstrapped=false;
     this.date=new Date();
@@ -527,6 +531,31 @@ class RecordsComponent {
     return false;
   }
 
+  canUploadRecords(){
+    return this.isUserUploader() || this.isApprover();
+  }
+
+  pendingRecordCount(){
+    if (!this.records || !Array.isArray(this.records)) return 0;
+    return this.records.filter(record => record._id && !record.approved).length;
+  }
+
+  recordHasPdf(record){
+    if (!record || !record._id || !this.fullFiles || !this.fullFiles.length) return false;
+    const marker = 'associated_' + record._id + '_';
+    return this.fullFiles.some(file => file.filename && file.filename.indexOf(marker) > -1);
+  }
+
+  canApproveRecord(record){
+    return this.isApprover() && record && record._id && !record.approved;
+  }
+
+  getUploadFileElement(){
+    return document.getElementById('recordUploadFile')
+      || document.getElementById('file')
+      || document.getElementById('fileApproval');
+  }
+
   isApprover(){
     return !!(this.user && this.approvalEmails.indexOf(this.user.email) > -1);
   }
@@ -555,7 +584,8 @@ class RecordsComponent {
     return record.newBaseMonth===true||record.newBaseMonth==='true';
   }
 
-  computeExpDate(record, expKey, timeframe){
+  computeExpDate(record, expKey, timeframe, options){
+    options = options || {};
     let recordDate=new Date(record.date);
     let existingRaw=this.fullPilot[expKey];
     let existingDate=existingRaw?new Date(existingRaw):null;
@@ -563,7 +593,7 @@ class RecordsComponent {
 
     if (this.isNewBaseMonth(record)) {
       if (hasExisting&&this.isWithinOneMonth(recordDate, existingDate)) {
-        if (!confirm('Are you sure you want to create a new base month? It appears you are within the window.')) {
+        if (!options.preview && !confirm('Are you sure you want to create a new base month? It appears you are within the window.')) {
           return null;
         }
       }
@@ -721,13 +751,13 @@ class RecordsComponent {
     }
     else this.seat=undefined;
     if (!this.pilot||!this.pilot._id) return this.toaster.error('Error','Need to select a pilot in the navbar before uploading');
-    let files;
-    if (approval) files=Array.from(document.getElementById('fileApproval').files);
-    else files=Array.from(document.getElementById('file').files);
+    const fileInput=this.getUploadFileElement();
+    let files=fileInput?Array.from(fileInput.files):[];
     if (files&&files.length>0) {
       let f=files[0];
       let tabArray=[];
       const localAssociated=this.getAssociatedRecord();
+      const approveAfterUpload=!!(approval && localAssociated && localAssociated._id);
       if (localAssociated) {
         if (!Array.isArray(localAssociated.trainingTypeArray)||localAssociated.trainingTypeArray.length===0) {
           return this.toaster.error('Error','Need to select some training types within the associated record before uploading');
@@ -739,13 +769,16 @@ class RecordsComponent {
         });
       }
       else tabArray=[{tab:this.tab,sub:this.subtab,seat:this.seat}];
-      if (approval&&localAssociated) {
-        this.approve();
-      }
       let uploadsPending=tabArray.length;
       const onUploadFinished=()=>{
         uploadsPending--;
-        if (uploadsPending<=0) this.timeout(()=>{this.init();},1000);
+        if (uploadsPending<=0) {
+          if (approveAfterUpload) {
+            const recordIndex=this.records.findIndex(r=>r._id===localAssociated._id);
+            this.approve(localAssociated, recordIndex);
+          }
+          this.timeout(()=>{this.init();},1000);
+        }
       };
       for (const obj of tabArray) {
         let filename=this.setFilename(f.name,obj);
@@ -801,52 +834,88 @@ class RecordsComponent {
   }
   
   updateExp(record){
-    //this is now coming from a record
-    if (!record.trainingTypeArray||record.trainingTypeArray.length===0) return;
+    const rows=this.buildExpPreviewRows(record);
+    if (!rows.length) return;
+    this.applyExpUpdates(record, rows);
+  }
+
+  buildExpPreviewRows(record){
+    const rows=[];
+    if (!record||!record.trainingTypeArray||record.trainingTypeArray.length===0) return rows;
     record.trainingTypeArray.forEach(type=>{
-      //convert type to tab
       const {tab,seat}=this.typeToTab(type);
       if (!tab) return;
-      //get exp timeframe and field name
-      const {expKey,expKeyAlt,timeframe} = this.setExp(tab,seat);
-      //timeframe and expKey are set
-      //if this timeframe and its not zero, update the pilot record exp date
-      if (timeframe&&expKey) {
-        let newDate=this.computeExpDate(record, expKey, timeframe);
-        if (!newDate||isNaN(newDate.getTime())) return;
-
-        let existingRaw=this.fullPilot[expKey];
-        let existingDate=existingRaw?new Date(existingRaw):null;
-        if (existingDate&&!isNaN(existingDate.getTime())&&newDate<existingDate) {
-          let allowEarlier=this.isNewBaseMonth(record)||this.isApprover();
-          if (!allowEarlier||!confirm('New expiration ('+newDate.toLocaleDateString()+') is earlier than the current one ('+existingDate.toLocaleDateString()+'). Proceed with this correction?')) {
-            this.toaster.error('Error','New expiration date should not be earlier than the existing one! Expiration date not updated');
-            return;
-          }
-        }
-        if (confirm('Are you sure you want to update '+this.pilot.name+'`s expiration for ' + expKey + ' to ' + newDate.toLocaleDateString() + '?')){
-          let doc={_id:this.pilot._id};
-          const expValue=newDate.toLocaleDateString();
-          doc[expKey] = expValue;
-          if (expKeyAlt) doc[expKeyAlt] = expValue;
-          this.logApprovalExpHistory(record,expKey,expValue,expKeyAlt);
-          doc.trainingExpHistory=this.fullPilot.trainingExpHistory;
-          this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(res=>{
-            this.toaster.success('Success','Pilot Profile Updated');
-            this.fullPilot[expKey] = expValue;
-            if (expKeyAlt) this.fullPilot[expKeyAlt] = expValue;
-            let index=this.pilots.map(e=>e._id).indexOf(this.pilot._id);
-            if (index>-1) Object.assign(this.pilots[index], doc );
-            //this.init();
-          }).catch(err=>{console.log(err)});
-        }
-        else {
-          this.toaster.error('Error','expiration date not updated');
-          //this.init();
-          return;
-        }
-      }
+      const {expKey,expKeyAlt,timeframe}=this.setExp(tab,seat);
+      if (!timeframe||!expKey) return;
+      const newDate=this.computeExpDate(record, expKey, timeframe, {preview:true});
+      if (!newDate||isNaN(newDate.getTime())) return;
+      const existingRaw=this.fullPilot[expKey];
+      const existingDate=existingRaw?new Date(existingRaw):null;
+      const hasExisting=existingDate&&!isNaN(existingDate.getTime());
+      let action='extend';
+      if (this.isNewBaseMonth(record)) action='rebase';
+      else if (!hasExisting) action='initial';
+      rows.push({
+        type:type,
+        expKey:expKey,
+        expKeyAlt:expKeyAlt,
+        newDate:newDate,
+        current:existingRaw||'—',
+        proposed:newDate.toLocaleDateString(),
+        action:action,
+        warnEarlier:hasExisting&&newDate<existingDate
+      });
     });
+    return rows;
+  }
+
+  applyExpUpdates(record, rows){
+    if (!rows||!rows.length) return;
+    const doc={_id:this.pilot._id};
+    rows.forEach(row=>{
+      const expValue=row.newDate.toLocaleDateString();
+      doc[row.expKey]=expValue;
+      if (row.expKeyAlt) doc[row.expKeyAlt]=expValue;
+      this.logApprovalExpHistory(record,row.expKey,expValue,row.expKeyAlt);
+    });
+    doc.trainingExpHistory=this.fullPilot.trainingExpHistory;
+    this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
+      this.toaster.success('Success','Pilot Profile Updated');
+      rows.forEach(row=>{
+        const expValue=row.newDate.toLocaleDateString();
+        this.fullPilot[row.expKey]=expValue;
+        if (row.expKeyAlt) this.fullPilot[row.expKeyAlt]=expValue;
+      });
+      const index=this.pilots.map(e=>e._id).indexOf(this.pilot._id);
+      if (index>-1) Object.assign(this.pilots[index], doc);
+    }).catch(err=>{console.log(err)});
+  }
+
+  finalizeApproval(record, rows){
+    if (!record||!record._id) return;
+    const index=this.records.findIndex(e=>e._id===record._id);
+    const localRecord=index>-1?this.records[index]:record;
+    localRecord.approved=true;
+    if (!localRecord.priorExpDates||!Object.keys(localRecord.priorExpDates).length) {
+      localRecord.priorExpDates=this.snapshotPriorExpDates(localRecord);
+    }
+    this.http.post('/api/rot/updateFirebase',{collection:'records',doc:localRecord}).then(res=>{
+      if (index>-1) this.records[index]=res.data;
+      this.applyExpUpdates(localRecord, rows);
+      this.buildRecordsChoice();
+    }).catch(err=>{
+      console.log(err);
+      this.toaster.error('Error','Failed to save approval');
+    });
+  }
+
+  startApprove(record, index){
+    if (!this.isApprover()) return this.toaster.error('Error','Only approvers can approve records');
+    if (!record||!record._id) return this.toaster.error('Error','Save the record before approving');
+    const localRecord=typeof index==='number'&&index>-1?this.records[index]:record;
+    const previewRows=this.buildExpPreviewRows(localRecord);
+    if (!previewRows.length) return this.toaster.error('Error','Select training types on this record before approving');
+    this.expPreviewModal(localRecord, previewRows, this.pilot.name);
   }
   
   typeToTab(type){
@@ -1189,17 +1258,7 @@ class RecordsComponent {
     const record=r||this.getAssociatedRecord();
     if (!record||!record._id) return this.toaster.error('Error','Cannot save this approval for this record, not finding it in my list of records!');
     const index=typeof i==='number'?i:this.records.findIndex(e=>e._id===record._id);
-    const localRecord=index>-1?this.records[index]:record;
-    //if (!record._id) return alert('You Need to Save it Before Approving it');
-    //update in firebase and update relevant exp date
-    localRecord.approved=true;
-    if (!localRecord.priorExpDates||!Object.keys(localRecord.priorExpDates).length) {
-      localRecord.priorExpDates=this.snapshotPriorExpDates(localRecord);
-    }
-    this.http.post('/api/rot/updateFirebase',{collection:'records',doc:localRecord}).then(res=>{
-      if (index>-1) this.records[index]=res.data;
-      this.updateExp(localRecord);
-    });
+    this.startApprove(record, index);
   }
   
   delete(record,index){
@@ -1420,6 +1479,18 @@ class RecordsComponent {
     });
     if (this.recordsChoice.length) {
       this.recordsChoice[0]={_id:-1,display:"UPLOAD A CERT",date:'',index:-1};
+    }
+    this.uploadRecordChoices=this.records
+      .map((record,index)=>({
+        _id:record._id,
+        display:this.displayArray(record),
+        date:record.date,
+        index:index,
+        approved:record.approved
+      }))
+      .filter(choice=>choice._id);
+    if (this.isApprover()&&this.recordsChoice.length) {
+      this.uploadRecordChoices.unshift(this.recordsChoice[0]);
     }
     if (this.associated&&this.associated._id&&this.associated._id!==-1) {
       const choice=this.recordsChoice.find(c=>c._id===this.associated._id);
@@ -1772,6 +1843,7 @@ angular.module('workspaceApp')
       if (!input||!Array.isArray(input)) return [];
       if (showApproved) return input;
       return input.filter(record=>{
+        if (!record._id) return true;
         return !record.approved;
       });
     };

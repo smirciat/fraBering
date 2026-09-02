@@ -142,6 +142,58 @@ angular.module('workspaceApp')
             });
           };
         },
+        expPreview(cb) {
+          cb = cb || angular.noop;
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                record = args.shift(),
+                rows = args.shift() || [],
+                pilotName = args.shift() || 'pilot',
+                theModal,
+                html,
+                i,
+                row;
+
+            html = '<p>Review expiration updates for <strong>' + pilotName + '</strong> before approving this record.</p>';
+            html += '<table class="table table-bordered table-condensed"><thead><tr><th>Event</th><th>Current</th><th>New</th><th>Action</th></tr></thead><tbody>';
+            for (i = 0; i < rows.length; i++) {
+              row = rows[i];
+              html += '<tr><td>' + row.expKey + '</td><td>' + row.current + '</td><td>' + row.proposed;
+              if (row.warnEarlier) {
+                html += ' <span style="color:#b94a48;">(earlier than current)</span>';
+              }
+              html += '</td><td>' + row.action + '</td></tr>';
+            }
+            html += '</tbody></table>';
+
+            theModal = openModal({
+              modal: {
+                dismissable: true,
+                title: 'Expiration preview',
+                html: html,
+                buttons: [{
+                  classes: 'btn-success',
+                  text: 'Approve and update expirations',
+                  click: function(event) {
+                    theModal.close(event);
+                  }
+                }, {
+                  classes: 'btn-default',
+                  text: 'Cancel',
+                  click: function(event) {
+                    theModal.dismiss(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+
+            theModal.result.then(function() {
+              cb(record, rows);
+            }).catch(function(err) {
+              console.log(err);
+            });
+          };
+        },
         pilotData(cb) {
           cb = cb || angular.noop;
           return function() {
