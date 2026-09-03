@@ -17,11 +17,11 @@ Uploading and approving is trying to rebase regardless of being told not to.
 
 **Progress (changed, not resolved):**
 
-NATHANIEL OLSON: Just tried to upload and approve Ryan Scott's checkride from yesterday.  The new look of the expiration date update notice is far far superior.  Nice work Andy.  Looks like there is a coding glitch through (see above screen shot, accidentally loaded it twice).  Now that I see that popup for confirming the updated expiration date, how about you make that part editable.  So you don't even ask about "new base" when building the training event.  When you hit submit the pop up comes up with columns "event" "current expiration" "New base" (the new base column is a check box so select for new base) then "new expiration" (date would change instantly based on checking or unchecking new base box).  Action column could be removed.  How does that sound?  Really, would like the logic to be built in to where when the flight test form is built, the check pilot or instructor selects, pilot-aircraft-evaluation(s)/training and hits generate, then the program generates the form with prepopulated but modifiable expiration/base month.  Then when I upload and approve I get the popup with current and new expiration.  Thats where I do the final QC then approve.  That would be an excellent flow.  The current popup format is excellent and much easier to interpret.  Nice work Andy.
+NATHANIEL OLSON: Much better.  However, if you look at the above screen shot.  It has the previous dates and the current dates as the same for the ones that I updated.  Not sure if that is just a glitch based on the previous glitch.  Overall, the popup with the selectable rebase is exquisite.  Nice work Andy.
 
 **Latest screenshot:**
 
-![screenshot-1788391299037.png](team-backlog/attachments/issue-23-att-20-screenshot-1788391299037.png)
+![screenshot-1788472624577.png](team-backlog/attachments/issue-23-att-21-screenshot-1788472624577.png)
 
 **Comments:**
 - NATHANIEL OLSON: Looking at it now, I hit save when I built the ROT and it appears it didn't save, but if you look at the training record I was trying to attach it to, it was dated 8/17/26.  Looks like I hit "save" and it disappears but still available to associate with for upload.
@@ -132,11 +132,31 @@ Your bullet answers on routine path (1), roles (2), and multi-event rides (4) st
 
 Also when you can: retry **Sara Cubbage / 8/17 B190SIC** with **New Base = false** so we know the original rebase fix is good.
 - NATHANIEL OLSON: Just tried to upload and approve Ryan Scott's checkride from yesterday.  The new look of the expiration date update notice is far far superior.  Nice work Andy.  Looks like there is a coding glitch through (see above screen shot, accidentally loaded it twice).  Now that I see that popup for confirming the updated expiration date, how about you make that part editable.  So you don't even ask about "new base" when building the training event.  When you hit submit the pop up comes up with columns "event" "current expiration" "New base" (the new base column is a check box so select for new base) then "new expiration" (date would change instantly based on checking or unchecking new base box).  Action column could be removed.  How does that sound?  Really, would like the logic to be built in to where when the flight test form is built, the check pilot or instructor selects, pilot-aircraft-evaluation(s)/training and hits generate, then the program generates the form with prepopulated but modifiable expiration/base month.  Then when I upload and approve I get the popup with current and new expiration.  Thats where I do the final QC then approve.  That would be an excellent flow.  The current popup format is excellent and much easier to interpret.  Nice work Andy.
+- Andy Smircich: Shipped the next slice on the expiration preview popup (still in progress on #23):
+
+**Editable preview modal**
+- Columns: Event | Current expiration | **New base** (checkbox) | **New expiration** (editable date)
+- Checking/unchecking **New base** recalculates the proposed date immediately
+- Removed the separate Action column
+
+**New base on the training row**
+- Hidden on the record row — rebase vs extend is decided in the approve popup instead
+
+**Auto rebase logic**
+- Default checkbox follows grace-month rules: early/due/late month relative to current expiration → extend; outside that window → rebase
+
+**Duplicate popup / rows**
+- Guard so approve cannot open the preview twice at once
+- Dedupe events in the preview table when the same expiration key would appear twice
+
+Please retry Ryan Scott’s checkride approve flow and let me know if the popup looks right and the dates behave as expected. Longer-term “generate flight test form with prepopulated exp/base” is still on the Tier B list.
+- NATHANIEL OLSON: Much better.  However, if you look at the above screen shot.  It has the previous dates and the current dates as the same for the ones that I updated.  Not sure if that is just a glitch based on the previous glitch.  Overall, the popup with the selectable rebase is exquisite.  Nice work Andy.
 
 **Attachments:**
 - ![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
 - ![screenshot-1788391295187.png](team-backlog/attachments/issue-23-att-19-screenshot-1788391295187.png)
 - ![screenshot-1788391299037.png](team-backlog/attachments/issue-23-att-20-screenshot-1788391299037.png)
+- ![screenshot-1788472624577.png](team-backlog/attachments/issue-23-att-21-screenshot-1788472624577.png)
 
 ## Ready for review (shipped — reporter verify, do not build)
 
@@ -444,6 +464,28 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
 
+## #30 293(a)1,4-8
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Need a selection for 293(a)1,4-8
+
+**Comments:**
+- Andy Smircich: Shipped — ready for your review.
+
+**#30 293(a) 1,4-8 selection**
+
+Added **293(a) 1,4-8** to the training-type checkbox modal (under Basic Indoctrination). Selecting it tracks `far293a` on the record, updates `far293a148` on approve, and populates the ROT form section when generating paperwork.
+
+Please confirm it appears in the type picker and that approve updates the pilot board 293(a) expiration as expected.
+
+**Attachments:**
+- ![screenshot-1788475606065.png](team-backlog/attachments/issue-30-att-23-screenshot-1788475606065.png)
+
 ## #24 Manual weather input
 
 - **Type:** bug · medium · ready_for_review
@@ -604,6 +646,33 @@ Please verify Ground Services and HEL board on a flight with fuel entered on a c
 - ![screenshot-1786985583805.png](team-backlog/attachments/issue-17-att-11-screenshot-1786985583805.png)
 - ![screenshot-1786986829260.png](team-backlog/attachments/issue-17-att-12-screenshot-1786986829260.png)
 - ![screenshot-1787680008941.png](team-backlog/attachments/issue-17-att-15-screenshot-1787680008941.png)
+
+## #29 Duplicate row generation
+
+- **Type:** bug · low · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+When I hit the "ROT" button to generate a ROT, the program creates a new row with no associated record.  So, I created the record then hit ROT and a ROT was generated.  I corrected the date on the record line then hit ROT again.  Duplicate line then created.  Also, after modifying date in the record line, hitting the ROT button does not generate a ROT with associated dates anymore.
+
+**Comments:**
+- Andy Smircich: Shipped — ready for your review.
+
+**#29 Duplicate row on ROT**
+
+ROT / Flight Test / INDOC was calling Save without the row index, so the record never got its Firebase `_id` back in the grid. Each click saved a new orphan record and unshifted another blank row.
+
+**Fix**
+- PDF generation now saves the row first (with index), waits for Firebase, then fills the form from the saved record.
+- Only one blank draft row is kept at a time (`ensureDraftRow`).
+- Changing the date updates base month automatically unless you picked base month manually (`checkDate` on blur).
+
+Please retry: fill a record → ROT → change date → ROT again. You should get one row, correct dates on the form, no duplicate blank lines.
+
+**Attachments:**
+- ![screenshot-1788473207869.png](team-backlog/attachments/issue-29-att-22-screenshot-1788473207869.png)
 
 ## #26 remove aircraft
 

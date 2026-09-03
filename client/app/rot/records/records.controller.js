@@ -1027,6 +1027,10 @@ class RecordsComponent {
       case 'BasicIndoc':
         tab="BI";
         break;
+      case 'far293a':
+      case '293a':
+        tab="293A";
+        break;
       case 'Hazmat':
         tab="HAZ";
         break;
@@ -1125,6 +1129,9 @@ class RecordsComponent {
       case 'BI':
         expKey='BasicIndocExp';
         expKeyAlt='far293a148';
+        break;
+      case '293A':
+        expKey='far293a148';
         break;
       case 'HAZ':
         expKey='HazmatExp';
@@ -1278,21 +1285,51 @@ class RecordsComponent {
     let array=this.categoryFilter(this.fullFiles,cat,sub,seat);
     return array.length>0;
   }
-  
-  update(record,index){
-    if (!record.trainingTypeArray||record.trainingTypeArray.length===0) return this.toaster.error('Error','You Need to Select at least one training type before saving');
-    if (record.checkAirman&&(!record.aircraft||record.aircraft==='none')) return this.toaster.error('Error','An aircraft has to be selected if the event is a checkride');
+
+  ensureDraftRow(){
+    const hasDraft=this.records.some(r=>!r._id);
+    if (!hasDraft) this.records.unshift(this.createNewRecord());
+  }
+
+  checkDate(record){
+    if (!record||record.baseMonthManual) return;
+    const d=new Date(record.date);
+    if (!isNaN(d.getTime())) {
+      record.baseMonth=d.toLocaleString('default', { month: 'long' });
+      record.dateObj=d;
+    }
+  }
+
+  persistRecord(record,index,options){
+    options=options||{};
+    if (!record.trainingTypeArray||record.trainingTypeArray.length===0) {
+      return Promise.reject('training');
+    }
+    if (record.checkAirman&&(!record.aircraft||record.aircraft==='none')) {
+      return Promise.reject('aircraft');
+    }
     record.dateObj=new Date(record.date);
-    console.log(record)
-    //create or update record in firebase, if it was a new record, unshift a new new one
-    this.http.post('/api/rot/updateFirebase',{collection:'records',doc:record}).then(res=>{
-      this.toaster.success('Success','Record is Updated');
-      const id=record._id;
-      this.records[index]=res.data;
-      if (!id) this.records.unshift(this.createNewRecord());
+    const hadId=!!record._id;
+    const resolvedIndex=typeof index==='number'&&index>-1?index:this.records.indexOf(record);
+    return this.http.post('/api/rot/updateFirebase',{collection:'records',doc:record}).then(res=>{
+      if (!options.silent) this.toaster.success('Success','Record is Updated');
+      if (resolvedIndex>-1) this.records[resolvedIndex]=res.data;
+      else Object.assign(record, res.data);
+      if (!hadId&&!options.skipNewRow) this.ensureDraftRow();
       this.enrichRecords();
       this.buildRecordsChoice();
+      return res.data;
     });
+  }
+
+  persistRecordError(err){
+    if (err==='training') this.toaster.error('Error','You Need to Select at least one training type before saving');
+    else if (err==='aircraft') this.toaster.error('Error','An aircraft has to be selected if the event is a checkride');
+    else console.log(err);
+  }
+  
+  update(record,index){
+    this.persistRecord(record,index).catch(err=>this.persistRecordError(err));
   }
   
   createNewRecord(){
@@ -1509,8 +1546,9 @@ class RecordsComponent {
         record.trainingTypeArray=[];
         this.appConfig.trainingEventKeys.forEach(key=>{
           if (record[key]&&record[key]==="true") {
-            if (key.slice(0,3)==="far") key=key.substring(3);
-            if (record.trainingTypeArray.indexOf(key)<0) record.trainingTypeArray.push(key);
+            let typeKey=key;
+            if (typeKey.slice(0,3)==="far"&&typeKey!=='far293a') typeKey=typeKey.substring(3);
+            if (record.trainingTypeArray.indexOf(typeKey)<0) record.trainingTypeArray.push(typeKey);
           }
         });
       }
@@ -1553,7 +1591,7 @@ class RecordsComponent {
     this.records.sort((a,b)=>{
       return new Date(b.date) - new Date(a.date);
     });
-    this.records.unshift(this.createNewRecord());
+    this.ensureDraftRow();
     this.buildRecordsChoice();
   }
   
@@ -1615,14 +1653,21 @@ class RecordsComponent {
   }
   
   pdf(record,PDFFileName) {
-      let id=record._id;
-      this.update(record);
-      //spin buttons
+      const index=this.records.indexOf(record);
       this.loading=true;
-      //
-      let index = this.records.map(e => e._id).indexOf(id);
-      let pilot = this.records[index];
-      if (!pilot||!pilot.date) return this.toaster.error('Error','Check this records for completeness before loading a form from it');
+      this.persistRecord(record,index,{skipNewRow:true,silent:true}).then(saved=>{
+        this.generatePdf(saved||record,PDFFileName);
+      }).catch(err=>{
+        this.loading=false;
+        this.persistRecordError(err);
+      });
+  }
+
+  generatePdf(pilot,PDFFileName) {
+      if (!pilot||!pilot.date) {
+        this.loading=false;
+        return this.toaster.error('Error','Check this records for completeness before loading a form from it');
+      }
       let certType = "ATP/";
       if (pilot.certType&&pilot.certType.toUpperCase()!="ATP"&&pilot.certType.toUpperCase()!="ATP/") certType="COMM/";
       let medClass="FIRST";
@@ -1698,6 +1743,25 @@ class RecordsComponent {
             if (pilot.BasicIndoc&&pilot.BasicIndoc==="true") {//"Basic Indoc": 
               eventIndex = this.appConfig.trainingEvents.map(e => e.name).indexOf('BasicIndoc');
               frequency=this.appConfig.trainingEvents[eventIndex].frequency;
+              fieldName = "Check Box1";
+              fields[fieldName]=["X"];
+              fields.Dropdown2=[pilot.baseMonth.toUpperCase()];
+              fieldName="BI TEST EXPIRATION";
+              fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
+              fieldName="Instructor 1";
+              fields[fieldName]=[pilot.instructor];
+              if (PDFFileName==="ROT") fields.Dropdown1=["S"];
+              fieldName="Date1_af_date";
+              fields[fieldName]=[dateObj];
+              fieldName="Instructor 2";
+              fields[fieldName]=[pilot.instructor];
+              if (PDFFileName==="ROT") fields.Dropdown2=["S"];
+              fieldName="Date2_af_date";
+              fields[fieldName]=[dateObj];
+            }
+            if (pilot.far293a&&pilot.far293a==="true"&&!(pilot.BasicIndoc&&pilot.BasicIndoc==="true")) {
+              eventIndex = this.appConfig.trainingEvents.map(e => e.name).indexOf('far293a');
+              frequency=eventIndex>-1?this.appConfig.trainingEvents[eventIndex].frequency:'12';
               fieldName = "Check Box1";
               fields[fieldName]=["X"];
               fields.Dropdown2=[pilot.baseMonth.toUpperCase()];

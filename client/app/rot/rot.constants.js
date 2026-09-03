@@ -13,6 +13,7 @@ angular.module('workspaceApp')
     ],
     trainingEvents: [
       {name: 'BasicIndoc', label: 'Basic Indoctrination', frequency: '12'},
+      {name: 'far293a', frequency: '12', label: '293(a) 1,4-8'},
       {name: 'Hazmat', frequency: '24', label: 'Hazmat'},
       {name: 'C208Ground', frequency: '12', label: 'Caravan Ground Training'},
       {name: 'C208TKS', frequency: '12', label: 'Caravan TKS Icing Course'},
