@@ -6,25 +6,167 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
+## #23 Trying to rebase when not told to do so
+
+- **Type:** bug · medium · in_progress
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Uploading and approving is trying to rebase regardless of being told not to.
+
+**Progress (changed, not resolved):**
+
+NATHANIEL OLSON: Just tried to upload and approve Ryan Scott's checkride from yesterday.  The new look of the expiration date update notice is far far superior.  Nice work Andy.  Looks like there is a coding glitch through (see above screen shot, accidentally loaded it twice).  Now that I see that popup for confirming the updated expiration date, how about you make that part editable.  So you don't even ask about "new base" when building the training event.  When you hit submit the pop up comes up with columns "event" "current expiration" "New base" (the new base column is a check box so select for new base) then "new expiration" (date would change instantly based on checking or unchecking new base box).  Action column could be removed.  How does that sound?  Really, would like the logic to be built in to where when the flight test form is built, the check pilot or instructor selects, pilot-aircraft-evaluation(s)/training and hits generate, then the program generates the form with prepopulated but modifiable expiration/base month.  Then when I upload and approve I get the popup with current and new expiration.  Thats where I do the final QC then approve.  That would be an excellent flow.  The current popup format is excellent and much easier to interpret.  Nice work Andy.
+
+**Latest screenshot:**
+
+![screenshot-1788391299037.png](team-backlog/attachments/issue-23-att-20-screenshot-1788391299037.png)
+
+**Comments:**
+- NATHANIEL OLSON: Looking at it now, I hit save when I built the ROT and it appears it didn't save, but if you look at the training record I was trying to attach it to, it was dated 8/17/26.  Looks like I hit "save" and it disappears but still available to associate with for upload.
+- Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
+- rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Upload and Approve was rebasing expiration even when New Base was false. It calculated from the training record date instead of extending the pilot’s current expiration.
+
+Fix:
+• New Base = false → extend current exp by the training interval (e.g. Aug 2027 → Aug 2028). Training date is only used when there is no prior exp.
+• New Base = true → rebase from base month / training date (same as before, with confirm if you’re within the normal window).
+
+Removed the misleading “set a new base month?” prompt that could rebase even when New Base was false.
+
+Please retry your Sara Cubbage / 8/17 B190SIC upload with New Base false and confirm the exp confirm shows an extension from current Aug 2027, not 8/17/2027.
+- NATHANIEL OLSON: I'll give it a shot but to build off of your "it might take a rethink of the approach."  I agree.  This approach works well for hard copies and binders, but doesn't translate well to the current training records program.  It is almost more work than paper and seems far less efficient.  If you could guide AI to build a completely new, streamlined approach or system, I'd definitely be open to options.  Maybe that is asking too much, but at this point, the current method with paper and binders seems preferable.
+- Andy Smircich: Lets work on this
+- Andy Smircich: Thanks for the honest feedback — that's exactly what we need to hear.
+
+You're right that the current Records flow was ported from a binder-era mental model: one line per checkride, manual base month, split upload vs approve UIs, confirm dialogs per event. The rebase fix addresses one bad behavior, but it doesn't fix the underlying friction you're describing. I'm open to a real redesign if we can define what "streamlined" means for your day-to-day work.
+
+Before we sketch a replacement, I need your input on a few things. Reply here with as much or as little detail as you want — bullet answers are fine.
+
+**1. Routine recurrent — happy path**
+What's the minimum you'd want? (e.g. select pilot → mark events done → attach PDF → one click done.) Which steps today feel like pure overhead?
+
+**2. Roles**
+Should Kaleb-only upload + you/Fen approving in a separate step stay? Or does one person usually do the whole thing? Anyone else who needs write access beyond the current list?
+
+**3. New Base**
+When should expiration rebase from the training month vs simply extend the pilot's current expiration by 12/6 months? Should that be **per training event** on the same checkride, not one flag for the whole record?
+
+**4. One checkride, multiple events**
+How often does one ride cover B190 PIC + ground + 299 together? Should approving update all of them in one action?
+
+**5. Paper vs digital**
+Which paper artifacts are still required (ROT PDF forms, quarterly check-airman report, physical binder copy)? What could we drop or auto-generate?
+
+**6. Approve without re-upload**
+Do you ever need to approve a record whose PDF was already uploaded separately? Should there be a plain **Approve** button on saved rows (not only Upload and Approve)?
+
+**7. Pilot boards vs Records**
+Should OME/OTZ boards and Records be one combined view, or stay separate with synced expiration dates only?
+
+**8. Audit / history**
+Is Current + 2 Previous expiration history enough for your audit needs, or do you need a full who/when/why change log per event?
+
+---
+
+**Meanwhile — please retry the Sara Cubbage / 8/17 B190SIC case** with **New Base = false** and confirm whether the exp prompt now shows an extension from the current Jul 2027 expiration (not 8/17/2027). That tells us whether the immediate bug is fixed while we scope the bigger redesign.
+
+On the "save and it disappears" note: unapproved saved records are hidden unless **Include Previously Approved** is toggled — that's confusing and is on the fix list either way.
+- NATHANIEL OLSON: 1) Select pilot, select aircraft, select evaluation(s) (293,297,297g,299) (293 tied to specific aircraft, all others apply to pilot as a whole), modifiable test form generated with default events checked and all admin info (pilot data, expiration dates, base months), check pilot can then customize if necessary, save/print, form signed and hardcopy submitted to flight department headquarters, headquarters reviews/uploads/approves.  At this point all expiration dates and base months are automatically updated on the pilot board.
+
+2)Check Pilots build paperwork, print, sign, turn into headquarters.  Fen/Me upload and approve for the time being and will add others as we get the flow figured out. 
+
+3)Rebase should not occur when evaluation is performed in any due month (early/due/late).  Rebase should automatically occur anytime evaluation is outside of that.  Due month is the month and year when the checkride expires.  So if expiration date is 8/27 and a checkride is done 9/26 that would be a rebase.  Obviously 8/27 due month 9/27 checkride date would not be a rebase. 
+
+4)Ground and flight training/Evals should never be on the same paperwork.  Ground training produces a ROT only.  Flight training produces a ROT only.  Evaluations should produce flight test forms only. 
+
+5)Unfortunately, I think all artifacts will be required at this point.  Even if we get the electronic flight records opspec signed (should be easy), the electronic signatures section will be more difficult due to authentication requirements.  That will take additional effort and potentially money so for the time being, all current forms must be generated.  
+
+6)This is interesting.  If the program is auto populating all base months and expiration dates, it seems like this would not be necessary.  However, it is probably prudent to have the option to "reapprove" something without uploading in order to modify a date or correct an entry error not related to the paperwork data.
+
+7) Nome and OTZ could be combined into one view, however, still organized Nome PIC/FO/OTZ PIC.  All on one view would be nice.  We will see what the unintended consequences of this are.   
+
+8)There does need to be a way to audit the whole system and audit an individuals Bering pilot history.  It's required to keep initial training documents permanently, so if we are going to go full electronic, lets have a pilots entire Bering history.  That way, if we make a mistake, the "audit" can retrace the training steps all the way back to the genesis of their career at Bering.  This would also provide redundancy, so that if an automated audit as somehow allowed something to slip through the cracks, then a human could go back and manually audit.  
+
+Hope this helps.  Thanks for the effort.  Nice work Andy.
+- Andy Smircich: <paste draft from doc section "Draft reply to Nate">
+- Andy Smircich: Sorry — the previous comment was a mistaken placeholder from our posting script, not the real reply. Here is the intended message:
+
+Nate — thanks again for the straight talk. We're treating this as product direction, not just a one-off bug.
+
+**Plan (two phases):**
+
+**Phase 1 — quick wins (next deploys)**  
+- Pending/draft queue so saved rows don't "disappear" (no more hunting **Include Previously Approved**).  
+- **Approve** on a saved row when the PDF is already on file (not only Upload and Approve).  
+- One shared upload flow for Kaleb and approvers (same screen, role gates the buttons).  
+- **Single expiration preview** before approve: every event on the row shows current → new (extend vs rebase per event, not one New Base flag for the whole row).
+
+**Phase 2 — "training session" (bigger redesign)**  
+- One **checkride session** per ride: pilot, date, instructor, check airman, events completed, PDF attached once, then **one approve** updates all relevant expirations.  
+- Kaleb can save a **draft** and submit; you/Fen **approve** when ready.  
+- We'll build this **above** the legacy table first so you can compare without losing today's workflow until you sign off.
+
+**Not in scope for now:** merging OME/OTZ pilot boards into Records (we can revisit after Phase 2 soaks).
+
+Your answers to the numbered questions still help — bullet replies are fine. Even partial answers on **routine recurrent (1)**, **roles (2)**, and **multi-event rides (4)** are enough to start Phase 2 mockups.
+
+When you have a minute, please still retry the **Sara Cubbage / 8/17 B190SIC** case with **New Base = false** so we know the immediate rebase fix is good on your end.
+- Andy Smircich: Phase 1 Records improvements are in this deploy — ready for you to try on `/rot/records`.
+
+**What changed**
+1. **Pending queue** — default table view shows pending/draft rows only. Saved records stay visible until approved (no more hunting “Include Previously Approved”). Toggle is now **Show approved records**.
+2. **Approve without re-upload** — on a saved row with a PDF already linked, approvers get an **Approve** button (no need to pick the file again).
+3. **Expiration preview** — one modal before approve/re-approve lists every training event: current exp → new exp → extend/rebase/initial. One confirm updates all.
+4. **Unified upload** — one upload section for Kaleb and approvers; same associate-record picker. **Upload File** vs **Upload and Approve** depends on role.
+
+**Please verify**
+- Save a draft → still visible in pending list
+- Kaleb uploads PDF → you **Approve** from the row (preview modal → confirm)
+- Multi-event row shows all exp lines in one preview
+
+Your bullet answers on routine path (1), roles (2), and multi-event rides (4) still help for Phase 2 session UI — no rush.
+
+Also when you can: retry **Sara Cubbage / 8/17 B190SIC** with **New Base = false** so we know the original rebase fix is good.
+- NATHANIEL OLSON: Just tried to upload and approve Ryan Scott's checkride from yesterday.  The new look of the expiration date update notice is far far superior.  Nice work Andy.  Looks like there is a coding glitch through (see above screen shot, accidentally loaded it twice).  Now that I see that popup for confirming the updated expiration date, how about you make that part editable.  So you don't even ask about "new base" when building the training event.  When you hit submit the pop up comes up with columns "event" "current expiration" "New base" (the new base column is a check box so select for new base) then "new expiration" (date would change instantly based on checking or unchecking new base box).  Action column could be removed.  How does that sound?  Really, would like the logic to be built in to where when the flight test form is built, the check pilot or instructor selects, pilot-aircraft-evaluation(s)/training and hits generate, then the program generates the form with prepopulated but modifiable expiration/base month.  Then when I upload and approve I get the popup with current and new expiration.  Thats where I do the final QC then approve.  That would be an excellent flow.  The current popup format is excellent and much easier to interpret.  Nice work Andy.
+
+**Attachments:**
+- ![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
+- ![screenshot-1788391295187.png](team-backlog/attachments/issue-23-att-19-screenshot-1788391295187.png)
+- ![screenshot-1788391299037.png](team-backlog/attachments/issue-23-att-20-screenshot-1788391299037.png)
+
+## Ready for review (shipped — reporter verify, do not build)
+
+_Waiting for reporter sign-off in the app._
+
 ## #28 Blank flight origin
 
-- **Type:** bug · high · open
+- **Type:** bug · high · ready_for_review
 - **Reporter:** Benjamin Rowe
+- **Status:** ready for review
 
 **Original report:**
 
 Why is the origin of flight 704/31Aug26 blank?  The flight is showing up on the OTZ flight board.  Either station is fine, but a Kawerak charter from Nome is probably Nome origin.  And the origin station needs to be populated. Thanks. Can’t attach screenshot from phone.
 
-**Progress (changed, not resolved):**
-
-Andy Smircich: Investigate this
-
 **Comments:**
 - Andy Smircich: Investigate this
+- Andy Smircich: Shipped — ready for your review.
 
-## Ready for review (shipped — reporter verify, do not build)
+**#28 Blank flight origin (BRG704 / 31Aug26)**
 
-_Waiting for reporter sign-off in the app._
+Takeflite sometimes sends airport **code** only (e.g. PAOM) without **name** on manifest legs. The sync only used `leg.origin.name`, so `airports[0]` could be blank and the first routing chip on the status board showed nothing.
+
+**Fix**
+• Route building now resolves airports from Takeflite **name or code** (code matched to master airport list → e.g. Nome / OME).
+• If the crew-less-first-leg filter leaves a blank origin, the true departure airport from the original first leg is restored.
+• One bad airport in the route no longer aborts processing for the rest of the flight.
+• Flight Release **Origin** falls back to routing when the iPad PFR has no `flightOrigin`.
+
+Please verify on OTZ (or Nome) status board: BRG704 or the next Kawerak charter from Nome should show **OME** (or the correct origin) on the first airport chip after the next sync (~1 min post-deploy).
 
 ## #25 Overdue aircraft time pop ups
 
@@ -493,71 +635,7 @@ Please verify on HEL status view: neither tail appears in the right-hand fleet l
 
 _Waiting on reporter answers in comments._
 
-## #23 Trying to rebase when not told to do so
-
-- **Type:** bug · medium · needs_clarification
-- **Reporter:** NATHANIEL OLSON
-- **Status:** needs clarification
-
-**Original report:**
-
-Uploading and approving is trying to rebase regardless of being told not to.
-
-**Comments:**
-- NATHANIEL OLSON: Looking at it now, I hit save when I built the ROT and it appears it didn't save, but if you look at the training record I was trying to attach it to, it was dated 8/17/26.  Looks like I hit "save" and it disappears but still available to associate with for upload.
-- Andy Smircich: -make sure we read the follow up comment and the screenshot to understand the full context
-- rebase option is tricky since there are often multiple base months in one training record processing.  We need to make sure we are doing this properly, it might take a re-think of the approach a little bit
-- Andy Smircich: Shipped in dev — ready for your review.
-
-Upload and Approve was rebasing expiration even when New Base was false. It calculated from the training record date instead of extending the pilot’s current expiration.
-
-Fix:
-• New Base = false → extend current exp by the training interval (e.g. Aug 2027 → Aug 2028). Training date is only used when there is no prior exp.
-• New Base = true → rebase from base month / training date (same as before, with confirm if you’re within the normal window).
-
-Removed the misleading “set a new base month?” prompt that could rebase even when New Base was false.
-
-Please retry your Sara Cubbage / 8/17 B190SIC upload with New Base false and confirm the exp confirm shows an extension from current Aug 2027, not 8/17/2027.
-- NATHANIEL OLSON: I'll give it a shot but to build off of your "it might take a rethink of the approach."  I agree.  This approach works well for hard copies and binders, but doesn't translate well to the current training records program.  It is almost more work than paper and seems far less efficient.  If you could guide AI to build a completely new, streamlined approach or system, I'd definitely be open to options.  Maybe that is asking too much, but at this point, the current method with paper and binders seems preferable.
-- Andy Smircich: Lets work on this
-- Andy Smircich: Thanks for the honest feedback — that's exactly what we need to hear.
-
-You're right that the current Records flow was ported from a binder-era mental model: one line per checkride, manual base month, split upload vs approve UIs, confirm dialogs per event. The rebase fix addresses one bad behavior, but it doesn't fix the underlying friction you're describing. I'm open to a real redesign if we can define what "streamlined" means for your day-to-day work.
-
-Before we sketch a replacement, I need your input on a few things. Reply here with as much or as little detail as you want — bullet answers are fine.
-
-**1. Routine recurrent — happy path**
-What's the minimum you'd want? (e.g. select pilot → mark events done → attach PDF → one click done.) Which steps today feel like pure overhead?
-
-**2. Roles**
-Should Kaleb-only upload + you/Fen approving in a separate step stay? Or does one person usually do the whole thing? Anyone else who needs write access beyond the current list?
-
-**3. New Base**
-When should expiration rebase from the training month vs simply extend the pilot's current expiration by 12/6 months? Should that be **per training event** on the same checkride, not one flag for the whole record?
-
-**4. One checkride, multiple events**
-How often does one ride cover B190 PIC + ground + 299 together? Should approving update all of them in one action?
-
-**5. Paper vs digital**
-Which paper artifacts are still required (ROT PDF forms, quarterly check-airman report, physical binder copy)? What could we drop or auto-generate?
-
-**6. Approve without re-upload**
-Do you ever need to approve a record whose PDF was already uploaded separately? Should there be a plain **Approve** button on saved rows (not only Upload and Approve)?
-
-**7. Pilot boards vs Records**
-Should OME/OTZ boards and Records be one combined view, or stay separate with synced expiration dates only?
-
-**8. Audit / history**
-Is Current + 2 Previous expiration history enough for your audit needs, or do you need a full who/when/why change log per event?
-
----
-
-**Meanwhile — please retry the Sara Cubbage / 8/17 B190SIC case** with **New Base = false** and confirm whether the exp prompt now shows an extension from the current Jul 2027 expiration (not 8/17/2027). That tells us whether the immediate bug is fixed while we scope the bigger redesign.
-
-On the "save and it disappears" note: unapproved saved records are hidden unless **Include Previously Approved** is toggled — that's confusing and is on the fix list either way.
-
-**Attachments:**
-- ![screenshot-1787268300411.png](team-backlog/attachments/issue-23-att-14-screenshot-1787268300411.png)
+_None._
 
 ## Out of scope for agents
 

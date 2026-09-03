@@ -149,28 +149,41 @@ angular.module('workspaceApp')
                 record = args.shift(),
                 rows = args.shift() || [],
                 pilotName = args.shift() || 'pilot',
+                helpers = args.shift() || {},
                 theModal,
-                html,
-                i,
-                row;
+                formRows,
+                i;
 
-            html = '<p>Review expiration updates for <strong>' + pilotName + '</strong> before approving this record.</p>';
-            html += '<table class="table table-bordered table-condensed"><thead><tr><th>Event</th><th>Current</th><th>New</th><th>Action</th></tr></thead><tbody>';
+            formRows = [];
             for (i = 0; i < rows.length; i++) {
-              row = rows[i];
-              html += '<tr><td>' + row.expKey + '</td><td>' + row.current + '</td><td>' + row.proposed;
-              if (row.warnEarlier) {
-                html += ' <span style="color:#b94a48;">(earlier than current)</span>';
-              }
-              html += '</td><td>' + row.action + '</td></tr>';
+              formRows.push(angular.extend({}, rows[i], {
+                newBase: rows[i].action === 'rebase',
+                newDateInput: rows[i].proposed
+              }));
             }
-            html += '</tbody></table>';
 
             theModal = openModal({
               modal: {
+                expPreview: true,
                 dismissable: true,
                 title: 'Expiration preview',
-                html: html,
+                pilotName: pilotName,
+                formRows: formRows,
+                onRowChange: function(row) {
+                  if (helpers.recalcRow) {
+                    helpers.recalcRow(row, record);
+                    row.newDateInput = row.proposed;
+                  }
+                },
+                onRowManualDate: function(row) {
+                  if (helpers.parseDate) {
+                    row.newDate = helpers.parseDate(row.newDateInput);
+                    if (row.newDate && !isNaN(row.newDate.getTime())) {
+                      row.proposed = row.newDate.toLocaleDateString();
+                      row.newDateInput = row.proposed;
+                    }
+                  }
+                },
                 buttons: [{
                   classes: 'btn-success',
                   text: 'Approve and update expirations',
@@ -188,9 +201,19 @@ angular.module('workspaceApp')
             }, 'modal-success');
 
             theModal.result.then(function() {
-              cb(record, rows);
-            }).catch(function(err) {
-              console.log(err);
+              if (helpers.onClose) helpers.onClose();
+              var out = [];
+              for (i = 0; i < formRows.length; i++) {
+                var row = formRows[i];
+                var parsed = helpers.parseDate ? helpers.parseDate(row.newDateInput) : null;
+                out.push(angular.extend({}, row, {
+                  newDate: parsed && !isNaN(parsed.getTime()) ? parsed : row.newDate,
+                  proposed: row.newDateInput || row.proposed
+                }));
+              }
+              cb(record, out);
+            }).catch(function() {
+              if (helpers.onClose) helpers.onClose();
             });
           };
         },

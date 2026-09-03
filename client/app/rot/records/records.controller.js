@@ -73,7 +73,9 @@ class RecordsComponent {
           if (this.appConfig.trainingEventKeys.indexOf(key)<0) continue;
           if (this.records[recordIndex][key]&&typeof this.records[recordIndex][key]=="boolean") {
             this.records[recordIndex][key]="true";
-            this.records[recordIndex].trainingTypeArray.push(key);
+            if (this.records[recordIndex].trainingTypeArray.indexOf(key)<0) {
+              this.records[recordIndex].trainingTypeArray.push(key);
+            }
             if (key!=='far297'&&!this.records[recordIndex].baseMonthManual){
               let expKey=key+'Exp';
               //find pilot record
@@ -92,6 +94,7 @@ class RecordsComponent {
         this.buildRecordsChoice();
       });
       this.expPreviewModal = this.Modal.confirm.expPreview((record, rows) => {
+        this._expPreviewOpen = false;
         this.finalizeApproval(record, rows);
       });
       this.pilotModal = this.Modal.confirm.pilotData(formData =>{
@@ -571,6 +574,45 @@ class RecordsComponent {
     this.pilotModal(pilotCopy,this.pilots);
   }
 
+  parseExpInputDate(dateStr){
+    if (!dateStr) return null;
+    const parsed=this.parseShortExpDate(String(dateStr).trim());
+    if (parsed) return parsed;
+    const d=new Date(dateStr);
+    return isNaN(d.getTime())?null:d;
+  }
+
+  getCheckrideGraceState(expirationDateStr, checkrideDateStr){
+    const exp=new Date(expirationDateStr);
+    const check=new Date(checkrideDateStr);
+    if (isNaN(exp.getTime())||isNaN(check.getTime())) return 'outside';
+    const monthDiff=(check.getFullYear()-exp.getFullYear())*12+(check.getMonth()-exp.getMonth());
+    if (monthDiff===0) return 'due';
+    if (monthDiff===-1) return 'early';
+    if (monthDiff===1) return 'late';
+    return 'outside';
+  }
+
+  shouldAutoRebase(record, expKey){
+    const existingRaw=this.fullPilot&&this.fullPilot[expKey];
+    if (!existingRaw) return false;
+    const grace=this.getCheckrideGraceState(existingRaw, record.date);
+    return grace==='outside';
+  }
+
+  recalcExpPreviewRow(row, record){
+    const {tab,seat}=this.typeToTab(row.type);
+    const {expKey,timeframe}=this.setExp(tab,seat);
+    if (!timeframe||!expKey) return;
+    const newDate=this.computeExpDate(record, expKey, timeframe, {preview:true, newBase:!!row.newBase});
+    if (!newDate||isNaN(newDate.getTime())) return;
+    row.newDate=newDate;
+    row.proposed=newDate.toLocaleDateString();
+    row.action=row.newBase?'rebase':(row.current&&row.current!=='—'?'extend':'initial');
+    const existingDate=row.current&&row.current!=='—'?new Date(row.current):null;
+    row.warnEarlier=existingDate&&!isNaN(existingDate.getTime())&&newDate<existingDate;
+  }
+
   parseShortExpDate(expStr){
     if (!expStr) return null;
     let parts=expStr.split('/');
@@ -590,8 +632,9 @@ class RecordsComponent {
     let existingRaw=this.fullPilot[expKey];
     let existingDate=existingRaw?new Date(existingRaw):null;
     let hasExisting=existingDate&&!isNaN(existingDate.getTime());
+    const useRebase=options.newBase!==undefined?!!options.newBase:this.isNewBaseMonth(record);
 
-    if (this.isNewBaseMonth(record)) {
+    if (useRebase) {
       if (hasExisting&&this.isWithinOneMonth(recordDate, existingDate)) {
         if (!options.preview && !confirm('Are you sure you want to create a new base month? It appears you are within the window.')) {
           return null;
@@ -773,7 +816,7 @@ class RecordsComponent {
       const onUploadFinished=()=>{
         uploadsPending--;
         if (uploadsPending<=0) {
-          if (approveAfterUpload) {
+          if (approveAfterUpload && !this._expPreviewOpen) {
             const recordIndex=this.records.findIndex(r=>r._id===localAssociated._id);
             this.approve(localAssociated, recordIndex);
           }
@@ -841,28 +884,29 @@ class RecordsComponent {
 
   buildExpPreviewRows(record){
     const rows=[];
+    const seen={};
     if (!record||!record.trainingTypeArray||record.trainingTypeArray.length===0) return rows;
     record.trainingTypeArray.forEach(type=>{
       const {tab,seat}=this.typeToTab(type);
       if (!tab) return;
       const {expKey,expKeyAlt,timeframe}=this.setExp(tab,seat);
-      if (!timeframe||!expKey) return;
-      const newDate=this.computeExpDate(record, expKey, timeframe, {preview:true});
+      if (!timeframe||!expKey||seen[expKey]) return;
+      seen[expKey]=true;
+      const newBase=this.shouldAutoRebase(record, expKey);
+      const newDate=this.computeExpDate(record, expKey, timeframe, {preview:true, newBase:newBase});
       if (!newDate||isNaN(newDate.getTime())) return;
       const existingRaw=this.fullPilot[expKey];
       const existingDate=existingRaw?new Date(existingRaw):null;
       const hasExisting=existingDate&&!isNaN(existingDate.getTime());
-      let action='extend';
-      if (this.isNewBaseMonth(record)) action='rebase';
-      else if (!hasExisting) action='initial';
       rows.push({
         type:type,
         expKey:expKey,
         expKeyAlt:expKeyAlt,
         newDate:newDate,
+        newBase:newBase,
         current:existingRaw||'—',
         proposed:newDate.toLocaleDateString(),
-        action:action,
+        action:newBase?'rebase':(hasExisting?'extend':'initial'),
         warnEarlier:hasExisting&&newDate<existingDate
       });
     });
@@ -910,12 +954,18 @@ class RecordsComponent {
   }
 
   startApprove(record, index){
+    if (this._expPreviewOpen) return;
     if (!this.isApprover()) return this.toaster.error('Error','Only approvers can approve records');
     if (!record||!record._id) return this.toaster.error('Error','Save the record before approving');
     const localRecord=typeof index==='number'&&index>-1?this.records[index]:record;
     const previewRows=this.buildExpPreviewRows(localRecord);
     if (!previewRows.length) return this.toaster.error('Error','Select training types on this record before approving');
-    this.expPreviewModal(localRecord, previewRows, this.pilot.name);
+    this._expPreviewOpen=true;
+    this.expPreviewModal(localRecord, previewRows, this.pilot.name, {
+      recalcRow:(row, rec)=>this.recalcExpPreviewRow(row, rec),
+      parseDate:(str)=>this.parseExpInputDate(str),
+      onClose:()=>{this._expPreviewOpen=false;}
+    });
   }
   
   typeToTab(type){
@@ -1460,7 +1510,7 @@ class RecordsComponent {
         this.appConfig.trainingEventKeys.forEach(key=>{
           if (record[key]&&record[key]==="true") {
             if (key.slice(0,3)==="far") key=key.substring(3);
-            record.trainingTypeArray.push(key);
+            if (record.trainingTypeArray.indexOf(key)<0) record.trainingTypeArray.push(key);
           }
         });
       }

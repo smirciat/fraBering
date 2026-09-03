@@ -11,6 +11,30 @@
       <label>{{type.label}}</label>
     </div>
   </form>
+  <div ng-if="modal.expPreview">
+    <p>Review expiration updates for <strong>{{modal.pilotName}}</strong> before approving this record. Adjust <em>New base</em> or edit dates as needed.</p>
+    <table class="table table-bordered table-condensed">
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Current expiration</th>
+          <th>New base</th>
+          <th>New expiration</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="row in modal.formRows track by row.expKey">
+          <td>{{row.expKey}}</td>
+          <td>{{row.current}}</td>
+          <td style="text-align:center;"><input type="checkbox" ng-model="row.newBase" ng-change="modal.onRowChange(row)"></td>
+          <td>
+            <input type="text" class="form-control" style="width:9em;display:inline-block;" ng-model="row.newDateInput" ng-blur="modal.onRowManualDate(row)">
+            <span ng-if="row.warnEarlier" style="color:#b94a48;font-size:11px;"> earlier than current</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <form ng-if="modal.pilot" name="pilotData">
     <div class="modal-footer">
       <button ng-repeat="button in modal.buttons" ng-class="button.classes" ng-click="button.click($event)" ng-bind="button.text" class="btn"></button>
@@ -846,6 +870,6 @@
     </div>
   </div>
 </div>
-<div class="modal-footer">
+<div class="modal-footer" ng-if="!modal.pilot">
   <button ng-repeat="button in modal.buttons" ng-class="button.classes" ng-click="button.click($event)" ng-bind="button.text" class="btn"></button>
 </div>

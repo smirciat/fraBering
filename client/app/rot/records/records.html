@@ -189,7 +189,7 @@
                 <th>Aircraft</th>
                 <th>Type</th>
                 <th>Base Month</th>
-                <th>New Base</th>
+                <th ng-if="false">New Base</th>
                 <th>Instructor</th>
                 <th>CheckAirman</th>
                 <th>Result</th>
@@ -250,7 +250,7 @@
                     <div ng-bind-html="month | highlight: $select.search"></div>
                   </ui-select-choices>
                 </ui-select></td>
-                <td><ui-select ng-model="record.newBaseMonth" theme="bootstrap" ng-disabled="disabled">
+                <td ng-if="false"><ui-select ng-model="record.newBaseMonth" theme="bootstrap" ng-disabled="disabled">
                   <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
                   <ui-select-choices repeat="choice in ['true','false']" >
                     <div ng-bind-html="choice | highlight: $select.search"></div>
