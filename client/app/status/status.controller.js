@@ -183,6 +183,7 @@ class StatusComponent {
           response.airport.manualObs.previousSignature=response.airport.manualObs.signature;
           response.airport.manualObs.signature=null;
           if (response.airport.manualObs.webcam===false) response.airport.manualObs.webcam=null;
+          if (response.airport.manualObs.notVfr===false) response.airport.manualObs.notVfr=null;
         }
         this.weatherModal(response.airport,this.user);
       }
@@ -828,6 +829,7 @@ class StatusComponent {
     if (!manualObs) return '';
     if (manualObs.webcam) return 'WebCam Observation, VFR Only';
     if (manualObs.webcamIFR) return 'Official WebCam Observation';
+    if (manualObs.notVfr) return 'Manual Observation: Not VFR';
     let obs='UNOFFICIAL: ';
     if (manualObs.isOfficial) obs='OFFICIAL OBSERVATION: ';
     if (manualObs.windSpeed&&manualObs.windDirection) obs=obs+'Wind '+manualObs.windDirection+'@'+manualObs.windSpeed+'kts';
@@ -844,6 +846,7 @@ class StatusComponent {
     if (manualObs) {
       if (manualObs.webcamIFR) return false;
       if (manualObs.webcam) return true;
+      if (manualObs.notVfr) return true;
       return !manualObs.isOfficial;
     }
     return !metarObj.isOfficial;
@@ -858,14 +861,14 @@ class StatusComponent {
   syncManualOfficialFlag(metarObj,manualObs){
     if (!metarObj||!manualObs) return;
     if (manualObs.webcamIFR) metarObj.isOfficial=true;
-    else if (manualObs.webcam) metarObj.isOfficial=false;
+    else if (manualObs.webcam||manualObs.notVfr) metarObj.isOfficial=false;
     else metarObj.isOfficial=manualObs.isOfficial;
   }
 
   applyManualObservationIfNeeded(metarObj,airport,aircraft){
     if (!metarObj||!airport) return;
     if (airport.manualObs&&airport.manualTimestamp&&this.isLessThanOneHourAgo(new Date(airport.manualTimestamp))) {
-      if (airport.manualObs.webcam||airport.manualObs.webcamIFR) {
+      if (airport.manualObs.webcam||airport.manualObs.webcamIFR||airport.manualObs.notVfr) {
         metarObj.usingManual=true;
         metarObj.manualObs=airport.manualObs;
         this.syncManualOfficialFlag(metarObj,airport.manualObs);
@@ -1768,6 +1771,10 @@ class StatusComponent {
       }
       if (metarObj.airport.manualObs.webcamIFR) {
         metarObj.color=returnString+' airport-orange';
+        return metarObj.color;
+      }
+      if (metarObj.airport.manualObs.notVfr) {
+        metarObj.color=returnString+' airport-pink';
         return metarObj.color;
       }
     }
@@ -3053,6 +3060,7 @@ class StatusComponent {
               airport.manualObs.previousSignature=airport.manualObs.signature;
               airport.manualObs.signature=null;
               if (airport.manualObs.webcam===false) airport.manualObs.webcam=null;
+              if (airport.manualObs.notVfr===false) airport.manualObs.notVfr=null;
             }
             this.weatherModal(airport,this.user);
             //this.tafDisplay('The TAF for ' +airport.name+' is:',airport.metarObj.taf);
@@ -3071,6 +3079,7 @@ class StatusComponent {
               airport.airport.manualObs.previousSignature=airport.airport.manualObs.signature;
               airport.airport.manualObs.signature=null;
               if (airport.airport.manualObs.webcam===false) airport.airport.manualObs.webcam=null;
+              if (airport.airport.manualObs.notVfr===false) airport.airport.manualObs.notVfr=null;
             }
               this.weatherModal(airport.airport,this.user);
             //}

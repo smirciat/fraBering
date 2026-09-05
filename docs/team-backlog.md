@@ -6,6 +6,19 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
+## #31 Flashing Weather Idea
+
+- **Type:** feature · medium · open
+- **Reporter:** Fen Kinneen
+
+**Original report:**
+
+Hi Andy,
+
+ 
+
+Today we are holding 840 on SMK weather. WBB looks almost okay, but definitely not to a point where I’m ready to call if VFR. In order to stop the flashing, I just marked the ceiling as 300. I know it’s not 300, but I just wanted to make the flashing stop, as we should. I’m thinking a third check box in the manual observation page could say “not VFR” or something of the like. Something that says “I don’t know what the weather is, but it’s not good enough to dispatch for VFR flight” in just a word or two. Turns the box red, prevents dispatch, stops the flashing. Bada-bing, bada-boom.
+
 ## #23 Trying to rebase when not told to do so
 
 - **Type:** bug · medium · in_progress
@@ -463,28 +476,6 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
-
-## #30 293(a)1,4-8
-
-- **Type:** bug · medium · ready_for_review
-- **Reporter:** NATHANIEL OLSON
-- **Status:** ready for review
-
-**Original report:**
-
-Need a selection for 293(a)1,4-8
-
-**Comments:**
-- Andy Smircich: Shipped — ready for your review.
-
-**#30 293(a) 1,4-8 selection**
-
-Added **293(a) 1,4-8** to the training-type checkbox modal (under Basic Indoctrination). Selecting it tracks `far293a` on the record, updates `far293a148` on approve, and populates the ROT form section when generating paperwork.
-
-Please confirm it appears in the type picker and that approve updates the pilot board 293(a) expiration as expected.
-
-**Attachments:**
-- ![screenshot-1788475606065.png](team-backlog/attachments/issue-30-att-23-screenshot-1788475606065.png)
 
 ## #24 Manual weather input
 

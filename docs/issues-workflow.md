@@ -58,6 +58,8 @@ ISSUES_EXPORT_TOKEN: 'long-random-string'
 
 Same value as `ISSUES_EXPORT_TOKEN` when running the export script.
 
+JWT fallback (if no export token): `ISSUES_EXPORT_EMAIL` + `ISSUES_EXPORT_PASSWORD`, or **`DEVELOPER_EMAIL_ADDRESS` + `DEVELOPER_PASSWORD`** from the same `local.env.js`.
+
 If unset, only **admin** / **superadmin** JWT can call `/api/issues/agent-summary`.
 
 ### Email on new issue

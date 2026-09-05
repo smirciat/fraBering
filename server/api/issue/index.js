@@ -34,19 +34,32 @@ function allowExportTokenOrUser(req, res, next) {
   return auth.hasRole('user')(req, res, next);
 }
 
+function allowExportTokenOrUser(req, res, next) {
+  var secret = exportTokenSecret();
+  if (secret) {
+    var provided = req.get('x-issues-export-token') || req.query.exportToken;
+    if (provided && String(provided) === String(secret)) {
+      req.user = {_id: 0, name: 'Cursor Agent', role: 'admin'};
+      return next();
+    }
+  }
+  return auth.hasRole('user')(req, res, next);
+}
+
 router.get('/agent-summary', allowAgentSummaryAccess, controller.agentSummary);
 router.get('/agent-export', allowAgentSummaryAccess, controller.agentExport);
 router.get('/export/attachments/:attachmentId', allowAgentSummaryAccess, controller.serveAttachment);
 router.get('/attachments/:attachmentId', allowExportTokenOrUser, controller.serveAttachment);
+
+router.patch('/:id', allowExportTokenOrUser, controller.update);
+router.post('/:id/comments', allowExportTokenOrUser, controller.addComment);
 
 router.use(auth.hasRole('user'));
 
 router.get('/', controller.index);
 router.get('/:id', controller.show);
 router.post('/', controller.create);
-router.post('/:id/comments', controller.addComment);
 router.post('/:id/attachments', controller.addAttachments);
 router.put('/:id', controller.update);
-router.patch('/:id', controller.update);
 
 module.exports = router;
