@@ -3045,19 +3045,37 @@ class StatusComponent {
     return status==='en route'||status==='completed'||status==='arrived';
   }
 
+  isCancelledFlightStatus(flight){
+    if (!flight||!flight.flightStatus) return false;
+    let status=String(flight.flightStatus).trim().toLowerCase();
+    return status.indexOf('cancel')>-1;
+  }
+
+  isWeatherFlashSuppressed(flight){
+    if (!flight||flight.active!=='true') return true;
+    if (flight.ocRelease&&flight.ocRelease!=='') return true;
+    if (this.isFullyReleased(flight)) return true;
+    if (this.hasDepartedStatus(flight)) return true;
+    if (this.hasLoggedDepartureTime(flight)) return true;
+    if (this.isCancelledFlightStatus(flight)) return true;
+    let status=flight.flightStatus?String(flight.flightStatus).trim().toLowerCase():'';
+    if (status.indexOf('no show')>-1||status.indexOf('noshow')>-1) return true;
+    if (status.indexOf('no-go')>-1||status.indexOf('nogo')>-1) return true;
+    return false;
+  }
+
   isFullyReleased(flight){
     if (!flight||!flight.pilotAgree||flight.pilotAgree==='') return false;
     return !!(flight.ocRelease&&flight.ocRelease!=='')||!!(flight.dispatchRelease&&flight.dispatchRelease!=='');
   }
 
   flightDepartWarningBlocked(flight){
-    if (flight&&flight.ocRelease&&flight.ocRelease!=='') return true;
-    return this.isFullyReleased(flight)||this.hasDepartedStatus(flight)||this.hasLoggedDepartureTime(flight);
+    return this.isWeatherFlashSuppressed(flight);
   }
 
   flightNeedsDepartWarning(flight){
-    if (!flight||flight.active!=='true') return false;
-    if (this.flightDepartWarningBlocked(flight)) return false;
+    if (!flight) return false;
+    if (this.isWeatherFlashSuppressed(flight)) return false;
     return this.flightHasBlueOrPurpleLeg(flight)&&this.isWithinOneHourOfDeparture(flight);
   }
   
