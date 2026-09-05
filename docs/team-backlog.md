@@ -6,6 +6,19 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
+## #31 Flashing Weather Idea
+
+- **Type:** feature · medium · open
+- **Reporter:** Fen Kinneen
+
+**Original report:**
+
+Hi Andy,
+
+ 
+
+Today we are holding 840 on SMK weather. WBB looks almost okay, but definitely not to a point where I’m ready to call if VFR. In order to stop the flashing, I just marked the ceiling as 300. I know it’s not 300, but I just wanted to make the flashing stop, as we should. I’m thinking a third check box in the manual observation page could say “not VFR” or something of the like. Something that says “I don’t know what the weather is, but it’s not good enough to dispatch for VFR flight” in just a word or two. Turns the box red, prevents dispatch, stops the flashing. Bada-bing, bada-boom.
+
 ## #23 Trying to rebase when not told to do so
 
 - **Type:** bug · medium · in_progress

@@ -549,6 +549,13 @@ angular.module('workspaceApp')
                     metarObj.color=(String(metarObj.color||'').indexOf('night')>-1?'night ':'')+'airport-orange';
                     return;
                   }
+                  if (mo.notVfr) {
+                    metarObj['Raw-Report']='Manual Observation: Not VFR';
+                    metarObj.usingManual=true;
+                    metarObj.isOfficial=false;
+                    metarObj.color=(String(metarObj.color||'').indexOf('night')>-1?'night ':'')+'airport-pink';
+                    return;
+                  }
                   let priorColor=String(metarObj.color||'');
                   let needsManual=!metarObj['Raw-Report']||priorColor.indexOf('airport-blue')>-1||priorColor.indexOf('airport-purple')>-1;
                   if (!needsManual) return;
@@ -1004,29 +1011,38 @@ angular.module('workspaceApp')
                 disableWebcam:function(){
                   if (webcamEnabled.indexOf(airport.threeLetter)<0) return true;
                 },
+                clearManualObsFields:function(){
+                  manualObs.visibility=null;
+                  manualObs.ceiling=null;
+                  manualObs.altimeter=null;
+                  manualObs.windDirection=null;
+                  manualObs.windSpeed=null;
+                },
                 clickWebcam:function(kind){
                   setTimeout(()=>{
                     if (kind==='webcam') {
                       if (manualObs.webcam) {
                         manualObs.webcamIFR=false;
+                        manualObs.notVfr=false;
                         manualObs.isOfficial=false;
-                        manualObs.visibility=null;
-                        manualObs.ceiling=null;
-                        manualObs.altimeter=null;
-                        manualObs.windDirection=null;
-                        manualObs.windSpeed=null;
+                        weatherModalApi.clearManualObsFields();
                       }
                       
                     }
-                    else {
+                    else if (kind==='webcamIFR') {
                       if (manualObs.webcamIFR) {
                         manualObs.webcam=false;
+                        manualObs.notVfr=false;
                         manualObs.isOfficial=true;
-                        manualObs.visibility=null;
-                        manualObs.ceiling=null;
-                        manualObs.altimeter=null;
-                        manualObs.windDirection=null;
-                        manualObs.windSpeed=null;
+                        weatherModalApi.clearManualObsFields();
+                      }
+                    }
+                    else if (kind==='notVfr') {
+                      if (manualObs.notVfr) {
+                        manualObs.webcam=false;
+                        manualObs.webcamIFR=false;
+                        manualObs.isOfficial=false;
+                        weatherModalApi.clearManualObsFields();
                       }
                     }
                   },0);

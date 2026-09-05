@@ -15,6 +15,8 @@ module.exports = {
   GMAIL_PASS:'',
   // Email when a new issue is filed (Issues navbar)
   DEVELOPER_EMAIL_ADDRESS: '',
+  // Optional: fraBering login for issue scripts when ISSUES_EXPORT_TOKEN is unset
+  DEVELOPER_PASSWORD: '',
   TWILIO_AUTH_TOKEN: '',
   TWILIO_ACCOUNT_SID: '',
   TWILIO_PHONE_NUMBER: '',

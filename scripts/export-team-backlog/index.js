@@ -13,7 +13,8 @@
  *   node scripts/export-team-backlog/index.js --local
  *     → http://localhost:9000 (dev DB only)
  *
- * Auth: ISSUES_EXPORT_TOKEN in local.env.js (same string as on prod server) or env vars below.
+ * Auth: ISSUES_EXPORT_TOKEN in local.env.js (same string as on prod server), or
+ * ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD, or DEVELOPER_EMAIL_ADDRESS + DEVELOPER_PASSWORD.
  */
 
 'use strict';
@@ -22,29 +23,10 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const https = require('https');
+const {loadLocalEnv, authHeaders} = require('../issue-auth');
 
 const LOCAL_API_BASE = 'http://localhost:9000';
 const PROD_API_BASE = 'https://frat.beringair.com';
-
-function loadLocalEnv() {
-  try {
-    const envPath = path.join(__dirname, '../../server/config/local.env.js');
-    const local = require(envPath);
-    Object.keys(local).forEach((key) => {
-      if (
-        process.env[key] === undefined &&
-        local[key] !== undefined &&
-        local[key] !== ''
-      ) {
-        process.env[key] = String(local[key]);
-      }
-    });
-  } catch (e) {
-    // local.env.js is optional for export
-  }
-}
-
-loadLocalEnv();
 
 function fetchBuffer(url, headers) {
   return new Promise((resolve, reject) => {
@@ -115,25 +97,6 @@ function resolveApiBase() {
     return process.env.FRA_API_BASE.replace(/\/$/, '');
   }
   return PROD_API_BASE;
-}
-
-async function authHeaders(base) {
-  const exportToken = process.env.ISSUES_EXPORT_TOKEN;
-  if (exportToken) {
-    return {headers: {'x-issues-export-token': exportToken}, exportToken: exportToken};
-  }
-  const email = process.env.ISSUES_EXPORT_EMAIL;
-  const password = process.env.ISSUES_EXPORT_PASSWORD;
-  if (email && password) {
-    const login = await postJson(`${base}/auth/local`, {email, password});
-    if (!login.token) {
-      throw new Error('Login succeeded but no token returned');
-    }
-    return {headers: {authorization: 'Bearer ' + login.token}, exportToken: null};
-  }
-  throw new Error(
-    'Set ISSUES_EXPORT_TOKEN or ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD (admin user)'
-  );
 }
 
 async function fetchAttachmentBuffer(base, attachmentId, auth) {
@@ -224,6 +187,7 @@ async function fetchExportBundle(base, headers) {
 }
 
 async function main() {
+  loadLocalEnv();
   const base = resolveApiBase();
   const auth = await authHeaders(base);
   const bundle = await fetchExportBundle(base, auth.headers);

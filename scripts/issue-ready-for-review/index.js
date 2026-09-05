@@ -6,33 +6,19 @@
  *   node scripts/issue-ready-for-review/index.js
  *   node scripts/issue-ready-for-review/index.js --local
  *
- * Auth: ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD in server/config/local.env.js
+ * Auth: ISSUES_EXPORT_TOKEN, or ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD,
+ * or DEVELOPER_EMAIL_ADDRESS + DEVELOPER_PASSWORD in server/config/local.env.js
  * (admin user — same pattern as export-team-backlog fallback).
  */
 
 'use strict';
 
-const path = require('path');
 const http = require('http');
 const https = require('https');
+const {loadLocalEnv, authHeaders} = require('../issue-auth');
 
 const LOCAL_API_BASE = 'http://localhost:9000';
 const PROD_API_BASE = 'https://frat.beringair.com';
-
-function loadLocalEnv() {
-  try {
-    const local = require(path.join(__dirname, '../../server/config/local.env.js'));
-    Object.keys(local).forEach((key) => {
-      if (process.env[key] === undefined && local[key] !== undefined && local[key] !== '') {
-        process.env[key] = String(local[key]);
-      }
-    });
-  } catch (e) {
-    // optional
-  }
-}
-
-loadLocalEnv();
 
 const UPDATES = [
   {
@@ -150,24 +136,16 @@ function requestJson(method, url, headers, body) {
 }
 
 async function main() {
-  const email = process.env.ISSUES_EXPORT_EMAIL;
-  const password = process.env.ISSUES_EXPORT_PASSWORD;
-  if (!email || !password) {
-    throw new Error('Set ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD in server/config/local.env.js');
-  }
+  loadLocalEnv();
 
   const base = resolveApiBase();
-  console.log('Logging in to ' + base + '...');
-  const login = await requestJson('POST', base + '/auth/local', {}, {email, password});
-  if (!login.token) {
-    throw new Error('Login succeeded but no token returned');
-  }
-  const headers = {authorization: 'Bearer ' + login.token};
+  const auth = await authHeaders(base);
+  console.log('Using ' + base + '...');
 
   for (const item of UPDATES) {
     console.log('Issue #' + item.id + '...');
-    await requestJson('PATCH', base + '/api/issues/' + item.id, headers, {status: 'ready_for_review'});
-    await requestJson('POST', base + '/api/issues/' + item.id + '/comments', headers, {
+    await requestJson('PATCH', base + '/api/issues/' + item.id, auth.headers, {status: 'ready_for_review'});
+    await requestJson('POST', base + '/api/issues/' + item.id + '/comments', auth.headers, {
       body: item.body,
       emailReporter: true
     });

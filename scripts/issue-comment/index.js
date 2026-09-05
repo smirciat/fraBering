@@ -6,25 +6,17 @@
  *   node scripts/issue-comment/index.js <issueId> [--status needs_clarification] [--no-email]
  *
  * Body: stdin or ISSUE_COMMENT_BODY env var.
- * Auth: ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD in local.env.js
+ * Auth: ISSUES_EXPORT_TOKEN, or ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD,
+ * or DEVELOPER_EMAIL_ADDRESS + DEVELOPER_PASSWORD in local.env.js
  */
 
 'use strict';
 
-const path = require('path');
 const http = require('http');
 const https = require('https');
+const {loadLocalEnv, authHeaders} = require('../issue-auth');
 
 const PROD_API_BASE = 'https://frat.beringair.com';
-
-function loadLocalEnv() {
-  const local = require(path.join(__dirname, '../../server/config/local.env.js'));
-  Object.keys(local).forEach((key) => {
-    if (process.env[key] === undefined && local[key] !== undefined && local[key] !== '') {
-      process.env[key] = String(local[key]);
-    }
-  });
-}
 
 function requestJson(method, url, headers, body) {
   return new Promise((resolve, reject) => {
@@ -99,22 +91,15 @@ async function main() {
     throw new Error('Comment body required on stdin or ISSUE_COMMENT_BODY');
   }
 
-  const email = process.env.ISSUES_EXPORT_EMAIL;
-  const password = process.env.ISSUES_EXPORT_PASSWORD;
-  if (!email || !password) {
-    throw new Error('Set ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD in server/config/local.env.js');
-  }
-
   const base = (process.env.API_BASE_URL || PROD_API_BASE).replace(/\/$/, '');
-  const login = await requestJson('POST', base + '/auth/local', {}, {email, password});
-  const headers = {authorization: 'Bearer ' + login.token};
+  const auth = await authHeaders(base);
 
   if (status) {
-    await requestJson('PATCH', base + '/api/issues/' + issueId, headers, {status: status});
+    await requestJson('PATCH', base + '/api/issues/' + issueId, auth.headers, {status: status});
     console.log('Status -> ' + status);
   }
 
-  await requestJson('POST', base + '/api/issues/' + issueId + '/comments', headers, {
+  await requestJson('POST', base + '/api/issues/' + issueId + '/comments', auth.headers, {
     body: body.trim(),
     emailReporter: emailReporter
   });

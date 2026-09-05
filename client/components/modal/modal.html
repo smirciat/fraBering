@@ -116,7 +116,7 @@
     <p>Previous Timestamp: {{modal.getTimestamp()}}</p>
     <p>Previous Signature: {{modal.manualObs.previousSignature}}</p>
     
-    <form name="manualWeatherForm" class="manual-weather-form" ng-hide="modal.manualObs.webcam||modal.manualObs.webcamIFR">
+    <form name="manualWeatherForm" class="manual-weather-form" ng-hide="modal.manualObs.webcam||modal.manualObs.webcamIFR||modal.manualObs.notVfr">
       <div class="modal-timestamp-layout" style="align-items: center;">
         <div>
           <div style="height:44px"><input class="form-control" type="text" ng-model="modal.manualObs.windDirection" ng-blur="modal.normalizeManualObsField('windDirection')" tabindex="1"></div>
@@ -140,7 +140,7 @@
         </div>
       </div>
     </form>
-    <div><p><strong>Uncheck any 'WebCam' boxes to input a manual observation</strong></p></div>
+    <div><p><strong>Uncheck shortcut boxes below to enter a full manual observation</strong></p></div>
     <div class="modal-timestamp-layout" style="align-items: center;">
       <div>
         <div style="height:44px;padding-top:10px">
@@ -150,18 +150,22 @@
             <input class="form-control" type="checkbox" style="width:44px;" ng-model="modal.manualObs.webcam" ng-change="modal.clickWebcam('webcam')">
             
             <input class="form-control" type="checkbox" style="width:44px;" ng-model="modal.manualObs.webcamIFR" ng-change="modal.clickWebcam('webcamIFR')" ng-disabled="modal.disableWebcam()">
+
+            <input class="form-control" type="checkbox" style="width:44px;" ng-model="modal.manualObs.notVfr" ng-change="modal.clickWebcam('notVfr')">
           </span>
         </div>
       </div>
       <div style="margin-top:12px">
         <div style="height:44px;padding-top:10px"><label>&nbsp WebCam (VFR Only)</label></div>
         <div style="height:44px;padding-top:10px"><label>&nbsp Official WebCam Observation (VFR/IFR)</label></div>
+        <div style="height:44px;padding-top:10px"><label>&nbsp Not VFR (below VFR mins — blocks dispatch)</label></div>
       </div>
     </div>
     <div>
       <br>
       <div style="height:44px;padding-top:10px" ng-show="modal.manualObs.webcam"><label>Confirmed! WebCam Shows VFR Conditions</label></div>
       <div style="height:44px;padding-top:10px" ng-show="modal.manualObs.webcamIFR"><label>Confirmed! WebCam Shows Conditions IAW GOM for IFR Operations</label></div>
+      <div style="height:44px;padding-top:10px" ng-show="modal.manualObs.notVfr"><label>Confirmed! Weather is not adequate for VFR dispatch at this airport</label></div>
       <br>
     </div>
     <div class="modal-contaminent-layout" style="align-items: center;">
