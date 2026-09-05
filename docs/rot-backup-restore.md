@@ -6,7 +6,7 @@ Two separate concerns when moving ROT into fraBering:
 |---------|------------|------------------|
 | **`ROT_SOURCE_URI`** | Postgres connection to the **old standalone ROT database** | **One-time** import of `Evaluations` rows into fraBering `RotEvaluations` |
 | **Training PDF migration** | Copy `attachments`, `records`, `pdfs` from ROT → fraBering | **One-time** prod cutover (script below) |
-| **PDF backups** | Tarballs of those same paths on disk | **Ongoing** — prod → vultr + dev |
+| **PDF backups** | Tarballs of those same paths on disk | **Ongoing** — prod → **Vultr only** (not Oregon dev) |
 
 They are **not** the same thing. Daily backups do **not** use `ROT_SOURCE_URI`.
 
@@ -121,7 +121,7 @@ Find the real URI on **bering-prod** in `~/ROT/server/config/local.env.js` → `
 
 ---
 
-## Document backup strategy (prod → vultr + dev)
+## Document backup strategy (prod → Vultr)
 
 ### What gets backed up
 
@@ -140,8 +140,8 @@ From `~/ROT/server/` on **bering-prod** — **training document PDFs only**:
 | Host | Copies kept | Why |
 |------|-------------|-----|
 | **bering-prod** | **1** | Live files are the source of truth; tar is a convenience copy before push |
-| **bering-vultr** | **3** | Off-site if prod is unrecoverable or latest tar is corrupt |
-| **bering-dev** | **1** | Latest copy for restore (~27 GB free; one ~10 GB tar fits) |
+| **bering-vultr** | **1** | Off-site if prod is unrecoverable |
+| **bering-dev** (Oregon) | **0** | Do not push — Kamatera snapshots + Vultr; see `resBering/docs/bering-dev-disk.md` |
 
 Set in `/etc/bering/rot-backup.env`:
 
@@ -149,14 +149,14 @@ Set in `/etc/bering/rot-backup.env`:
 BACKUP_HOME=/home/andy
 SSH_CONFIG=/home/andy/.ssh/config
 SSH_IDENTITY_FILE=/home/andy/.ssh/bering_backup
-REMOTE_HOSTS="bering-vultr bering-dev"
-REMOTE_KEEP_COUNTS="3 1"
+REMOTE_HOSTS="bering-vultr"
+REMOTE_KEEP_COUNTS="1"
 # Do not set REMOTE_USER if User is already in ~/.ssh/config for each Host
 ```
 
 **Cron note:** Cron does not load your login shell. Set `BACKUP_HOME`, `SSH_CONFIG`, and `SSH_IDENTITY_FILE` in rot-backup.env. The backup uses **`rot-backup-ssh.sh`** (same flags as a manual `ssh -F … -i … bering-vultr` test) for both `ssh` and `rsync -e`, because rsync’s `-e "ssh …"` string often drops config/key options.
 
-At ~10 GB per tar: prod ~10 GB, vultr ~30 GB, dev ~10 GB.
+At ~200 MB per tar: prod ~200 MB, vultr ~200 MB.
 
 Check prod before first run:
 
@@ -186,11 +186,10 @@ This section is the operator checklist: what to run on each machine, in order, a
 1. **bering-prod** (cron, ~02:15) runs `backup-rot-pdfs.sh`.
 2. Script copies **training PDF paths only** from `~/ROT/server/` into a temp dir.
 3. Script builds **`/var/backups/rot/rot-docs-YYYY-MM-DD.tar.gz`** (~10 GB on prod).
-4. Script **rsync**s that file to **bering-vultr** and **bering-dev** → `/var/backups/rot/`.
+4. Script **rsync**s that file to **bering-vultr** → `/var/backups/rot/`.
 5. Script **deletes old tars**:
    - prod: keep **1** newest
-   - vultr: keep **3** newest
-   - dev: keep **1** newest
+   - vultr: keep **1** newest
 6. Log append: `/var/backups/rot/backup.log` and `cron.log`.
 
 Nothing touches Postgres. DB backups stay your existing dev/vultr Postgres process.
@@ -206,15 +205,14 @@ Nothing touches Postgres. DB backups stay your existing dev/vultr Postgres proce
 | `rsync`, `ssh`, `tar`, `gzip` | prod |
 | `/var/backups/rot` writable | prod, vultr, dev |
 | **~15 GB free** on prod backup filesystem (script checks `MIN_FREE_GB`) | prod |
-| **~30 GB free** on vultr backup dir | vultr |
-| **~12 GB free** on dev backup dir (1 tar) | dev |
-| Passwordless SSH **prod → vultr** and **prod → dev** | prod `~/.ssh` |
+| **~1 GB free** on vultr backup dir (1 tar) | vultr |
+| Passwordless SSH **prod → vultr** | prod `~/.ssh` |
 
 ---
 
-### Step 1 — bering-vultr and bering-dev (one-time)
+### Step 1 — bering-vultr (one-time)
 
-On **each** backup server:
+On the backup server:
 
 ```bash
 sudo mkdir -p /var/backups/rot
@@ -223,13 +221,9 @@ chmod 700 /var/backups/rot
 df -h /var/backups
 ```
 
-You need **~30 GB** on vultr (3 tars) and **~12 GB** on dev (1 tar).
+You need **~1 GB** on vultr (1 tar). **Oregon dev does not receive ROT PDF tars** — see `resBering/docs/bering-dev-disk.md`.
 
-No cron on vultr/dev — they only **receive** files from prod.
-
----
-
-You need **~30 GB** on vultr (3 tars) and **~12 GB** on dev (1 tar). Adjust `REMOTE_KEEP_COUNTS` if space is tight.
+No cron on vultr — it only **receives** files from prod.
 
 ---
 
@@ -380,8 +374,8 @@ nano /etc/bering/rot-backup.env
 | `ROT_SERVER_ROOT` | `/home/andy/ROT/server` | Must exist; where ROT stores PDFs today |
 | `BACKUP_DIR` | `/var/backups/rot` | Where prod writes the tar before push |
 | `PROD_KEEP_COUNT` | `1` | One tar on prod |
-| `REMOTE_HOSTS` | `bering-vultr bering-dev` | Order matters |
-| `REMOTE_KEEP_COUNTS` | `3 1` | vultr keeps 3, dev keeps 1 |
+| `REMOTE_HOSTS` | `bering-vultr` | Vultr only — not Oregon dev |
+| `REMOTE_KEEP_COUNTS` | `1` | vultr keeps 1 |
 | `SSH_IDENTITY_FILE` | `/home/andy/.ssh/bering_backup` | Optional; matches SSH config |
 | `REMOTE_DIR` | `/var/backups/rot` | Same path on both remotes |
 
@@ -577,7 +571,7 @@ sudo chown $USER:$USER /var/backups/rot   # or dedicated backup user
 Edit `/etc/bering/rot-backup.env`:
 
 - `ROT_SERVER_ROOT` — usually `/home/andy/ROT/server`
-- `PROD_KEEP_COUNT=1`, `REMOTE_KEEP_COUNTS="3 1"`
+- `PROD_KEEP_COUNT=1`, `REMOTE_KEEP_COUNTS="1"`
 - `REMOTE_HOSTS`, `REMOTE_DIR`, optional `SSH_IDENTITY_FILE`
 
 ### 3. Test once manually
@@ -604,7 +598,7 @@ crontab -e
 15 2 * * * ROT_BACKUP_ENV=/etc/bering/rot-backup.env /home/andy/fraBering/scripts/rot-backup/backup-rot-pdfs.sh >> /var/backups/rot/cron.log 2>&1
 ```
 
-Retention: prod **1** tar; vultr **3**; dev **1** (see `REMOTE_KEEP_COUNTS`).
+Retention: prod **1** tar; vultr **1** (see `REMOTE_KEEP_COUNTS`).
 
 ---
 
@@ -680,8 +674,8 @@ Use your existing Postgres backups on dev/vultr (not the PDF tar). For fraBering
 | How do I stop standalone ROT? | `docs/rot-decommission.md` |
 | Where does nightly backup read from? | `ROT_BACKUP_SOURCE=frabering` → `server/fileserver/rot/` |
 | Where do PDFs live in fraBering? | `server/fileserver/rot/` (repo root, not `dist/`) |
-| Where are daily backups? | `/var/backups/rot/rot-docs-YYYY-MM-DD.tar.gz` on prod, vultr, dev |
-| How long kept? | **1** prod, **3** vultr, **1** dev (`REMOTE_KEEP_COUNTS="3 1"`) |
+| How long kept? | **1** prod, **1** vultr (`REMOTE_KEEP_COUNTS="1"`) |
+| Where are daily backups? | `/var/backups/rot/rot-docs-YYYY-MM-DD.tar.gz` on prod and vultr |
 | Recover files? | `scripts/rot-backup/restore-rot-pdfs.sh <tar>` |
 
 See also: `docs/rot-integration-plan.md`, `scripts/migrate-rot-evaluations/index.js`.

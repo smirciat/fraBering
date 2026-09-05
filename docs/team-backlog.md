@@ -336,6 +336,18 @@ Helicopter cards unchanged. Date under tail and truck/meter fields as before.
 
 Please verify on phone at your base — especially a Caravan with fuel entered.
 - Benjamin Rowe: This is looking good.  Need to see some more use by ground crew, testing and feedback.
+- Benjamin Rowe: Example: N171CJ 9/5/26 BRG702, please check math.  Screenshot attached.  Request is to ADD 242/gal side which is 50gal less than required.  
+3500-1537 = 1963lbs or 292gal (at 6.7lbs/gal).  So the request should be calculated at 146gal/side.  
+
+Further, the request would be really useful to the fueler if the ADD line said:
+ADD: 127gal/side MAINS + 19gal/side AUX.  
+
+This pattern should be applied to all aircraft with main and aux tanks (B190, BE20, C212, R44, MD500, Huey)
+
+Otherwise this page looks nice, formatted well for phone viewing.  Need to get some more fueler/pilot testers and determine if actually a value-add useful feature or if there is a better way to communicate fuel requests, sequence, and status efficiently around large ramp areas.  Thanks
+
+**Attachments:**
+- ![screenshot-1788629769622.png](team-backlog/attachments/issue-15-att-24-screenshot-1788629769622.png)
 
 ## #14 Helicopter fuel request
 
@@ -464,27 +476,37 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
 
-## #30 293(a)1,4-8
+## #31 Flashing Weather Idea
 
-- **Type:** bug · medium · ready_for_review
-- **Reporter:** NATHANIEL OLSON
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** Fen Kinneen
 - **Status:** ready for review
 
 **Original report:**
 
-Need a selection for 293(a)1,4-8
+Hi Andy,
+
+ 
+
+Today we are holding 840 on SMK weather. WBB looks almost okay, but definitely not to a point where I’m ready to call if VFR. In order to stop the flashing, I just marked the ceiling as 300. I know it’s not 300, but I just wanted to make the flashing stop, as we should. I’m thinking a third check box in the manual observation page could say “not VFR” or something of the like. Something that says “I don’t know what the weather is, but it’s not good enough to dispatch for VFR flight” in just a word or two. Turns the box red, prevents dispatch, stops the flashing. Bada-bing, bada-boom.
 
 **Comments:**
-- Andy Smircich: Shipped — ready for your review.
+- Cursor Agent: Shipped in dev — ready for your review.
 
-**#30 293(a) 1,4-8 selection**
+**#31 Not VFR manual observation**
 
-Added **293(a) 1,4-8** to the training-type checkbox modal (under Basic Indoctrination). Selecting it tracks `far293a` on the record, updates `far293a148` on approve, and populates the ROT form section when generating paperwork.
+Manual weather modal now has a third shortcut checkbox **Not VFR** (alongside WebCam VFR and Official WebCam):
 
-Please confirm it appears in the type picker and that approve updates the pilot board 293(a) expiration as expected.
+• Dispatch can declare weather is below VFR mins without inventing a ceiling/visibility number
+• Airport leg colors **pink** (blocks VFR dispatch in Flight Release)
+• Stops the **depart-warning flash** (that only triggers on blue/purple legs within 1 hr of departure)
+• Mutually exclusive with WebCam shortcuts and the numeric manual entry form
 
-**Attachments:**
-- ![screenshot-1788475606065.png](team-backlog/attachments/issue-30-att-23-screenshot-1788475606065.png)
+**Please verify**
+1. Airport with missing/stale METAR (blue or purple leg) flashing within 1 hr of departure
+2. Right-click airport → manual weather → check **Not VFR** → sign/save
+3. Leg should turn pink, flight should stop flashing, Flight Release should block dispatch on that leg
+4. Uncheck Not VFR or enter a full manual obs to clear the declaration
 
 ## #24 Manual weather input
 

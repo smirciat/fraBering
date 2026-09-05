@@ -1592,6 +1592,69 @@ class StatusComponent {
     return this.fuelTruckOptionsList || [];
   }
 
+  twinTankFuelLimits(equipment) {
+    if (!equipment) return null;
+    let maxMain = equipment.maxMain;
+    let maxAux = equipment.maxAux;
+    if ((!maxMain || !maxAux) && equipment.name) {
+      let fallback = {
+        Casa: { maxMain: 1323, maxAux: 289 }
+      };
+      if (fallback[equipment.name]) {
+        maxMain = fallback[equipment.name].maxMain;
+        maxAux = fallback[equipment.name].maxAux;
+      }
+    }
+    if (!maxMain || !maxAux) return null;
+    return { maxMain: maxMain * 1, maxAux: maxAux * 1, galFactor: 6.7 };
+  }
+
+  heliTwinTankLimits(heli) {
+    if (!heli) return null;
+    let type = String(heli.acftType || '').toUpperCase();
+    if (type.indexOf('R44') > -1 || type.indexOf('R-44') > -1) return { maxMain: 29, maxAux: 17, galFactor: 1 };
+    if (type.indexOf('MD500') > -1 || type.indexOf('MD 500') > -1) return { maxMain: 64, maxAux: 31, galFactor: 1 };
+    if (type.indexOf('UH-1') > -1 || type.indexOf('UH1') > -1 || type.indexOf('HUEY') > -1) {
+      return { maxMain: 100, maxAux: 45, galFactor: 1 };
+    }
+    return null;
+  }
+
+  computeTwinTankAdd(fillTo, fob, maxMain, maxAux, galFactor) {
+    fillTo = fillTo * 1;
+    fob = fob * 1;
+    maxMain = maxMain * 1;
+    maxAux = maxAux * 1;
+    galFactor = galFactor || 6.7;
+    if (fillTo - fob < 0) return { error: 'DOUBLE CHECK FUEL REQUEST' };
+    if (fillTo > maxMain * 2 + maxAux * 2) return { error: 'Main + Aux request exceeds capacity' };
+    let fobPerSide = fob / 2;
+    let mainsCurrentPerSide = Math.min(fobPerSide, maxMain);
+    let auxCurrentPerSide = Math.min(Math.max(0, fobPerSide - maxMain), maxAux);
+    let mainsTotalTarget = Math.min(fillTo, maxMain * 2);
+    let auxTotalTarget = Math.min(Math.max(0, fillTo - maxMain * 2), maxAux * 2);
+    let mainsTargetPerSide = mainsTotalTarget / 2;
+    let auxTargetPerSide = auxTotalTarget / 2;
+    let mainsAddPerSide = mainsTargetPerSide - mainsCurrentPerSide;
+    let auxAddPerSide = auxTargetPerSide - auxCurrentPerSide;
+    if (mainsAddPerSide < 0 || auxAddPerSide < 0) {
+      return { error: 'Main + Aux request exceeds capacity' };
+    }
+    return {
+      mainsAddGalPerSide: Math.round(mainsAddPerSide / galFactor),
+      auxAddGalPerSide: Math.round(auxAddPerSide / galFactor)
+    };
+  }
+
+  formatTwinTankAddValue(addResult) {
+    if (!addResult || addResult.error) return addResult;
+    let parts = [];
+    if (addResult.mainsAddGalPerSide > 0) parts.push(addResult.mainsAddGalPerSide + 'gal/side MAINS');
+    if (addResult.auxAddGalPerSide > 0) parts.push(addResult.auxAddGalPerSide + 'gal/side AUX');
+    if (!parts.length) parts.push('0 gal');
+    return parts.join(' + ');
+  }
+
   updateFuelMeterGallons(flight) {
     let start = parseFloat(String(flight.startFuel || '').replace(/[^\d.]/g, ''));
     let stop = parseFloat(String(flight.stopFuel || '').replace(/[^\d.]/g, ''));
@@ -1643,8 +1706,16 @@ class StatusComponent {
         }
         rows.push({ label: 'Fill To', value: fillTo + ' gal', highlight: true, hint: 'Flight Report start fuel' });
         if (fobInfo !== null) {
-          let add = Math.round((fillTo - fobInfo.value) * 10) / 10;
-          rows.push({ label: 'ADD', value: add + ' gal', highlight: true });
+          let twinLimits = this.heliTwinTankLimits(heli);
+          if (twinLimits) {
+            let addResult = this.computeTwinTankAdd(fillTo, fobInfo.value, twinLimits.maxMain, twinLimits.maxAux, twinLimits.galFactor);
+            if (addResult.error) rows.push({ label: '', value: addResult.error, error: true });
+            else rows.push({ label: 'ADD', value: this.formatTwinTankAddValue(addResult), highlight: true });
+          }
+          else {
+            let add = Math.round((fillTo - fobInfo.value) * 10) / 10;
+            rows.push({ label: 'ADD', value: add + ' gal', highlight: true });
+          }
         }
         return { ready: true, rows: rows };
       }
@@ -1659,28 +1730,16 @@ class StatusComponent {
     }
     let fillTo = Math.round(flight.pfr.legArray[0].fuel * 1);
     let fob = Math.round((flight.fuelPreviouslyOnboard || flight.autoOnboard || 0) * 1);
-    let eq = flight.equipment && flight.equipment.name;
+    let twinLimits = this.twinTankFuelLimits(flight.equipment);
     let rows = [];
-    if (eq === 'Beech 1900' || eq === 'King Air' || eq === 'Casa') {
-      let main = (fillTo - fob) / 2;
-      let aux = 0;
-      if (fillTo > flight.equipment.maxMain * 2) {
-        aux = (fillTo - flight.equipment.maxMain * 2 - fob) / 2;
-        main = flight.equipment.maxMain;
-      }
-      if (aux > flight.equipment.maxAux) {
-        return { ready: true, rows: [{ label: '', value: 'Main + Aux request exceeds capacity', error: true }] };
+    if (twinLimits) {
+      let addResult = this.computeTwinTankAdd(fillTo, fob, twinLimits.maxMain, twinLimits.maxAux, twinLimits.galFactor);
+      if (addResult.error) {
+        return { ready: true, rows: [{ label: '', value: addResult.error, error: true }] };
       }
       rows.push({ label: 'FOB', value: fob + ' lbs', hint: 'previous block in' });
       rows.push({ label: 'Fill To', value: fillTo + ' lbs', highlight: true, hint: 'Flight Report start fuel' });
-      let addMain = Math.round(main / 6.7);
-      if (addMain < 0) {
-        rows.push({ label: '', value: 'DOUBLE CHECK FUEL REQUEST', error: true });
-      }
-      else {
-        rows.push({ label: 'ADD', value: addMain + ' gal/side Mains', highlight: true });
-        if (aux > 0) rows.push({ label: 'ADD Aux', value: Math.round(aux / 6.7) + ' gal/side', highlight: true });
-      }
+      rows.push({ label: 'ADD', value: this.formatTwinTankAddValue(addResult), highlight: true });
     }
     else {
       rows.push({ label: 'FOB', value: fob + ' lbs', hint: 'previous block in' });
@@ -1710,8 +1769,15 @@ class StatusComponent {
           else response+='FOB: missing\n';
           response+='Fill To: '+fillTo+' gal';
           if (fobInfo!==null) {
-            let add=Math.round((fillTo-fobInfo.value)*10)/10;
-            response+='\nADD: '+add+' gal';
+            let twinLimits=this.heliTwinTankLimits(heli);
+            if (twinLimits) {
+              let addResult=this.computeTwinTankAdd(fillTo, fobInfo.value, twinLimits.maxMain, twinLimits.maxAux, twinLimits.galFactor);
+              if (!addResult.error) response+='\nADD: '+this.formatTwinTankAddValue(addResult);
+            }
+            else {
+              let add=Math.round((fillTo-fobInfo.value)*10)/10;
+              response+='\nADD: '+add+' gal';
+            }
           }
         }
         else response+='FUEL: '+(heli.fltPlan&&heli.fltPlan.fuel?heli.fltPlan.fuel:'')+' hrs (flight plan)';
@@ -1720,25 +1786,14 @@ class StatusComponent {
     }
     if (!flight.pfr||!flight.pfr.legArray[0].fuel||flight.pfr.legArray[0].fuel<100) return "WAITING ON PILOT";
     let response='';
-    if (flight.equipment.name==="Beech 1900"||flight.equipment.name==="King Air"||flight.equipment.name==="Casa"){
+    let twinLimits=this.twinTankFuelLimits(flight.equipment);
+    if (twinLimits){
       let fob=flight.fuelPreviouslyOnboard||flight.autoOnboard||0;
-      let main=(flight.pfr.legArray[0].fuel*1-fob*1)/2;
-      let aux=0;
-      if (flight.pfr.legArray[0].fuel*1>flight.equipment.maxMain*2){
-        aux=(flight.pfr.legArray[0].fuel*1-flight.equipment.maxMain*2-fob*1)/2;
-        main=flight.equipment.maxMain;
-      }
-      
-      let gallons=Math.round(main/6.7);
-      if (aux>flight.equipment.maxAux) return 'Main + Aux request exceeds capacity';
-      if (gallons<0) response+=', DOUBLE CHECK FUEL REQUEST';
-      else {
-        if (flight.pfr&&flight.pfr.fuelRequestString) response += ' ' + flight.pfr.fuelRequestString;
-        else {
-          response +="\n ADD " + Math.round(main/6.7) + " GAL/side Mains";
-          if (aux>0) response +="\n " + Math.round(aux/6.7) + " GAL/side Aux";
-        }
-      }
+      let fillTo=flight.pfr.legArray[0].fuel*1;
+      let addResult=this.computeTwinTankAdd(fillTo, fob, twinLimits.maxMain, twinLimits.maxAux, twinLimits.galFactor);
+      if (addResult.error) return addResult.error;
+      if (flight.pfr&&flight.pfr.fuelRequestString) response += ' ' + flight.pfr.fuelRequestString;
+      else response +="\n ADD: " + this.formatTwinTankAddValue(addResult);
     }
     else if (flight.pfr&&flight.pfr.fuelRequestString) response += ' ' + flight.pfr.fuelRequestString;
     else {
