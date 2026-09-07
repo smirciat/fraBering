@@ -6,18 +6,14 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #31 Flashing Weather Idea
+## #32 Flashy weather wont stop flashy
 
-- **Type:** feature · medium · open
-- **Reporter:** Fen Kinneen
+- **Type:** bug · critical · open
+- **Reporter:** DONALD SHOWALTER
 
 **Original report:**
 
-Hi Andy,
-
- 
-
-Today we are holding 840 on SMK weather. WBB looks almost okay, but definitely not to a point where I’m ready to call if VFR. In order to stop the flashing, I just marked the ceiling as 300. I know it’s not 300, but I just wanted to make the flashing stop, as we should. I’m thinking a third check box in the manual observation page could say “not VFR” or something of the like. Something that says “I don’t know what the weather is, but it’s not good enough to dispatch for VFR flight” in just a word or two. Turns the box red, prevents dispatch, stops the flashing. Bada-bing, bada-boom.
+TNC purple man ops not vfr
 
 ## #23 Trying to rebase when not told to do so
 
@@ -171,6 +167,68 @@ Please retry Ryan Scott’s checkride approve flow and let me know if the popup 
 - ![screenshot-1788391299037.png](team-backlog/attachments/issue-23-att-20-screenshot-1788391299037.png)
 - ![screenshot-1788472624577.png](team-backlog/attachments/issue-23-att-21-screenshot-1788472624577.png)
 
+## #16 Update ETA
+
+- **Type:** feature · medium · open
+- **Reporter:** Benjamin Rowe
+
+**Original report:**
+
+For all flights, we need the ability to enter an updated ETA.  If you are flying a regular schedule and experience a substantial delay, we need a way to record this info and new ETA.  
+
+Similarly, if a flight will terminate in a village due to mechanical for example, we need a way to record completion time, location, and reason in the flight release and or takeflite or new solution.  Once again, a streamlined "one entry per user" focus to make gathering and recording this data easy and complete.
+
+**Progress (changed, not resolved):**
+
+Benjamin Rowe: Added screenshot. When an ETA has been updated based on actual aircraft OFF time as shown on the main flight status board, this ETA in the bottom of the flight release area should update also right? It currently stays as the originally scheduled ETA instead of updating.
+
+**Latest screenshot:**
+
+![screenshot-1788716221662.png](team-backlog/attachments/issue-16-att-25-screenshot-1788716221662.png)
+
+**Comments:**
+- Andy Smircich: - In flight Release Modal, an updated ETA input near the bottom where other post-departure comments live
+- A flight terminated away from base checkbox can reveal inputs for the other requested data points
+- Data persists on flight row
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Flight Release modal (bottom section, above “Changes While Enroute/After Release”):
+
+• Updated ETA — local HH:MM; shows planned final arrival for reference
+• “Flight terminated away from base” checkbox — when checked, reveals:
+  - Termination location
+  - Completion time (local HH:MM)
+  - Reason
+
+All fields save on the flight row (miscObject) with the existing release save — no separate save button. Disabled when flight status is Completed.
+
+Please verify on /status: open a released/enroute flight → Flight Release → enter ETA and/or termination details → save → reopen modal and confirm values persisted.
+- Andy Smircich: Small follow-up shipped in dev.
+
+Updated ETA and “flight terminated away from base” fields are now grouped inside “Changes While Enroute / After Release (Amendments)” in Flight Release — same fields, same save on miscObject, layout aligned with #13 standby feedback.
+
+Please confirm save/reload still works as on your prior test.
+- Benjamin Rowe: Cool thanks.  
+
+I would suggest this new area instead of saying "final planned arrival" to instead say "ETA 10:50" for example.  Below that, a prompt "Update the ETA?" and box to enter the new ETA HH:MM.  
+
+The check box for flight terminated away from base is probably not necessary as this is so infrequent.  There must be a Takeflite user entry for this in the same list with Boarding, Taxiing, Enroute, Cancelled, WxDelay?  Or use one of those that makes most sense and user should close the flight and type a note into Amendments after Release box.  Probably just some user training on expectations.  Main point is to be able to keep good track of all flights with reference to the system, be able to look in here and see accurate info to help with dispatch SA.  Thanks
+- Benjamin Rowe: On flight 702 on 8/25, if I enter a WBB departure time of 1150, it auto-populates an incorrect arrival time of 0047.  I think that is supposed to be 1247?  Please update times prob 24hr local time is best practice.
+- Andy Smircich: look into this
+- Andy Smircich: Update shipped in dev — ready for your review.
+
+Per your feedback on Updated ETA:
+
+• Flight Release now shows **ETA 10:50** (planned final) with prompt **Update the ETA?** and HH:MM input below — inside Amendments.
+• **Flight terminated away from base** checkbox removed per your note (use Takeflite status + Amendments text for rare cases).
+• **WBB 1150 → 1247 fix** — createETA now handles 24hr local wrap and HHMM entry without colons.
+
+Please verify on an enroute flight: open Flight Release → Amendments, confirm ETA label/readout, enter updated ETA, save, reopen modal and confirm board strip shows updated time.
+- Benjamin Rowe: Added screenshot. When an ETA has been updated based on actual aircraft OFF time as shown on the main flight status board, this ETA in the bottom of the flight release area should update also right? It currently stays as the originally scheduled ETA instead of updating.
+
+**Attachments:**
+- ![screenshot-1788716221662.png](team-backlog/attachments/issue-16-att-25-screenshot-1788716221662.png)
+
 ## Ready for review (shipped — reporter verify, do not build)
 
 _Waiting for reporter sign-off in the app._
@@ -228,57 +286,6 @@ Addresses overdue standby-charter time popups (#25):
 • Standby charter detection is now **ground-time only** (45+ min scheduled on the ground at a village) — multi-leg and long-block rules removed (see #13).
 
 Please verify as dispatch: on a live standby charter with Takeflite OFF logged at a village, confirm Flight Release → Amendments shows the time and the popup does not repeat for that stop.
-
-## #16 Update ETA
-
-- **Type:** feature · high · ready_for_review
-- **Reporter:** Benjamin Rowe
-- **Status:** ready for review
-
-**Original report:**
-
-For all flights, we need the ability to enter an updated ETA.  If you are flying a regular schedule and experience a substantial delay, we need a way to record this info and new ETA.  
-
-Similarly, if a flight will terminate in a village due to mechanical for example, we need a way to record completion time, location, and reason in the flight release and or takeflite or new solution.  Once again, a streamlined "one entry per user" focus to make gathering and recording this data easy and complete.
-
-**Comments:**
-- Andy Smircich: - In flight Release Modal, an updated ETA input near the bottom where other post-departure comments live
-- A flight terminated away from base checkbox can reveal inputs for the other requested data points
-- Data persists on flight row
-- Andy Smircich: Shipped in dev — ready for your review.
-
-Flight Release modal (bottom section, above “Changes While Enroute/After Release”):
-
-• Updated ETA — local HH:MM; shows planned final arrival for reference
-• “Flight terminated away from base” checkbox — when checked, reveals:
-  - Termination location
-  - Completion time (local HH:MM)
-  - Reason
-
-All fields save on the flight row (miscObject) with the existing release save — no separate save button. Disabled when flight status is Completed.
-
-Please verify on /status: open a released/enroute flight → Flight Release → enter ETA and/or termination details → save → reopen modal and confirm values persisted.
-- Andy Smircich: Small follow-up shipped in dev.
-
-Updated ETA and “flight terminated away from base” fields are now grouped inside “Changes While Enroute / After Release (Amendments)” in Flight Release — same fields, same save on miscObject, layout aligned with #13 standby feedback.
-
-Please confirm save/reload still works as on your prior test.
-- Benjamin Rowe: Cool thanks.  
-
-I would suggest this new area instead of saying "final planned arrival" to instead say "ETA 10:50" for example.  Below that, a prompt "Update the ETA?" and box to enter the new ETA HH:MM.  
-
-The check box for flight terminated away from base is probably not necessary as this is so infrequent.  There must be a Takeflite user entry for this in the same list with Boarding, Taxiing, Enroute, Cancelled, WxDelay?  Or use one of those that makes most sense and user should close the flight and type a note into Amendments after Release box.  Probably just some user training on expectations.  Main point is to be able to keep good track of all flights with reference to the system, be able to look in here and see accurate info to help with dispatch SA.  Thanks
-- Benjamin Rowe: On flight 702 on 8/25, if I enter a WBB departure time of 1150, it auto-populates an incorrect arrival time of 0047.  I think that is supposed to be 1247?  Please update times prob 24hr local time is best practice.
-- Andy Smircich: look into this
-- Andy Smircich: Update shipped in dev — ready for your review.
-
-Per your feedback on Updated ETA:
-
-• Flight Release now shows **ETA 10:50** (planned final) with prompt **Update the ETA?** and HH:MM input below — inside Amendments.
-• **Flight terminated away from base** checkbox removed per your note (use Takeflite status + Amendments text for rare cases).
-• **WBB 1150 → 1247 fix** — createETA now handles 24hr local wrap and HHMM entry without colons.
-
-Please verify on an enroute flight: open Flight Release → Amendments, confirm ETA label/readout, enter updated ETA, save, reopen modal and confirm board strip shows updated time.
 
 ## #15 Ground Services View
 
@@ -358,6 +365,15 @@ ADD: 127gal/side MAINS + 19gal/side AUX.
 This pattern should be applied to all aircraft with main and aux tanks (B190, BE20, C212, R44, MD500, Huey)
 
 Otherwise this page looks nice, formatted well for phone viewing.  Need to get some more fueler/pilot testers and determine if actually a value-add useful feature or if there is a better way to communicate fuel requests, sequence, and status efficiently around large ramp areas.  Thanks
+- Andy Smircich: Further update shipped in dev — ready for your review.
+
+Per your N171CJ / BRG702 example — twin-tank ADD math is fixed on Ground Services.
+
+• ADD now splits correctly between mains and aux per side (FOB fills mains first, then aux; remainder goes to aux when fill-to exceeds mains capacity).
+• Example: FOB 1537 lbs, Fill To 3500 lbs on a B190 now shows ADD: 127gal/side MAINS + 19gal/side AUX (not 242gal/side Mains).
+• Applies to King Air, Beech 1900, Casa/C212, and twin-tank helis (R44, MD500, Huey) when tank limits apply.
+
+Please re-check N171CJ or any B190/BE20 with aux fuel in the request on Ground Services.
 
 **Attachments:**
 - ![screenshot-1788629769622.png](team-backlog/attachments/issue-15-att-24-screenshot-1788629769622.png)
@@ -708,32 +724,6 @@ Please retry: fill a record → ROT → change date → ROT again. You should ge
 
 **Attachments:**
 - ![screenshot-1788473207869.png](team-backlog/attachments/issue-29-att-22-screenshot-1788473207869.png)
-
-## #26 remove aircraft
-
-- **Type:** bug · low · ready_for_review
-- **Reporter:** Benjamin Rowe
-- **Status:** ready for review
-
-**Original report:**
-
-Can we remove a couple aircraft from this list? 
-N62AR - sold
-N644CH - out for overhaul til probably May 2027.  
-
-Thanks!
-
-**Comments:**
-- Andy Smircich: Update aircraft list
-- Andy Smircich: Shipped — ready for your review.
-
-• **N62AR** (sold) and **N644CH** (overhaul) marked inactive in Firebase.
-• HEL fleet sidebar and navbar aircraft list filter `isInactive` tails.
-
-Please verify on HEL status view: neither tail appears in the right-hand fleet list. Script added for future retirements: `node scripts/mark-aircraft-inactive/index.js NxxXX`.
-
-**Attachments:**
-- ![screenshot-1787871954738.png](team-backlog/attachments/issue-26-att-18-screenshot-1787871954738.png)
 
 ## Needs clarification (radar — do not build)
 

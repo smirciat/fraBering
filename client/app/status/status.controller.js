@@ -204,8 +204,7 @@ class StatusComponent {
         //  console.log(err);
         //});
       });
-      let index=this.airports.map(e => e._id).indexOf(airport._id);
-      if (index>-1) this.airports[index]=airport;
+      this.applyManualWeatherSave(airport);
     });
     this.flightModalCallback=(flight)=>{
       this.spinner=true;
@@ -725,6 +724,42 @@ class StatusComponent {
         }
       },0);
     });
+  }
+
+  applyManualWeatherSave(airport){
+    if (!airport) return;
+    let sidebarIndex=this.airports.map(e=>e._id).indexOf(airport._id);
+    if (sidebarIndex>-1) angular.extend(this.airports[sidebarIndex], airport);
+    let masterIndex=this.masterAirports.map(e=>e._id).indexOf(airport._id);
+    if (masterIndex<0) masterIndex=this.masterAirports.map(e=>e.threeLetter).indexOf(airport.threeLetter);
+    if (masterIndex>-1) {
+      this.masterAirports[masterIndex].manualObs=airport.manualObs;
+      this.masterAirports[masterIndex].manualTimestamp=airport.manualTimestamp;
+      this.decorateAirportMetar(this.masterAirports[masterIndex]);
+    }
+    else this.decorateAirportMetar(airport);
+    this.refreshFlightAirportColors();
+  }
+
+  legNeedsManualWeatherNudge(leg){
+    if (!leg) return false;
+    let idx=this.worstRiskColorIndex(leg.lockedLegColor||leg.color);
+    if (idx!==1&&idx!==2) return false;
+    let airport=leg.airport;
+    let mo=(airport&&airport.manualObs)||leg.manualObs;
+    let ts=airport&&airport.manualTimestamp;
+    if (!mo&&airport&&airport.threeLetter&&this.masterAirports) {
+      let masterIndex=this.masterAirports.map(e=>e.threeLetter).indexOf(airport.threeLetter);
+      if (masterIndex>-1) {
+        mo=this.masterAirports[masterIndex].manualObs;
+        ts=this.masterAirports[masterIndex].manualTimestamp;
+      }
+    }
+    if (!mo||!ts) return true;
+    if (!this.isLessThanOneHourAgo(new Date(ts))) return true;
+    if (mo.webcam||mo.webcamIFR||mo.notVfr) return false;
+    if (mo.isOfficial&&(mo.visibility||mo.ceiling||mo.windDirection||mo.windSpeed||mo.altimeter)) return false;
+    return true;
   }
 
   decorateAirportMetar(airport){
@@ -3016,8 +3051,7 @@ class StatusComponent {
     let objs=flight.airportObjs||flight.airportObjsLocked;
     if (!objs||!objs.length) return false;
     for (let i=0;i<objs.length;i++) {
-      let idx=this.worstRiskColorIndex(objs[i].lockedLegColor||objs[i].color);
-      if (idx===1||idx===2) return true;
+      if (this.legNeedsManualWeatherNudge(objs[i])) return true;
     }
     return false;
   }
