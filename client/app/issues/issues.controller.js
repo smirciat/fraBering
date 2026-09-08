@@ -96,6 +96,10 @@ class IssuesComponent {
     return '/api/issues/attachments/' + attachmentId;
   }
 
+  isClosed(issue) {
+    return !!(issue && (issue.status === 'done' || issue.status === 'closed'));
+  }
+
   reporterName(issue) {
     return issue && issue.reporterName ? issue.reporterName : '';
   }
@@ -107,7 +111,8 @@ class IssuesComponent {
     if (issue.reporterRepliedLast) {
       return true;
     }
-    if (issue.status !== 'needs_clarification' && issue.status !== 'ready_for_review') {
+    var watchStatuses = ['needs_clarification', 'ready_for_review', 'done', 'closed'];
+    if (watchStatuses.indexOf(issue.status) < 0) {
       return false;
     }
     var comments = issue.comments;
@@ -356,10 +361,26 @@ class IssuesComponent {
     if (!this.selected || !this.isAdmin) {
       return;
     }
+    var self = this;
     var payload = _.pick(this.selected, [
       'kind', 'title', 'description', 'priority', 'status', 'developerApproved'
     ]);
-    this.http.patch('/api/issues/' + this.selected._id, payload);
+    return this.http.patch('/api/issues/' + this.selected._id, payload).then(function(res) {
+      if (res.data) {
+        self.selected.status = res.data.status;
+        self.selected.priority = res.data.priority;
+        self.selected.developerApproved = res.data.developerApproved;
+        self.upsertIssueInList(self.selected);
+      }
+    });
+  }
+
+  reopenIssue() {
+    if (!this.selected || !this.isAdmin || !this.isClosed(this.selected)) {
+      return;
+    }
+    this.selected.status = 'open';
+    this.saveIssue();
   }
 
   submitComment() {

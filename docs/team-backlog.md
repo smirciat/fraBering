@@ -8,12 +8,28 @@ _Developer-approved, open or in progress. Agents should implement these._
 
 ## #32 Flashy weather wont stop flashy
 
-- **Type:** bug · critical · open
+- **Type:** bug · critical · in_progress
 - **Reporter:** DONALD SHOWALTER
 
 **Original report:**
 
 TNC purple man ops not vfr
+
+**Progress (changed, not resolved):**
+
+Bering Air: Nate says how about we flash a blueish color instead of red.  Still grab the attention, but it's not an emergency
+
+**Comments:**
+- Andy Smircich: Shipped in dev — ready for your review.
+
+Fixed depart-warning flash not stopping after manual weather entry (e.g. TNC purple → Not VFR).
+
+• Saving manual obs now refreshes master airport data and all flight leg colors immediately
+• Flash only nags when a blue/purple leg still lacks a recent manual declaration (Not VFR, WebCam, or official obs counts as addressed)
+
+Please verify: flight within 1 hr of departure with a purple leg → right-click airport → Not VFR → sign/save → flight should stop flashing right away.
+- Andy Smircich: It works gud now
+- Bering Air: Nate says how about we flash a blueish color instead of red.  Still grab the attention, but it's not an emergency
 
 ## #23 Trying to rebase when not told to do so
 

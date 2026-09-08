@@ -47,7 +47,7 @@
         <ul class="list-group" style="max-height: 70vh; overflow-y: auto; margin-bottom: 0;">
           <li class="list-group-item issue-list-item"
               ng-repeat="issue in issues.issueList | orderBy:'-_id'"
-              ng-class="{active: issues.selected && issues.selected._id === issue._id}"
+              ng-class="{active: issues.selected && issues.selected._id === issue._id, 'issue-closed-item': issues.isClosed(issue)}"
               ng-click="issues.selectIssue(issue)">
             <span class="label label-default status-label pull-right">{{issues.statusLabel(issue.status)}}</span>
             <span class="label issue-reporter-replied-badge pull-right"
@@ -71,6 +71,13 @@
           </div>
         </div>
         <div class="panel-body">
+          <div class="alert alert-warning issue-closed-banner" ng-if="issues.isClosed(issues.selected)">
+            This issue is marked <strong>{{issues.statusLabel(issues.selected.status)}}</strong>.
+            <span ng-if="issues.isAdmin">Change status below or click Reopen to return it to the build queue.</span>
+            <span ng-if="!issues.isAdmin">New comments will reopen it for the team.</span>
+            <button type="button" class="btn btn-warning btn-xs pull-right" ng-if="issues.isAdmin"
+                    ng-click="issues.reopenIssue()">Reopen</button>
+          </div>
           <p style="white-space: pre-wrap;">{{issues.selected.description}}</p>
           <div ng-if="issues.selected.attachments && issues.selected.attachments.length">
             <h5>Screenshots</h5>

@@ -38,6 +38,14 @@
   text-transform: none;
 }
 
+.issues-page .issue-closed-item {
+  opacity: 0.72;
+}
+
+.issues-page .issue-closed-banner {
+  margin-bottom: 12px;
+}
+
 .issues-paste-zone {
   display: block;
   width: 100%;

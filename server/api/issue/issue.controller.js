@@ -126,7 +126,8 @@ function reporterRepliedLast(issue, lastComment) {
   if (!issue || !lastComment) {
     return false;
   }
-  if (issue.status !== 'needs_clarification' && issue.status !== 'ready_for_review') {
+  var reopenStatuses = ['needs_clarification', 'ready_for_review', 'done', 'closed'];
+  if (reopenStatuses.indexOf(issue.status) < 0) {
     return false;
   }
   var reporter = String(issue.reporterName || '').trim().toLowerCase();
@@ -340,21 +341,31 @@ export function addComment(req, res) {
         authorName: req.user.name,
         authorUserId: req.user._id
       }).then(function(comment) {
-        if (!emailReporter && !emailDeveloper) {
-          return comment;
-        }
-        return Promise.resolve().then(function() {
-          if (!emailReporter || !issue.reporterUserId) {
-            return null;
-          }
-          return User.findOne({where: {_id: issue.reporterUserId}});
-        }).then(function(reporterUser) {
-          notifyIssueComment(issue, comment, {
-            emailReporter: emailReporter,
-            emailDeveloper: emailDeveloper,
-            reporterEmail: reporterUser && reporterUser.email
+        var reopenStatuses = ['done', 'closed'];
+        var reopenPromise = Promise.resolve(issue);
+        if (reopenStatuses.indexOf(issue.status) >= 0) {
+          reopenPromise = issue.update({status: 'open'}).then(function(updated) {
+            issue = updated;
+            return updated;
           });
-          return comment;
+        }
+        return reopenPromise.then(function() {
+          if (!emailReporter && !emailDeveloper) {
+            return comment;
+          }
+          return Promise.resolve().then(function() {
+            if (!emailReporter || !issue.reporterUserId) {
+              return null;
+            }
+            return User.findOne({where: {_id: issue.reporterUserId}});
+          }).then(function(reporterUser) {
+            notifyIssueComment(issue, comment, {
+              emailReporter: emailReporter,
+              emailDeveloper: emailDeveloper,
+              reporterEmail: reporterUser && reporterUser.email
+            });
+            return comment;
+          });
         });
       });
     })
