@@ -40,6 +40,8 @@ module.exports = {
   FRAT_OPS_EXPORT_TOKEN: '',
   // Optional: override issue screenshot storage (default: <repo>/server/fileserver/issue-attachments)
   ISSUE_ATTACHMENT_ROOT: '',
+  // Optional: reservations API base for safety bulletin nag at flight release (#159)
+  RESERVATIONS_API_BASE_URL: 'https://reservations.beringair.com',
   // ROT integration — source Postgres for one-time Evaluations import (scripts/migrate-rot-evaluations)
   ROT_SOURCE_URI: '',
   // ROT document storage root (default: <repo>/server/fileserver/rot)

@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('workspaceApp')
-  .factory('Modal', function($rootScope, $uibModal, Util, $timeout, rotAppConfig) {
+  .factory('Modal', function($rootScope, $uibModal, Util, $timeout, rotAppConfig, $http) {
     /**
      * Opens a modal
      * @param  {Object} scope      - an object to be merged with modal's scope
@@ -632,6 +632,20 @@ angular.module('workspaceApp')
             flight.miscObject.standbyCharter=standbyCharter;
             Util.initStandbyLegTimes(flight);
             Util.initFlightEtaFields(flight);
+            var myBulletinsUrl='https://reservations.beringair.com/safety/bulletins';
+            var confirmReleaseWithBulletinNag=function(action){
+              var count=modalBulletinState.count;
+              if (!count) {
+                action();
+                return;
+              }
+              var msg='You have '+count+' safety bulletin'+(count===1?'':'s')+
+                ' to acknowledge on Reservations before releasing this flight.\n\n'+
+                'Open My Bulletins (Safety menu) to read and acknowledge.\n\n'+
+                'Continue signing release anyway?';
+              if (window.confirm(msg)) action();
+            };
+            var modalBulletinState={count:0, loading:true};
             quickModal = openModal({
               modal: {
                 Math:Math,
@@ -695,6 +709,12 @@ angular.module('workspaceApp')
                 dismissable: true,
                 show:false,
                 flightModal:true,
+                pendingBulletinCount:function(){return modalBulletinState.count;},
+                pendingBulletinsLoading:function(){return modalBulletinState.loading;},
+                showBulletinReleaseNag:function(){
+                  return !allDisabled() && modalBulletinState.count > 0;
+                },
+                openMyBulletins:function(){window.open(myBulletinsUrl,'_blank','noopener');},
                 pilotEmpNumber: Util.pilotEmpNumber,
                 crewIdCheckedLabel:function(){
                   if (flight.pilotAgree) return 'CHECKED';
@@ -806,29 +826,35 @@ angular.module('workspaceApp')
                 },
                 isWrongUser:isWrongUser,
                 dispatchClick:function(){
-                  if (!flight.dispatchRelease) {
-                    flight.dispatchRelease=user.name;
-                    flight.dispatchReleaseTimestamp=new Date();
-                    snapshotReleaseWeather(true);
-                  }
+                  confirmReleaseWithBulletinNag(function(){
+                    if (!flight.dispatchRelease) {
+                      flight.dispatchRelease=user.name;
+                      flight.dispatchReleaseTimestamp=new Date();
+                      snapshotReleaseWeather(true);
+                    }
+                  });
                 },
                 ocClick:function(){
-                  if (!flight.ocRelease) {
-                    flight.ocRelease=user.name;
-                    flight.ocReleaseTimestamp=new Date();
-                    snapshotReleaseWeather(true);
-                  }
+                  confirmReleaseWithBulletinNag(function(){
+                    if (!flight.ocRelease) {
+                      flight.ocRelease=user.name;
+                      flight.ocReleaseTimestamp=new Date();
+                      snapshotReleaseWeather(true);
+                    }
+                  });
                 },
                 pilotClick:function(){
-                  if (!flight.pilotAgree) {
-                    flight.pilotAgree=user.name;
-                    flight.releaseTimestamp=new Date();
-                    if (!flight.crewId) flight.crewId='checked';
-                    flight.cockpitInspection='secure';
-                    flight.cabinInspection='secure';
-                    flight.cargoInspection='secure';
-                    flight.wheelWellInspection='secure';
-                  }
+                  confirmReleaseWithBulletinNag(function(){
+                    if (!flight.pilotAgree) {
+                      flight.pilotAgree=user.name;
+                      flight.releaseTimestamp=new Date();
+                      if (!flight.crewId) flight.crewId='checked';
+                      flight.cockpitInspection='secure';
+                      flight.cabinInspection='secure';
+                      flight.cargoInspection='secure';
+                      flight.wheelWellInspection='secure';
+                    }
+                  });
                 },
                 acceptSig:function(pilotAgree){flight.pilotAgree=pilotAgree},
                 fuelSanity:function(fuel){if (fuel<flight.equipment.minFuel) return "airport-pink";},
@@ -970,6 +996,14 @@ angular.module('workspaceApp')
                 }]
               }
             }, 'modal-success');
+
+            $http.get('/api/reservationsBridge/pending-bulletins').then(function(res) {
+              modalBulletinState.count = (res.data && res.data.count) ||
+                (res.data && res.data.items && res.data.items.length) || 0;
+              modalBulletinState.loading = false;
+            }).catch(function() {
+              modalBulletinState.loading = false;
+            });
 
             quickModal.result.then(function(event) {
               cb.apply(event, [flight]); //this is where all callback is actually called

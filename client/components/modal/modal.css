@@ -18,6 +18,20 @@
 .modal-success .modal-header {
   background: #5cb85c;
 }
+
+.modal-bulletin-release-nag {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  color: #78350f;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
+}
+
+.modal-bulletin-release-nag p {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
 .modal-warning .modal-header {
   background: #f0ad4e;
 }

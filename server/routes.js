@@ -42,6 +42,7 @@ export default function(app) {
   app.use('/api/manifests', require('./api/manifest'));
   app.use('/api/pfrs', require('./api/pfr'));
   app.use('/api/reservations', require('./api/reservation'));
+  app.use('/api/reservationsBridge', require('./api/reservationsBridge'));
   app.use('/api/notifications', require('./api/notification'));
   app.use('/api/hazardReports', require('./api/hazardReport'));
   app.use('/api/issues', require('./api/issue'));

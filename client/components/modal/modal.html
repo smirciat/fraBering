@@ -801,6 +801,13 @@
       </table>
     </div>
     <hr class="my-hr">
+    <div ng-if="modal.flightModal && modal.showBulletinReleaseNag()" class="modal-bulletin-release-nag" role="note">
+      <p>
+        You have {{ modal.pendingBulletinCount() }} safety bulletin{{ modal.pendingBulletinCount() === 1 ? '' : 's' }}
+        to acknowledge before releasing this flight.
+      </p>
+      <button type="button" class="btn btn-warning" ng-click="modal.openMyBulletins()">Open My Bulletins</button>
+    </div>
     <p>I certify that the requirements of GOM 05.29 Flight Release have been met and crew ID's have been checked.</p>
     <table class="table table-borderless">
       <tr>
