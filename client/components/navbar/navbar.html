@@ -23,6 +23,7 @@
           <a href="#" data-toggle="dropdown" class="dropdown-toggle">View <b class="caret"></b></a>
           <ul class="dropdown-menu">
             <li><a href="#" ng-click="nav.goHome($event)">Status Board</a></li>
+            <li ng-click="nav.setView(5)"><a>Day Planner</a></li>
             <li ng-click="nav.setView(1)" ng-show="nav.isAdmin()"><a>Today's FIKI</a></li>
             <li ng-click="nav.setView(2)" ng-show="nav.isAdmin()"><a>Future Charters</a></li>
             <li ng-click="nav.setView(3)"><a>Loads Available</a></li>

@@ -939,3 +939,149 @@ div.airport-pink h1{
   -o-animation: glowing 1500ms infinite;
   animation: glowing 1500ms infinite;
 }
+
+.day-planner {
+  background-color: #ffffcc;
+  margin: 0;
+  padding: 8px 0 16px;
+  width: 100%;
+}
+
+.day-planner-title {
+  text-align: center;
+  margin: 4px 12px 8px;
+  font-weight: bold;
+}
+
+.day-planner-note {
+  text-align: center;
+  font-weight: bold;
+  padding: 24px;
+}
+
+.day-planner-scroll {
+  overflow: auto;
+  max-height: calc(100vh - 8.5em);
+  background: #ffffcc;
+  padding-left: 8px;
+}
+
+.day-planner-grid {
+  min-width: 96em;
+}
+
+.day-planner-header,
+.day-planner-row {
+  display: grid;
+  grid-template-columns: 12em repeat(29, minmax(2.6em, 1fr));
+  align-items: center;
+  border-bottom: 1px solid #c8c8c8;
+}
+
+.day-planner-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #d9d9d9;
+  min-height: 2em;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.day-planner-row {
+  position: relative;
+  min-height: 2.8em;
+  background: #f7f7f0;
+}
+
+.day-planner-row:nth-child(even) {
+  background: #ececdc;
+}
+
+.day-planner-label {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: #f7f7f0;
+  padding: 4px 8px;
+  border-right: 2px solid #333;
+  font-weight: bold;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  box-shadow: 3px 0 5px rgba(0,0,0,0.12);
+}
+
+.day-planner-row:nth-child(even) .day-planner-label {
+  background: #ececdc;
+}
+
+.day-planner-header .day-planner-label {
+  z-index: 6;
+  background: #d9d9d9;
+  justify-content: center;
+}
+
+.day-planner-tick {
+  border-left: 1px solid #c0c0c0;
+  padding: 6px 0 4px;
+  font-size: 11px;
+  color: #666;
+  align-self: stretch;
+}
+
+.day-planner-tick-hour {
+  color: #111;
+  font-weight: bold;
+  background: rgba(0,0,0,0.04);
+}
+
+.day-planner-slot {
+  border-left: 1px solid #ddd;
+  min-height: 2.8em;
+  align-self: stretch;
+}
+
+.day-planner-bar {
+  margin: 2px 2px;
+  padding: 2px 5px 3px;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid #333;
+  border-bottom-width: 3px;
+  line-height: 1.15;
+  align-self: center;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.day-planner-bar:hover {
+  filter: brightness(0.95);
+}
+
+.day-planner-num {
+  font-weight: bold;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.day-planner-tail {
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.day-planner-route {
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+

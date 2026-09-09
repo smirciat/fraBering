@@ -34,6 +34,8 @@ class StatusComponent {
     this.longPressTimer;
     this.longPressDuration = 500;
     this.view='board';
+    this.plannerSlots=[];
+    this.plannerRows=[];
     this.baseRunwayOverrideBusy=false;
     this.baseClosureComment='';
     this.flightsRequestId=0;
@@ -75,6 +77,8 @@ class StatusComponent {
   }
   
   $onInit() {
+    this.plannerSlots=this.buildPlannerSlots();
+    this.plannerRows=this.plannerRows||[];
     //this.cookies.remove('token');
     let storage=window.localStorage.getItem('token');
     let token=this.cookies.get('token');
@@ -342,7 +346,7 @@ class StatusComponent {
       if (!oldVal) return;
       if (this.aircraft._id!=='All') this.scope.nav.isFilter=false;
       //update flight filter
-      this.timeout(()=>{this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights,true)},500);
+      this.timeout(()=>{this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights,true); this.buildPlannerRows();},500);
     });
     this.scope.$watch('nav.view',(newVal,oldVal)=>{
       if (!newVal) return;
@@ -356,10 +360,14 @@ class StatusComponent {
       if (newVal==='fuel') {
         this.buildFuelPageEntries();
       }
+      if (newVal==='planner') {
+        this.buildPlannerRows();
+      }
     });
     this.scope.$watch('nav.isFilter',(newVal,oldVal)=>{
       this.isFilter=newVal;
       this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights);
+      this.buildPlannerRows();
     });
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
       this.spinner=true;
@@ -381,6 +389,7 @@ class StatusComponent {
             this.setAirplaneList();
             this.availablePilots();
             this.buildFuelPageEntries();
+            this.buildPlannerRows();
           },200);
       },0);
     });
@@ -2453,6 +2462,356 @@ class StatusComponent {
     this.displayedAircraft.sort((a,b)=>{
       return aircraftTypes.indexOf(a.acftType)-aircraftTypes.indexOf(b.acftType);
     });
+    this.buildPlannerRows();
+  }
+
+  buildPlannerSlots(){
+    const slots=[];
+    for (let minutes=7*60; minutes<=21*60; minutes+=30) {
+      const hour=Math.floor(minutes/60);
+      const min=minutes%60;
+      const label=min===0?((hour<10?'0':'')+hour+'00'):'30';
+      slots.push({label:label, minutes:minutes, hour:min===0});
+    }
+    return slots;
+  }
+
+  plannerTimeToMinutes(timeStr){
+    if (!timeStr) return null;
+    const parts=String(timeStr).split(':');
+    if (parts.length<2) return null;
+    const hour=parseInt(parts[0],10);
+    const min=parseInt(parts[1],10);
+    if (isNaN(hour)||isNaN(min)) return null;
+    return hour*60+min;
+  }
+
+  plannerSlotIndex(minutes, roundUp){
+    const start=7*60;
+    const end=21*60;
+    const slotCount=this.plannerSlots.length;
+    if (minutes==null) return roundUp?slotCount:0;
+    let clamped=minutes;
+    if (clamped<start) clamped=start;
+    if (clamped>end) clamped=end;
+    const raw=(clamped-start)/30;
+    let idx=roundUp?Math.ceil(raw):Math.floor(raw);
+    if (idx<0) idx=0;
+    if (idx>slotCount) idx=slotCount;
+    return idx;
+  }
+
+  plannerAircraftTail(aircraftId){
+    if (!aircraftId) return '';
+    return String(aircraftId);
+  }
+
+  plannerLookupPilot(username){
+    if (!username) return null;
+    const u=String(username).toLowerCase().trim();
+    const lists=[this.allPilots, this.sortedPilots];
+    for (let i=0;i<lists.length;i++) {
+      const list=lists[i];
+      if (!list||!list.length) continue;
+      for (let j=0;j<list.length;j++) {
+        const p=list[j];
+        const tf=(p.takeFliteUsername||'').toLowerCase();
+        if (tf&&tf===u) return p;
+      }
+    }
+    return null;
+  }
+
+  plannerPilotName(flight){
+    const obj=(flight&&flight.pilotObject)||this.plannerLookupPilot(flight&&flight.pilot)||null;
+    if (obj) {
+      const first=(obj.firstName||'').trim();
+      const last=(obj.lastName||'').trim();
+      if (first||last) return (first+' '+last).trim();
+      if (obj.displayName) return String(obj.displayName).trim();
+      if (obj.name) return String(obj.name).trim();
+    }
+    if (flight&&flight.pilotObject&&flight.pilotObject.displayName) return String(flight.pilotObject.displayName).trim();
+    if (flight&&flight.pilot) return String(flight.pilot).trim();
+    return '';
+  }
+
+  plannerPilotKey(flight){
+    const pic=flight&&flight.pilot?String(flight.pilot).toLowerCase().trim():'';
+    if (pic) return pic;
+    return 'ac:'+(flight&&flight.aircraft?flight.aircraft:'unknown');
+  }
+
+  plannerCrewLabel(flight){
+    return this.plannerPilotName(flight);
+  }
+
+  plannerRouteLabel(flight){
+    if (!flight) return '';
+    const codes=[];
+    const objs=flight.airportObjs||[];
+    objs.forEach(obj=>{
+      const three=obj&&obj.airport&&obj.airport.threeLetter;
+      if (three) codes.push(three);
+    });
+    if (codes.length) return codes.join(' – ');
+    if (flight.airports&&flight.airports.length) return flight.airports.join(' – ');
+    return '';
+  }
+
+  plannerDestLabel(flight){
+    return this.plannerRouteLabel(flight);
+  }
+
+  plannerBarClass(flight){
+    const locked=flight&&(flight.colorLock||flight.color);
+    if (locked&&String(locked).indexOf('airport-green')===-1) return locked;
+    const op=flight&&flight.operation?String(flight.operation).toLowerCase():'';
+    if (op.indexOf('charter')>-1) return 'airport-orange';
+    return 'airport-blue';
+  }
+
+  plannerDutyCode(pilot){
+    if (!pilot) return '';
+    return String(pilot.code||pilot.label||'').trim().toUpperCase();
+  }
+
+  plannerPilotAllowed(pilot){
+    if (!pilot) return false;
+    const code=this.plannerDutyCode(pilot);
+    if (code==='A') return true;
+    if (code==='OC'||code==='NM'||code==='ND'||code==='D'||code==='DM'||code==='F'||code==='CS'||code==='16') return false;
+    const header=pilot.header||'';
+    if (header==='OC'||header==='Dispatch'||header==='Fueler'||header==='Cargo Lead'||header==='Medevac'||header==='Unassigned Copilots') return false;
+    if (!pilot.far299Exp) return false;
+    return true;
+  }
+
+  plannerHasFlightDuty(pilot){
+    const code=this.plannerDutyCode(pilot);
+    if (code==='A') return true;
+    return ['8','KA','B1','B2','C1','C2','S1','S2','IOE','OTZ','T'].indexOf(code)>-1;
+  }
+
+  plannerFlightInBase(flight){
+    if (!flight||!flight.airports||!flight.airports.length) return false;
+    if (window.base&&window.base.base==='HEL') return false;
+    if (window.base&&window.base.base==='OTZ') {
+      for (let i=0;i<flight.airports.length;i++){
+        if (flight.airports[i]==='Kotzebue') return true;
+      }
+      return false;
+    }
+    if (window.base&&window.base.base==='UNK') {
+      for (let i=0;i<flight.airports.length;i++){
+        if (flight.airports[i]==='Unalakleet') return true;
+      }
+      return false;
+    }
+    for (let i=0;i<flight.airports.length;i++){
+      if (flight.airports[i]==='Nome') return true;
+    }
+    return false;
+  }
+
+  plannerFlightSuppressed(flight){
+    if (!flight) return true;
+    if (flight.active==='false'||flight.active===false) return true;
+    if (flight.inactive===true||flight.inactive==='true') return true;
+    if (!flight.flightId) return true;
+    const status=String(flight.flightStatus||'').trim().toLowerCase();
+    if (status.indexOf('cancel')>-1||status.indexOf('cxld')>-1) return true;
+    if (status.indexOf('no show')>-1||status.indexOf('noshow')>-1) return true;
+    if (status.indexOf('no-go')>-1||status.indexOf('nogo')>-1||status.indexOf('no go')>-1) return true;
+    if (status.indexOf('not oper')>-1||status.indexOf('abort')>-1) return true;
+    const op=String(flight.operation||'').trim().toLowerCase();
+    if (op.indexOf('cancel')>-1) return true;
+    return false;
+  }
+
+  plannerFlightVisible(flight){
+    if (!flight||!flight.date) return false;
+    if (flight.active!=='true') return false;
+    if (!flight.aircraft||flight.aircraft.substring(0,1)!=='N') return false;
+    if (this.plannerFlightSuppressed(flight)) return false;
+    let date=window.dateString;
+    if (this&&this.assessment) date=new Date().toLocaleDateString();
+    if (flight.date!==date) return false;
+    if (window.toggle&&flight.departTimes&&flight.departTimes[0]){
+      const arr=flight.departTimes[0].split(':');
+      if (arr.length===3) {
+        const flightDate=new Date(date).setHours(arr[0],arr[1],arr[2]);
+        if (new Date()>flightDate&&date===new Date().toLocaleDateString()) return false;
+      }
+    }
+    return this.plannerFlightInBase(flight);
+  }
+
+  plannerFlightNum(flight){
+    if (!flight||!flight.flightNum) return 0;
+    const match=String(flight.flightNum).match(/\d+/);
+    return match?parseInt(match[0],10):0;
+  }
+
+  plannerBarsOverlap(barA, barB){
+    if (!barA||!barB) return false;
+    return barA.colStart<barB.colEnd&&barB.colStart<barA.colEnd;
+  }
+
+  dedupePlannerBars(bars){
+    const kept=[];
+    (bars||[]).forEach(bar=>{
+      let drop=false;
+      for (let i=0;i<kept.length;i++){
+        const other=kept[i];
+        if (!this.plannerBarsOverlap(bar, other)) continue;
+        const barSup=this.plannerFlightSuppressed(bar.flight);
+        const otherSup=this.plannerFlightSuppressed(other.flight);
+        if (!barSup&&otherSup) {
+          kept.splice(i,1);
+          i--;
+          continue;
+        }
+        if (barSup&&!otherSup) {
+          drop=true;
+          break;
+        }
+        const barHasId=!!(bar.flight&&bar.flight.flightId);
+        const otherHasId=!!(other.flight&&other.flight.flightId);
+        if (barHasId&&!otherHasId) {
+          kept.splice(i,1);
+          i--;
+          continue;
+        }
+        if (!barHasId&&otherHasId) {
+          drop=true;
+          break;
+        }
+        const barStart=this.plannerTimeToMinutes(bar.flight&&bar.flight.departTimes&&bar.flight.departTimes[0])||0;
+        const otherStart=this.plannerTimeToMinutes(other.flight&&other.flight.departTimes&&other.flight.departTimes[0])||0;
+        if (barStart>otherStart) {
+          kept.splice(i,1);
+          i--;
+          continue;
+        }
+        if (barStart<otherStart) {
+          drop=true;
+          break;
+        }
+        const barNum=this.plannerFlightNum(bar.flight);
+        const otherNum=this.plannerFlightNum(other.flight);
+        if (barNum>otherNum) {
+          kept.splice(i,1);
+          i--;
+          continue;
+        }
+        if (barNum<otherNum) {
+          drop=true;
+          break;
+        }
+      }
+      if (!drop) kept.push(bar);
+    });
+    return kept;
+  }
+
+  plannerBarForFlight(flight){
+    if (!flight||!flight.departTimes||!flight.departTimes.length) return null;
+    const startMin=this.plannerTimeToMinutes(flight.departTimes[0]);
+    if (startMin==null) return null;
+    let endStr;
+    if (flight.arriveTimes&&flight.arriveTimes.length) {
+      endStr=flight.arriveTimes[flight.arriveTimes.length-1];
+    }
+    if (!endStr) endStr=flight.departTimes[flight.departTimes.length-1];
+    let endMin=this.plannerTimeToMinutes(endStr);
+    if (endMin==null) endMin=startMin+30;
+    if (endMin<=startMin) endMin=startMin+30;
+    const startSlot=this.plannerSlotIndex(startMin, false);
+    let endSlot=this.plannerSlotIndex(endMin, true);
+    if (endSlot<=startSlot) endSlot=startSlot+1;
+    return {
+      flight:flight,
+      colStart:startSlot+2,
+      colEnd:endSlot+2,
+      route:this.plannerRouteLabel(flight),
+      aircraft:flight.aircraft||'',
+      barClass:this.plannerBarClass(flight)
+    };
+  }
+
+  buildPlannerRows(){
+    if (!this.plannerSlots||!this.plannerSlots.length) this.plannerSlots=this.buildPlannerSlots();
+    const rows=[];
+    const flights=(this.todaysFlights||[]).filter(flight=>this.plannerFlightVisible(flight));
+    const byPilot={};
+    flights.forEach(flight=>{
+      const key=this.plannerPilotKey(flight);
+      if (!key||key.indexOf('ac:')===0) return;
+      if (!byPilot[key]) byPilot[key]=[];
+      byPilot[key].push(flight);
+    });
+    Object.keys(byPilot).forEach(key=>{
+      byPilot[key].sort((a,b)=>{
+        const am=this.plannerTimeToMinutes(a.departTimes&&a.departTimes[0])||0;
+        const bm=this.plannerTimeToMinutes(b.departTimes&&b.departTimes[0])||0;
+        return am-bm;
+      });
+    });
+    const seen={};
+    const pilots=this.sortedPilots||[];
+    pilots.forEach(p=>{
+      const tf=p.takeFliteUsername?String(p.takeFliteUsername).toLowerCase().trim():'';
+      if (!tf) return;
+      if (!this.plannerPilotAllowed(p)) return;
+      const picFlights=byPilot[tf];
+      if (!picFlights&&!this.plannerHasFlightDuty(p)) return;
+      seen[tf]=true;
+      const nameFlights=picFlights||[];
+      let name=this.plannerPilotName(nameFlights[0]||{pilot:tf,pilotObject:p});
+      if (!name) {
+        const first=(p.firstName||'').trim();
+        const last=(p.lastName||'').trim();
+        name=(first+' '+last).trim()||p.displayName||p.name||tf;
+      }
+      rows.push({
+        pilotKey:tf,
+        pilotName:name,
+        bars:this.dedupePlannerBars((picFlights||[]).map(f=>this.plannerBarForFlight(f)).filter(Boolean))
+      });
+    });
+    Object.keys(byPilot).forEach(key=>{
+      if (seen[key]) return;
+      const rosterPilot=this.plannerLookupPilot(key);
+      if (rosterPilot&&!this.plannerPilotAllowed(rosterPilot)) return;
+      const picFlights=byPilot[key];
+      const name=this.plannerPilotName(picFlights[0])||key.replace(/^ac:/,'');
+      rows.push({
+        pilotKey:key,
+        pilotName:name,
+        bars:this.dedupePlannerBars(picFlights.map(f=>this.plannerBarForFlight(f)).filter(Boolean))
+      });
+    });
+    rows.forEach(row=>{
+      row.bars=this.dedupePlannerBars(row.bars);
+    });
+    this.plannerRows=rows;
+  }
+
+  plannerHeading(){
+    const raw=this.dateString||(this.date&&this.date.toLocaleDateString())||'';
+    const d=raw?new Date(raw):new Date();
+    if (isNaN(d.getTime())) return raw;
+    const weekday=d.toLocaleString('default', { weekday: 'long' });
+    const month=d.toLocaleString('default', { month: 'long' });
+    const day=d.getDate();
+    const j=day%10;
+    const k=day%100;
+    let suffix='th';
+    if (j===1&&k!==11) suffix='st';
+    else if (j===2&&k!==12) suffix='nd';
+    else if (j===3&&k!==13) suffix='rd';
+    return weekday+', '+month+' '+day+suffix;
   }
   
   patchCalendarFlights(flight){
@@ -3284,6 +3643,7 @@ class StatusComponent {
           this.todaysFlights=this.filterTodaysFlights(res.data);
           this.loadFlights=JSON.parse(JSON.stringify(this.todaysFlights));
           this.buildFuelPageEntries();
+          this.buildPlannerRows();
           this.timeout(()=>{this.checkStandbyIntermediateNags();},800);
           this.scroll(true);
           this.timeout(()=>{
@@ -3306,6 +3666,7 @@ class StatusComponent {
               console.log(array)
               this.todaysFlights=this.filterTodaysFlights(array);
               this.availablePilots();
+              this.buildPlannerRows();
               
               console.log('Todays Flight Socket fired');
               console.log(item);
@@ -3339,6 +3700,7 @@ class StatusComponent {
               //else we don't want it!
             }
             this.buildFuelPageEntries();
+            this.buildPlannerRows();
             this.timeout(()=>{this.checkStandbyIntermediateNags();},800);
           });
         })

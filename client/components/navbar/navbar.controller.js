@@ -29,7 +29,7 @@ class NavbarController {
     this.window=$window;
     this.timeout=$timeout;
     this.view="board";
-    this.views=["board","next","charters","load","fuel"];
+    this.views=["board","next","charters","load","fuel","planner"];
     this.bases=[{base:"OME",four:"PAOM"},{base:"OTZ",four:"PAOT"},{base:"UNK",four:"PAUN"},{base:"HEL",four:"HELI"}];
     //this.base=this.bases[0];
     //window.base=this.base;
@@ -163,7 +163,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='163';
+    let version='164';
     const reloadGuardKey='fratStoppedReload';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.sessionStorage.removeItem(reloadGuardKey);
@@ -626,7 +626,7 @@ class NavbarController {
   }
 
   setView(index){
-    if (index>-1&&index<5){
+    if (index>-1&&index<this.views.length){
       window.localStorage.setItem('view',this.views[index]);
       this.view=this.views[index];
     }

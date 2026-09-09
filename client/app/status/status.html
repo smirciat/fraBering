@@ -399,6 +399,31 @@
       
   </div>
 </section>
+<section class="day-planner" ng-if="status.Auth.isUser()&&status.view==='planner'">
+  <h3 class="day-planner-title">{{status.plannerHeading()}}</h3>
+  <p ng-if="!status.fixedWing()" class="day-planner-note">Day Planner is for fixed-wing bases (OME / OTZ / UNK).</p>
+  <div ng-if="status.fixedWing()" class="day-planner-scroll">
+    <div class="day-planner-grid">
+      <div class="day-planner-header">
+        <div class="day-planner-label">Pilot</div>
+        <div class="day-planner-tick" ng-class="{'day-planner-tick-hour': slot.hour}" ng-repeat="slot in status.plannerSlots track by slot.minutes">{{slot.label}}</div>
+      </div>
+      <div class="day-planner-row" ng-repeat="row in status.plannerRows track by row.pilotKey">
+        <div class="day-planner-label">{{row.pilotName}}</div>
+        <div class="day-planner-slot" ng-repeat="slot in status.plannerSlots track by slot.minutes"></div>
+        <div class="day-planner-bar" ng-repeat="bar in row.bars track by bar.flight._id"
+             ng-style="{'grid-column': bar.colStart + ' / ' + bar.colEnd}"
+             ng-class="status.plannerBarClass(bar.flight)"
+             ng-click="status.lookAtFlight(bar.flight)"
+             uib-tooltip="{{status.getFlightNum(bar.flight)}} {{bar.aircraft}} {{bar.route}}"
+             tooltip-placement="top">
+          <div class="day-planner-num">{{status.getFlightNum(bar.flight)}} <span class="day-planner-tail">{{bar.aircraft}}</span></div>
+          <div class="day-planner-route" ng-if="bar.route">{{bar.route}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 <section ng-if="status.view==='next'&&status.Auth.isAdmin()" style="background-color:#ffffcc;margin:0;padding:20px 5% 20px 5%;width:100%;">
   <h3>FIKI View</h3>
   <div style="margin-bottom:16px;">
