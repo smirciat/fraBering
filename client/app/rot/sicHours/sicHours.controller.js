@@ -24,6 +24,22 @@ class RotSicHoursComponent {
     this.fileURLs = [];
     this.loading = false;
     this.loadError = '';
+    this.printedOn = new Date().toLocaleDateString();
+  }
+
+  printFilterSummary() {
+    let parts = [];
+    if (this.aircraftSelected) parts.push('Aircraft: ' + this.aircraftSelected);
+    if (this.startDate && this.endDate) {
+      parts.push(this.startDate.toLocaleDateString() + ' – ' + this.endDate.toLocaleDateString());
+    } else if (this.startDate) {
+      parts.push('From ' + this.startDate.toLocaleDateString());
+    } else if (this.endDate) {
+      parts.push('Through ' + this.endDate.toLocaleDateString());
+    } else {
+      parts.push('All dates in range');
+    }
+    return parts.join(' · ');
   }
 
   $onInit() {

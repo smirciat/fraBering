@@ -35,3 +35,66 @@
   margin: 1em 0;
   color: #a94442;
 }
+
+.rot-sic-hours-wrap {
+  margin-left: 10px;
+}
+
+.rot-sic-hours-print-header {
+  margin-bottom: 0.75em;
+}
+
+.rot-sic-hours-print-title {
+  margin: 0 0 0.25em;
+  font-size: 1.25em;
+}
+
+.rot-sic-hours-print-meta {
+  margin: 0 0 0.2em;
+  font-size: 0.95em;
+}
+
+@media screen {
+  .rot-sic-hours-print-header {
+    display: none;
+  }
+}
+
+@media print {
+  .navbar,
+  .rot-nav {
+    display: none !important;
+  }
+
+  .rot-sic-hours-wrap {
+    margin-left: 0;
+  }
+
+  .rot-sic-hours-print-header {
+    display: block;
+  }
+
+  .rot-sic-hours-print-table {
+    font-size: 9pt;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .rot-sic-hours-print-table th,
+  .rot-sic-hours-print-table td {
+    padding: 3px 5px;
+    border: 1px solid #333 !important;
+  }
+
+  .rot-sic-hours-print-table thead {
+    display: table-header-group;
+  }
+
+  .rot-sic-hours-print-table tr {
+    page-break-inside: avoid;
+  }
+
+  @page {
+    margin: 0.5in;
+  }
+}
