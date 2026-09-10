@@ -163,7 +163,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='166';
+    let version='167';
     const reloadGuardKey='fratStoppedReload';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.sessionStorage.removeItem(reloadGuardKey);
@@ -625,10 +625,16 @@ class NavbarController {
     this.$state.go('status');
   }
 
-  setView(index){
-    if (index>-1&&index<this.views.length){
-      window.localStorage.setItem('view',this.views[index]);
-      this.view=this.views[index];
+  setView(index, $event){
+    if ($event) {
+      $event.preventDefault();
+      if ($event.stopPropagation) $event.stopPropagation();
+    }
+    if (!(index>-1&&index<this.views.length)) return;
+    window.localStorage.setItem('view',this.views[index]);
+    this.view=this.views[index];
+    if (!this.isOnStatusRoute()&&this.$state) {
+      this.$state.go('status');
     }
   }
   

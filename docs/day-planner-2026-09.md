@@ -4,7 +4,7 @@ Gantt-style day schedule for fixed-wing ops. **Not** a replacement for the prima
 
 ## Access
 
-- Navbar **View → Day Planner** (`nav.setView(5)` → `status.view === 'planner'`)
+- Navbar **View → Day Planner** (`nav.setView(5)` → `status.view === 'planner'`). From other routes (e.g. **Bugs**), `setView` saves the view and `$state.go('status')`; status applies the saved view on load (`syncStatusViewFromNav`).
 - Fixed-wing bases only (OME / OTZ / UNK). HEL shows a short note.
 - Same auth as `/status` (`Auth.isUser()`)
 - Clicking a bar opens the same flight modal as the main board (`lookAtFlight()` → `Modal.confirm.flight`)
@@ -107,9 +107,9 @@ Primary board section (`status.view === 'board'`) is unchanged.
 
 ## Deploy
 
-1. **`stopped166`** in both places (same number):
-   - `client/components/navbar/navbar.controller.js` — `stoppedFunction()` → `let version='166'`
-   - `server/api/todaysFlight/index.js` → `router.post('/stopped166', ...)`
+1. **`stopped167`** in both places (same number):
+   - `client/components/navbar/navbar.controller.js` — `stoppedFunction()` → `let version='167'`
+   - `server/api/todaysFlight/index.js` → `router.post('/stopped167', ...)`
 2. `grunt build`
 3. `pm2 restart fraBering`
 
@@ -122,7 +122,7 @@ See `docs/stopped-version-deploy.md` — do **not** remove 404 → `location.rel
 3. Cancelled or stale pairings (e.g. BRG590) not stacked on live flight (BRG594)
 4. Click bar → same flight release modal as main board
 5. Refresh page on planner view — rows rebuild after `dayFlights` returns
-6. Old tabs reload after deploy (`stopped166` bump)
+6. Old tabs reload after deploy (`stopped167` bump)
 
 ## Related
 

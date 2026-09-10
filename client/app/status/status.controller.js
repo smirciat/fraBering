@@ -350,20 +350,9 @@ class StatusComponent {
     });
     this.scope.$watch('nav.view',(newVal,oldVal)=>{
       if (!newVal) return;
-      this.view=newVal;
-      if (newVal==='charters'){
-        this.makeFutureCharters();
-      }
-      if (newVal==='next') {
-        this.loadMasterAirports();
-      }
-      if (newVal==='fuel') {
-        this.buildFuelPageEntries();
-      }
-      if (newVal==='planner') {
-        this.buildPlannerRows();
-      }
+      this.applyStatusView(newVal);
     });
+    this.syncStatusViewFromNav();
     this.scope.$watch('nav.isFilter',(newVal,oldVal)=>{
       this.isFilter=newVal;
       this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights);
@@ -2463,6 +2452,21 @@ class StatusComponent {
       return aircraftTypes.indexOf(a.acftType)-aircraftTypes.indexOf(b.acftType);
     });
     this.buildPlannerRows();
+  }
+
+  syncStatusViewFromNav(){
+    let view=(this.scope.nav&&this.scope.nav.view)||window.localStorage.getItem('view');
+    if (!view) return;
+    this.applyStatusView(view);
+  }
+
+  applyStatusView(view){
+    if (!view) return;
+    this.view=view;
+    if (view==='charters') this.makeFutureCharters();
+    if (view==='next') this.loadMasterAirports();
+    if (view==='fuel') this.buildFuelPageEntries();
+    if (view==='planner') this.buildPlannerRows();
   }
 
   buildPlannerSlots(){
