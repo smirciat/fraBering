@@ -409,7 +409,10 @@
         <div class="day-planner-tick" ng-class="{'day-planner-tick-hour': slot.hour}" ng-repeat="slot in status.plannerSlots track by slot.minutes">{{slot.label}}</div>
       </div>
       <div class="day-planner-row" ng-repeat="row in status.plannerRows track by row.pilotKey">
-        <div class="day-planner-label">{{row.pilotName}}</div>
+        <div class="day-planner-label">
+          <div class="day-planner-pilot-name">{{row.pilotName}}</div>
+          <div class="day-planner-pilot-aircraft" ng-if="row.labelAircraft">{{row.labelAircraft}}</div>
+        </div>
         <div class="day-planner-slot" ng-repeat="slot in status.plannerSlots track by slot.minutes"></div>
         <div class="day-planner-bar" ng-repeat="bar in row.bars track by bar.flight._id"
              ng-style="{'grid-column': bar.colStart + ' / ' + bar.colEnd}"
@@ -417,7 +420,7 @@
              ng-click="status.lookAtFlight(bar.flight)"
              uib-tooltip="{{status.getFlightNum(bar.flight)}} {{bar.aircraft}} {{bar.route}}"
              tooltip-placement="top">
-          <div class="day-planner-num">{{status.getFlightNum(bar.flight)}} <span class="day-planner-tail">{{bar.aircraft}}</span></div>
+          <div class="day-planner-num">{{status.getFlightNum(bar.flight)}}<span class="day-planner-tail" ng-if="bar.showAircraft"> {{bar.aircraft}}</span></div>
           <div class="day-planner-route" ng-if="bar.route">{{bar.route}}</div>
         </div>
       </div>

@@ -1008,14 +1008,26 @@ div.airport-pink h1{
   border-right: 2px solid #333;
   font-weight: bold;
   font-size: 13px;
-  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   align-self: stretch;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
   box-shadow: 3px 0 5px rgba(0,0,0,0.12);
+}
+
+.day-planner-pilot-name {
+  line-height: 1.2;
+}
+
+.day-planner-pilot-aircraft {
+  font-weight: normal;
+  font-size: 11px;
+  color: #444;
+  margin-top: 2px;
+  line-height: 1.2;
 }
 
 .day-planner-row:nth-child(even) .day-planner-label {

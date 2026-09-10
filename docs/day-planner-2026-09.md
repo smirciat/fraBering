@@ -17,7 +17,7 @@ Gantt-style day schedule for fixed-wing ops. **Not** a replacement for the prima
 | **Columns** | 30-minute slots from **0700–2100** Alaska time |
 | **Bars** | Flight number, tail, full routing (3-letter codes); color from flight risk / charter |
 
-Row labels use roster **First Last** when available (`plannerPilotName()`).
+Row labels use roster **First Last** when available (`plannerPilotName()`), plus the pilot’s **first aircraft** of the day in the sticky label column. Tail numbers are **not** repeated on every bar — only on the first bar after an aircraft swap mid-day (`annotatePlannerRowAircraft`).
 
 ## Data source
 
@@ -96,6 +96,7 @@ Primary board section (`status.view === 'board'`) is unchanged.
 - `plannerFlightVisible` / `plannerFlightSuppressed` / `plannerFlightInBase`
 - `plannerBarForFlight` / `dedupePlannerBars` / `buildPlannerRows`
 - `plannerHeading` — weekday + date title
+- `plannerBarClass` — uses `colorLock||color` (same as main board flight chip); calls `ensureFlightColorLock` before resolving class
 
 ## Implementation notes
 
@@ -104,9 +105,9 @@ Primary board section (`status.view === 'board'`) is unchanged.
 
 ## Deploy
 
-1. **`stopped164`** in both places (same number):
-   - `client/components/navbar/navbar.controller.js` — `stoppedFunction()` → `let version='164'`
-   - `server/api/todaysFlight/index.js` — `router.post('/stopped164', ...)`
+1. **`stopped165`** in both places (same number):
+   - `client/components/navbar/navbar.controller.js` — `stoppedFunction()` → `let version='165'`
+   - `server/api/todaysFlight/index.js` → `router.post('/stopped165', ...)`
 2. `grunt build`
 3. `pm2 restart fraBering`
 
@@ -119,7 +120,7 @@ See `docs/stopped-version-deploy.md` — do **not** remove 404 → `location.rel
 3. Cancelled or stale pairings (e.g. BRG590) not stacked on live flight (BRG594)
 4. Click bar → same flight release modal as main board
 5. Refresh page on planner view — rows rebuild after `dayFlights` returns
-6. Old tabs reload after deploy (`stopped164` bump)
+6. Old tabs reload after deploy (`stopped165` bump)
 
 ## Related
 

@@ -6,30 +6,14 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #32 Flashy weather wont stop flashy
+## #33 day planner
 
-- **Type:** bug · critical · in_progress
-- **Reporter:** DONALD SHOWALTER
+- **Type:** bug · medium · open
+- **Reporter:** AGNAQIN SCHAEFFER
 
 **Original report:**
 
-TNC purple man ops not vfr
-
-**Progress (changed, not resolved):**
-
-Bering Air: Nate says how about we flash a blueish color instead of red.  Still grab the attention, but it's not an emergency
-
-**Comments:**
-- Andy Smircich: Shipped in dev — ready for your review.
-
-Fixed depart-warning flash not stopping after manual weather entry (e.g. TNC purple → Not VFR).
-
-• Saving manual obs now refreshes master airport data and all flight leg colors immediately
-• Flash only nags when a blue/purple leg still lacks a recent manual declaration (Not VFR, WebCam, or official obs counts as addressed)
-
-Please verify: flight within 1 hr of departure with a purple leg → right-click airport → Not VFR → sign/save → flight should stop flashing right away.
-- Andy Smircich: It works gud now
-- Bering Air: Nate says how about we flash a blueish color instead of red.  Still grab the attention, but it's not an emergency
+can you remove the plane numbers from the flight so that the plane numbers are not above every flight listed?
 
 ## #23 Trying to rebase when not told to do so
 
@@ -520,38 +504,6 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
-
-## #31 Flashing Weather Idea
-
-- **Type:** feature · medium · ready_for_review
-- **Reporter:** Fen Kinneen
-- **Status:** ready for review
-
-**Original report:**
-
-Hi Andy,
-
- 
-
-Today we are holding 840 on SMK weather. WBB looks almost okay, but definitely not to a point where I’m ready to call if VFR. In order to stop the flashing, I just marked the ceiling as 300. I know it’s not 300, but I just wanted to make the flashing stop, as we should. I’m thinking a third check box in the manual observation page could say “not VFR” or something of the like. Something that says “I don’t know what the weather is, but it’s not good enough to dispatch for VFR flight” in just a word or two. Turns the box red, prevents dispatch, stops the flashing. Bada-bing, bada-boom.
-
-**Comments:**
-- Cursor Agent: Shipped in dev — ready for your review.
-
-**#31 Not VFR manual observation**
-
-Manual weather modal now has a third shortcut checkbox **Not VFR** (alongside WebCam VFR and Official WebCam):
-
-• Dispatch can declare weather is below VFR mins without inventing a ceiling/visibility number
-• Airport leg colors **pink** (blocks VFR dispatch in Flight Release)
-• Stops the **depart-warning flash** (that only triggers on blue/purple legs within 1 hr of departure)
-• Mutually exclusive with WebCam shortcuts and the numeric manual entry form
-
-**Please verify**
-1. Airport with missing/stale METAR (blue or purple leg) flashing within 1 hr of departure
-2. Right-click airport → manual weather → check **Not VFR** → sign/save
-3. Leg should turn pink, flight should stop flashing, Flight Release should block dispatch on that leg
-4. Uncheck Not VFR or enter a full manual obs to clear the declaration
 
 ## #24 Manual weather input
 

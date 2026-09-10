@@ -2564,9 +2564,11 @@ class StatusComponent {
   }
 
   plannerBarClass(flight){
-    const locked=flight&&(flight.colorLock||flight.color);
-    if (locked&&String(locked).indexOf('airport-green')===-1) return locked;
-    const op=flight&&flight.operation?String(flight.operation).toLowerCase():'';
+    if (!flight) return '';
+    this.ensureFlightColorLock(flight);
+    const cls=flight.colorLock||flight.color;
+    if (cls) return cls;
+    const op=flight.operation?String(flight.operation).toLowerCase():'';
     if (op.indexOf('charter')>-1) return 'airport-orange';
     return 'airport-blue';
   }
@@ -2744,6 +2746,10 @@ class StatusComponent {
     if (!this.plannerSlots||!this.plannerSlots.length) this.plannerSlots=this.buildPlannerSlots();
     const rows=[];
     const flights=(this.todaysFlights||[]).filter(flight=>this.plannerFlightVisible(flight));
+    flights.forEach(flight=>{
+      this.ensureFlightColorLock(flight);
+      this.reapplyFlightColorLock(flight);
+    });
     const byPilot={};
     flights.forEach(flight=>{
       const key=this.plannerPilotKey(flight);
@@ -2794,8 +2800,30 @@ class StatusComponent {
     });
     rows.forEach(row=>{
       row.bars=this.dedupePlannerBars(row.bars);
+      this.annotatePlannerRowAircraft(row);
     });
     this.plannerRows=rows;
+  }
+
+  annotatePlannerRowAircraft(row){
+    if (!row) return;
+    if (!row.bars||!row.bars.length) {
+      row.labelAircraft='';
+      return;
+    }
+    row.bars.sort((a,b)=>a.colStart-b.colStart);
+    let prev='';
+    row.bars.forEach((bar,index)=>{
+      const ac=(bar.aircraft||'').trim();
+      if (index===0) {
+        row.labelAircraft=ac;
+        bar.showAircraft=false;
+        prev=ac;
+        return;
+      }
+      bar.showAircraft=!!(ac&&ac!==prev);
+      if (bar.showAircraft) prev=ac;
+    });
   }
 
   plannerHeading(){
