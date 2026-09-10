@@ -2536,6 +2536,20 @@ class StatusComponent {
     return '';
   }
 
+  plannerCopilotName(flight){
+    if (!flight||!flight.coPilot) return '';
+    const obj=flight.coPilotObject||this.plannerLookupPilot(flight.coPilot)||null;
+    if (obj) {
+      const first=(obj.firstName||'').trim();
+      const last=(obj.lastName||'').trim();
+      if (first||last) return (first+' '+last).trim();
+      if (obj.displayName) return String(obj.displayName).trim();
+      if (obj.name) return String(obj.name).trim();
+    }
+    if (flight.coPilotObject&&flight.coPilotObject.displayName) return String(flight.coPilotObject.displayName).trim();
+    return String(flight.coPilot).trim();
+  }
+
   plannerPilotKey(flight){
     const pic=flight&&flight.pilot?String(flight.pilot).toLowerCase().trim():'';
     if (pic) return pic;
@@ -2807,11 +2821,19 @@ class StatusComponent {
 
   annotatePlannerRowAircraft(row){
     if (!row) return;
+    row.copilotName='';
     if (!row.bars||!row.bars.length) {
       row.labelAircraft='';
       return;
     }
     row.bars.sort((a,b)=>a.colStart-b.colStart);
+    for (let i=0;i<row.bars.length;i++){
+      const copilot=this.plannerCopilotName(row.bars[i].flight);
+      if (copilot) {
+        row.copilotName=copilot;
+        break;
+      }
+    }
     let prev='';
     row.bars.forEach((bar,index)=>{
       const ac=(bar.aircraft||'').trim();

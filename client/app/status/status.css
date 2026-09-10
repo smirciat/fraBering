@@ -991,8 +991,9 @@ div.airport-pink h1{
 
 .day-planner-row {
   position: relative;
-  min-height: 2.8em;
+  min-height: 0;
   background: #f7f7f0;
+  align-items: center;
 }
 
 .day-planner-row:nth-child(even) {
@@ -1018,8 +1019,37 @@ div.airport-pink h1{
   box-shadow: 3px 0 5px rgba(0,0,0,0.12);
 }
 
+.day-planner-label,
+.day-planner-slot,
+.day-planner-bar {
+  grid-row: 1;
+}
+
+.day-planner-pilot-crew {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
 .day-planner-pilot-name {
   line-height: 1.2;
+}
+
+.day-planner-copilot {
+  font-weight: normal;
+  font-size: 11px;
+  color: #333;
+  padding-left: 7px;
+  border-left: 2px solid #777;
+  margin-left: 1px;
+  line-height: 1.2;
+}
+
+.day-planner-crew-role {
+  font-weight: bold;
+  font-size: 10px;
+  color: #555;
+  margin-right: 4px;
 }
 
 .day-planner-pilot-aircraft {
@@ -1056,12 +1086,13 @@ div.airport-pink h1{
 
 .day-planner-slot {
   border-left: 1px solid #ddd;
-  min-height: 2.8em;
+  min-height: 0;
   align-self: stretch;
+  pointer-events: none;
 }
 
 .day-planner-bar {
-  margin: 2px 2px;
+  margin: 1px 2px;
   padding: 2px 5px 3px;
   text-align: center;
   cursor: pointer;
