@@ -25,6 +25,20 @@ class RotSicHoursComponent {
     this.loading = false;
     this.loadError = '';
     this.printedOn = new Date().toLocaleDateString();
+    this.flightsRequestId = 0;
+  }
+
+  revokePdfUrls() {
+    (this.fileURLs || []).forEach(url => {
+      if (url) URL.revokeObjectURL(url);
+    });
+    this.fileURLs = [];
+    this.blobs = [];
+  }
+
+  pilotPdfName(pilot) {
+    if (!pilot) return '';
+    return pilot.name || pilot.displayName || '';
   }
 
   printFilterSummary() {
@@ -46,10 +60,10 @@ class RotSicHoursComponent {
     this.RotPilotContext.loadPilots().then(() => {
       this.applyPilot(this.RotPilotContext.getChosenPilot());
       this.scope.$watch(
-        () => this.RotPilotContext.getChosenPilot(),
-        (newVal, oldVal) => {
-          if (!newVal || newVal === oldVal) return;
-          this.applyPilot(newVal);
+        () => this.RotPilotContext.getEmployeeId(),
+        (newId, oldId) => {
+          if (!newId || newId === oldId) return;
+          this.applyPilot(this.RotPilotContext.getChosenPilot());
         }
       );
     });
@@ -62,12 +76,16 @@ class RotSicHoursComponent {
     if (!employeeId) return;
     this.queryObj.value = employeeId;
     this.queryObj.value2 = employeeId;
+    this.revokePdfUrls();
+    this.allFlights = [];
     this.flights = [];
+    this.flightsRequestId += 1;
     this.init();
   }
 
   init() {
     if (!this.pilot) return;
+    const requestId = this.flightsRequestId;
     let today = new Date();
     this.startDate408 = this.pilot.C408Initial;
     if (!this.startDate408) {
@@ -78,10 +96,12 @@ class RotSicHoursComponent {
     this.loading = true;
     this.loadError = '';
     this.http.post('/api/rot/firebaseQuery', this.queryObj).then(res => {
+      if (requestId !== this.flightsRequestId) return;
       this.allFlights = res.data;
       this.filterFlights();
       this.loading = false;
     }).catch(() => {
+      if (requestId !== this.flightsRequestId) return;
       this.loading = false;
       this.loadError = 'Could not load flights (server timeout). Try again or narrow the date range.';
     });
@@ -138,26 +158,36 @@ class RotSicHoursComponent {
   }
 
   openPdf() {
-    if (!this.pilot || typeof pdfform !== 'function') {
+    const pilot = this.RotPilotContext.getChosenPilot() || this.pilot;
+    if (!pilot || typeof pdfform !== 'function') {
       alert('PDF form library not loaded or pilot not selected');
+      return;
+    }
+    this.pilot = pilot;
+    if (this.loading) {
+      alert('Flights are still loading for this pilot. Please wait a moment and try again.');
       return;
     }
     this.aircraftSelected = 'Courier';
     this.filterFlights();
     let rows = JSON.parse(JSON.stringify(this.flights));
+    this.revokePdfUrls();
+    const pilotName = this.pilotPdfName(pilot);
+    const pilotCert = pilot.cert || '';
     this.http({
       url: '/api/rot/files/pdfs?filename=' + encodeURIComponent('SIC_LOG.pdf'),
       method: 'GET',
       headers: {'Accept': 'application/pdf'},
       responseType: 'arraybuffer'
     }).then(response => {
+      if (this.RotPilotContext.getEmployeeId() !== String(pilot._id)) return;
       let page = 1;
       this.blobs = [];
       this.fileURLs = [];
       while (rows.length > 0) {
         let fields = {
-          'Pilot Name': [this.pilot.name],
-          'Certificate Number': [this.pilot.cert],
+          'Pilot Name': [pilotName],
+          'Certificate Number': [pilotCert],
           'Page': [page],
           'of': [''],
           throughDate: [new Date().toLocaleDateString()]
