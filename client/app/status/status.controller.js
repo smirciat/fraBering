@@ -378,7 +378,6 @@ class StatusComponent {
             this.setAirplaneList();
             this.availablePilots();
             this.buildFuelPageEntries();
-            this.buildPlannerRows();
           },200);
       },0);
     });
@@ -2279,6 +2278,8 @@ class StatusComponent {
   
   setPilotList(){
     if (!this.dateString||!this.base||!this.allPilots) return;
+    this.sortedPilots=[];
+    if (this.view==='planner') this.plannerRows=[];
     let headerList=['OC','Dispatch','Fueler','Cargo Lead','Medevac','Unassigned Captains','Unassigned Copilots'];
     this.http.post('/api/calendar/rosterDay',{dateString:this.dateString}).then(res=>{
       this.pilotList=[];
@@ -2375,6 +2376,7 @@ class StatusComponent {
         return headerList.indexOf(a.header)-headerList.indexOf(b.header)||new Date(a.dateOfHire)-new Date(b.dateOfHire)||a._id-b._id;
       });
       console.log(this.sortedPilots);
+      this.buildPlannerRows();
     })
     .catch(err=>{
       this.Auth.hasRole('user');
@@ -2596,8 +2598,21 @@ class StatusComponent {
     return String(pilot.code||pilot.label||'').trim().toUpperCase();
   }
 
+  plannerPilotInBase(pilot){
+    if (!pilot||!this.base) return false;
+    const base=this.base.base;
+    if (pilot.pilotBase) {
+      if (pilot.pilotBase===base) return true;
+      if (base==='OTZ'&&this.plannerDutyCode(pilot)==='ND') return true;
+      if (base==='UNK'&&(this.plannerDutyCode(pilot)==='ND'||this.plannerDutyCode(pilot)==='D')) return true;
+      return false;
+    }
+    return true;
+  }
+
   plannerPilotAllowed(pilot){
     if (!pilot) return false;
+    if (!this.plannerPilotInBase(pilot)) return false;
     const code=this.plannerDutyCode(pilot);
     if (code==='A') return true;
     if (code==='OC'||code==='NM'||code==='ND'||code==='D'||code==='DM'||code==='F'||code==='CS'||code==='16') return false;
