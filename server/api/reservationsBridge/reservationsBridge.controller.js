@@ -17,6 +17,14 @@ function actorDisplayName(user) {
   return String(name).trim();
 }
 
+function fratOpsExportToken() {
+  return (
+    process.env.FRAT_OPS_EXPORT_TOKEN ||
+    localEnv.FRAT_OPS_EXPORT_TOKEN ||
+    ''
+  );
+}
+
 /**
  * GET /api/reservationsBridge/pending-bulletins
  * Proxy to reservations Safety bulletins pending list for the signed-in FRAT user (#159 slice 4).
@@ -29,8 +37,12 @@ export async function pendingBulletins(req, res) {
 
   const url = `${reservationsApiBaseUrl()}/api/safety/bulletins/pending`;
   try {
+    const exportToken = fratOpsExportToken();
     const response = await axios.get(url, {
       params: { recipientName: name },
+      headers: exportToken
+        ? { 'x-frat-ops-export-token': exportToken }
+        : undefined,
       timeout: 12000,
       validateStatus: (status) => status < 500,
     });
