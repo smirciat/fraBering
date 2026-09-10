@@ -40,7 +40,7 @@ Reuses the existing status stack — no new API:
 
 **Hidden:**
 
-- Pilots not on the selected base (`plannerPilotInBase` — roster `pilotBase` must match; OTZ may include Nome ND dispatch)
+- Duty-only rows (no flights at this base) when roster `pilotBase` does not match the selected base — pilots **with flights** at the base always show (e.g. OME captain flying through OTZ)
 - OC, NM, ND, D, DM, F, CS, `16`
 - Headers: OC, Dispatch, Fueler, Cargo Lead, Medevac, Unassigned Copilots
 - Copilots (`!pilot.far299Exp`)
@@ -108,9 +108,9 @@ Primary board section (`status.view === 'board'`) is unchanged.
 
 ## Deploy
 
-1. **`stopped168`** in both places (same number):
-   - `client/components/navbar/navbar.controller.js` — `stoppedFunction()` → `let version='168'`
-   - `server/api/todaysFlight/index.js` → `router.post('/stopped168', ...)`
+1. **`stopped169`** in both places (same number):
+   - `client/components/navbar/navbar.controller.js` — `stoppedFunction()` → `let version='169'`
+   - `server/api/todaysFlight/index.js` → `router.post('/stopped169', ...)`
 2. `grunt build`
 3. `pm2 restart fraBering`
 
@@ -123,7 +123,7 @@ See `docs/stopped-version-deploy.md` — do **not** remove 404 → `location.rel
 3. Cancelled or stale pairings (e.g. BRG590) not stacked on live flight (BRG594)
 4. Click bar → same flight release modal as main board
 5. Refresh page on planner view — rows rebuild after `dayFlights` returns
-6. Old tabs reload after deploy (`stopped168` bump)
+6. Old tabs reload after deploy (`stopped169` bump)
 
 ## Related
 

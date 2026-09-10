@@ -2610,9 +2610,8 @@ class StatusComponent {
     return true;
   }
 
-  plannerPilotAllowed(pilot){
+  plannerPilotRoleAllowed(pilot){
     if (!pilot) return false;
-    if (!this.plannerPilotInBase(pilot)) return false;
     const code=this.plannerDutyCode(pilot);
     if (code==='A') return true;
     if (code==='OC'||code==='NM'||code==='ND'||code==='D'||code==='DM'||code==='F'||code==='CS'||code==='16') return false;
@@ -2620,6 +2619,10 @@ class StatusComponent {
     if (header==='OC'||header==='Dispatch'||header==='Fueler'||header==='Cargo Lead'||header==='Medevac'||header==='Unassigned Copilots') return false;
     if (!pilot.far299Exp) return false;
     return true;
+  }
+
+  plannerPilotAllowed(pilot){
+    return this.plannerPilotRoleAllowed(pilot)&&this.plannerPilotInBase(pilot);
   }
 
   plannerHasFlightDuty(pilot){
@@ -2802,9 +2805,11 @@ class StatusComponent {
     pilots.forEach(p=>{
       const tf=p.takeFliteUsername?String(p.takeFliteUsername).toLowerCase().trim():'';
       if (!tf) return;
-      if (!this.plannerPilotAllowed(p)) return;
+      if (!this.plannerPilotRoleAllowed(p)) return;
       const picFlights=byPilot[tf];
-      if (!picFlights&&!this.plannerHasFlightDuty(p)) return;
+      if (!picFlights) {
+        if (!this.plannerHasFlightDuty(p)||!this.plannerPilotInBase(p)) return;
+      }
       seen[tf]=true;
       const nameFlights=picFlights||[];
       let name=this.plannerPilotName(nameFlights[0]||{pilot:tf,pilotObject:p});
@@ -2822,7 +2827,7 @@ class StatusComponent {
     Object.keys(byPilot).forEach(key=>{
       if (seen[key]) return;
       const rosterPilot=this.plannerLookupPilot(key);
-      if (rosterPilot&&!this.plannerPilotAllowed(rosterPilot)) return;
+      if (rosterPilot&&!this.plannerPilotRoleAllowed(rosterPilot)) return;
       const picFlights=byPilot[key];
       const name=this.plannerPilotName(picFlights[0])||key.replace(/^ac:/,'');
       rows.push({
