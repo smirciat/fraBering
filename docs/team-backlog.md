@@ -6,14 +6,21 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #33 day planner
+## #34 Not VFR purple to red to purple....
 
 - **Type:** bug · medium · open
-- **Reporter:** AGNAQIN SCHAEFFER
+- **Reporter:** Lil Buddy
 
 **Original report:**
 
-can you remove the plane numbers from the flight so that the plane numbers are not above every flight listed?
+I entered a "Not VFR (below VFR mins — blocks dispatch)" manual observation on PHO and it keeps switching back and forth from red with an orange border to purple with an orange border.
+
+**Progress (changed, not resolved):**
+
+LOGAN BAGLEY: Screenshots I tried to upload are “too large for the server proxy” I was prompted to ask admin to raise nginx client_max_body_size
+
+**Comments:**
+- LOGAN BAGLEY: Screenshots I tried to upload are “too large for the server proxy” I was prompted to ask admin to raise nginx client_max_body_size
 
 ## #23 Trying to rebase when not told to do so
 

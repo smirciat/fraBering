@@ -769,7 +769,8 @@ class StatusComponent {
     if (airport.metarObj&&(!taf||taf==='')) taf=airport.metarObj.taf;
     if (!airport.metarObj) airport.metarObj={};
     airport.metarObj.airport=angular.copy(airport);
-    airport.metarObj.color=this.overallRiskClass(airport.metarObj);
+    this.applyManualObservationIfNeeded(airport.metarObj, airport);
+    if (!airport.metarObj.color) airport.metarObj.color=this.overallRiskClass(airport.metarObj);
     airport.metarObj.taf=taf;
     airport.metarObj.TAF=TAF;
     let masterIndex=this.masterAirports.map(e=>e.threeLetter).indexOf(airport.threeLetter);
@@ -784,6 +785,7 @@ class StatusComponent {
     angular.extend(this.airports[sidebarIndex], item);
     let hub=this.getBaseHubAirport();
     if (hub&&hub._id===item._id) this.syncBaseClosureComment();
+    this.refreshFlightAirportColors();
   }
 
   loadMasterAirports(){
@@ -1851,7 +1853,7 @@ class StatusComponent {
     let tempColor="airport-green";
     //runway
     if (!metarObj.airport) return returnString+=' '+color;
-    if (metarObj.usingManual&&metarObj.airport.manualObs&&metarObj.airport.manualTimestamp&&this.isLessThanOneHourAgo(new Date(metarObj.airport.manualTimestamp))){
+    if (metarObj.airport.manualObs&&metarObj.airport.manualTimestamp&&this.isLessThanOneHourAgo(new Date(metarObj.airport.manualTimestamp))){
       if (metarObj.airport.manualObs.webcam) {
         metarObj.color=returnString+' airport-green';
         return metarObj.color;
