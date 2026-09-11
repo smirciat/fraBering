@@ -3,7 +3,8 @@
 /**
  * Post a comment on an issue (and optionally update status).
  *
- *   node scripts/issue-comment/index.js <issueId> [--status needs_clarification] [--no-email]
+ *   node scripts/issue-comment/index.js <issueId> [--status ready_for_review] [--no-email]
+ *       [--invite "LOGAN BAGLEY"] [--email-developer]
  *
  * Body: stdin or ISSUE_COMMENT_BODY env var.
  * Auth: ISSUES_EXPORT_TOKEN, or ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD,
@@ -82,6 +83,9 @@ async function main() {
   const statusIdx = process.argv.indexOf('--status');
   const status = statusIdx >= 0 ? process.argv[statusIdx + 1] : null;
   const emailReporter = !process.argv.includes('--no-email');
+  const emailDeveloper = process.argv.includes('--email-developer');
+  const inviteIdx = process.argv.indexOf('--invite');
+  const notifyInviteName = inviteIdx >= 0 ? String(process.argv[inviteIdx + 1] || '').trim() : '';
 
   let body = process.env.ISSUE_COMMENT_BODY || '';
   if (!body.trim()) {
@@ -99,12 +103,22 @@ async function main() {
     console.log('Status -> ' + status);
   }
 
-  await requestJson('POST', base + '/api/issues/' + issueId + '/comments', auth.headers, {
+  const payload = {
     body: body.trim(),
-    emailReporter: emailReporter
-  });
+    emailReporter: emailReporter,
+    emailDeveloper: emailDeveloper
+  };
+  if (notifyInviteName) {
+    payload.notifyInviteName = notifyInviteName;
+  }
 
-  console.log('Comment posted on #' + issueId + (emailReporter ? ' (reporter emailed)' : ''));
+  await requestJson('POST', base + '/api/issues/' + issueId + '/comments', auth.headers, payload);
+
+  const bits = [];
+  if (emailReporter) bits.push('reporter');
+  if (emailDeveloper) bits.push('developer');
+  if (notifyInviteName) bits.push('invite ' + notifyInviteName);
+  console.log('Comment posted on #' + issueId + (bits.length ? ' (' + bits.join(', ') + ' emailed)' : ''));
 }
 
 main().catch((err) => {

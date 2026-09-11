@@ -38,6 +38,7 @@ REMOTE_KEEP_COUNTS="${REMOTE_KEEP_COUNTS:-}"
 MIN_FREE_GB="${MIN_FREE_GB:-15}"
 REMOTE_HOSTS="${REMOTE_HOSTS:-bering-vultr bering-dev}"
 REMOTE_DIR="${REMOTE_DIR:-/var/backups/rot}"
+REMOTE_DIRS="${REMOTE_DIRS:-}"
 DATE_TAG="$(date +%Y-%m-%d)"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 WORKDIR="${BACKUP_DIR}/.work-${STAMP}"
@@ -92,6 +93,24 @@ remote_keep_count() {
   echo "$REMOTE_KEEP_COUNT"
 }
 
+remote_dir_for_host() {
+  local host="$1"
+  local idx="${2:-0}"
+  if [[ -n "$REMOTE_DIRS" ]]; then
+    local -a dirs
+    read -ra dirs <<< "$REMOTE_DIRS"
+    if [[ -n "${dirs[$idx]:-}" ]]; then
+      echo "${dirs[$idx]}"
+      return
+    fi
+  fi
+  case "$host" in
+    bering-vultr) echo "/root/backup/rot" ;;
+    bering-dev) echo "/home/andy/backup/rot" ;;
+    *) echo "$REMOTE_DIR" ;;
+  esac
+}
+
 [[ -x "$SSH_WRAPPER" ]] || chmod +x "$SSH_WRAPPER"
 [[ -f "$SSH_CONFIG" ]] || fail "SSH_CONFIG not found: $SSH_CONFIG"
 [[ -f "$SSH_IDENTITY_FILE" ]] || fail "SSH_IDENTITY_FILE not found: $SSH_IDENTITY_FILE"
@@ -104,15 +123,17 @@ ssh_remote() {
 
 rsync_remote() {
   local host="$1"
-  rsync -av --partial -e "$SSH_WRAPPER" "${TAR_PATH}" "${host}:${REMOTE_DIR}/"
+  local remote_dir="$2"
+  rsync -av --partial -e "$SSH_WRAPPER" "${TAR_PATH}" "${host}:${remote_dir}/"
 }
 
 prune_remote() {
   local host="$1"
-  local keep="$2"
-  log "Pruning remote ${host}:${REMOTE_DIR} (keep ${keep} newest)"
+  local remote_dir="$2"
+  local keep="$3"
+  log "Pruning remote ${host}:${remote_dir} (keep ${keep} newest)"
   ssh_remote "$host" \
-    "mkdir -p '${REMOTE_DIR}' && ls -1t '${REMOTE_DIR}'/rot-docs-*.tar.gz 2>/dev/null | tail -n +$((keep + 1)) | xargs -r rm -f" \
+    "mkdir -p '${remote_dir}' && ls -1t '${remote_dir}'/rot-docs-*.tar.gz 2>/dev/null | tail -n +$((keep + 1)) | xargs -r rm -f" \
     || log "WARN: remote prune failed on ${host}"
 }
 
@@ -184,10 +205,11 @@ fi
 host_idx=0
 for host in $REMOTE_HOSTS; do
   remote_keep="$(remote_keep_count "$host" "$host_idx")"
-  log "Pushing to ${host}:${REMOTE_DIR}/ (keep ${remote_keep} on remote)"
-  ssh_remote "$host" "mkdir -p '${REMOTE_DIR}'"
-  rsync_remote "$host" || fail "rsync to ${host} failed"
-  prune_remote "$host" "$remote_keep"
+  remote_dir="$(remote_dir_for_host "$host" "$host_idx")"
+  log "Pushing to ${host}:${remote_dir}/ (keep ${remote_keep} on remote)"
+  ssh_remote "$host" "mkdir -p '${remote_dir}'"
+  rsync_remote "$host" "$remote_dir" || fail "rsync to ${host} failed"
+  prune_remote "$host" "$remote_dir" "$remote_keep"
   host_idx=$((host_idx + 1))
 done
 
