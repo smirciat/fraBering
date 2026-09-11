@@ -343,6 +343,8 @@ export function addComment(req, res) {
   }
   var emailReporter = !!(req.body && req.body.emailReporter);
   var emailDeveloper = !!(req.body && req.body.emailDeveloper);
+  var notifyInviteName =
+    req.body && req.body.notifyInviteName ? String(req.body.notifyInviteName).trim() : '';
 
   return Issue.findOne({
     where: {
@@ -378,12 +380,27 @@ export function addComment(req, res) {
             }
             return User.findOne({where: {_id: issue.reporterUserId}});
           }).then(function(reporterUser) {
-            notifyIssueComment(issue, comment, {
+            var notifyOpts = {
               emailReporter: emailReporter,
               emailDeveloper: emailDeveloper,
-              reporterEmail: reporterUser && reporterUser.email
+              reporterEmail: reporterUser && reporterUser.email,
+              notifyInviteName: notifyInviteName
+            };
+            if (!notifyInviteName) {
+              notifyIssueComment(issue, comment, notifyOpts);
+              return comment;
+            }
+            return User.findAll({
+              where: {
+                name: {[Op.iLike]: notifyInviteName}
+              }
+            }).then(function(inviteMatches) {
+              if (inviteMatches.length === 1 && inviteMatches[0].email) {
+                notifyOpts.inviteEmail = inviteMatches[0].email;
+              }
+              notifyIssueComment(issue, comment, notifyOpts);
+              return comment;
             });
-            return comment;
           });
         });
       });

@@ -106,6 +106,17 @@ export function notifyIssueComment(issue, comment, options) {
   } else if (options.emailReporter) {
     console.log('issue notify: skipped reporter comment email — no reporter email on issue #' + issueJson._id);
   }
+
+  if (options.inviteEmail) {
+    sendIssueMail(options.inviteEmail, subject, html, 'comment invite issue #' + issueJson._id);
+  } else if (options.notifyInviteName) {
+    console.log(
+      'issue notify: skipped invite comment email — no email for ' +
+        options.notifyInviteName +
+        ' on issue #' +
+        issueJson._id
+    );
+  }
 }
 
 /**

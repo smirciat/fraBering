@@ -6,7 +6,7 @@ Two separate concerns when moving ROT into fraBering:
 |---------|------------|------------------|
 | **`ROT_SOURCE_URI`** | Postgres connection to the **old standalone ROT database** | **One-time** import of `Evaluations` rows into fraBering `RotEvaluations` |
 | **Training PDF migration** | Copy `attachments`, `records`, `pdfs` from ROT → fraBering | **One-time** prod cutover (script below) |
-| **PDF backups** | Tarballs of those same paths on disk | **Ongoing** — prod → **Vultr only** (not Oregon dev) |
+| **PDF backups** | Tarballs of those same paths on disk | **Ongoing** — prod → **Oregon dev** (`bering-dev`); Vultr optional |
 
 They are **not** the same thing. Daily backups do **not** use `ROT_SOURCE_URI`.
 
@@ -140,8 +140,8 @@ From `~/ROT/server/` on **bering-prod** — **training document PDFs only**:
 | Host | Copies kept | Why |
 |------|-------------|-----|
 | **bering-prod** | **1** | Live files are the source of truth; tar is a convenience copy before push |
-| **bering-vultr** | **1** | Off-site if prod is unrecoverable |
-| **bering-dev** (Oregon) | **0** | Do not push — Kamatera snapshots + Vultr; see `resBering/docs/bering-dev-disk.md` |
+| **bering-dev** (Oregon) | **2** typical | Off-site copy (~200 MiB/tar); see `resBering/docs/bering-dev-disk.md` |
+| **bering-vultr** | optional | Second off-site if in `REMOTE_HOSTS` |
 
 Set in `/etc/bering/rot-backup.env`:
 
@@ -149,8 +149,8 @@ Set in `/etc/bering/rot-backup.env`:
 BACKUP_HOME=/home/andy
 SSH_CONFIG=/home/andy/.ssh/config
 SSH_IDENTITY_FILE=/home/andy/.ssh/bering_backup
-REMOTE_HOSTS="bering-vultr"
-REMOTE_KEEP_COUNTS="1"
+REMOTE_HOSTS="bering-dev"
+REMOTE_KEEP_COUNTS="2"
 # Do not set REMOTE_USER if User is already in ~/.ssh/config for each Host
 ```
 
@@ -185,7 +185,7 @@ This section is the operator checklist: what to run on each machine, in order, a
 
 1. **bering-prod** (cron, ~02:15) runs `backup-rot-pdfs.sh`.
 2. Script copies **training PDF paths only** from `~/ROT/server/` into a temp dir.
-3. Script builds **`/var/backups/rot/rot-docs-YYYY-MM-DD.tar.gz`** (~10 GB on prod).
+3. Script builds **`/var/backups/rot/rot-docs-YYYY-MM-DD.tar.gz`** (~200 MiB on prod — training PDF paths only).
 4. Script **rsync**s that file to **bering-vultr** → `/var/backups/rot/`.
 5. Script **deletes old tars**:
    - prod: keep **1** newest
@@ -377,7 +377,8 @@ nano /etc/bering/rot-backup.env
 | `REMOTE_HOSTS` | `bering-vultr` | Vultr only — not Oregon dev |
 | `REMOTE_KEEP_COUNTS` | `1` | vultr keeps 1 |
 | `SSH_IDENTITY_FILE` | `/home/andy/.ssh/bering_backup` | Optional; matches SSH config |
-| `REMOTE_DIR` | `/var/backups/rot` | Same path on both remotes |
+| `REMOTE_DIRS` | `/root/backup/rot /home/andy/backup/rot` | **One path per host**, same order as `REMOTE_HOSTS` (`bering-vultr` then `bering-dev`) |
+| `REMOTE_DIR` | `/var/backups/rot` | Fallback only; prod staging is `BACKUP_DIR` |
 
 **Do not** put secrets in this file for DB — PDF backup does not use Postgres.
 

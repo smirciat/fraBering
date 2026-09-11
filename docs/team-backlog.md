@@ -6,22 +6,6 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #35 FDR
-
-- **Type:** feature · medium · open
-- **Reporter:** Kaleb Janke
-
-**Original report:**
-
-I'm going to email you the spread sheet
-
-**Progress (changed, not resolved):**
-
-Andy Smircich: I uploaded Flight and Duty Records XLSX file to /uploads .  We want to incorporate this workflow into the training records area (likely a separate view) so that Kaleb doesn't use the spreadsheet anymore to update these things manually, but it looks similar in the browser.  Also, many of the formulas are "broken" so we want to review those.  Tabs for calendar years is a behavior/ui we'd like to preserve, as well as similar formatting.  A side note: we cannot upload an xlsx file in issues on ~/fraBering, lets address that too.
-
-**Comments:**
-- Andy Smircich: I uploaded Flight and Duty Records XLSX file to /uploads .  We want to incorporate this workflow into the training records area (likely a separate view) so that Kaleb doesn't use the spreadsheet anymore to update these things manually, but it looks similar in the browser.  Also, many of the formulas are "broken" so we want to review those.  Tabs for calendar years is a behavior/ui we'd like to preserve, as well as similar formatting.  A side note: we cannot upload an xlsx file in issues on ~/fraBering, lets address that too.
-
 ## #23 Trying to rebase when not told to do so
 
 - **Type:** bug · medium · in_progress
@@ -511,6 +495,32 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
+
+## #34 Not VFR purple to red to purple....
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** Lil Buddy
+- **Status:** ready for review
+
+**Original report:**
+
+I entered a "Not VFR (below VFR mins — blocks dispatch)" manual observation on PHO and it keeps switching back and forth from red with an orange border to purple with an orange border.
+
+**Comments:**
+- LOGAN BAGLEY: Screenshots I tried to upload are “too large for the server proxy” I was prompted to ask admin to raise nginx client_max_body_size
+- Cursor Agent: **Ready for review — two fixes on prod**
+
+**1. Not VFR color flip (original report)**  
+On the status board, a **Not VFR** manual observation could bounce between **red** and **purple** because risk color was calculated before the manual observation was applied, and some paths still required `usingManual`. Manual observation is applied first now, flight/airport colors refresh after you save from the sidebar, and **Not VFR** should stay **red** (with the orange border) for the full hour.
+
+**2. Screenshot uploads (Logan)**  
+nginx on **frat.beringair.com** now allows **50M** bodies (same as reservations issues), so paste/upload should no longer hit “too large for the server proxy.”
+
+**Please verify**
+- **Lil Buddy** — PHO (or any airport): set **Not VFR**, watch the column for a minute; it should not flip back to purple.
+- **Logan** — please paste or attach the screenshots you tried earlier on **#34** so we can confirm the color behavior if anything is still wrong.
+
+Reply here when it looks good and we can mark **Done**.
 
 ## #24 Manual weather input
 

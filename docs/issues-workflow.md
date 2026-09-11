@@ -85,7 +85,7 @@ If `DEVELOPER_EMAIL_ADDRESS` is empty, no email is sent (issue create still succ
 Paste runs in the browser only. **`grunt serve`** uses live `client/` files; **production** serves **`dist/`** after `grunt build`. If paste works locally but not on `https://frat.beringair.com`, redeploy a fresh build first.
 
 - The app reads the clipboard **during** the paste event (deferring loses data on HTTPS).
-- If a preview appears but save fails, nginx may be limiting body size — set `client_max_body_size 20m;` for the frat vhost (Express allows 50mb JSON).
+- If a preview appears but save fails, nginx may be limiting body size — set `client_max_body_size 50M;` on the **frat.beringair.com** vhost (Express allows 50mb JSON). Prod: `~/fraBering/scripts/nginx-frat-upload-limit.sh` (same 50M as reservations issues).
 
 ## Issue attachment storage (prod)
 
