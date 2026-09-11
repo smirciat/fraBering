@@ -8,6 +8,17 @@ const RECORDS_ACCESS_EMAILS = [
   'kalebjanke@gmail.com'
 ];
 
+/** FDR (#35) — hidden from nav unless user name matches (expand list in code when needed). */
+const FDR_ACCESS_NAMES = [
+  'Andy Smircich',
+  'Nathaniel Olson',
+  'Kaleb Janke',
+  'Fen Kinneen',
+  'Scott Gordon',
+  'Kyle Lefebvre',
+  'Brian Weckwerth'
+];
+
 const COMPANY_INSTRUCTORS = [
   'Kyle Lefebvre',
   'Nick Hajdukovich',
@@ -43,11 +54,42 @@ function isCompanyInstructor(user) {
   });
 }
 
+function nameMatchesAllowList(user, allowList) {
+  if (!user || !user.name) return false;
+  const userNorm = normalizeName(user.name);
+  if (!userNorm) return false;
+  return allowList.some(entry => {
+    const entryNorm = normalizeName(entry);
+    if (!entryNorm) return false;
+    return userNorm === entryNorm ||
+      userNorm.indexOf(entryNorm) > -1 ||
+      entryNorm.indexOf(userNorm) > -1;
+  });
+}
+
+export function canAccessFdr(user) {
+  return nameMatchesAllowList(user, FDR_ACCESS_NAMES);
+}
+
+/** Lock/unlock Firebase hour sync for a closed FDR year (FDR team or admin). */
+export function canManageFdrYearLock(user) {
+  if (!user) return false;
+  if (user.role === 'admin' || user.role === 'superadmin') return true;
+  return canAccessFdr(user);
+}
+
 export function canAccessRecords(user) {
   if (!user || !user.email) return false;
   const email = String(user.email).toLowerCase();
   if (RECORDS_ACCESS_EMAILS.indexOf(email) > -1) return true;
   return isCompanyInstructor(user);
+}
+
+export function requireFdrAccess(req, res, next) {
+  if (!canAccessFdr(req.user)) {
+    return res.status(403).json({message: 'FDR access is restricted'});
+  }
+  return next();
 }
 
 export function requireRecordsAccess(req, res, next) {

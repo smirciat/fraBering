@@ -211,16 +211,27 @@ class IssuesComponent {
     }
   }
 
-  isClipboardImageBlob(blob, declaredType) {
+  isAllowedIssueAttachmentBlob(blob, declaredType) {
     if (!blob || !blob.size) {
       return false;
     }
-    var type = blob.type || declaredType || '';
+    var type = (blob.type || declaredType || '').toLowerCase();
     if (type.indexOf('image/') === 0) {
       return true;
     }
+    if (
+      type.indexOf('spreadsheetml') >= 0 ||
+      type.indexOf('ms-excel') >= 0 ||
+      type === 'application/pdf'
+    ) {
+      return true;
+    }
+    var name = (blob.name || '').toLowerCase();
+    if (/\.(xlsx|xls|pdf)$/.test(name)) {
+      return true;
+    }
     if (!type || type === 'application/octet-stream') {
-      return blob.size > 64;
+      return blob.size > 64 && /\.(png|jpe?g|gif|webp|xlsx|xls|pdf)$/i.test(name);
     }
     return false;
   }
@@ -234,7 +245,7 @@ class IssuesComponent {
     var seen = {};
 
     function addBlob(blob, declaredType) {
-      if (!blob || !self.isClipboardImageBlob(blob, declaredType)) {
+      if (!blob || !self.isAllowedIssueAttachmentBlob(blob, declaredType)) {
         return;
       }
       var key = blob.size + ':' + (blob.type || declaredType || '');
@@ -285,15 +296,72 @@ class IssuesComponent {
   blobToUploadPayload(blob, callback) {
     var reader = new FileReader();
     var stamp = Date.now();
+    var defaultName = 'screenshot-' + stamp + '.png';
+    var fileName = blob.name || defaultName;
     reader.onload = function() {
+      var mimeType = blob.type || 'image/png';
+      var previewUrl = mimeType.indexOf('image/') === 0 ? URL.createObjectURL(blob) : '';
       callback({
-        name: 'screenshot-' + stamp + '.png',
-        mimeType: blob.type || 'image/png',
+        name: fileName,
+        mimeType: mimeType,
         data: reader.result,
-        previewUrl: URL.createObjectURL(blob)
+        previewUrl: previewUrl
       });
     };
     reader.readAsDataURL(blob);
+  }
+
+  handleFileInput(inputEl, mode) {
+    if (!inputEl || !inputEl.files || !inputEl.files.length) {
+      return;
+    }
+    var self = this;
+    this.collectFilesFromInput(inputEl, function(files) {
+      if (mode === 'new') {
+        files.forEach(function(file) {
+          self.pendingNewFiles.push(file);
+        });
+        self.pasteFeedback = '';
+      } else if (mode === 'detail' && self.selected) {
+        self.uploadFilesToIssue(self.selected._id, files);
+      }
+    });
+    inputEl.value = '';
+  }
+
+  collectFilesFromInput(input, done) {
+    if (!input || !input.files || !input.files.length) {
+      return;
+    }
+    var self = this;
+    var blobs = [];
+    for (var i = 0; i < input.files.length; i++) {
+      var blob = input.files[i];
+      if (this.isAllowedIssueAttachmentBlob(blob, blob.type)) {
+        blobs.push(blob);
+      }
+    }
+    if (!blobs.length) {
+      this.pasteFeedback = 'That file type is not supported. Use images, PDF, or Excel (.xlsx/.xls).';
+      return;
+    }
+    var pending = blobs.length;
+    var collected = [];
+    blobs.forEach(function(blob) {
+      self.blobToUploadPayload(blob, function(payload) {
+        collected.push(payload);
+        pending -= 1;
+        if (pending === 0) {
+          self.$scope.$evalAsync(function() {
+            done(collected);
+          });
+        }
+      });
+    });
+  }
+
+  isImageAttachment(file) {
+    return file && file.mimeType && file.mimeType.indexOf('image/') === 0;
   }
 
   uploadFilesToIssue(issueId, files) {
@@ -321,7 +389,7 @@ class IssuesComponent {
       if (status === 413) {
         self.pasteFeedback = 'Upload too large for the server proxy (ask admin to raise nginx client_max_body_size).';
       } else {
-        self.pasteFeedback = 'Screenshot upload failed. Try again or use a smaller image.';
+        self.pasteFeedback = 'Attachment upload failed. Try again or use a smaller file.';
       }
     });
   }

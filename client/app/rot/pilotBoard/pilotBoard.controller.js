@@ -120,6 +120,7 @@ class RotPilotBoardComponent {
     window.moment = this.moment;
     window.medicalShortDate = this.medicalShortDate.bind(this);
     this.bootstrapped = false;
+    this.loadError = '';
     this.Auth.getCurrentUser(user => {
       if (!user || !user.role) return;
       this.user = user;
@@ -128,18 +129,51 @@ class RotPilotBoardComponent {
     });
   }
 
+  $onChanges(changes) {
+    if (changes.baseCode && !changes.baseCode.isFirstChange() && this.bootstrapped) {
+      this.init();
+    }
+  }
+
   init() {
     if (!this.bootstrapped) return;
-    this.http.post('/api/rot/firebaseQuery', {
+    this.loadError = '';
+    let body = {
       collection: 'pilots',
       parameter: 'pilotBase',
       value: this.baseCode,
       limit: 3000
-    }).then(res => {
-      this.pilots = this.processPilots(res.data || []);
+    };
+    if (this.baseCode === 'OTZ') {
+      body.parameter2 = 'pilotBase';
+      body.value2 = 'KOTZEBUE';
+      body.queryOr = true;
+    } else if (this.baseCode === 'OME') {
+      body.parameter2 = 'pilotBase';
+      body.value2 = 'NOME';
+      body.queryOr = true;
+    }
+    this.http.post('/api/rot/firebaseQuery', body).then(res => {
+      let raw = res.data || [];
+      let seen = {};
+      let pilots = [];
+      raw.forEach(pilot => {
+        if (!pilot || !pilot._id || seen[pilot._id]) return;
+        if (pilot.pilotBase === 'black' || pilot.pilotBase === 'none') return;
+        if (pilot.isActive === false) return;
+        seen[pilot._id] = true;
+        pilots.push(pilot);
+      });
+      this.pilots = this.processPilots(pilots);
       this.sortPilots(this.pilots);
       this.gridOptions.data = this.pilots;
       this.gridOptions2.data = this.pilots;
+      if (!this.pilots.length) {
+        this.loadError = 'No pilots found for ' + this.baseCode + '. Check Firebase pilotBase (OTZ / KOTZEBUE).';
+      }
+    }, err => {
+      let msg = err && err.data && err.data.message;
+      this.loadError = msg || 'Could not load pilot board from Firebase.';
     });
   }
 

@@ -86,6 +86,26 @@ function pickUpdateBody(body, user) {
   return _.pick(body, ['title', 'description']);
 }
 
+function defaultExtensionForMime(mimeType) {
+  var mime = String(mimeType || '').toLowerCase();
+  if (mime.indexOf('jpeg') >= 0) {
+    return '.jpg';
+  }
+  if (mime.indexOf('png') >= 0) {
+    return '.png';
+  }
+  if (mime.indexOf('spreadsheetml') >= 0 || mime.indexOf('officedocument.spreadsheetml') >= 0) {
+    return '.xlsx';
+  }
+  if (mime.indexOf('ms-excel') >= 0) {
+    return '.xls';
+  }
+  if (mime.indexOf('pdf') >= 0) {
+    return '.pdf';
+  }
+  return '.bin';
+}
+
 function decodeUploadPayload(body) {
   var list = body && body.files;
   if (!Array.isArray(list)) {
@@ -110,8 +130,7 @@ function decodeUploadPayload(body) {
     var mimeType = item.mimeType || item.type || 'image/png';
     var originalName = safeOriginalName(item.name || item.originalName || 'screenshot.png');
     if (!/\.[a-z0-9]+$/i.test(originalName)) {
-      var ext = mimeType.indexOf('jpeg') >= 0 ? '.jpg' : '.png';
-      originalName += ext;
+      originalName += defaultExtensionForMime(mimeType);
     }
     out.push({
       buffer: buffer,
@@ -266,7 +285,7 @@ export function addAttachments(req, res) {
   }
   var files = decodeUploadPayload(req.body);
   if (!files.length) {
-    res.status(400).send({message: 'No image data in request'});
+    res.status(400).send({message: 'No attachment data in request'});
     return null;
   }
   return Issue.findOne({where: {_id: issueId}})

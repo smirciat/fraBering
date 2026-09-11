@@ -7,7 +7,8 @@ import {resolveRotFile, ensureRotDirs} from './rot.storage.js';
 import * as rotFirebase from './rot.firebase.controller';
 import * as rotRecords from './rot.records.controller';
 import * as rotFileserver from './rot.fileserver.controller';
-import {requireRecordsAccess, requireRecordsAccessIfRecordsCollection} from './rot.access.js';
+import {requireRecordsAccess, requireRecordsAccessIfRecordsCollection, requireFdrAccess} from './rot.access.js';
+import * as rotFdr from './rot.fdr.controller';
 
 var router = express.Router();
 
@@ -48,5 +49,18 @@ router.get('/files/attachments', sendRotFile('attachments'));
 router.get('/files/records', requireRecordsAccess, sendRotFile('records'));
 router.get('/files/pdfs', sendRotFile('pdfs'));
 router.get('/files/fileserver', sendRotFile('fileserver'));
+
+router.get('/fdr/meta', requireFdrAccess, rotFdr.fdrMeta);
+router.get('/fdr/summary', requireFdrAccess, rotFdr.fdrSummary);
+router.get('/fdr/export/workbook', requireFdrAccess, rotFdr.fdrExportWorkbook);
+router.get('/fdr/summary/export', requireFdrAccess, rotFdr.fdrExportSummary);
+router.post('/fdr/:year/compute-hours', requireFdrAccess, rotFdr.fdrComputeHours);
+router.get('/fdr/:year/export', requireFdrAccess, rotFdr.fdrExportYear);
+router.get('/fdr/:year', requireFdrAccess, rotFdr.fdrYear);
+router.put('/fdr/:year/settings', requireFdrAccess, rotFdr.fdrUpdateYearSettings);
+router.put('/fdr/:year/days-off', requireFdrAccess, rotFdr.fdrSaveDaysOff);
+router.put('/fdr/:year/hour-notes', requireFdrAccess, rotFdr.fdrSaveHourNotes);
+router.put('/fdr/:year/pilots', requireFdrAccess, rotFdr.fdrSaveRoster);
+router.post('/fdr/:year/copy-roster', requireFdrAccess, rotFdr.fdrCopyRoster);
 
 export default router;

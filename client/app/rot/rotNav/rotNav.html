@@ -2,11 +2,11 @@
   <div class="container-fluid rot-nav-inner">
     <ul class="nav navbar-nav">
       <li ng-if="rotNav.canAccessRecords()" ui-sref-active="active"><a ui-sref="rot.records">Training Records</a></li>
+      <li ng-if="rotNav.canAccessFdr()" ui-sref-active="active"><a ui-sref="rot.fdr">FDR</a></li>
       <li ui-sref-active="active"><a ui-sref="rot.pilotEvals">Pilot Evals</a></li>
       <li ui-sref-active="active"><a ui-sref="rot.sicHours">SIC Log</a></li>
-      <li ui-sref-active="active"><a ui-sref="rot.ome">Nome (OME)</a></li>
-      <li ui-sref-active="active"><a ui-sref="rot.otz">Kotz (OTZ)</a></li>
-      <li ui-sref-active="active"><a ui-sref="rot.fileserver">Fileserver</a></li>
+      <li ui-sref-active="active"><a href="" ng-click="rotNav.goPilotBoard('OME', $event)">Nome (OME)</a></li>
+      <li ui-sref-active="active"><a href="" ng-click="rotNav.goPilotBoard('OTZ', $event)">Kotz (OTZ)</a></li>
     </ul>
   </div>
 </nav>

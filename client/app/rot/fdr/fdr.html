@@ -1,0 +1,252 @@
+<div ng-if="fdr.loggedIn() && !fdr.canAccessFdr()" class="rot-fdr-wrap" style="margin:40px auto;max-width:40em;">
+  <h3>FDR</h3>
+  <p>Access is restricted. If you need access, contact Andy.</p>
+</div>
+
+<div class="rot-fdr-wrap rot-fdr-page" ng-if="fdr.loggedIn() && fdr.canAccessFdr()">
+  <h3>FDR</h3>
+  <div class="rot-fdr-export-toolbar rot-fdr-no-print" ng-if="!fdr.loading && fdr.years.length">
+    <button type="button" class="btn btn-default btn-sm" ng-click="fdr.exportCurrentExcel()" ng-disabled="fdr.exporting">
+      Download Excel (this tab)
+    </button>
+    <button type="button" class="btn btn-default btn-sm" ng-click="fdr.exportFullWorkbook()" ng-disabled="fdr.exporting">
+      Download full workbook
+    </button>
+    <button type="button" class="btn btn-default btn-sm" ng-click="fdr.printForPdf()" ng-if="!fdr.viewSummary && fdr.selectedYear">
+      Print / Save as PDF
+    </button>
+    <span class="text-muted rot-fdr-export-hint" ng-if="fdr.exporting">Building export…</span>
+  </div>
+  <div class="alert rot-fdr-hours-banner rot-fdr-no-print"
+       ng-class="{'alert-info': fdr.hoursLoading, 'alert-warning': !fdr.hoursLoading && (fdr.hoursLocked || fdr.hoursSource === 'import' || fdr.hoursSource === 'firebase_partial'), 'alert-success': !fdr.hoursLoading && !fdr.hoursLocked && fdr.hoursSource === 'firebase'}"
+       ng-if="fdr.showHoursStatusBanner() || fdr.hoursLoadError">
+    <p class="rot-fdr-hours-banner-text" ng-if="fdr.showHoursStatusBanner()">{{fdr.hoursStatusBanner()}}</p>
+    <p class="text-danger rot-fdr-hours-banner-text" ng-if="fdr.hoursLoadError">{{fdr.hoursLoadError}}</p>
+    <button type="button" class="btn btn-default btn-sm" ng-if="fdr.hoursLoadError"
+            ng-click="fdr.retryHoursRefresh()" ng-disabled="fdr.viewSummary">
+      Continue sync
+    </button>
+  </div>
+
+  <p class="text-muted rot-fdr-meta rot-fdr-sync-summary" ng-if="fdr.showSyncSummary()">
+    {{fdr.syncSummaryLabel()}}
+    <span class="rot-fdr-sync-legend-inline">
+      <span class="rot-fdr-sync-marker rot-fdr-sync-marker-saved" title="Saved Firebase hours">●</span> saved
+      <span class="rot-fdr-sync-marker rot-fdr-sync-marker-session" title="Synced this session">●</span> this session
+    </span>
+  </p>
+
+  <div class="rot-fdr-year-lock rot-fdr-no-print" ng-if="!fdr.loading && !fdr.viewSummary && fdr.mode === 'computed' && fdr.hoursLockEditable">
+    <button type="button" class="btn btn-default btn-sm" ng-click="fdr.toggleYearHoursLock()" ng-disabled="fdr.savingYearLock">
+      {{fdr.hoursLocked ? 'Unlock' : 'Lock'}} Firebase sync for {{fdr.selectedYear}}
+    </button>
+    <span class="text-muted rot-fdr-year-lock-hint" ng-if="fdr.savingYearLock">Saving…</span>
+  </div>
+
+  <div class="rot-fdr-sync-toolbar rot-fdr-no-print form-inline" ng-if="!fdr.loading && !fdr.viewSummary && fdr.mode === 'computed' && fdr.years.length">
+    <span class="rot-fdr-sync-label">Sync hours from Firebase:</span>
+    <button type="button" class="btn btn-primary btn-sm" ng-click="fdr.syncFirebaseHours('all')" ng-disabled="fdr.syncDisabled()">
+      All pilots
+    </button>
+    <select class="form-control input-sm" ng-model="fdr.syncBase">
+      <option value="OME">OME (NOME PIC/SIC)</option>
+      <option value="OTZ">OTZ (Kotzebue)</option>
+      <option value="ROTOR">Rotorwing</option>
+    </select>
+    <button type="button" class="btn btn-default btn-sm" ng-click="fdr.syncFirebaseHours('base')" ng-disabled="fdr.syncDisabled()">
+      Sync base
+    </button>
+    <select class="form-control input-sm" ng-model="fdr.syncPilotName" ng-options="n for n in fdr.syncPilotOptions"></select>
+    <button type="button" class="btn btn-default btn-sm" ng-click="fdr.syncFirebaseHours('pilot')" ng-disabled="fdr.syncDisabled() || !fdr.syncPilotName">
+      Sync pilot
+    </button>
+    <select class="form-control input-sm" ng-model="fdr.syncPilotFilter" title="Filter rows by sync status">
+      <option value="all">Show all pilots</option>
+      <option value="saved">Saved Firebase hours only</option>
+      <option value="unsaved">Not saved yet</option>
+      <option value="session">Synced this session</option>
+    </select>
+  </div>
+  <p class="text-muted rot-fdr-meta" ng-if="fdr.mode === 'static'">Historical snapshot (hours and days off from imported spreadsheet).</p>
+  <p class="text-muted rot-fdr-meta" ng-if="fdr.showCompletionKey()">
+    <span class="rot-fdr-legend-complete">Green</span> = month complete (hours + days off).
+    <span class="rot-fdr-legend-incomplete">Amber</span> = past month still missing hours or days off.
+    <span class="rot-fdr-legend-note">Red flag</span> = discrepancy note on hours.
+  </p>
+  <p class="text-muted rot-fdr-meta" ng-if="fdr.showLimitsKey()">
+    <span class="rot-fdr-legend-limit-warn">Gold outline</span> = approaching limit (90% of cap).
+    <span class="rot-fdr-legend-limit-violation">Red outline</span> = over hour cap or under 13 days off / quarter (when quarter is auditable).
+    Limits: 500h/quarter, 1400h/year, 800h per consecutive quarter-pair; Q4 prior year + Q1 this year max 800h.
+  </p>
+  <p ng-if="fdr.loading" class="rot-fdr-loading">Loading…</p>
+  <p ng-if="fdr.loadError" class="text-danger">{{fdr.loadError}}</p>
+  <p class="text-info" ng-if="fdr.savingDaysOff">Saving days off…</p>
+  <p class="text-info" ng-if="fdr.savingRoster">Saving roster…</p>
+  <p class="text-info" ng-if="fdr.savingHourNote">Saving hour note…</p>
+
+  <div class="rot-fdr-roster-toolbar rot-fdr-no-print" ng-if="fdr.canEditRoster() && !fdr.loading">
+    <button type="button" class="btn btn-default btn-sm" ng-click="fdr.toggleEditRoster()">
+      {{fdr.editRoster ? 'Close roster editor' : 'Edit section roster'}}
+    </button>
+  </div>
+
+  <div class="panel panel-default rot-fdr-roster-panel rot-fdr-no-print" ng-if="fdr.editRoster && fdr.canEditRoster()">
+    <div class="panel-heading"><strong>Section roster — {{fdr.selectedYear}}</strong></div>
+    <div class="panel-body">
+      <p class="text-muted">One section per pilot for the year. Moving someone updates where they appear; hours still come from Firebase for all months.</p>
+      <div class="rot-fdr-roster-copy">
+        <button type="button" class="btn btn-default btn-sm" ng-click="fdr.copyRosterFromPrevious()" ng-disabled="fdr.savingRoster">Copy from {{fdr.selectedYear - 1}}</button>
+        <label class="rot-fdr-roster-replace">
+          <input type="checkbox" ng-model="fdr.copyRosterReplace"> Replace existing roster
+        </label>
+      </div>
+      <table class="table table-condensed rot-fdr-roster-table">
+        <thead>
+          <tr><th>Pilot</th><th>Section</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="row in fdr.rosterRows">
+            <td>{{row.name}}</td>
+            <td>
+              <select class="form-control input-sm" ng-model="row.section" ng-options="s for s in fdr.sectionOptions"></select>
+            </td>
+            <td>
+              <button type="button" class="btn btn-link btn-sm text-danger" ng-click="fdr.removeRosterRow(row)">Remove</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="rot-fdr-roster-add form-inline">
+        <input type="text" class="form-control input-sm" placeholder="LAST, FIRST" ng-model="fdr.newPilotName">
+        <select class="form-control input-sm" ng-model="fdr.newPilotSection" ng-options="s for s in fdr.sectionOptions"></select>
+        <button type="button" class="btn btn-default btn-sm" ng-click="fdr.addRosterPilot()">Add pilot</button>
+        <button type="button" class="btn btn-primary btn-sm" ng-click="fdr.saveRoster()" ng-disabled="fdr.savingRoster">Save roster</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-warning" ng-if="fdr.compareAlerts.length">
+    <strong>Hours may be incomplete vs imported spreadsheet</strong> (computed &lt; 85% of imported for months that had data):
+    <ul class="rot-fdr-alert-list">
+      <li ng-repeat="a in fdr.compareAlerts">{{a.pilotName}} — {{fdr.monthLabel(a.month)}}: computed {{a.computed}}, spreadsheet {{a.imported}}</li>
+    </ul>
+  </div>
+
+  <div class="panel panel-default rot-fdr-note-panel rot-fdr-no-print" ng-if="fdr.noteEditor">
+    <div class="panel-heading">
+      Hour note — {{fdr.noteEditor.pilotName}} / {{fdr.noteEditor.monthKey}}
+      <button type="button" class="close" ng-click="fdr.closeHourNote()">&times;</button>
+    </div>
+    <div class="panel-body">
+      <p class="text-muted">Discrepancy comment for auditors (paper F&amp;D vs computed hours).</p>
+      <textarea class="form-control" rows="3" ng-model="fdr.noteEditor.text" maxlength="2000"></textarea>
+      <div class="rot-fdr-note-actions">
+        <button type="button" class="btn btn-primary btn-sm" ng-click="fdr.saveHourNote()" ng-disabled="fdr.savingHourNote">Save</button>
+        <button type="button" class="btn btn-default btn-sm" ng-click="fdr.closeHourNote()">Cancel</button>
+        <button type="button" class="btn btn-link btn-sm text-danger" ng-click="fdr.noteEditor.text = ''; fdr.saveHourNote()">Clear note</button>
+      </div>
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs rot-fdr-year-tabs rot-fdr-no-print" ng-if="fdr.years.length">
+    <li ng-repeat="y in fdr.years" ng-class="{active: fdr.selectedYear === y}">
+      <a href="" ng-click="fdr.selectYear(y)">{{y}}</a>
+    </li>
+    <li ng-class="{active: fdr.selectedYear === 'summary'}">
+      <a href="" ng-click="fdr.selectYear('summary')">Summary</a>
+    </li>
+  </ul>
+
+  <div class="rot-fdr-sheet" ng-if="fdr.viewSummary && !fdr.loadError">
+    <h4 class="rot-fdr-sheet-title">Flight &amp; Duty Audit Report — Summary</h4>
+    <div class="table-responsive">
+      <table class="table table-bordered table-condensed rot-fdr-table">
+        <thead>
+          <tr>
+            <th class="rot-fdr-name-col">Year</th>
+            <th ng-repeat="m in fdr.months">{{m}}</th>
+            <th ng-repeat="q in fdr.quarters">{{q}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="row in fdr.summaryRows">
+            <td class="rot-fdr-name-col">{{row.year}}</td>
+            <td ng-repeat="m in fdr.months">{{fdr.displayCell(row.months[m])}}</td>
+            <td ng-repeat="q in fdr.quarters">{{fdr.displayCell(row.quarters[q])}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="rot-fdr-sheet" ng-if="!fdr.viewSummary && fdr.selectedYear && !fdr.loadError">
+    <h4 class="rot-fdr-sheet-title" ng-if="fdr.sheetTitle">{{fdr.sheetTitle}}</h4>
+    <div class="rot-fdr-section" ng-repeat="sec in fdr.sections">
+      <h4 class="rot-fdr-section-title">{{sec.title}}</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-condensed rot-fdr-table">
+          <thead>
+            <tr>
+              <th class="rot-fdr-name-col">Instructions</th>
+              <th ng-repeat="m in fdr.months" ng-class="fdr.monthHeaderClass(m)">{{m}}</th>
+              <th ng-repeat="q in fdr.quarters">{{q}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat-start="p in sec.pilots" ng-class="fdr.pilotStripeClass($index)" ng-if="fdr.pilotPassesSyncFilter(p)">
+              <td class="rot-fdr-name-col">
+                <span class="rot-fdr-sync-markers" ng-if="fdr.mode === 'computed'">
+                  <span class="rot-fdr-sync-marker rot-fdr-sync-marker-saved"
+                        ng-class="{'rot-fdr-sync-marker-off': !fdr.pilotSyncedOverall(p)}"
+                        title="{{fdr.pilotSyncSavedTitle(p)}}">●</span>
+                  <span class="rot-fdr-sync-marker rot-fdr-sync-marker-session"
+                        ng-class="{'rot-fdr-sync-marker-off': !fdr.pilotSyncedThisSession(p)}"
+                        title="{{fdr.pilotSyncSessionTitle(p)}}">●</span>
+                </span>
+                {{p.name}}
+              </td>
+              <td ng-repeat="m in fdr.months" ng-class="fdr.hourCellClass(p, m)" title="{{fdr.hourNoteTitle(p, m)}}">
+                <span class="rot-fdr-hour-cell">
+                  <span>{{fdr.displayCell(p.hours.months[m])}}</span>
+                  <button type="button" class="rot-fdr-note-btn"
+                          ng-if="p.hourNotesEditable"
+                          ng-class="{'rot-fdr-note-flag': fdr.hasHourNote(p, m)}"
+                          ng-click="fdr.openHourNote(p, m)"
+                          title="{{fdr.hasHourNote(p, m) ? fdr.hourNoteTitle(p, m) : 'Add discrepancy note'}}">!</button>
+                </span>
+              </td>
+              <td ng-repeat="q in fdr.quarters" ng-class="fdr.quarterHourClass(p, q)" title="{{fdr.quarterHourTitle(p, q)}}">{{fdr.displayCell(p.hours.quarters[q])}}</td>
+            </tr>
+            <tr ng-repeat-end class="rot-fdr-duty-row" ng-class="fdr.pilotStripeClass($index)" ng-if="fdr.pilotPassesSyncFilter(p)">
+              <td class="rot-fdr-name-col rot-fdr-duty-label">Days off</td>
+              <td ng-repeat="m in fdr.months" ng-class="fdr.dutyCellClass(p, m)">
+                <input ng-if="fdr.daysOffEditable(p)" type="number" min="0" max="31" class="rot-fdr-days-input"
+                       ng-model="p.duty.months[m]" ng-blur="fdr.onDaysOffBlur(p, m)">
+                <span ng-if="!fdr.daysOffEditable(p)">{{fdr.displayCell(p.duty.months[m])}}</span>
+              </td>
+              <td ng-repeat="q in fdr.quarters" ng-class="fdr.quarterDutyClass(p, q)" title="{{fdr.quarterDutyTitle(p, q)}}">{{fdr.displayCell(p.duty.quarters[q])}}</td>
+            </tr>
+            <tr class="rot-fdr-total-row" ng-if="sec.totalRow">
+              <td class="rot-fdr-name-col"><strong>{{sec.totalRow.label}}</strong></td>
+              <td ng-repeat="m in fdr.months">{{fdr.displayCell(sec.totalRow.values.months[m])}}</td>
+              <td ng-repeat="q in fdr.quarters">{{fdr.displayCell(sec.totalRow.values.quarters[q])}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="rot-fdr-section" ng-if="fdr.companyTotal">
+      <div class="table-responsive">
+        <table class="table table-bordered table-condensed rot-fdr-table">
+          <tbody>
+            <tr class="rot-fdr-total-row rot-fdr-company-total">
+              <td class="rot-fdr-name-col"><strong>{{fdr.companyTotal.label}}</strong></td>
+              <td ng-repeat="m in fdr.months">{{fdr.displayCell(fdr.companyTotal.values.months[m])}}</td>
+              <td ng-repeat="q in fdr.quarters">{{fdr.displayCell(fdr.companyTotal.values.quarters[q])}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

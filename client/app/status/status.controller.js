@@ -360,25 +360,33 @@ class StatusComponent {
     });
     this.scope.$watch('nav.base',(newVal,oldVal)=>{
       this.spinner=true;
-      if (!newVal||newVal==='') return;
+      if (!newVal||!newVal.base) {
+        this.spinner=false;
+        return;
+      }
       this.timeout(()=>{
-        this.scope.nav.isCollapsed=true;
+        if (this.scope.nav) this.scope.nav.isCollapsed=true;
         this.base=newVal;
+        window.base=newVal;
         this.refreshFuelTruckOptions();
         if (!oldVal) {
           this.spinner=false;
           return;
         }
         this.scroll(true);
-          this.timeout(()=>{
-            this.spinner=false;
-            if (this.masterAirports) this.setBase(this.masterAirports);
-            this.syncBaseClosureComment();
-            this.setPilotList();
-            this.setAirplaneList();
-            this.availablePilots();
-            this.buildFuelPageEntries();
-          },200);
+        this.timeout(()=>{
+          this.spinner=false;
+          if (this.masterAirports) this.setBase(this.masterAirports);
+          this.syncBaseClosureComment();
+          this.setPilotList();
+          this.setAirplaneList();
+          this.availablePilots();
+          this.buildFuelPageEntries();
+          if (this.allTodaysFlights) {
+            this.todaysFlights=this.filterTodaysFlights(this.allTodaysFlights);
+          }
+          this.buildPlannerRows();
+        },200);
       },0);
     });
     this.scope.$watch('nav.dateString',(newVal,oldVal)=>{//or '$root.nav...'
@@ -1489,8 +1497,9 @@ class StatusComponent {
           if (this.alternateArray.indexOf(airport.threeLetter)>-1) this.alternateAirports.push(angular.copy(airport));
         }
       });
-      if (!this.scope.nav) return;
-      let baseFour=this.scope.nav.base.four;
+      let activeBase=window.base||(this.scope.nav&&this.scope.nav.base);
+      if (!activeBase||!activeBase.four) return;
+      let baseFour=activeBase.four;
       if (baseFour==="HELI") this.airports=airports;
       else this.airports=airports.filter(e=>this.airportInStatusSidebar(e, baseFour));
       
@@ -2278,39 +2287,54 @@ class StatusComponent {
     return header;
   }
   
-  setPilotList(){
-    if (!this.dateString||!this.base||!this.allPilots) return;
-    this.sortedPilots=[];
-    if (this.view==='planner') this.plannerRows=[];
+  syncActiveBaseFromWindow() {
+    if (!this.base || !this.base.base) {
+      if (window.base && window.base.base) this.base = window.base;
+    }
+  }
+
+  rosterAssignmentBase(pilot) {
+    if (!pilot) return '';
+    if (pilot.label === 'OTZ') return 'OTZ';
+    if (pilot.label === 'OME') return 'OME';
+    let loc = pilot.location;
+    if (loc === 'KOTZ' || loc === 'KOTZEBUE') return 'OTZ';
+    if (loc === 'NOME') return 'OME';
+    if (loc === 'UNK' || loc === 'UNALAKLEET') return 'UNK';
+    return '';
+  }
+
+  applyRosterToPilotList(rosterData) {
+    this.syncActiveBaseFromWindow();
+    if (!this.dateString || !this.base || !this.allPilots || !rosterData) return;
     let headerList=['OC','Dispatch','Fueler','Cargo Lead','Medevac','Unassigned Captains','Unassigned Copilots'];
-    this.http.post('/api/calendar/rosterDay',{dateString:this.dateString}).then(res=>{
-      this.pilotList=[];
-      this.coPilotList=[];
-      this.ocList=[];
-      this.sortedPilots=[];
-      if (!res||!res.data) return;
-      this.wholeRoster=res.data;
-      let basePilotRoster=res.data.filter(pilot=>{
+    let activeBase = this.base.base;
+    this.pilotList=[];
+    this.coPilotList=[];
+    this.ocList=[];
+    this.sortedPilots=[];
+    let basePilotRoster=rosterData.filter(pilot=>{
         if (pilot.employee_full_name==="Sam Kendall") return false;
         if (pilot.location_name) {
-          pilot.position=pilot.location_name.split(' ')[1];
-          pilot.location=pilot.location_name.split(' ')[0];
+          let parts=String(pilot.location_name).trim().split(/\s+/);
+          pilot.location=parts[0];
+          if (parts.length > 1) pilot.position=parts.slice(1).join(' ');
         }
         if (pilot.label==="OTZ") pilot.location="KOTZEBUE";
         if (pilot.label==="OME") pilot.location="NOME";
+        if (pilot.location==="KOTZ") pilot.location="KOTZEBUE";
         if (pilot.title==='OC'&&pilot.type==='shift'&&pilot.location!=="HELICOPTER") return true;
-        if (this.base.base==="UNK") {
+        if (activeBase==="UNK") {
           if (pilot.location==="NOME"&&(pilot.label==="ND"||pilot.label==="D")) return true;
           return pilot.position==='CAPT'||pilot.position==='FO';
         }
-        if (this.base.base==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==='D');
-        if (this.base.base==="OTZ") {
+        if (activeBase==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==='D');
+        if (activeBase==="OTZ") {
           if (pilot.location==="NOME"&&pilot.label==="ND") return true;
-          return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==='D');
+          return pilot.location==='KOTZEBUE';
         }
         return true;
       });
-      console.log(basePilotRoster);
       for (let pilot of basePilotRoster){//pilot is the pilot object from acroroster
         let p;
         //if (pilot.employee_full_name==="Michael Evans") pilot.employee_full_name="Mike Evans";
@@ -2334,25 +2358,16 @@ class StatusComponent {
           //continue;
         }
         else p=this.allPilots[index];//p is the pilot object from firebase
-        if (pilot.label==="OTZ") p.pilotBase="OTZ";
-        if (pilot.label==="OME") p.pilotBase="OME";
-        let inBase=p.pilotBase===this.base.base;
-        if (pilot.label==="OC") inBase=true;
-        if ((pilot.label==="ND"||pilot.label==="D")&&this.base.base==='UNK') inBase=true;
-        if (pilot.label==="ND"&&this.base.base==='OTZ') inBase=true;
-        //UNK Base rules
-        if (this.base.base==="UNK"&&this.todaysFlights) {
-          this.todaysFlights.forEach(flight=>{
-            if (!flight.pilotObject||flight.pilotObject.displayName!==p.displayName||flight.active==='false') return;
-            let x=flight.airports.indexOf('Unalakleet');
-            if (x>-1) inBase=true;
-          });
-        }
+        let assignmentBase=this.rosterAssignmentBase(pilot);
+        if (assignmentBase) p.pilotBase=assignmentBase;
+        else if (pilot.location==="NOME") p.pilotBase="OME";
+        else if (pilot.location==="KOTZEBUE"||pilot.location==="KOTZ") p.pilotBase="OTZ";
+        if (!p.name) p.name=p.displayName||pilot.employee_full_name||'';
         //set up headers for sort order
         p.header='';
         //p.code=pilot.title;
         p.code=pilot.label;
-        if (inBase&&p) {
+        if (p) {
           if (p.code==='OC') p.header='OC';
           if (p.code==='NM') p.header='Medevac';
           if (p.code==='ND') p.header='Dispatch';
@@ -2373,12 +2388,21 @@ class StatusComponent {
           this.sortedPilots.push(p);
         }
       }//end of for of loop
-      this.sortedPilots.sort((a,b)=>{
-        //if (!a.header) return -1;
-        return headerList.indexOf(a.header)-headerList.indexOf(b.header)||new Date(a.dateOfHire)-new Date(b.dateOfHire)||a._id-b._id;
-      });
-      console.log(this.sortedPilots);
-      this.buildPlannerRows();
+    this.sortedPilots.sort((a,b)=>{
+      return headerList.indexOf(a.header)-headerList.indexOf(b.header)||new Date(a.dateOfHire)-new Date(b.dateOfHire)||a._id-b._id;
+    });
+    this.buildPlannerRows();
+  }
+
+  setPilotList(){
+    this.syncActiveBaseFromWindow();
+    if (!this.dateString||!this.base||!this.allPilots) return;
+    this.sortedPilots=[];
+    if (this.view==='planner') this.plannerRows=[];
+    this.http.post('/api/calendar/rosterDay',{dateString:this.dateString}).then(res=>{
+      if (!res||!res.data) return;
+      this.wholeRoster=res.data;
+      this.applyRosterToPilotList(res.data);
     })
     .catch(err=>{
       this.Auth.hasRole('user');

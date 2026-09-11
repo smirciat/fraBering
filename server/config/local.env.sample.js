@@ -46,5 +46,7 @@ module.exports = {
   // ROT integration — source Postgres for one-time Evaluations import (scripts/migrate-rot-evaluations)
   ROT_SOURCE_URI: '',
   // ROT document storage root (default: <repo>/server/fileserver/rot)
-  ROT_FILE_ROOT: ''
+  ROT_FILE_ROOT: '',
+  // Flight & Duty workbook (default: uploads/Flight&DutyRecordReport.xls in repo root)
+  FDR_WORKBOOK_PATH: ''
 };

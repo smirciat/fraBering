@@ -42,5 +42,11 @@ db.RosterCalendarRequest = require('../api/rosterCalendarRequest/rosterCalendarR
 db.RosterMonthMeta = require('../api/rosterMonthMeta/rosterMonthMeta.model').default(db.sequelize, Sequelize.DataTypes);
 db.RosterStaffingMinimum = require('../api/rosterStaffingMinimum/rosterStaffingMinimum.model').default(db.sequelize, Sequelize.DataTypes);
 db.RotEvaluation = require('../api/rotEvaluation/rotEvaluation.model').default(db.sequelize, Sequelize.DataTypes);
+db.FdrPilot = require('../api/rot/fdrPilot.model').default(db.sequelize, Sequelize.DataTypes);
+db.FdrDaysOff = require('../api/rot/fdrDaysOff.model').default(db.sequelize, Sequelize.DataTypes);
+db.FdrImportHour = require('../api/rot/fdrImportHour.model').default(db.sequelize, Sequelize.DataTypes);
+db.FdrHourNote = require('../api/rot/fdrHourNote.model').default(db.sequelize, Sequelize.DataTypes);
+db.FdrComputedHour = require('../api/rot/fdrComputedHour.model').default(db.sequelize, Sequelize.DataTypes);
+db.FdrYearSettings = require('../api/rot/fdrYearSettings.model').default(db.sequelize, Sequelize.DataTypes);
 
 module.exports = db;

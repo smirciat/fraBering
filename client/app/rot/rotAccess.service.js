@@ -10,6 +10,16 @@ angular.module('workspaceApp')
       'kalebjanke@gmail.com'
     ];
 
+    const FDR_ACCESS_NAMES = [
+      'Andy Smircich',
+      'Nathaniel Olson',
+      'Kaleb Janke',
+      'Fen Kinneen',
+      'Scott Gordon',
+      'Kyle Lefebvre',
+      'Brian Weckwerth'
+    ];
+
     const COMPANY_INSTRUCTORS = [
       'Kyle Lefebvre',
       'Nick Hajdukovich',
@@ -45,6 +55,29 @@ angular.module('workspaceApp')
       });
     }
 
+    function nameMatchesAllowList(user, allowList) {
+      if (!user || !user.name) return false;
+      const userNorm = normalizeName(user.name);
+      if (!userNorm) return false;
+      return allowList.some(function(entry) {
+        const entryNorm = normalizeName(entry);
+        if (!entryNorm) return false;
+        return userNorm === entryNorm ||
+          userNorm.indexOf(entryNorm) > -1 ||
+          entryNorm.indexOf(userNorm) > -1;
+      });
+    }
+
+    function canAccessFdr(user) {
+      return nameMatchesAllowList(user, FDR_ACCESS_NAMES);
+    }
+
+    function canManageFdrYearLock(user) {
+      if (!user) return false;
+      if (user.role === 'admin' || user.role === 'superadmin') return true;
+      return canAccessFdr(user);
+    }
+
     function canAccessRecords(user) {
       if (!user || !user.email) return false;
       const email = String(user.email).toLowerCase();
@@ -54,6 +87,8 @@ angular.module('workspaceApp')
 
     return {
       canAccessRecords: canAccessRecords,
+      canAccessFdr: canAccessFdr,
+      canManageFdrYearLock: canManageFdrYearLock,
       isCompanyInstructor: isCompanyInstructor
     };
   });

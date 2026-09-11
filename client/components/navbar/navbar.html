@@ -39,10 +39,10 @@
             <li ui-sref-active="active"><a href="#" ng-click="nav.navigateTo('roster', $event)"><i class="fa fa-calendar-check-o"></i> Roster</a></li>
             <li ui-sref-active="active"><a ui-sref="rot.pilotEvals">Pilot Evals</a></li>
             <li ng-show="nav.canAccessRotRecords()" ui-sref-active="active"><a ui-sref="rot.records">Training Records</a></li>
-            <li ui-sref-active="active"><a ui-sref="rot.ome">Nome (OME)</a></li>
-            <li ui-sref-active="active"><a ui-sref="rot.otz">Kotz (OTZ)</a></li>
+            <li ng-show="nav.canAccessFdr()" ui-sref-active="active"><a ui-sref="rot.fdr">FDR</a></li>
+            <li ui-sref-active="active"><a href="" ng-click="nav.goRotPilotBoard('OME', $event)">Nome (OME)</a></li>
+            <li ui-sref-active="active"><a href="" ng-click="nav.goRotPilotBoard('OTZ', $event)">Kotz (OTZ)</a></li>
             <li ui-sref-active="active"><a ui-sref="rot.sicHours">SIC Log</a></li>
-            <li ui-sref-active="active"><a ui-sref="rot.fileserver">Fileserver</a></li>
           </ul>
         </li>
         <li ng-show="nav.Auth.isUser()" style="padding-left:1em;padding-top:7px;">
@@ -64,9 +64,10 @@
           </div>
         </li>
         <li ng-show="nav.Auth.isUser()" style="padding-top:7px;padding-left:2em;">
-          <ui-select style="width:10em;" ng-model="nav.base" theme="selectize" ng-disabled="disabled" ng-change="nav.updateBase()">
+          <ui-select style="width:10em;" ng-model="nav.base" theme="selectize" ng-disabled="disabled"
+                     on-select="nav.updateBase($item)" ng-change="nav.updateBase()">
               <ui-select-match placeholder="Choose...">{{$select.selected.base}}</ui-select-match>
-              <ui-select-choices repeat="base in nav.bases" >
+              <ui-select-choices repeat="base in nav.bases">
                 <div ng-bind-html="base.base | highlight: $select.search"></div>
               </ui-select-choices>
           </ui-select>

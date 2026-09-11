@@ -75,7 +75,40 @@ export function resolveRotFile(subdir, filename) {
 }
 
 export function ensureRotDirs() {
-  ['attachments', 'records', 'pdfs', 'fileserver'].forEach(name => {
+  ['attachments', 'records', 'pdfs', 'fileserver', 'fdr'].forEach(name => {
     fs.mkdirSync(rotSubdir(name), {recursive: true});
   });
+}
+
+const FDR_WORKBOOK_NAMES = [
+  'Flight&DutyRecordReport.xls',
+  'Flight&DutyRecordReport.xlsx',
+  'Flight and Duty Record Report.xls',
+  'Flight and Duty Record Report.xlsx'
+];
+
+/** Master FDR spreadsheet — uploads/ on dev; server/fileserver/rot/fdr or FDR_WORKBOOK_PATH on prod. */
+export function resolveFdrWorkbookPath() {
+  let override = process.env.FDR_WORKBOOK_PATH || localEnv.FDR_WORKBOOK_PATH;
+  if (override) {
+    let resolved = path.resolve(String(override));
+    if (fs.existsSync(resolved)) {
+      return resolved;
+    }
+  }
+  let root = findRepoRoot();
+  let dirs = uniqueRoots([
+    path.join(root, 'uploads'),
+    path.join(root, 'server/fileserver/fdr'),
+    rotSubdir('fdr')
+  ]);
+  for (let d = 0; d < dirs.length; d++) {
+    for (let n = 0; n < FDR_WORKBOOK_NAMES.length; n++) {
+      let candidate = path.join(dirs[d], FDR_WORKBOOK_NAMES[n]);
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  }
+  return null;
 }

@@ -124,10 +124,16 @@ class NavbarController {
     if (tempFilter==='true') this.isFilter=true;
     if (tempFilter==='false') this.isFilter=false;
     window.isFilter=this.isFilter;
-    if (window.localStorage.getItem('baseIndex')!==null&&window.localStorage.getItem('baseIndex')!=='undefined') this.base=this.bases[window.localStorage.getItem('baseIndex')];
-    else this.base=this.bases[0];
+    this.base=this.baseFromStorage();
     window.base=this.base;
     this.updateBase();
+    this.syncBaseFromRoute(this.$state.current);
+    this.scope.$on('$stateChangeSuccess', (event, toState) => {
+      this.syncBaseFromRoute(toState);
+    });
+    this.scope.$on('frat:setBase', (event, baseCode) => {
+      this.selectBaseByCode(baseCode);
+    });
     this.http.post('/api/airplanes/firebaseGrab').then(res=>{
       window.firebaseGrabData=res.data;
       this.allAircraft=res.data.aircraft.filter(a=>a._id.substring(0,1)==="N"&&!a.isInactive);
@@ -219,12 +225,49 @@ class NavbarController {
     else this.setNavDate(this.date);
   }
   
-  updateBase(){
-    //this.isCollapsed=true;
-    let index=this.bases.map(e => e.base).indexOf(this.base.base);
-    if (index>-1) window.localStorage.setItem('baseIndex',index);
-    window.base=this.base;
-    if (index===3) {
+  baseFromStorage() {
+    let raw=window.localStorage.getItem('baseIndex');
+    if (raw===null||raw===undefined||raw==='undefined') return this.bases[0];
+    let index=parseInt(raw, 10);
+    if (!Number.isFinite(index)||index<0||index>=this.bases.length) return this.bases[0];
+    return this.bases[index];
+  }
+
+  selectBaseByCode(baseCode) {
+    if (!baseCode) return;
+    let index=this.bases.map(e => e.base).indexOf(baseCode);
+    if (index<0) return;
+    this.base=this.bases[index];
+    this.updateBase();
+  }
+
+  syncBaseFromRoute(state) {
+    if (!state||!state.name) return;
+    if (state.name==='rot.otz') this.selectBaseByCode('OTZ');
+    else if (state.name==='rot.ome') this.selectBaseByCode('OME');
+  }
+
+  goRotPilotBoard(baseCode, $event) {
+    if ($event) {
+      $event.preventDefault();
+      if ($event.stopPropagation) $event.stopPropagation();
+    }
+    this.selectBaseByCode(baseCode);
+    if (!this.$state) return;
+    this.$state.go(baseCode==='OTZ' ? 'rot.otz' : 'rot.ome');
+  }
+
+  updateBase(selected) {
+    if (selected && selected.base) {
+      this.base = selected;
+    }
+    if (!this.base || !this.base.base) {
+      this.base = this.bases[0];
+    }
+    let index = this.bases.map(e => e.base).indexOf(this.base.base);
+    if (index > -1) window.localStorage.setItem('baseIndex', String(index));
+    window.base = this.base;
+    if (index === 3) {
       document.documentElement.style.setProperty('--modal-dialog-width', '75%');
     }
     else {
@@ -685,6 +728,10 @@ class NavbarController {
 
   canAccessRotRecords(){
     return this.RotAccess.canAccessRecords(this.Auth.getCurrentUser());
+  }
+
+  canAccessFdr(){
+    return this.RotAccess.canAccessFdr(this.Auth.getCurrentUser());
   }
 }
 

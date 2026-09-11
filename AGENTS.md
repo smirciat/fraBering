@@ -70,3 +70,4 @@ See `README.md` for full install steps (npm, bower, node version quirks).
 - `docs/team-backlog.md` / `docs/issues-workflow.md` — team Issues queue
 - `docs/performance-status-board-2026-08.md` — `/status` performance notes
 - `docs/day-planner-2026-09.md` — Day Planner view (Gantt by pilot, Sep 2026)
+- `docs/fdr-plan-2026-09.md` — Flight & Duty Records (#35) — status, limits, on-demand Firebase sync, year lock; Phase 4 cleanup deferred during soak

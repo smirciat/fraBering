@@ -32,12 +32,18 @@
               <textarea class="form-control" rows="4" ng-model="issues.newIssue.description"></textarea>
             </div>
             <div class="form-group">
-              <label>Screenshots</label>
+              <label>Attachments</label>
               <issues-paste-area on-paste="issues.onPasteNew($event)"></issues-paste-area>
+              <p class="issue-meta">Paste a screenshot, or choose a file (image, PDF, Excel).</p>
+              <input type="file" class="issues-file-input" accept="image/*,.pdf,.xlsx,.xls"
+                     multiple id="issues-new-file-input"
+                     onchange="angular.element(this).scope().$apply(function(){ angular.element(this).scope().issues.handleFileInput(this, 'new'); }.bind(this));">
+              <label class="btn btn-default btn-xs" for="issues-new-file-input">Choose file…</label>
               <p class="text-warning issue-meta" ng-if="issues.pasteFeedback">{{issues.pasteFeedback}}</p>
               <ul class="issues-pending-thumbs" ng-if="issues.pendingNewFiles.length">
                 <li ng-repeat="file in issues.pendingNewFiles">
-                  <img ng-src="{{file.previewUrl}}" alt="Pasted screenshot">
+                  <img ng-if="file.previewUrl" ng-src="{{file.previewUrl}}" alt="{{file.name}}">
+                  <span ng-if="!file.previewUrl" class="issue-meta">{{file.name}}</span>
                 </li>
               </ul>
             </div>
@@ -80,21 +86,27 @@
           </div>
           <p style="white-space: pre-wrap;">{{issues.selected.description}}</p>
           <div ng-if="issues.selected.attachments && issues.selected.attachments.length">
-            <h5>Screenshots</h5>
+            <h5>Attachments</h5>
             <ul class="issues-attachment-list">
               <li ng-repeat="file in issues.selected.attachments">
                 <a ng-href="{{issues.attachmentUrl(file._id)}}" target="_blank" rel="noopener">
-                  <img ng-src="{{issues.attachmentUrl(file._id)}}" alt="{{file.originalName}}">
+                  <img ng-if="issues.isImageAttachment(file)" ng-src="{{issues.attachmentUrl(file._id)}}" alt="{{file.originalName}}">
+                  <span ng-if="!issues.isImageAttachment(file)">{{file.originalName}}</span>
                 </a>
-                <div class="issue-meta">{{file.originalName}}</div>
+                <div class="issue-meta" ng-if="issues.isImageAttachment(file)">{{file.originalName}}</div>
               </li>
             </ul>
           </div>
           <div class="form-group" style="margin-top: 1em;">
-            <label>Add screenshot</label>
+            <label>Add attachment</label>
             <issues-paste-area on-paste="issues.onPasteDetail($event)"></issues-paste-area>
+            <p class="issue-meta">Paste a screenshot, or choose a file (image, PDF, Excel).</p>
+            <input type="file" class="issues-file-input" accept="image/*,.pdf,.xlsx,.xls"
+                   multiple id="issues-detail-file-input"
+                   onchange="angular.element(this).scope().$apply(function(){ angular.element(this).scope().issues.handleFileInput(this, 'detail'); }.bind(this));">
+            <label class="btn btn-default btn-xs" for="issues-detail-file-input">Choose file…</label>
             <p class="text-warning issue-meta" ng-if="issues.pasteFeedback">{{issues.pasteFeedback}}</p>
-            <span class="issue-meta" ng-if="issues.uploading">Uploading screenshot…</span>
+            <span class="issue-meta" ng-if="issues.uploading">Uploading…</span>
           </div>
           <div class="row issue-meta" ng-if="issues.isAdmin">
             <div class="col-sm-4">

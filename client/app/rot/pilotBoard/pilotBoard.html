@@ -1,4 +1,5 @@
 <div ng-if="rotPilotBoard.loggedIn()">
+  <p class="text-danger" ng-if="rotPilotBoard.loadError">{{rotPilotBoard.loadError}}</p>
   <div print-section class="paper rot-pilot-board-page">
     <div class="beringBanner row">
       <div class="col-sm-2 fourteen"><strong class="bering">BERING AIR</strong></div>

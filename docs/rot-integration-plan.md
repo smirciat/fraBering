@@ -35,6 +35,8 @@ See: `docs/rot-decommission.md`
 
 **Records redesign (#23):** Nate feedback + Tier A/B plan — [`issues-23-records-redesign.md`](./issues-23-records-redesign.md)
 
+**Flight & Duty (#35):** spreadsheet-like ROT view; plan — [`fdr-plan-2026-09.md`](./fdr-plan-2026-09.md)
+
 ## Prod deploy + training PDF migration
 
 **Code deploy** (no file moves required for OME/OTZ/SIC UI):

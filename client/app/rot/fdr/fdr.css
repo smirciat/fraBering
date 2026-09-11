@@ -1,0 +1,327 @@
+.rot-fdr-wrap {
+  padding: 1em 1.5em 2em;
+}
+
+.rot-fdr-year-lock {
+  margin-bottom: 0.5em;
+}
+
+.rot-fdr-year-lock .btn {
+  margin-right: 0.5em;
+}
+
+.rot-fdr-export-toolbar {
+  margin-bottom: 0.75em;
+}
+
+.rot-fdr-export-toolbar .btn {
+  margin-right: 0.35em;
+  margin-bottom: 0.35em;
+}
+
+.rot-fdr-export-hint {
+  font-size: 12px;
+  margin-left: 0.5em;
+}
+
+@media print {
+  .rot-fdr-no-print,
+  .navbar,
+  .rot-nav,
+  .rot-fdr-note-btn {
+    display: none !important;
+  }
+
+  .rot-fdr-wrap {
+    padding: 0;
+  }
+
+  .rot-fdr-table {
+    font-size: 9px;
+  }
+
+  .rot-fdr-cell-complete,
+  .rot-fdr-cell-incomplete,
+  .rot-fdr-cell-has-note,
+  .rot-fdr-pilot-block-a td,
+  .rot-fdr-pilot-block-b td {
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .rot-fdr-days-input {
+    border: none;
+    background: transparent;
+    width: auto;
+  }
+}
+
+.rot-fdr-meta {
+  margin-bottom: 0.5em;
+}
+
+.rot-fdr-hours-banner {
+  margin: 0 0 1em;
+  max-width: 52em;
+}
+
+.rot-fdr-hours-banner-text {
+  margin: 0 0 0.5em;
+}
+
+.rot-fdr-hours-banner .btn {
+  margin-top: 0.25em;
+}
+
+.rot-fdr-sync-toolbar {
+  margin: 0 0 1em;
+  max-width: 56em;
+}
+
+.rot-fdr-sync-toolbar .form-control,
+.rot-fdr-sync-toolbar .btn {
+  margin-right: 0.35em;
+  margin-bottom: 0.35em;
+  vertical-align: middle;
+}
+
+.rot-fdr-sync-label {
+  font-weight: 600;
+  margin-right: 0.5em;
+}
+
+.rot-fdr-sync-summary {
+  margin-bottom: 0.5em;
+}
+
+.rot-fdr-sync-legend-inline {
+  margin-left: 0.75em;
+  font-size: 12px;
+}
+
+.rot-fdr-sync-markers {
+  display: inline-block;
+  margin-right: 0.35em;
+  letter-spacing: 1px;
+  vertical-align: baseline;
+}
+
+.rot-fdr-sync-marker {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.rot-fdr-sync-marker-saved {
+  color: #2e7d32;
+}
+
+.rot-fdr-sync-marker-session {
+  color: #1565c0;
+}
+
+.rot-fdr-sync-marker-off {
+  color: #ccc;
+}
+
+.rot-fdr-year-tabs {
+  margin-bottom: 1em;
+  flex-wrap: wrap;
+}
+
+.rot-fdr-section {
+  margin-bottom: 2em;
+}
+
+.rot-fdr-section-title {
+  margin: 0 0 0.5em;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.rot-fdr-table {
+  font-size: 12px;
+  background: #fff;
+}
+
+.rot-fdr-table th,
+.rot-fdr-table td {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rot-fdr-name-col {
+  text-align: left !important;
+  min-width: 10em;
+  max-width: 14em;
+}
+
+/* Two-row pilot blocks: hours + days off share the same band */
+.rot-fdr-table tr.rot-fdr-pilot-block-a td {
+  background: #fff;
+}
+
+.rot-fdr-table tr.rot-fdr-pilot-block-b td {
+  background: #eef2f7;
+}
+
+.rot-fdr-duty-row td {
+  color: #555;
+  font-size: 11px;
+}
+
+.rot-fdr-duty-label {
+  font-style: italic;
+  padding-left: 1.5em !important;
+}
+
+.rot-fdr-days-input {
+  width: 3.2em;
+  padding: 2px 4px;
+  font-size: 12px;
+  text-align: right;
+  background: transparent;
+}
+
+.rot-fdr-alert-list {
+  margin: 0.5em 0 0;
+  padding-left: 1.2em;
+}
+
+.rot-fdr-company-total td {
+  background: #e3eaf5;
+}
+
+.rot-fdr-total-row td {
+  background: #eef3fa;
+  font-weight: 600;
+}
+
+.rot-fdr-roster-toolbar {
+  margin: 0.5em 0 1em;
+}
+
+.rot-fdr-roster-panel {
+  margin-bottom: 1.5em;
+  max-width: 42em;
+}
+
+.rot-fdr-roster-copy {
+  margin-bottom: 0.75em;
+}
+
+.rot-fdr-roster-replace {
+  margin-left: 1em;
+  font-weight: normal;
+  font-size: 12px;
+}
+
+.rot-fdr-roster-table td {
+  vertical-align: middle;
+}
+
+.rot-fdr-roster-add .form-control {
+  width: auto;
+  display: inline-block;
+  margin-right: 0.35em;
+  margin-bottom: 0.35em;
+}
+
+.rot-fdr-pilot-block-a .rot-fdr-cell-complete {
+  background: #e3f0e4 !important;
+}
+
+.rot-fdr-pilot-block-a .rot-fdr-cell-incomplete {
+  background: #fff6d9 !important;
+}
+
+.rot-fdr-pilot-block-b .rot-fdr-cell-complete {
+  background: #d4e6d6 !important;
+}
+
+.rot-fdr-pilot-block-b .rot-fdr-cell-incomplete {
+  background: #ebe2c4 !important;
+}
+
+.rot-fdr-cell-has-note {
+  box-shadow: inset 0 0 0 2px #c62828;
+}
+
+.rot-fdr-th-incomplete {
+  background: #fff3cd !important;
+}
+
+.rot-fdr-hour-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  width: 100%;
+}
+
+.rot-fdr-note-btn {
+  border: none;
+  background: transparent;
+  color: #bbb;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 2px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rot-fdr-note-btn.rot-fdr-note-flag {
+  color: #c62828;
+}
+
+.rot-fdr-note-panel {
+  max-width: 36em;
+  margin-bottom: 1em;
+}
+
+.rot-fdr-note-panel .close {
+  float: right;
+}
+
+.rot-fdr-note-actions {
+  margin-top: 0.5em;
+}
+
+.rot-fdr-legend-complete {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.rot-fdr-legend-incomplete {
+  color: #f9a825;
+  font-weight: 600;
+}
+
+.rot-fdr-legend-note {
+  color: #c62828;
+  font-weight: 600;
+}
+
+.rot-fdr-limit-warn {
+  box-shadow: inset 0 0 0 2px #f9a825 !important;
+}
+
+.rot-fdr-limit-violation {
+  box-shadow: inset 0 0 0 2px #c62828 !important;
+}
+
+.rot-fdr-legend-limit-warn {
+  color: #f9a825;
+  font-weight: 600;
+}
+
+.rot-fdr-legend-limit-violation {
+  color: #c62828;
+  font-weight: 600;
+}
+
+@media print {
+  .rot-fdr-limit-warn,
+  .rot-fdr-limit-violation {
+    box-shadow: none !important;
+  }
+}

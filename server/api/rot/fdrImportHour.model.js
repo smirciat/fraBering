@@ -1,0 +1,29 @@
+'use strict';
+
+export default function(sequelize, DataTypes) {
+  return sequelize.define('FdrImportHour', {
+    _id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    year: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    pilotName: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    month: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    hours: DataTypes.DOUBLE
+  }, {
+    indexes: [
+      {unique: true, fields: ['year', 'pilotName', 'month']}
+    ]
+  });
+}

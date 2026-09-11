@@ -6,21 +6,21 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #34 Not VFR purple to red to purple....
+## #35 FDR
 
-- **Type:** bug · medium · open
-- **Reporter:** Lil Buddy
+- **Type:** feature · medium · open
+- **Reporter:** Kaleb Janke
 
 **Original report:**
 
-I entered a "Not VFR (below VFR mins — blocks dispatch)" manual observation on PHO and it keeps switching back and forth from red with an orange border to purple with an orange border.
+I'm going to email you the spread sheet
 
 **Progress (changed, not resolved):**
 
-LOGAN BAGLEY: Screenshots I tried to upload are “too large for the server proxy” I was prompted to ask admin to raise nginx client_max_body_size
+Andy Smircich: I uploaded Flight and Duty Records XLSX file to /uploads .  We want to incorporate this workflow into the training records area (likely a separate view) so that Kaleb doesn't use the spreadsheet anymore to update these things manually, but it looks similar in the browser.  Also, many of the formulas are "broken" so we want to review those.  Tabs for calendar years is a behavior/ui we'd like to preserve, as well as similar formatting.  A side note: we cannot upload an xlsx file in issues on ~/fraBering, lets address that too.
 
 **Comments:**
-- LOGAN BAGLEY: Screenshots I tried to upload are “too large for the server proxy” I was prompted to ask admin to raise nginx client_max_body_size
+- Andy Smircich: I uploaded Flight and Duty Records XLSX file to /uploads .  We want to incorporate this workflow into the training records area (likely a separate view) so that Kaleb doesn't use the spreadsheet anymore to update these things manually, but it looks similar in the browser.  Also, many of the formulas are "broken" so we want to review those.  Tabs for calendar years is a behavior/ui we'd like to preserve, as well as similar formatting.  A side note: we cannot upload an xlsx file in issues on ~/fraBering, lets address that too.
 
 ## #23 Trying to rebase when not told to do so
 

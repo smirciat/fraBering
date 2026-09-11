@@ -46,6 +46,15 @@
   margin-bottom: 12px;
 }
 
+.issues-file-input {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
 .issues-paste-zone {
   display: block;
   width: 100%;
