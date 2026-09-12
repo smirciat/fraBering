@@ -94,13 +94,23 @@ function compareAlerts(year, pilots, importHoursMap) {
       let month = idx + 1;
       let imported = imp[month];
       if (imported === null || imported === undefined || imported === '') return;
+      let impN = num(imported);
       let computed = p.hours && p.hours.months ? num(p.hours.months[m]) : 0;
-      if (num(imported) >= 5 && computed < num(imported) * 0.85) {
+      if (impN >= 5 && computed < impN * 0.85) {
         alerts.push({
           pilotName: p.name,
           month,
-          imported: roundHour(num(imported)),
-          computed: roundHour(computed)
+          imported: roundHour(impN),
+          computed: roundHour(computed),
+          kind: 'low'
+        });
+      } else if (impN >= 5 && computed > impN * 1.15) {
+        alerts.push({
+          pilotName: p.name,
+          month,
+          imported: roundHour(impN),
+          computed: roundHour(computed),
+          kind: 'high'
         });
       }
     });

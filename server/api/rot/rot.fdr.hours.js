@@ -83,6 +83,41 @@ function collectionToFlights(result) {
   return out;
 }
 
+/** Same leg sometimes appears as duplicate Firestore docs (identical times/crew/date). */
+function flightLegDedupeKey(flight) {
+  if (!flight) return '';
+  return [
+    flight.dateString || '',
+    flight.aircraft || '',
+    flight.departure || '',
+    flight.destination || '',
+    flight.flightTime,
+    flight.pilotEmployeeNumber,
+    flight.coPilotEmployeeNumber
+  ].join('|');
+}
+
+function dedupeFlightsByLeg(flights) {
+  let seen = {};
+  let out = [];
+  (flights || []).forEach(f => {
+    let key = flightLegDedupeKey(f);
+    if (!key || seen[key]) return;
+    seen[key] = true;
+    out.push(f);
+  });
+  return out;
+}
+
+function dedupeFlightsByDocId(flights) {
+  let seen = {};
+  return (flights || []).filter(f => {
+    if (!f || !f._id || seen[f._id]) return false;
+    seen[f._id] = true;
+    return true;
+  });
+}
+
 function uniqueEmployeeIds(employeeIds) {
   let seen = {};
   let list = [];
@@ -150,18 +185,14 @@ export async function fetchFlightsForEmployeeYear(employeeId, year) {
     );
     flights = collectionToFlights(mergedNum);
   }
-  let seen = {};
-  return flights.filter(f => {
-    if (!f._id || seen[f._id]) return false;
-    seen[f._id] = true;
-    return flightCalendarYear(f) === year;
-  });
+  flights = dedupeFlightsByDocId(flights).filter(f => flightCalendarYear(f) === year);
+  return dedupeFlightsByLeg(flights);
 }
 
 export function aggregateHoursByMonth(flights) {
   let months = {};
   for (let m = 1; m <= 12; m++) months[m] = 0;
-  (flights || []).forEach(f => {
+  dedupeFlightsByLeg(flights || []).forEach(f => {
     if (!flightCountsForAggregation(f)) return;
     let mo = flightMonth(f);
     if (!mo) return;

@@ -17,7 +17,7 @@ Shipped in app code (deploy: `grunt babel:server`, `grunt build`, `pm2 restart f
 | **Sync visibility** | Green ● = saved in DB; blue ● = synced this browser session (`sessionStorage`); filter + summary line |
 | **Duty limits** | `rot.fdr.limits.js` — ≤500h/quarter, ≤1400h/year, ≥13 days off/quarter (when auditable), ≤800h for Q1+Q2, Q2+Q3, Q3+Q4, and **Q4(prior year)+Q1(current year)**; cell/header outlines + legend |
 | **Year lock** | `FdrYearSettings.hoursLocked` — blocks Firebase sync (`403` on compute); days off still editable; `PUT /api/rot/fdr/:year/settings` |
-| **Compare alerts** | Server flags import vs Firebase when computed &lt; ~85% of imported (≥5h months); kept for QA while soaking |
+| **Compare alerts** | Server flags import vs Firebase when computed differs by &gt;15% from imported (≥5h imported months)—both too low and too high; kept for QA while soaking |
 
 **Deferred (Phase 4 — hold while soaking):** tone down compare banner, optional backfill script from in-memory cache, nginx timeout tuning. No code changes until ops is happy with sync + limits + lock in prod.
 

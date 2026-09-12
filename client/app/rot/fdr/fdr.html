@@ -126,9 +126,14 @@
   </div>
 
   <div class="alert alert-warning" ng-if="fdr.compareAlerts.length">
-    <strong>Hours may be incomplete vs imported spreadsheet</strong> (computed &lt; 85% of imported for months that had data):
+    <strong>Computed hours differ from imported spreadsheet</strong> (by more than 15% for months with ≥5h imported):
     <ul class="rot-fdr-alert-list">
-      <li ng-repeat="a in fdr.compareAlerts">{{a.pilotName}} — {{fdr.monthLabel(a.month)}}: computed {{a.computed}}, spreadsheet {{a.imported}}</li>
+      <li ng-repeat="a in fdr.compareAlerts">
+        {{a.pilotName}} — {{fdr.monthLabel(a.month)}}:
+        computed {{a.computed}}, spreadsheet {{a.imported}}
+        <span ng-if="a.kind === 'high'">(Firebase higher)</span>
+        <span ng-if="a.kind === 'low'">(Firebase lower)</span>
+      </li>
     </ul>
   </div>
 

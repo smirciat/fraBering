@@ -31,6 +31,27 @@ export function displayNameKey(raw) {
   return normalizePilotName(last + first);
 }
 
+function canonicalLastName(last) {
+  let n = normalizePilotName(last);
+  if (n === 'PAULSON' || n === 'PAULSEN') return 'PAULSEN';
+  return n;
+}
+
+function firebaseLastName(firebaseLabel) {
+  let s = String(firebaseLabel || '').trim();
+  let comma = s.indexOf(',');
+  if (comma >= 0) {
+    return normalizePilotName(s.slice(0, comma));
+  }
+  let parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return normalizePilotName(s);
+  return normalizePilotName(parts[parts.length - 1]);
+}
+
+function lastNamesAlign(spreadsheetLast, firebaseLabel) {
+  return canonicalLastName(spreadsheetLast) === canonicalLastName(firebaseLastName(firebaseLabel));
+}
+
 /** True when spreadsheet LAST, FIRST and a Firebase label refer to the same person. */
 export function namesReferToSamePilot(spreadsheetRaw, firebaseLabel) {
   let sheetKey = spreadsheetNameKey(spreadsheetRaw);
@@ -43,10 +64,14 @@ export function namesReferToSamePilot(spreadsheetRaw, firebaseLabel) {
   let sLast = normalizePilotName(String(spreadsheetRaw).slice(0, comma));
   let sFirst = normalizePilotName(String(spreadsheetRaw).slice(comma + 1));
   if (!sLast || !sFirst) return false;
-  if (!sheetKey.startsWith(sLast) || !fbKey.startsWith(sLast)) return false;
+  if (!lastNamesAlign(sLast, firebaseLabel)) return false;
+  let canonLast = canonicalLastName(sLast);
+  let fbLast = canonicalLastName(firebaseLastName(firebaseLabel));
+  if (!sheetKey.startsWith(sLast) && !sheetKey.startsWith(canonLast) && !sheetKey.startsWith(fbLast)) return false;
+  if (!fbKey.startsWith(fbLast)) return false;
 
-  let sRest = sheetKey.slice(sLast.length);
-  let fRest = fbKey.slice(sLast.length);
+  let sRest = sheetKey.startsWith(sLast) ? sheetKey.slice(sLast.length) : sheetKey.slice(fbLast.length);
+  let fRest = fbKey.slice(fbLast.length);
   if (!sRest || !fRest) return false;
   if (sRest === fRest) return true;
   if (sRest.indexOf(fRest) === 0 || fRest.indexOf(sRest) === 0) return true;
@@ -62,6 +87,8 @@ function compatibleSpreadsheetFirstNames(sRest, fRest) {
   if (!sParts.length || !fParts.length) return false;
   let sGiven = sParts[0].replace(/\./g, '');
   let fGiven = fParts[0].replace(/\./g, '');
+  if (sGiven === 'SAVANNAH' || sGiven === 'SAVANNA') sGiven = 'SAVANNA';
+  if (fGiven === 'SAVANNAH' || fGiven === 'SAVANNA') fGiven = 'SAVANNA';
   if (!sGiven || !fGiven) return false;
   if (sGiven === fGiven) return middleInitialsCompatible(sParts, fParts);
   if (sGiven.indexOf(fGiven) === 0 || fGiven.indexOf(sGiven) === 0) {
