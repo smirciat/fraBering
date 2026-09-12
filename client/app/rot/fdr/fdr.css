@@ -272,6 +272,48 @@
   box-shadow: inset 0 0 0 2px #c62828;
 }
 
+.rot-fdr-cell-audited {
+  box-shadow: inset 0 0 0 2px #1565c0;
+}
+
+.rot-fdr-duty-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  width: 100%;
+}
+
+.rot-fdr-audit-btn,
+.rot-fdr-audit-note-btn {
+  border: none;
+  background: transparent;
+  color: #bbb;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 2px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rot-fdr-audit-btn.rot-fdr-audit-btn-on {
+  color: #1565c0;
+}
+
+.rot-fdr-audit-note-btn {
+  font-size: 11px;
+}
+
+.rot-fdr-legend-audit {
+  color: #1565c0;
+  font-weight: 600;
+}
+
+.rot-fdr-duty-sync-missing {
+  color: #c62828;
+  font-weight: 600;
+}
+
 .rot-fdr-th-incomplete {
   background: #fff3cd !important;
 }

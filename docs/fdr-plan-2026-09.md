@@ -144,6 +144,7 @@ Do not keep editing the `.xls` as system of record. Postgres (implemented):
 - **`FdrHourNote`** — discrepancy comment on a month’s hours
 - **`FdrComputedHour`** — `year`, `pilotName`, `month`, `hours`, `syncedAt`, `syncedBy` (Firebase snapshot)
 - **`FdrYearSettings`** — `year` PK, `hoursLocked`, `lockedAt`, `lockedBy`
+- **`FdrMonthAudit`** — `year`, `pilotName`, `month`; `hoursAuditedAt` / `dutyAuditedAt`, by, optional notes
 
 Hours for 2025+ default path: **last successful Firebase sync** in `FdrComputedHour`. Unsynced pilots still show import hours until scoped sync runs.
 
@@ -167,6 +168,7 @@ Auth: logged-in user + **FDR allowlist** (`requireFdrAccess`). Year lock: FDR al
 | `PUT /api/rot/fdr/:year/settings` | `{ hoursLocked: boolean }` — freeze/unfreeze Firebase sync for the year |
 | `PUT /api/rot/fdr/:year/days-off` | Save days-off cells |
 | `PUT /api/rot/fdr/:year/hour-notes` | Save hour discrepancy notes (2025+) |
+| `PUT /api/rot/fdr/:year/month-audit` | Auditor sign-off per month for hours and/or days off (2025+) |
 | `PUT /api/rot/fdr/:year/pilots` | Section roster for the year |
 | `POST /api/rot/fdr/:year/copy-roster` | Copy roster from prior year |
 | `GET /api/rot/fdr/.../export` | Excel export (year, summary, full workbook) |
@@ -348,7 +350,7 @@ Grid still shows one days-off number per month. Audit is a checkbox/note on the 
 1. ~~Server helper + `scripts/fdr-duty-union-test`~~ — shipped (`rot.fdr.duty.js`).
 2. ~~`FdrComputedDuty` + sync on `compute-hours`~~ — shipped (`rot.fdr.computedDuty.js`).
 3. ~~FDR grid reads cached days off when duty synced~~ — shipped; unsynced pilots keep xls/manual.
-4. Month audit control + Postgres row — **not built**.
+4. Month audit control + Postgres row — shipped (`FdrMonthAudit`, hours + duty sign-off per month, `PUT /month-audit`).
 5. Days-off compare alerts — shipped (exact match vs import per month; `dutyCompareAlerts` on year payload).
 6. Soak on Andy + one prod-only captain + one beta-only before fleet-wide trust.
 

@@ -92,6 +92,10 @@
     <span class="rot-fdr-legend-incomplete">Amber</span> = past month still missing hours or days off.
     <span class="rot-fdr-legend-note">Red flag</span> = discrepancy note on hours.
   </p>
+  <p class="text-muted rot-fdr-meta" ng-if="fdr.showMonthAuditKey()">
+    <span class="rot-fdr-legend-audit">Blue outline</span> = auditor signed off that row (hours or days off).
+    Use <strong>✓</strong> on each cell to toggle; <strong>+</strong> for an optional audit note (who/when is logged).
+  </p>
   <p class="text-muted rot-fdr-meta" ng-if="fdr.showLimitsKey()">
     <span class="rot-fdr-legend-limit-warn">Gold outline</span> = approaching limit (90% of cap).
     <span class="rot-fdr-legend-limit-violation">Red outline</span> = over hour cap or under 13 days off / quarter (when quarter is auditable).
@@ -102,6 +106,7 @@
   <p class="text-info" ng-if="fdr.savingDaysOff">Saving days off…</p>
   <p class="text-info" ng-if="fdr.savingRoster">Saving roster…</p>
   <p class="text-info" ng-if="fdr.savingHourNote">Saving hour note…</p>
+  <p class="text-info" ng-if="fdr.savingMonthAudit">Saving audit…</p>
 
   <div class="rot-fdr-roster-toolbar rot-fdr-no-print" ng-if="fdr.canEditRoster() && !fdr.loading">
     <button type="button" class="btn btn-default btn-sm" ng-click="fdr.toggleEditRoster()">
@@ -160,11 +165,29 @@
     <ul class="rot-fdr-alert-list">
       <li ng-repeat="a in fdr.dutyCompareAlerts">
         {{a.pilotName}} — {{fdr.monthLabel(a.month)}}:
-        Firebase {{a.computed}}, spreadsheet {{a.imported}}
+        Firebase {{fdr.displayCell(a.computed)}}, spreadsheet {{a.imported === null ? '—' : a.imported}}
+        <span ng-if="a.kind === 'missing_import'">(import blank)</span>
+        <span ng-if="a.kind === 'missing_firebase'">(Firebase blank)</span>
         <span ng-if="a.kind === 'high'">(more days off)</span>
         <span ng-if="a.kind === 'low'">(fewer days off)</span>
       </li>
     </ul>
+  </div>
+
+  <div class="panel panel-default rot-fdr-note-panel rot-fdr-no-print" ng-if="fdr.auditEditor">
+    <div class="panel-heading">
+      Month audit note — {{fdr.auditEditor.pilotName}} / {{fdr.auditEditor.monthKey}}
+      ({{fdr.auditEditor.parameter === 'hours' ? 'hours' : 'days off'}})
+      <button type="button" class="close" ng-click="fdr.closeMonthAuditNote()">&times;</button>
+    </div>
+    <div class="panel-body">
+      <p class="text-muted">Optional note stored with your sign-off (auditor name and time are recorded automatically).</p>
+      <textarea class="form-control" rows="2" ng-model="fdr.auditEditor.text" maxlength="2000"></textarea>
+      <div class="rot-fdr-note-actions">
+        <button type="button" class="btn btn-primary btn-sm" ng-click="fdr.saveMonthAuditNote()" ng-disabled="fdr.savingMonthAudit">Save &amp; mark audited</button>
+        <button type="button" class="btn btn-default btn-sm" ng-click="fdr.closeMonthAuditNote()">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <div class="panel panel-default rot-fdr-note-panel rot-fdr-no-print" ng-if="fdr.noteEditor">
@@ -243,6 +266,15 @@
               <td ng-repeat="m in fdr.months" ng-class="fdr.hourCellClass(p, m)" title="{{fdr.hourNoteTitle(p, m)}}">
                 <span class="rot-fdr-hour-cell">
                   <span>{{fdr.displayCell(p.hours.months[m])}}</span>
+                  <button type="button" class="rot-fdr-audit-btn"
+                          ng-if="fdr.monthAuditEditable && fdr.monthAuditAllowed(p, m)"
+                          ng-class="{'rot-fdr-audit-btn-on': fdr.isMonthAudited(p, m, 'hours')}"
+                          ng-click="fdr.toggleMonthAudit(p, m, 'hours')"
+                          title="{{fdr.monthAuditTitle(p, m, 'hours')}}">✓</button>
+                  <button type="button" class="rot-fdr-audit-note-btn"
+                          ng-if="fdr.monthAuditEditable && fdr.monthAuditAllowed(p, m)"
+                          ng-click="fdr.openMonthAuditNote(p, m, 'hours')"
+                          title="Audit note for hours">+</button>
                   <button type="button" class="rot-fdr-note-btn"
                           ng-if="p.hourNotesEditable"
                           ng-class="{'rot-fdr-note-flag': fdr.hasHourNote(p, m)}"
@@ -253,11 +285,35 @@
               <td ng-repeat="q in fdr.quarters" ng-class="fdr.quarterHourClass(p, q)" title="{{fdr.quarterHourTitle(p, q)}}">{{fdr.displayCell(p.hours.quarters[q])}}</td>
             </tr>
             <tr ng-repeat-end class="rot-fdr-duty-row" ng-class="fdr.pilotStripeClass($index)" ng-if="fdr.pilotPassesSyncFilter(p)">
-              <td class="rot-fdr-name-col rot-fdr-duty-label">Days off</td>
+              <td class="rot-fdr-name-col rot-fdr-duty-label"
+                  ng-class="{'rot-fdr-duty-sync-missing': p.hoursFromFirebase && p.dutySyncNeeded}"
+                  title="{{p.hoursFromFirebase && p.dutySyncNeeded ? 'Hours synced; days off not loaded — re-sync pilot' : ''}}">Days off</td>
               <td ng-repeat="m in fdr.months" ng-class="fdr.dutyCellClass(p, m)">
-                <input ng-if="fdr.daysOffEditable(p)" type="number" min="0" max="31" class="rot-fdr-days-input"
-                       ng-model="p.duty.months[m]" ng-blur="fdr.onDaysOffBlur(p, m)">
-                <span ng-if="!fdr.daysOffEditable(p)" title="{{fdr.dutyCellTitle(p)}}">{{fdr.displayCell(p.duty.months[m])}}</span>
+                <span class="rot-fdr-duty-cell" ng-if="fdr.daysOffEditable(p)">
+                  <input type="number" min="0" max="31" class="rot-fdr-days-input"
+                         ng-model="p.duty.months[m]" ng-blur="fdr.onDaysOffBlur(p, m)">
+                  <button type="button" class="rot-fdr-audit-btn"
+                          ng-if="fdr.monthAuditEditable && fdr.monthAuditAllowed(p, m)"
+                          ng-class="{'rot-fdr-audit-btn-on': fdr.isMonthAudited(p, m, 'duty')}"
+                          ng-click="fdr.toggleMonthAudit(p, m, 'duty')"
+                          title="{{fdr.monthAuditTitle(p, m, 'duty')}}">✓</button>
+                  <button type="button" class="rot-fdr-audit-note-btn"
+                          ng-if="fdr.monthAuditEditable && fdr.monthAuditAllowed(p, m)"
+                          ng-click="fdr.openMonthAuditNote(p, m, 'duty')"
+                          title="Audit note for days off">+</button>
+                </span>
+                <span class="rot-fdr-duty-cell" ng-if="!fdr.daysOffEditable(p)">
+                  <span title="{{fdr.dutyCellTitle(p)}}">{{fdr.displayCell(p.duty.months[m])}}</span>
+                  <button type="button" class="rot-fdr-audit-btn"
+                          ng-if="fdr.monthAuditEditable && fdr.monthAuditAllowed(p, m)"
+                          ng-class="{'rot-fdr-audit-btn-on': fdr.isMonthAudited(p, m, 'duty')}"
+                          ng-click="fdr.toggleMonthAudit(p, m, 'duty')"
+                          title="{{fdr.monthAuditTitle(p, m, 'duty')}}">✓</button>
+                  <button type="button" class="rot-fdr-audit-note-btn"
+                          ng-if="fdr.monthAuditEditable && fdr.monthAuditAllowed(p, m)"
+                          ng-click="fdr.openMonthAuditNote(p, m, 'duty')"
+                          title="Audit note for days off">+</button>
+                </span>
               </td>
               <td ng-repeat="q in fdr.quarters" ng-class="fdr.quarterDutyClass(p, q)" title="{{fdr.quarterDutyTitle(p, q)}}">{{fdr.displayCell(p.duty.quarters[q])}}</td>
             </tr>

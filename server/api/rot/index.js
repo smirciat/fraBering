@@ -60,6 +60,7 @@ router.get('/fdr/:year', requireFdrAccess, rotFdr.fdrYear);
 router.put('/fdr/:year/settings', requireFdrAccess, rotFdr.fdrUpdateYearSettings);
 router.put('/fdr/:year/days-off', requireFdrAccess, rotFdr.fdrSaveDaysOff);
 router.put('/fdr/:year/hour-notes', requireFdrAccess, rotFdr.fdrSaveHourNotes);
+router.put('/fdr/:year/month-audit', requireFdrAccess, rotFdr.fdrSaveMonthAudit);
 router.put('/fdr/:year/pilots', requireFdrAccess, rotFdr.fdrSaveRoster);
 router.post('/fdr/:year/copy-roster', requireFdrAccess, rotFdr.fdrCopyRoster);
 

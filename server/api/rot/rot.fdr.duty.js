@@ -11,7 +11,7 @@ if (!admin.apps.length) {
 }
 
 const INDEX_COLLECTIONS = ['flightIndex', 'flightIndexBeta'];
-const FETCH_TIMEOUT_MS = 55000;
+const FETCH_TIMEOUT_MS = 115000;
 
 /** Calendar date in America/Anchorage as YYYY-MM-DD */
 export function timestampToAlaskaYmd(raw) {

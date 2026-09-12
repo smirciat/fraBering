@@ -205,6 +205,27 @@ export function fdrCopyRoster(req, res) {
     });
 }
 
+export function fdrSaveMonthAudit(req, res) {
+  let year = parseInt(String(req.params.year || '').trim(), 10);
+  if (!Number.isFinite(year)) {
+    return res.status(400).json({message: 'Invalid year'});
+  }
+  let entries = req.body && req.body.entries;
+  if (!Array.isArray(entries)) {
+    return res.status(400).json({message: 'entries array required'});
+  }
+  let userName = req.user && req.user.name ? req.user.name : '';
+  return fdrService.saveMonthAuditEntriesForYear(year, entries, userName)
+    .then(data => res.json(data))
+    .catch(err => {
+      console.log('fdrSaveMonthAudit error', year, err);
+      if (String(err.message) === 'month_audit_readonly') {
+        return res.status(403).json({message: 'Month audit is only available for 2025 and later.'});
+      }
+      return res.status(500).json({message: 'Failed to save month audit'});
+    });
+}
+
 export function fdrSaveHourNotes(req, res) {
   let year = parseInt(String(req.params.year || '').trim(), 10);
   if (!Number.isFinite(year)) {

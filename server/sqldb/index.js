@@ -49,5 +49,6 @@ db.FdrHourNote = require('../api/rot/fdrHourNote.model').default(db.sequelize, S
 db.FdrComputedHour = require('../api/rot/fdrComputedHour.model').default(db.sequelize, Sequelize.DataTypes);
 db.FdrComputedDuty = require('../api/rot/fdrComputedDuty.model').default(db.sequelize, Sequelize.DataTypes);
 db.FdrYearSettings = require('../api/rot/fdrYearSettings.model').default(db.sequelize, Sequelize.DataTypes);
+db.FdrMonthAudit = require('../api/rot/fdrMonthAudit.model').default(db.sequelize, Sequelize.DataTypes);
 
 module.exports = db;

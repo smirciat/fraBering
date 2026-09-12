@@ -39,10 +39,13 @@ class RotFdrComponent {
     this.savingRoster = false;
     this.copyRosterReplace = false;
     this.hourNotesEditable = false;
+    this.monthAuditEditable = false;
     this.incompletePilotMonths = 0;
     this.limitsEnabled = false;
     this.noteEditor = null;
+    this.auditEditor = null;
     this.savingHourNote = false;
+    this.savingMonthAudit = false;
     this.exporting = false;
     this.hoursLastSyncedAt = null;
     this.syncBase = 'OME';
@@ -145,6 +148,7 @@ class RotFdrComponent {
     this.companyTotal = data.companyTotal || null;
     this.rosterEditable = !!data.rosterEditable;
     this.hourNotesEditable = !!data.hourNotesEditable;
+    this.monthAuditEditable = !!data.monthAuditEditable;
     this.incompletePilotMonths = data.incompletePilotMonths || 0;
     this.limitsEnabled = !!data.limitsEnabled;
     this.syncSummary = data.syncSummary || null;
@@ -299,6 +303,26 @@ class RotFdrComponent {
     return String(name || '').trim().toUpperCase().replace(/\s+/g, ' ');
   }
 
+  mergeDutySyncFailures(failed) {
+    if (!failed || !failed.length) return;
+    this.dutySyncFailures = this.dutySyncFailures || [];
+    failed.forEach(item => {
+      if (!item || !item.pilotName) return;
+      let key = this.normalizePilotKey(item.pilotName);
+      let exists = this.dutySyncFailures.some(f => this.normalizePilotKey(f.pilotName) === key);
+      if (!exists) this.dutySyncFailures.push(item);
+    });
+  }
+
+  flushDutySyncFailureBanner() {
+    if (!this.dutySyncFailures || !this.dutySyncFailures.length) return;
+    let names = this.dutySyncFailures.map(f => f.pilotName).join(', ');
+    let detail = this.dutySyncFailures[0].message || 'duty index fetch failed';
+    this.hoursLoadError =
+      'Hours saved, but days off did not sync for: ' + names + '. (' + detail + ') Re-sync those pilots after deploy or check server logs.';
+    this.dutySyncFailures = [];
+  }
+
   markPilotsSyncedThisSession(pilotNames) {
     if (!this.selectedYear || this.selectedYear === 'summary') return;
     let map = this.readSessionPilotMap();
@@ -416,6 +440,9 @@ class RotFdrComponent {
       if (pilot.dutySyncedAt) t += ' (synced ' + this.formatSyncDate(pilot.dutySyncedAt) + ')';
       return t;
     }
+    if (pilot.hoursFromFirebase && pilot.dutySyncNeeded) {
+      return 'Firebase hours saved, but days off were not loaded — re-sync this pilot (duty index may have timed out).';
+    }
     if (pilot.daysOffEditable) return 'Imported or manual — edit here until Firebase duty sync';
     return '';
   }
@@ -470,6 +497,7 @@ class RotFdrComponent {
     if (scope === 'pilot') syncBody.pilotName = options.pilotName || this.syncPilotName;
     this.hoursLoading = true;
     this.hoursLoadError = '';
+    this.dutySyncFailures = [];
     this.startHoursRefreshTimer();
 
     let runBatch = () => {
@@ -481,6 +509,12 @@ class RotFdrComponent {
       return this.http.post('/api/rot/fdr/' + year + '/compute-hours', body, {timeout: 120000}).then(res => {
         this.applyYearData(res.data);
         let hc = res.data.hoursCompute;
+        if (hc && hc.syncedPilotNames && hc.syncedPilotNames.length) {
+          this.markPilotsSyncedThisSession(hc.syncedPilotNames);
+        }
+        if (hc && hc.dutySyncFailed && hc.dutySyncFailed.length) {
+          this.mergeDutySyncFailures(hc.dutySyncFailed);
+        }
         if (hc && hc.stalled) {
           this.hoursLoading = false;
           this.hoursProgress = hc;
@@ -509,9 +543,7 @@ class RotFdrComponent {
         this.hoursProgress = hc || null;
         this.hoursLoadError = '';
         this.clearHoursRefreshTimer();
-        if (hc && hc.syncedPilotNames && hc.syncedPilotNames.length) {
-          this.markPilotsSyncedThisSession(hc.syncedPilotNames);
-        }
+        this.flushDutySyncFailureBanner();
       });
     };
 
@@ -636,21 +668,24 @@ class RotFdrComponent {
   }
 
   hourCellClass(pilot, monthKey) {
-    return this.pilotMonthCellClass(pilot, monthKey, true);
+    return this.pilotMonthCellClass(pilot, monthKey, 'hours');
   }
 
   dutyCellClass(pilot, monthKey) {
-    return this.pilotMonthCellClass(pilot, monthKey, false);
+    return this.pilotMonthCellClass(pilot, monthKey, 'duty');
   }
 
   pilotStripeClass(pilotIndex) {
     return pilotIndex % 2 === 1 ? 'rot-fdr-pilot-block-b' : 'rot-fdr-pilot-block-a';
   }
 
-  pilotMonthCellClass(pilot, monthKey, isHoursRow) {
+  pilotMonthCellClass(pilot, monthKey, rowKind) {
     let classes = {};
-    if (isHoursRow && this.hasHourNote(pilot, monthKey)) {
+    if (rowKind === 'hours' && this.hasHourNote(pilot, monthKey)) {
       classes['rot-fdr-cell-has-note'] = true;
+    }
+    if (this.isMonthAudited(pilot, monthKey, rowKind)) {
+      classes['rot-fdr-cell-audited'] = true;
     }
     if (!pilot || !pilot.monthStatus) return classes;
     if (pilot.monthStatus.complete && pilot.monthStatus.complete[monthKey]) {
@@ -659,6 +694,93 @@ class RotFdrComponent {
       classes['rot-fdr-cell-incomplete'] = true;
     }
     return classes;
+  }
+
+  monthAuditAllowed(pilot, monthKey) {
+    if (!this.monthAuditEditable || !pilot || !pilot.monthStatus) return false;
+    return !!(pilot.monthStatus.complete[monthKey] || pilot.monthStatus.incomplete[monthKey]);
+  }
+
+  monthAuditCell(pilot, monthKey, parameter) {
+    if (!pilot) return null;
+    if (parameter === 'hours') return pilot.hoursAudit && pilot.hoursAudit[monthKey];
+    return pilot.dutyAudit && pilot.dutyAudit[monthKey];
+  }
+
+  isMonthAudited(pilot, monthKey, parameter) {
+    let cell = this.monthAuditCell(pilot, monthKey, parameter);
+    return !!(cell && cell.audited);
+  }
+
+  monthAuditTitle(pilot, monthKey, parameter) {
+    let cell = this.monthAuditCell(pilot, monthKey, parameter);
+    if (!cell || !cell.audited) {
+      let label = parameter === 'hours' ? 'hours' : 'days off';
+      return 'Mark ' + label + ' reviewed for this month';
+    }
+    let parts = ['Audited'];
+    if (cell.by) parts.push('by ' + cell.by);
+    if (cell.at) parts.push(this.formatSyncDate(cell.at));
+    let line = parts.join(' ');
+    if (cell.note) line += ' — ' + String(cell.note).trim();
+    return line;
+  }
+
+  toggleMonthAudit(pilot, monthKey, parameter) {
+    if (!this.monthAuditAllowed(pilot, monthKey)) return;
+    let audited = !this.isMonthAudited(pilot, monthKey, parameter);
+    this.saveMonthAuditEntry(pilot.name, monthKey, parameter, audited);
+  }
+
+  openMonthAuditNote(pilot, monthKey, parameter) {
+    if (!this.monthAuditAllowed(pilot, monthKey)) return;
+    let cell = this.monthAuditCell(pilot, monthKey, parameter) || {};
+    this.auditEditor = {
+      pilotName: pilot.name,
+      monthKey: monthKey,
+      parameter: parameter,
+      audited: !!cell.audited,
+      text: cell.note || ''
+    };
+  }
+
+  closeMonthAuditNote() {
+    this.auditEditor = null;
+  }
+
+  saveMonthAuditNote() {
+    if (!this.auditEditor || this.selectedYear === 'summary') return;
+    let ed = this.auditEditor;
+    this.saveMonthAuditEntry(ed.pilotName, ed.monthKey, ed.parameter, true, ed.text);
+    this.auditEditor = null;
+  }
+
+  saveMonthAuditEntry(pilotName, monthKey, parameter, audited, note) {
+    if (!this.monthAuditEditable || this.selectedYear === 'summary') return;
+    let monthIndex = this.months.indexOf(monthKey) + 1;
+    if (!monthIndex) return;
+    let entry = {
+      pilotName: pilotName,
+      month: monthIndex,
+      parameter: parameter,
+      audited: audited
+    };
+    if (note !== undefined) entry.note = note;
+    this.savingMonthAudit = true;
+    this.http.put('/api/rot/fdr/' + this.selectedYear + '/month-audit', {
+      entries: [entry]
+    }).then(res => {
+      this.savingMonthAudit = false;
+      this.applyYearData(res.data);
+    }, err => {
+      this.savingMonthAudit = false;
+      let msg = err && err.data && err.data.message;
+      this.loadError = msg || 'Failed to save month audit';
+    });
+  }
+
+  showMonthAuditKey() {
+    return this.monthAuditEditable && !this.viewSummary;
   }
 
   monthHeaderClass(monthKey) {
