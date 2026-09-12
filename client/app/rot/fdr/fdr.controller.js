@@ -348,7 +348,11 @@ class RotFdrComponent {
     let saved = (this.syncSummary && this.syncSummary.saved) || 0;
     let total = (this.syncSummary && this.syncSummary.total) || 0;
     let session = this.sessionPilotSyncCount();
-    let line = saved + ' of ' + total + ' pilots have saved Firebase hours';
+    let dutySaved = (this.syncSummary && this.syncSummary.dutySaved) !== undefined
+      ? this.syncSummary.dutySaved
+      : 0;
+    let line = saved + ' of ' + total + ' pilots have saved Firebase hours; '
+      + dutySaved + ' with duty (prod∪beta)';
     if (session > 0) {
       line += '; ' + session + ' synced this session';
     }

@@ -54,6 +54,7 @@ Month hours and days off are **typed**. The only formulas are Q1–Q4, YEAR, sec
 Each pilot has **one row of monthly flight hours**. Section names (**NOME PIC**, **NOME SIC**, **ROTORWING**, **KOTZEBUE**) are **duty assignment / where they sit**, not a filter on time.
 
 - Sum Firebase `flights.flightTime` (minutes → hours) for that employee as **PIC or SIC** that calendar month (`pilotEmployeeNumber` **or** `coPilotEmployeeNumber`).
+- **Firebase / Flight Report only.** Takeflite is not an FDR hours source (fixed-wing may also exist there; those times are not crew flight time).
 - **All aircraft.** Do not restrict PIC-section rows to PIC-leg time.
 - Same person, one section: all of their hours for the year go in that section’s row.
 
@@ -199,9 +200,161 @@ Issues **xlsx** upload (same #35 note) is separate and already started.
 9. ~~**Year lock**~~ — done (`FdrYearSettings`)
 10. **Phase 4 cleanup** — deferred during prod soak (see status table above)
 
+## Next: duty days + monthly audits (planning, Sep 2026)
+
+**Hours:** Firebase Flight Report is SOT for **all** pilot flight time (`flights.flightTime` as PIC or SIC). Takeflite is **not** part of FDR — even though fixed-wing trips also exist there, off-block / schedule times are not crew hours. Spreadsheet vs Firebase gaps (e.g. ROTORWING Paulsen) are FR vs paper/xls, not Takeflite. Compare alerts flag Firebase **higher or lower** than import.
+
+**Days off (not implemented):** A day off is a calendar day the pilot did **not** claim as duty (flight **or** admin). Do **not** infer off from “no flight that day.” Roster A/admin is duty.
+
+### What we found in Firestore (explore with Andy)
+
+Root collections: `aircraft`, `auditLogs`, `employees`, `flights`, `keys`, `manifest`, `passengers`, `people`, `pilots`, `recordTypes`, `records`, `rostercalendar`, `rostermonthmeta`, `rosterschedules`, `users`. **No dedicated `dutyDays` collection.**
+
+Duty lives under **`pilots/{employeeId}/flightIndex`** (Flight Report persistence):
+
+| Doc id pattern | Example | Notes |
+|----------------|---------|--------|
+| PFR id | `1099-010826-1` | Same as `flights` doc; `dutyDayIsAssigned` sometimes true |
+| Sequence ON | `100ON` | `dutyDayType.Regular` / `Overnight` / `Partial` / `Training` often set; `dutyDayIsAssigned` often **false** |
+| Sequence OFF | `100OFF` | types empty; not the same as “calendar day off” |
+
+`dutyDayType` flags: `Admin`, `AdminAR`, `Medevac`, `MedevacPhone`, `Overnight`, `Partial`, `Regular`, `Training`, `WeatherFull`, `WeatherHalf`.
+
+`pilots/{id}/BRG-Indexes/BRGIndex` has a numeric `duty` counter (Paulsen **141**) plus a `pfr` date map — likely hitch/PFR indexes, not monthly days-off.
+
+**Coverage is uneven:** rotor / FR-heavy pilots have hundreds of `flightIndex` docs; some FW PICs have almost none. **Hypothesis (Andy, 2026-09-12):** `flightIndex` (and maybe `BRGIndex`) is written on Flight Report **manual backup**, not on every duty claim. Andy’s emp **933** index is dense **2023–Nov 2024**, then nearly empty in **2025–2026**, matching “last backup around then.” If true, missing days are **unsynced local duty**, not days off — auto-import is unsafe until backup (or a live sync) is proven.
+
+**Open questions (need FR / iPad walkthrough):**
+
+1. Which field means “claimed this calendar day as duty”? (`dutyDayIsAssigned` vs any `dutyDayType` vs presence of `*ON` vs PFR with `flightBeganString`)
+2. Is Admin-only duty always written to Firebase, or only on backup?
+3. Are `{n}ON`/`{n}OFF` hitch bookends or per-day records?
+4. Timezone: `date` timestamps look UTC afternoon for AK morning (`07:00`).
+5. Does FR **backup** upsert `flightIndex` for 2025–2026 Admin-only days?
+
+### Backup test — emp 933 (ready to run)
+
+**Baseline (queried 2026-09-12, before a new backup):**
+
+| Metric | Value |
+|--------|--------|
+| `pilots/933/flightIndex` docs | **1442** |
+| `dutyDayIsAssigned` true | 161 |
+| `dutyDayType.Admin` | **7** (all `{n}ON`; none on PFR ids) |
+| Admin-only (no Regular) | `551ON` (~2024-08-21), `602ON` (~2024-11-13) |
+| Last dense month | **2024-11** |
+| 2025+ index | handful of docs (not a full year) |
+| `BRGIndex.duty` | 801 |
+
+**Procedure**
+
+1. ~~Snapshot before~~ — done (table above).
+2. **Andy:** on the iPad Flight Report app, run the same **manual backup** used historically. Note time (AK) and whether it reports success / error / “nothing to upload.”
+3. Wait until the app says finished (plus ~1 min). Ping this thread.
+4. Re-query `pilots/933/flightIndex` (counts + newest `date` + Admin flags + 2025–2026 month histogram). Compare to the baseline.
+
+**Backup test — emp 933 (ran 2026-09-12 ~11:00 AK)**
+
+**Baseline (before):** 1442 index docs, 161 assigned, 7 Admin, dense through 2024-11, `BRGIndex.duty` 801.
+
+**After backup:** **no change** — same 1442 / 161 / 7 Admin / duty 801. **0** `flightIndex` docs had `updateTime` in the backup window (newest index write **2026-02-09**). PIC `flights` for 933 also **0** writes in that window, but `flights` already has **2025 (482) + 2026 (300)** PFRs — hours sync live; **duty index does not**.
+
+| After backup | Meaning |
+|--------------|---------|
+| Doc count jumps; 2025–2026 `{n}ON` rows; Admin on known admin-only days | Backup **is** the duty sync. |
+| `flights` / hours change but `flightIndex` stays ~1442 and still dead after 2024-11 | Backup is PFR/hours only. |
+| **Observed:** nothing moved on `flightIndex` or `flights` | This backup pass did **not** upsert duty (or PFRs). Hours were already in `flights`. Duty auto-import still blocked. |
+
+**Not a fleet-wide FR cutoff (2026-09-12 sample):** Many FW and HEL pilots still have dense `flightIndex` through **2026-08/09** (e.g. Gordon, Bickford, McIntosh, Macavoy, Paulsen, Barton). Andy **933** going quiet after **2024-11** is **not** the company pattern. Empty/tiny indexes (Rowe 0, Hajdukovich 3) look like never used, not a Nov 2024 code drop. Gordon still has **116** Admin-flagged index docs, including the current era.
+
+**Live Admin test — emp 933, calendar 2026-09-13 (Andy creating in FR):**
+
+**Before (2026-09-12):** 1442 index docs, max `{n}ON` sequence **800**, **no** index rows dated 2026-09-13/14.
+
+**After create+sync:** **+2 docs** (`1105ON` / `1105OFF`). `1105ON` date **2026-09-13**, **`dutyDayType.Admin` only**, `dutyDayIsAssigned` false, `flightTime` 0, began `07:00`. `1105OFF` is 2026-09-14, empty types. `BRGIndex.duty` 801 → **1106**. Admin count 7 → **8**.
+
+**Beta vs production FR (confirmed 2026-09-12):** Two indexes, not identical:
+
+| Collection | Emp 933 |
+|------------|---------|
+| `flightIndex` (non-beta app) | 1444 docs, sparse 2025, Admin test **1105ON** 9/13 |
+| `flightIndexBeta` (beta app) | **3003** docs, dense 2025–2026, **154** Admin; **1104ON** Admin 2026-09-09; **no** 1105ON |
+| `Backup-Beta_26-09-12` | Today’s beta backup (**1234** docs) — **not** merged into `flightIndex` |
+
+This morning’s backup did not update prod `flightIndex` because it was a **beta** backup into `Backup-Beta_*`. Live non-beta sync wrote 1105ON. Fleet: some people are almost entirely beta (Hajdukovich 3 vs 3213; Krebiehl 0 vs 3568); line captains often prod-only (Paulsen beta 2 docs).
+
+We **cannot** require one FR build. Plan: **always union** `flightIndex` and `flightIndexBeta`. Ignore `Backup-*` / `Backup-Beta_*`.
+
+### Union solution (plan — not built)
+
+**Goal:** Auto days off from Firebase duty claims; hours stay on `flights`. Postgres caches a snapshot; auditors mark a pilot-month complete on the FDR grid.
+
+**1. Read (per employee, on-demand sync — same pattern as hours)**
+
+```
+pilots/{employeeId}/flightIndex
+pilots/{employeeId}/flightIndexBeta
+```
+
+Same `employeeId` we already resolve for hours. Do **not** read dated backup subcollections. Do **not** merge by `{n}` — sequence numbers are per app (1104 vs 1105).
+
+**2. Calendar day (America/Anchorage)**
+
+Map each doc’s `date` timestamp to an AK calendar date (FR stores ~07:00 AK as UTC afternoon). Overnight `OFF` docs are **not** a second duty day.
+
+**3. Claimed duty (union set of dates)**
+
+A doc counts as a **claim** if:
+
+- id is `{n}ON` **and** at least one `dutyDayType` flag is true (`Admin`, `AdminAR`, `Regular`, `Partial`, `Training`, `Weather*`, `Medevac*`, `Overnight`, …), **or**
+- `dutyDayIsAssigned === true` (PFR tied to a duty day)
+
+Ignore `{n}OFF`, empty types, and PFR docs that are only hours with no assignment/type.
+
+**Union:** `claimedDates = dates(prod) ∪ dates(beta)`. Same calendar day in both apps = **one** duty day. Admin in beta + Regular in prod same day = still one duty day.
+
+**4. Days off for month M**
+
+```
+daysOff = daysInMonth − |claimedDates in M|
+```
+
+Current month: only count through **today** (AK), or leave the cell “in progress” until the month closes. Do **not** treat “no index at all” as 30 days off — if both collections are empty for that year, keep imported/manual `FdrDaysOff` and flag **unsynced**.
+
+**5. Postgres cache (parallel to `FdrComputedHour`)**
+
+- `FdrComputedDuty` — per pilot/year/month: `daysOff`, `claimedCount`, `syncedAt`, `syncedBy`, maybe `source` (`union`)
+- Optional `FdrComputedDutyDay` — list of claimed ISO dates for that month (debug / audit drill-in)
+- `FdrMonthAudit` — `year`, `pilotName`, `month`, `auditedAt`, `auditedBy`, `note` (Kaleb/auditor: “numbers look right”)
+
+Grid still shows one days-off number per month. Audit is a checkbox/note on the month, not a replacement for the number.
+
+**6. UI / API**
+
+- Piggyback **Sync** (all / base / pilot) to refresh hours **and** duty, or a second “Sync duty” if we want to isolate load.
+- 2025+: days-off cells **read-only from cache** after sync; override only via audit note + optional manual patch if FR is wrong (keep rare).
+- Compare banner: computed days off vs imported xls (same ±15% / absolute delta idea) so Kaleb sees drift.
+- Legend: hours from `flights`; duty from FR prod∪beta.
+
+**7. What we will not do**
+
+- Infer off from “no PFR / no Takeflite flight”
+- Use roster A/OFF
+- Use `BRGIndex.duty` as a monthly count
+- Require pilots to leave beta
+
+**8. Build order**
+
+1. ~~Server helper + `scripts/fdr-duty-union-test`~~ — shipped (`rot.fdr.duty.js`).
+2. ~~`FdrComputedDuty` + sync on `compute-hours`~~ — shipped (`rot.fdr.computedDuty.js`).
+3. ~~FDR grid reads cached days off when duty synced~~ — shipped; unsynced pilots keep xls/manual.
+4. Month audit control + Postgres row — **not built**.
+5. Days-off compare alerts — **not built**.
+6. Soak on Andy + one prod-only captain + one beta-only before fleet-wide trust.
+
 ## Out of scope
 
-- Deriving days off from roster or flights (F&D remains SOT)
+- Treating roster codes or “no flight that day” as days off
 - Rewriting Training Records (#23)
 - Fixing historical Excel formulas in the file
 - Mid-year split rows (Hanson/Rickett pattern: one section, some months blank)
