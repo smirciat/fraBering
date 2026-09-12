@@ -52,7 +52,32 @@ export function namesReferToSamePilot(spreadsheetRaw, firebaseLabel) {
   if (sRest.indexOf(fRest) === 0 || fRest.indexOf(sRest) === 0) return true;
   if (fRest.length === 1 && sRest.charAt(0) === fRest.charAt(0)) return true;
   if (sRest.length === 1 && fRest.charAt(0) === sRest.charAt(0)) return true;
+  return compatibleSpreadsheetFirstNames(sRest, fRest);
+}
+
+/** e.g. spreadsheet "MIKE K" vs Firebase "MICHAEL K" (same last name already verified). */
+function compatibleSpreadsheetFirstNames(sRest, fRest) {
+  let sParts = String(sRest || '').trim().split(/\s+/).filter(Boolean);
+  let fParts = String(fRest || '').trim().split(/\s+/).filter(Boolean);
+  if (!sParts.length || !fParts.length) return false;
+  let sGiven = sParts[0].replace(/\./g, '');
+  let fGiven = fParts[0].replace(/\./g, '');
+  if (!sGiven || !fGiven) return false;
+  if (sGiven === fGiven) return middleInitialsCompatible(sParts, fParts);
+  if (sGiven.indexOf(fGiven) === 0 || fGiven.indexOf(sGiven) === 0) {
+    return middleInitialsCompatible(sParts, fParts);
+  }
+  if (sGiven.charAt(0) === fGiven.charAt(0) && middleInitialsCompatible(sParts, fParts)) {
+    return true;
+  }
   return false;
+}
+
+function middleInitialsCompatible(sParts, fParts) {
+  let sMid = sParts.length > 1 ? sParts[1].replace(/\./g, '') : '';
+  let fMid = fParts.length > 1 ? fParts[1].replace(/\./g, '') : '';
+  if (!sMid || !fMid) return true;
+  return sMid.charAt(0) === fMid.charAt(0);
 }
 
 export function buildPilotEmployeeIndex(firebasePilots) {

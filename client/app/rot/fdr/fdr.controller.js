@@ -460,10 +460,29 @@ class RotFdrComponent {
         offset: offset,
         continue: continuePrior
       });
+      let batchStartOffset = offset;
       return this.http.post('/api/rot/fdr/' + year + '/compute-hours', body, {timeout: 120000}).then(res => {
         this.applyYearData(res.data);
         let hc = res.data.hoursCompute;
+        if (hc && hc.stalled) {
+          this.hoursLoading = false;
+          this.hoursProgress = hc;
+          this.hoursLoadError =
+            'Could not sync ' + (hc.stalledPilotName || 'pilot') +
+            ' — no matching Firebase employee number. Fix the roster name or set employee ID, then use Continue sync.';
+          this.clearHoursRefreshTimer();
+          return;
+        }
         if (hc && !hc.done) {
+          if (hc.nextOffset === batchStartOffset && !(hc.syncedPilotNames && hc.syncedPilotNames.length)) {
+            this.hoursLoading = false;
+            this.hoursProgress = hc;
+            this.hoursLoadError =
+              'Firebase sync stopped at ' + hc.processed + ' of ' + hc.total +
+              ' pilots. Use Continue sync to retry the rest.';
+            this.clearHoursRefreshTimer();
+            return;
+          }
           offset = hc.nextOffset;
           continuePrior = true;
           this.hoursProgress = hc;
