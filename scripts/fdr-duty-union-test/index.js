@@ -81,6 +81,11 @@ assert(filterFdrTabYears([2025, 2026, 2027], new Date('2026-09-12T20:00:00Z')).j
 let future = computeDaysOffByMonth(2027, {'2027-01-15': true}, new Date('2026-12-31T20:00:00Z'));
 assert(future.sheetYearNotStarted && future.months[1] === null, '2027 sheet in 2026: all months blank');
 
+let emptyClaims = computeDaysOffByMonth(2026, {}, new Date('2026-09-12T20:00:00Z'));
+assert(emptyClaims.months[1] === 31, 'Jan with no duty claims is full month off');
+assert(emptyClaims.months[9] === 11, 'Sep 12 snapshot: 11 elapsed days, 0 duty → 11 off');
+assert(emptyClaims.months[10] === null, 'Oct still undetermined');
+
 async function live933() {
   if (process.env.SKIP_FDR_DUTY_LIVE) {
     console.log('skip live Firebase (SKIP_FDR_DUTY_LIVE)');

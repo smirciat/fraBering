@@ -221,6 +221,7 @@ export async function computeDutyForEmployeeYear(employeeId, year, asOfDate) {
     return ymd.indexOf(yearPrefix) === 0 && !fromIndexOnly[ymd];
   });
   let hasAnyIndex = docs.length > 0;
+  let flightDutyDatesInYear = Object.keys(mergeClaimedDatesFromFlights(flights, year)).length;
   let realAsOf = asOfDate || new Date();
   let snap = snapshotTodayForFdrYear(year, realAsOf);
   let result = computeDaysOffByMonth(year, claimedInYear, realAsOf);
@@ -230,9 +231,10 @@ export async function computeDutyForEmployeeYear(employeeId, year, asOfDate) {
     claimedDates: Object.keys(claimedInYear).sort(),
     sheetYearNotStarted: !!result.sheetYearNotStarted,
     indexDocCount: docs.length,
-    flightDutyDatesInYear: Object.keys(mergeClaimedDatesFromFlights(flights, year)).length,
+    flightDutyDatesInYear,
     flightOnlyDutyDates: flightOnlyDates.length,
     dutySnapshotAk: result.sheetYearNotStarted ? null : formatSnapshotTodayAk(snap),
-    hasAnyIndex
+    hasAnyIndex,
+    hasDutySignal: hasAnyIndex || flightDutyDatesInYear > 0
   };
 }

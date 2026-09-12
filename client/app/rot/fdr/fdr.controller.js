@@ -454,8 +454,15 @@ class RotFdrComponent {
     return line;
   }
 
+  dutyRowTitle(pilot) {
+    return this.dutyCellTitle(pilot);
+  }
+
   dutyCellTitle(pilot) {
     if (!pilot) return '';
+    if (pilot.dutyIndexMissing) {
+      return 'No Firebase duty index for this pilot — enter days off from the paper F&D sheet.';
+    }
     if (pilot.dutyFromFirebase) {
       let t = 'Days off snapshot (elapsed days in month minus duty; today/future not counted as off)';
       if (pilot.dutySyncedAt) t += ' (synced ' + this.formatSyncDate(pilot.dutySyncedAt) + ')';
@@ -836,6 +843,8 @@ class RotFdrComponent {
         let r = hc.dutySyncReport[0];
         if (r.dutySkipped === 'sheet_year_not_started') {
           line += ' Days off not synced — ' + (r.dutySkippedDetail || 'sheet year not started yet') + '.';
+        } else if (r.dutySkipped === 'no_duty_index') {
+          line += ' No duty index found — enter days off manually in the grid.';
         } else {
           if (r.indexDocCount !== undefined) {
             line += ' Duty index: ' + r.indexDocCount + ' docs';

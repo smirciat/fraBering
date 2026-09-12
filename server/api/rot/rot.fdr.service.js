@@ -554,6 +554,16 @@ export async function computeFdrYearHours(year, options) {
             }
             return upsertComputedDutyForPilot(year, row.pilotName, eid, duty, syncedBy)
               .then(stats => {
+                if (stats && stats.indexMissing) {
+                  dutySyncReport.push({
+                    pilotName: row.pilotName,
+                    dutySkipped: 'no_duty_index',
+                    dutySkippedDetail: 'No flightIndex docs for this employee — enter days off manually',
+                    indexDocCount: duty.indexDocCount || 0,
+                    hasAnyIndex: false
+                  });
+                  return;
+                }
                 dutySyncReport.push({
                   pilotName: row.pilotName,
                   indexDocCount: duty.indexDocCount,
@@ -630,6 +640,7 @@ export async function buildFdrYear(year, options) {
   let dutyByEmployeeMonth = {};
   let dutySyncedPilotKeys = {};
   let dutySyncedAtByPilot = {};
+  let dutyIndexMissingPilotKeys = {};
   let dutyLastSyncedAt = null;
 
   if (useComputed) {
@@ -660,6 +671,7 @@ export async function buildFdrYear(year, options) {
     dutyByEmployeeMonth = dutyState.byEmployeeMonth || {};
     dutySyncedPilotKeys = dutyState.syncedPilotKeys;
     dutySyncedAtByPilot = dutyState.syncedAtByPilot || {};
+    dutyIndexMissingPilotKeys = dutyState.indexMissingPilotKeys || {};
     dutyLastSyncedAt = dutyState.lastSyncedAt;
   }
 
@@ -674,7 +686,8 @@ export async function buildFdrYear(year, options) {
   return assembleFdrYearPayload(
     year, roster, daysMap, importHoursMap, hourNotesMap, useComputed,
     computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map,
-    dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, monthAuditMap,
+    dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot,
+    dutyIndexMissingPilotKeys, monthAuditMap,
     {
       hoursPending,
       hoursSource,
@@ -726,7 +739,7 @@ function buildDaysOffRowForPilot(manualMonthInts, byPilotMonth, byEmployeeMonth,
   return buildDaysOffRow(merged);
 }
 
-function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotesMap, useComputed, computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map, dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, monthAuditMap, meta) {
+function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotesMap, useComputed, computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map, dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, dutyIndexMissingPilotKeys, monthAuditMap, meta) {
   meta = meta || {};
   syncedPilotKeys = syncedPilotKeys || {};
   syncedAtByPilot = syncedAtByPilot || {};
@@ -735,6 +748,7 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
   dutyByEmployeeMonth = dutyByEmployeeMonth || {};
   dutySyncedPilotKeys = dutySyncedPilotKeys || {};
   dutySyncedAtByPilot = dutySyncedAtByPilot || {};
+  dutyIndexMissingPilotKeys = dutyIndexMissingPilotKeys || {};
   let sections = [];
   let sectionOrder = [];
   let sectionMap = {};
@@ -749,6 +763,7 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
       ? (row.employeeId || matchPilotEmployeeId(row.pilotName, employeeKeyIndex, fbPilots))
       : null;
     let hasDutySynced = useComputed && pilotHasComputedDuty(dutySyncedPilotKeys, row.pilotName);
+    let dutyIndexMissing = useComputed && !!dutyIndexMissingPilotKeys[key];
     let daysOff = buildDaysOffRowForPilot(
       monthInts, dutyByPilotMonth, dutyByEmployeeMonth, row.pilotName, eid, hasDutySynced
     );
@@ -794,7 +809,8 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
       hoursFromFirebase: hasComputed,
       hoursSyncedAt: pilotSyncedAt(syncedAtByPilot, row.pilotName),
       dutyFromFirebase: hasDutySynced,
-      dutySyncNeeded: hasComputed && !hasDutySynced,
+      dutySyncNeeded: hasComputed && !hasDutySynced && !dutyIndexMissing,
+      dutyIndexMissing: dutyIndexMissing,
       dutySyncedAt: pilotDutySyncedAt(dutySyncedAtByPilot, row.pilotName),
       hoursEditable: false,
       daysOffEditable: year >= COMPUTED_HOURS_FROM_YEAR && !hasDutySynced,

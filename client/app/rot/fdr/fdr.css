@@ -324,6 +324,16 @@
   font-weight: 600;
 }
 
+.rot-fdr-duty-index-missing {
+  color: #c05600;
+  font-weight: 600;
+}
+
+.rot-fdr-duty-hint {
+  font-weight: 600;
+  font-size: 11px;
+}
+
 .rot-fdr-th-incomplete {
   background: #fff3cd !important;
 }
