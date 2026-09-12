@@ -265,19 +265,29 @@ function resolveCachedMonthHours(cached, eid) {
   return null;
 }
 
-function buildSyncProgress(syncRoster, syncedPilotKeys, batchOffset, batchLimit) {
+function firstUnsyncedPilotOffset(syncRoster, syncedPilotKeys, fromIndex) {
+  let start = Math.max(0, parseInt(fromIndex, 10) || 0);
+  for (let i = start; i < (syncRoster || []).length; i++) {
+    if (!pilotHasComputedHours(syncedPilotKeys, syncRoster[i].pilotName)) {
+      return i;
+    }
+  }
+  return (syncRoster || []).length;
+}
+
+function buildSyncProgress(syncRoster, syncedPilotKeys, batchOffset, batchLimit, extra) {
   let total = (syncRoster || []).length;
   let processed = (syncRoster || []).filter(r => pilotHasComputedHours(syncedPilotKeys, r.pilotName)).length;
-  let nextOffset = processed;
-  if (batchLimit !== undefined && batchLimit !== null && batchOffset !== undefined && batchOffset !== null) {
-    nextOffset = Math.min(batchOffset + batchLimit, total);
-  }
-  return {
-    done: total > 0 && processed >= total,
-    processed,
-    total,
-    nextOffset
+  let nextOffset = firstUnsyncedPilotOffset(syncRoster, syncedPilotKeys, 0);
+  let done = total === 0 || processed >= total || nextOffset >= total;
+  let progress = {
+    done: done,
+    processed: processed,
+    total: total,
+    nextOffset: nextOffset
   };
+  if (extra) Object.assign(progress, extra);
+  return progress;
 }
 
 function rosterPilotByEmployeeId(roster, employeeKeyIndex, fbPilots) {
@@ -366,7 +376,17 @@ export async function computeFdrYearHours(year, options) {
       await clearComputedHoursForYear(year);
     }
 
-    let sliceRoster = syncRoster.slice(offset, offset + limit);
+    let pgBeforeSync = await loadComputedHoursState(year);
+    let startOffset = firstUnsyncedPilotOffset(syncRoster, pgBeforeSync.syncedPilotKeys, 0);
+    if (startOffset >= syncRoster.length) {
+      let builtEarly = await buildFdrYear(year, {viewer: options.viewer});
+      if (!builtEarly) throw new Error('no_data');
+      builtEarly.hoursCompute = buildSyncProgress(syncRoster, pgBeforeSync.syncedPilotKeys, startOffset, limit);
+      builtEarly.hoursCompute.syncedPilotNames = [];
+      builtEarly.hoursPending = false;
+      return builtEarly;
+    }
+    let sliceRoster = syncRoster.slice(startOffset, startOffset + limit);
     let todoIds = [];
     sliceRoster.forEach(r => {
       let eid = r.employeeId || matchPilotEmployeeId(r.pilotName, employeeKeyIndex, fbPilots);
@@ -374,17 +394,26 @@ export async function computeFdrYearHours(year, options) {
     });
 
     if (scope === 'all' && continuePrior) {
-      let pgBefore = await loadComputedHoursState(year);
       todoIds = todoIds.filter(eid => {
         let row = pilotByEid[eid];
-        return row && !pilotHasComputedHours(pgBefore.syncedPilotKeys, row.pilotName);
+        return row && !pilotHasComputedHours(pgBeforeSync.syncedPilotKeys, row.pilotName);
       });
     }
 
     let t0 = Date.now();
-    console.log('fdr compute-hours', year, 'scope', scope, 'offset', offset, 'todo', todoIds.length);
+    console.log('fdr compute-hours', year, 'scope', scope, 'startOffset', startOffset, 'todo', todoIds.length);
     let syncedPilotNames = [];
-    if (todoIds.length) {
+    let stallExtra = null;
+    if (sliceRoster.length && !todoIds.length) {
+      let row = sliceRoster[0];
+      let name = row && row.pilotName ? row.pilotName : '';
+      console.log('fdr compute-hours stall: no Firebase employee match', year, name);
+      stallExtra = {
+        stalled: true,
+        stalledPilotName: name,
+        stallReason: 'no_employee_match'
+      };
+    } else if (todoIds.length) {
       let partial = await computeHoursForEmployeeIds(todoIds, year, 1);
       let syncedBy = options.syncedBy || '';
       await Promise.all(Object.keys(partial).map(eid => {
@@ -400,8 +429,11 @@ export async function computeFdrYearHours(year, options) {
     if (!built) throw new Error('no_data');
 
     let pgAfter = await loadComputedHoursState(year);
-    let progress = buildSyncProgress(syncRoster, pgAfter.syncedPilotKeys, offset, limit);
+    let progress = buildSyncProgress(syncRoster, pgAfter.syncedPilotKeys, offset, limit, stallExtra);
     progress.syncedPilotNames = syncedPilotNames;
+    if (stallExtra && stallExtra.stalled) {
+      progress.done = true;
+    }
     built.hoursCompute = progress;
     built.hoursPending = false;
     return built;
