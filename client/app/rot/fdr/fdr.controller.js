@@ -337,6 +337,7 @@ class RotFdrComponent {
     let extra = '';
     if (detail === 'fdr_duty_no_months_written') {
       extra = ' Duty math produced no saveable months for this snapshot.';
+    }
     this.hoursLoadError =
       'Hours saved, but days off did not sync for: ' + names + '. (' + detail + ').' + extra +
       ' Re-sync after deploy or check server logs.';
