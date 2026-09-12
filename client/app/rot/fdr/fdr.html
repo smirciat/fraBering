@@ -43,29 +43,48 @@
     <span class="text-muted rot-fdr-year-lock-hint" ng-if="fdr.savingYearLock">Saving…</span>
   </div>
 
-  <div class="rot-fdr-sync-toolbar rot-fdr-no-print form-inline" ng-if="!fdr.loading && !fdr.viewSummary && fdr.mode === 'computed' && fdr.years.length">
-    <span class="rot-fdr-sync-label">Sync hours &amp; days off from Firebase:</span>
-    <button type="button" class="btn btn-primary btn-sm" ng-click="fdr.syncFirebaseHours('all')" ng-disabled="fdr.syncDisabled()">
-      All pilots
-    </button>
-    <select class="form-control input-sm" ng-model="fdr.syncBase">
-      <option value="OME">OME (NOME PIC/SIC)</option>
-      <option value="OTZ">OTZ (Kotzebue)</option>
-      <option value="ROTOR">Rotorwing</option>
-    </select>
-    <button type="button" class="btn btn-default btn-sm" ng-click="fdr.syncFirebaseHours('base')" ng-disabled="fdr.syncDisabled()">
-      Sync base
-    </button>
-    <select class="form-control input-sm" ng-model="fdr.syncPilotName" ng-options="n for n in fdr.syncPilotOptions"></select>
-    <button type="button" class="btn btn-default btn-sm" ng-click="fdr.syncFirebaseHours('pilot')" ng-disabled="fdr.syncDisabled() || !fdr.syncPilotName">
-      Sync pilot
-    </button>
-    <select class="form-control input-sm" ng-model="fdr.syncPilotFilter" title="Filter rows by sync status">
-      <option value="all">Show all pilots</option>
-      <option value="saved">Saved Firebase hours only</option>
-      <option value="unsaved">Not saved yet</option>
-      <option value="session">Synced this session</option>
-    </select>
+  <div class="rot-fdr-sync-toolbar rot-fdr-no-print" ng-if="!fdr.loading && !fdr.viewSummary && fdr.mode === 'computed' && fdr.years.length">
+    <div class="rot-fdr-sync-row">
+      <span class="rot-fdr-sync-label">Sync hours &amp; days off from Firebase</span>
+      <button type="button" class="btn btn-primary btn-sm" ng-click="fdr.syncFirebaseHours('all')" ng-disabled="fdr.syncDisabled()">
+        All pilots
+      </button>
+    </div>
+    <div class="rot-fdr-sync-row">
+      <span class="rot-fdr-sync-sublabel">Base</span>
+      <div class="input-group input-group-sm rot-fdr-sync-group">
+        <select class="form-control" ng-model="fdr.syncBase">
+          <option value="OME">OME (NOME PIC/SIC)</option>
+          <option value="OTZ">OTZ (Kotzebue)</option>
+          <option value="ROTOR">Rotorwing</option>
+        </select>
+        <span class="input-group-btn">
+          <button type="button" class="btn btn-default" ng-click="fdr.syncFirebaseHours('base')" ng-disabled="fdr.syncDisabled()">
+            Sync base
+          </button>
+        </span>
+      </div>
+    </div>
+    <div class="rot-fdr-sync-row">
+      <span class="rot-fdr-sync-sublabel">Pilot</span>
+      <div class="input-group input-group-sm rot-fdr-sync-group rot-fdr-sync-group-pilot">
+        <select class="form-control" ng-model="fdr.syncPilotName" ng-options="n for n in fdr.syncPilotOptions"></select>
+        <span class="input-group-btn">
+          <button type="button" class="btn btn-default" ng-click="fdr.syncFirebaseHours('pilot')" ng-disabled="fdr.syncDisabled() || !fdr.syncPilotName">
+            Sync pilot
+          </button>
+        </span>
+      </div>
+    </div>
+    <div class="rot-fdr-sync-row">
+      <span class="rot-fdr-sync-sublabel">Grid filter</span>
+      <select class="form-control input-sm rot-fdr-sync-filter" ng-model="fdr.syncPilotFilter" title="Filter rows by sync status">
+        <option value="all">Show all pilots</option>
+        <option value="saved">Saved Firebase hours only</option>
+        <option value="unsaved">Not saved yet</option>
+        <option value="session">Synced this session</option>
+      </select>
+    </div>
   </div>
   <p class="text-muted rot-fdr-meta" ng-if="fdr.mode === 'static'">Historical snapshot (hours and days off from imported spreadsheet).</p>
   <p class="text-muted rot-fdr-meta" ng-if="fdr.showCompletionKey()">
@@ -133,6 +152,17 @@
         computed {{a.computed}}, spreadsheet {{a.imported}}
         <span ng-if="a.kind === 'high'">(Firebase higher)</span>
         <span ng-if="a.kind === 'low'">(Firebase lower)</span>
+      </li>
+    </ul>
+  </div>
+  <div class="alert alert-warning" ng-if="fdr.dutyCompareAlerts.length">
+    <strong>Days off differ from imported spreadsheet</strong> (any month where Firebase does not exactly match the import):
+    <ul class="rot-fdr-alert-list">
+      <li ng-repeat="a in fdr.dutyCompareAlerts">
+        {{a.pilotName}} — {{fdr.monthLabel(a.month)}}:
+        Firebase {{a.computed}}, spreadsheet {{a.imported}}
+        <span ng-if="a.kind === 'high'">(more days off)</span>
+        <span ng-if="a.kind === 'low'">(fewer days off)</span>
       </li>
     </ul>
   </div>
@@ -227,7 +257,7 @@
               <td ng-repeat="m in fdr.months" ng-class="fdr.dutyCellClass(p, m)">
                 <input ng-if="fdr.daysOffEditable(p)" type="number" min="0" max="31" class="rot-fdr-days-input"
                        ng-model="p.duty.months[m]" ng-blur="fdr.onDaysOffBlur(p, m)">
-                <span ng-if="!fdr.daysOffEditable(p)">{{fdr.displayCell(p.duty.months[m])}}</span>
+                <span ng-if="!fdr.daysOffEditable(p)" title="{{fdr.dutyCellTitle(p)}}">{{fdr.displayCell(p.duty.months[m])}}</span>
               </td>
               <td ng-repeat="q in fdr.quarters" ng-class="fdr.quarterDutyClass(p, q)" title="{{fdr.quarterDutyTitle(p, q)}}">{{fdr.displayCell(p.duty.quarters[q])}}</td>
             </tr>

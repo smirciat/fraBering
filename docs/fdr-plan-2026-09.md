@@ -349,7 +349,7 @@ Grid still shows one days-off number per month. Audit is a checkbox/note on the 
 2. ~~`FdrComputedDuty` + sync on `compute-hours`~~ — shipped (`rot.fdr.computedDuty.js`).
 3. ~~FDR grid reads cached days off when duty synced~~ — shipped; unsynced pilots keep xls/manual.
 4. Month audit control + Postgres row — **not built**.
-5. Days-off compare alerts — **not built**.
+5. Days-off compare alerts — shipped (exact match vs import per month; `dutyCompareAlerts` on year payload).
 6. Soak on Andy + one prod-only captain + one beta-only before fleet-wide trust.
 
 ## Out of scope

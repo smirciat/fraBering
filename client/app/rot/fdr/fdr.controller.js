@@ -20,6 +20,7 @@ class RotFdrComponent {
     this.mode = '';
     this.hoursSource = '';
     this.compareAlerts = [];
+    this.dutyCompareAlerts = [];
     this.loading = false;
     this.hoursLoading = false;
     this.hoursProgress = null;
@@ -139,6 +140,7 @@ class RotFdrComponent {
       this.hoursProgress = data.hoursCompute;
     }
     this.compareAlerts = data.compareAlerts || [];
+    this.dutyCompareAlerts = data.dutyCompareAlerts || [];
     this.refreshSyncPilotOptions();
     this.companyTotal = data.companyTotal || null;
     this.rosterEditable = !!data.rosterEditable;
@@ -403,8 +405,19 @@ class RotFdrComponent {
       if (this.hoursLockedAt) parts.push(this.formatSyncDate(this.hoursLockedAt));
       line += ' Locked ' + parts.join(', ') + '.';
     }
-    line += ' Days off can still be edited.';
+    line += ' Synced pilots keep Firebase days off (not editable).';
     return line;
+  }
+
+  dutyCellTitle(pilot) {
+    if (!pilot) return '';
+    if (pilot.dutyFromFirebase) {
+      let t = 'Days off from Firebase duty index';
+      if (pilot.dutySyncedAt) t += ' (synced ' + this.formatSyncDate(pilot.dutySyncedAt) + ')';
+      return t;
+    }
+    if (pilot.daysOffEditable) return 'Imported or manual — edit here until Firebase duty sync';
+    return '';
   }
 
   syncFirebaseHours(scope) {

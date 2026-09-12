@@ -75,19 +75,45 @@
 
 .rot-fdr-sync-toolbar {
   margin: 0 0 1em;
-  max-width: 56em;
+  max-width: 52em;
 }
 
-.rot-fdr-sync-toolbar .form-control,
-.rot-fdr-sync-toolbar .btn {
-  margin-right: 0.35em;
-  margin-bottom: 0.35em;
-  vertical-align: middle;
+.rot-fdr-sync-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em 0.75em;
+  margin-bottom: 0.5em;
+}
+
+.rot-fdr-sync-row:last-child {
+  margin-bottom: 0;
 }
 
 .rot-fdr-sync-label {
   font-weight: 600;
-  margin-right: 0.5em;
+  margin-right: 0.25em;
+}
+
+.rot-fdr-sync-sublabel {
+  font-weight: 600;
+  min-width: 4.5em;
+  color: #555;
+  font-size: 13px;
+}
+
+.rot-fdr-sync-group {
+  max-width: 22em;
+  flex: 1 1 16em;
+}
+
+.rot-fdr-sync-group-pilot {
+  max-width: 28em;
+}
+
+.rot-fdr-sync-filter {
+  max-width: 16em;
+  flex: 0 1 auto;
 }
 
 .rot-fdr-sync-summary {

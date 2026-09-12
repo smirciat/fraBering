@@ -123,6 +123,32 @@ function compareAlerts(year, pilots, importHoursMap) {
   return alerts.slice(0, 50);
 }
 
+function compareDutyAlerts(year, pilots, daysMap) {
+  if (year < COMPUTED_HOURS_FROM_YEAR) return [];
+  let alerts = [];
+  pilots.forEach(p => {
+    if (!p.dutyFromFirebase) return;
+    let key = normalizePilotName(p.name);
+    let imp = daysMap[key] || {};
+    MONTHS.forEach((m, idx) => {
+      let month = idx + 1;
+      let imported = imp[month];
+      if (imported === null || imported === undefined || imported === '') return;
+      let impN = Math.round(num(imported));
+      let computed = Math.round(p.duty && p.duty.months ? num(p.duty.months[m]) : 0);
+      if (computed === impN) return;
+      alerts.push({
+        pilotName: p.name,
+        month,
+        imported: impN,
+        computed,
+        kind: computed > impN ? 'high' : 'low'
+      });
+    });
+  });
+  return alerts.slice(0, 50);
+}
+
 function sectionTotalLabel(title) {
   let t = String(title || '').toUpperCase();
   if (t.indexOf('NOME PIC') >= 0) return 'Total OME PIC';
@@ -670,8 +696,10 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
   let pilotsSyncedSaved = roster.filter(r => pilotHasComputedHours(syncedPilotKeys, r.pilotName)).length;
   let dutySyncedSaved = roster.filter(r => pilotHasComputedDuty(dutySyncedPilotKeys, r.pilotName)).length;
   let alerts = compareAlerts(year, allPilots, importHoursMap);
+  let dutyAlerts = compareDutyAlerts(year, allPilots, daysMap);
 
   let compare = (meta.hoursSource === 'firebase' || meta.hoursSource === 'firebase_partial') ? alerts : [];
+  let dutyCompare = useComputed ? dutyAlerts : [];
 
   return {
     year,
@@ -694,6 +722,7 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
     } : null,
     dutyLastSyncedAt: meta.dutyLastSyncedAt || null,
     compareAlerts: compare,
+    dutyCompareAlerts: dutyCompare,
     rosterEditable: year >= COMPUTED_HOURS_FROM_YEAR,
     hourNotesEditable: year >= COMPUTED_HOURS_FROM_YEAR,
     incompletePilotMonths: countIncompletePilotMonths(allPilots),
