@@ -32,11 +32,35 @@ function flightMonth(flight) {
   return flightDateParts(flight).month;
 }
 
-/** FDR plan: all aircraft with positive flightTime (minutes). */
-function flightCountsForAggregation(flight) {
+const HELI_TYPE_RE = /(astar|robinson|md500|huey|r44|r-44|helicopter|heli)/i;
+
+export function isHelicopterFlight(flight) {
   if (!flight) return false;
-  if (num(flight.flightTime) <= 0) return false;
-  return true;
+  if (flight.isHelicopter) return true;
+  return HELI_TYPE_RE.test(String(flight.acftType || ''));
+}
+
+function hobbsHours(flight) {
+  let total = num(flight.hobbsTotal);
+  if (total > 0.04) return roundHour(total);
+  if (flight.hobbsIn === null || flight.hobbsIn === undefined || flight.hobbsIn === '') return 0;
+  if (flight.hobbsOut === null || flight.hobbsOut === undefined || flight.hobbsOut === '') return 0;
+  let delta = num(flight.hobbsIn) - num(flight.hobbsOut);
+  if (delta > 0.04) return roundHour(delta);
+  return 0;
+}
+
+/** Decimal hours for FDR: Hobbs on helicopters, flightTime minutes/60 on airplanes. */
+export function flightHoursForFdr(flight) {
+  if (!flight) return 0;
+  if (isHelicopterFlight(flight)) return hobbsHours(flight);
+  let mins = num(flight.flightTime);
+  if (mins <= 0) return 0;
+  return mins / 60;
+}
+
+function flightCountsForAggregation(flight) {
+  return flightHoursForFdr(flight) > 0;
 }
 
 const EMPLOYEE_FETCH_TIMEOUT_MS = 55000;
@@ -88,7 +112,7 @@ function flightLegDedupeKey(flight) {
   if (!flight) return '';
   return [
     flight.dateString || '',
-    flight.aircraft || '',
+    flight.aircraft || flight.acftNumber || '',
     flight.departure || '',
     flight.destination || '',
     flight.flightTime,
@@ -146,7 +170,7 @@ function aggregateFlightsByEmployee(flights, year, idSet) {
     if (!flightCountsForAggregation(f)) return;
     let mo = flightMonth(f);
     if (!mo) return;
-    let hours = num(f.flightTime) / 60;
+    let hours = flightHoursForFdr(f);
     ['pilotEmployeeNumber', 'coPilotEmployeeNumber'].forEach(field => {
       let raw = f[field];
       if (raw === null || raw === undefined) return;
@@ -196,7 +220,7 @@ export function aggregateHoursByMonth(flights) {
     if (!flightCountsForAggregation(f)) return;
     let mo = flightMonth(f);
     if (!mo) return;
-    months[mo] += num(f.flightTime) / 60;
+    months[mo] += flightHoursForFdr(f);
   });
   for (let m = 1; m <= 12; m++) {
     if (months[m] > 0) months[m] = roundHour(months[m]);

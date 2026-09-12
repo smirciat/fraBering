@@ -53,7 +53,10 @@ Month hours and days off are **typed**. The only formulas are Q1–Q4, YEAR, sec
 
 Each pilot has **one row of monthly flight hours**. Section names (**NOME PIC**, **NOME SIC**, **ROTORWING**, **KOTZEBUE**) are **duty assignment / where they sit**, not a filter on time.
 
-- Sum Firebase `flights.flightTime` (minutes → hours) for that employee as **PIC or SIC** that calendar month (`pilotEmployeeNumber` **or** `coPilotEmployeeNumber`).
+- Sum Firebase crew flight time for that employee as **PIC or SIC** that calendar month (`pilotEmployeeNumber` **or** `coPilotEmployeeNumber`).
+- **Airplanes:** `flights.flightTime` (minutes → hours). That field is block/air time on a per-leg PFR.
+- **Helicopters:** `hobbsTotal` (hours), or `hobbsIn − hobbsOut` if total is missing. Rotor PFRs are typically **one document per duty day** with a single `legArray` entry whose off/on times are the duty window (`flightTime` / `flightTimeString` ≈ duty + standby, often 6–12h). Hobbs is the meter time (Patrik ~70h/month vs FDR 148h when using `flightTime`).
+- **Firebase / Flight Report only.** Takeflite is not an FDR hours source.
 - **Firebase / Flight Report only.** Takeflite is not an FDR hours source (fixed-wing may also exist there; those times are not crew flight time).
 - **All aircraft.** Do not restrict PIC-section rows to PIC-leg time.
 - Same person, one section: all of their hours for the year go in that section’s row.

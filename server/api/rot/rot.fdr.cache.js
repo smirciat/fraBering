@@ -2,7 +2,7 @@
 
 const HOURS_TTL_MS = 45 * 60 * 1000;
 /** Bump when aggregation rules change so old in-memory caches are ignored. */
-export const FDR_HOURS_CACHE_VERSION = 3;
+export const FDR_HOURS_CACHE_VERSION = 4;
 const hoursByYear = {};
 const computeInFlight = {};
 
