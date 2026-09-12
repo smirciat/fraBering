@@ -3,11 +3,12 @@
 (function() {
 
 class RotFdrComponent {
-  constructor($http, Auth, RotAccess, $interval) {
+  constructor($http, Auth, RotAccess, $interval, $timeout) {
     this.http = $http;
     this.Auth = Auth;
     this.RotAccess = RotAccess;
     this.interval = $interval;
+    this.timeout = $timeout;
     this.user = null;
     this.years = [];
     this.selectedYear = null;
@@ -58,6 +59,7 @@ class RotFdrComponent {
     this.hoursLockedBy = null;
     this.hoursLockEditable = false;
     this.savingYearLock = false;
+    this.syncFeedback = '';
   }
 
   loggedIn() {
@@ -132,6 +134,9 @@ class RotFdrComponent {
   }
 
   applyYearData(data) {
+    let scrollTop = window.pageYOffset
+      || (document.documentElement && document.documentElement.scrollTop)
+      || 0;
     this.months = data.months || [];
     this.quarters = data.quarters || [];
     this.sections = data.sections || [];
@@ -158,6 +163,16 @@ class RotFdrComponent {
     this.hoursLockEditable = this.RotAccess.canManageFdrYearLock(this.user);
     if (!this.editRoster) {
       this.syncRosterRowsFromSections();
+    }
+    this.timeout(() => {
+      window.scrollTo(0, scrollTop);
+    }, 0, false);
+  }
+
+  preventCellFocus($event) {
+    if ($event) {
+      $event.preventDefault();
+      $event.stopPropagation();
     }
   }
 
@@ -497,6 +512,7 @@ class RotFdrComponent {
     if (scope === 'pilot') syncBody.pilotName = options.pilotName || this.syncPilotName;
     this.hoursLoading = true;
     this.hoursLoadError = '';
+    this.syncFeedback = '';
     this.dutySyncFailures = [];
     this.startHoursRefreshTimer();
 
@@ -518,9 +534,16 @@ class RotFdrComponent {
         if (hc && hc.stalled) {
           this.hoursLoading = false;
           this.hoursProgress = hc;
-          this.hoursLoadError =
-            'Could not sync ' + (hc.stalledPilotName || 'pilot') +
-            ' — no matching Firebase employee number. Fix the roster name or set employee ID, then use Continue sync.';
+          let stallName = hc.stalledPilotName || 'pilot';
+          if (hc.stallReason === 'sync_no_pilot_saved') {
+            this.hoursLoadError =
+              'Sync did not save hours or days off for ' + stallName +
+              '. Check server logs (fdr compute-hours / duty sync) and roster name vs Firebase employee ID.';
+          } else {
+            this.hoursLoadError =
+              'Could not sync ' + stallName +
+              ' — no matching Firebase employee number. Fix the roster name or set employee ID, then use Continue sync.';
+          }
           this.clearHoursRefreshTimer();
           return;
         }
@@ -544,6 +567,7 @@ class RotFdrComponent {
         this.hoursLoadError = '';
         this.clearHoursRefreshTimer();
         this.flushDutySyncFailureBanner();
+        this.setSyncFeedback(hc, scope, options);
       });
     };
 
@@ -616,7 +640,7 @@ class RotFdrComponent {
       if (this.sessionPilotSyncCount() < (this.syncSummary && this.syncSummary.saved)) {
         line += '. Some pilots were not refreshed this browser session (see row markers)';
       }
-      line += '. Days off are from paper F&D — edit below.';
+      line += '. Days off from Firebase after duty sync (or editable until synced).';
       return line;
     }
     return '';
@@ -734,6 +758,9 @@ class RotFdrComponent {
 
   openMonthAuditNote(pilot, monthKey, parameter) {
     if (!this.monthAuditAllowed(pilot, monthKey)) return;
+    let scrollTop = window.pageYOffset
+      || (document.documentElement && document.documentElement.scrollTop)
+      || 0;
     let cell = this.monthAuditCell(pilot, monthKey, parameter) || {};
     this.auditEditor = {
       pilotName: pilot.name,
@@ -742,6 +769,9 @@ class RotFdrComponent {
       audited: !!cell.audited,
       text: cell.note || ''
     };
+    this.timeout(() => {
+      window.scrollTo(0, scrollTop);
+    }, 0, false);
   }
 
   closeMonthAuditNote() {
@@ -781,6 +811,34 @@ class RotFdrComponent {
 
   showMonthAuditKey() {
     return this.monthAuditEditable && !this.viewSummary;
+  }
+
+  showFdrGridLegend() {
+    return this.mode === 'computed' && !this.viewSummary && !this.loading;
+  }
+
+  setSyncFeedback(hc, scope, options) {
+    if (!hc || !hc.done) return;
+    if (hc.stalled) return;
+    let names = hc.syncedPilotNames || [];
+    if (names.length) {
+      let line = 'Sync finished for ' + names.join(', ') + '.';
+      if (hc.dutySyncReport && hc.dutySyncReport.length) {
+        let r = hc.dutySyncReport[0];
+        if (r.indexDocCount !== undefined) {
+          line += ' Duty index: ' + r.indexDocCount + ' docs.';
+        }
+      }
+      this.syncFeedback = line;
+      return;
+    }
+    if (scope === 'pilot' && options.pilotName) {
+      this.hoursLoadError =
+        'Sync finished but nothing was saved for ' + options.pilotName +
+        '. Check roster name vs Firebase employee, or server logs (fdr compute-hours / duty sync).';
+    } else if (scope === 'base' || scope === 'all') {
+      this.hoursLoadError = 'Sync finished but no pilots were updated in the last batch. See Continue sync or server logs.';
+    }
   }
 
   monthHeaderClass(monthKey) {
@@ -971,7 +1029,7 @@ class RotFdrComponent {
   }
 }
 
-RotFdrComponent.$inject = ['$http', 'Auth', 'RotAccess', '$interval'];
+RotFdrComponent.$inject = ['$http', 'Auth', 'RotAccess', '$interval', '$timeout'];
 
 angular.module('workspaceApp')
   .component('rotFdr', {

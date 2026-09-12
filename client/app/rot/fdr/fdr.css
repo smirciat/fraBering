@@ -60,6 +60,16 @@
   margin-bottom: 0.5em;
 }
 
+.rot-fdr-grid-legend {
+  max-width: 52em;
+  line-height: 1.45;
+  font-size: 13px;
+}
+
+.rot-fdr-sync-feedback {
+  margin-bottom: 0.5em;
+}
+
 .rot-fdr-hours-banner {
   margin: 0 0 1em;
   max-width: 52em;

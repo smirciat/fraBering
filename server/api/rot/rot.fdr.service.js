@@ -499,6 +499,7 @@ export async function computeFdrYearHours(year, options) {
     console.log('fdr compute-hours', year, 'scope', scope, 'startOffset', startOffset, 'todo', todoIds.length);
     let syncedPilotNames = [];
     let dutySyncFailed = [];
+    let dutySyncReport = [];
     let stallExtra = null;
     if (sliceRoster.length && !todoIds.length) {
       let row = sliceRoster[0];
@@ -518,13 +519,28 @@ export async function computeFdrYearHours(year, options) {
         syncedPilotNames.push(row.pilotName);
         return upsertComputedHoursForPilot(year, row.pilotName, eid, partial[eid], syncedBy)
           .then(() => computeDutyForEmployeeYear(eid, year))
-          .then(duty => upsertComputedDutyForPilot(year, row.pilotName, eid, duty, syncedBy))
+          .then(duty => {
+            dutySyncReport.push({
+              pilotName: row.pilotName,
+              indexDocCount: duty.indexDocCount,
+              hasAnyIndex: duty.hasAnyIndex
+            });
+            return upsertComputedDutyForPilot(year, row.pilotName, eid, duty, syncedBy);
+          })
           .catch(err => {
             let msg = err && err.message ? String(err.message) : 'duty_sync_failed';
             console.log('fdr duty sync failed', year, eid, row.pilotName, msg);
             dutySyncFailed.push({pilotName: row.pilotName, employeeId: eid, message: msg});
           });
       }));
+    }
+    if (!stallExtra && todoIds.length && !syncedPilotNames.length) {
+      let row = sliceRoster[0];
+      stallExtra = {
+        stalled: true,
+        stalledPilotName: row && row.pilotName ? row.pilotName : '',
+        stallReason: 'sync_no_pilot_saved'
+      };
     }
     console.log('fdr compute-hours firebase', year, 'ms', Date.now() - t0);
 
@@ -535,6 +551,7 @@ export async function computeFdrYearHours(year, options) {
     let progress = buildSyncProgress(syncRoster, pgAfter.syncedPilotKeys, offset, limit, stallExtra);
     progress.syncedPilotNames = syncedPilotNames;
     if (dutySyncFailed.length) progress.dutySyncFailed = dutySyncFailed;
+    if (dutySyncReport.length) progress.dutySyncReport = dutySyncReport;
     if (scopedSync && !stallExtra) {
       let advanced = startOffset + sliceRoster.length;
       progress.nextOffset = advanced;
