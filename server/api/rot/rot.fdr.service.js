@@ -156,10 +156,6 @@ function compareAlerts(year, pilots, importHoursMap) {
   return alerts.slice(0, 50);
 }
 
-function daysInFdrMonth(year, month) {
-  return new Date(year, month, 0).getDate();
-}
-
 function compareDutyAlerts(year, pilots, daysMap) {
   if (year < COMPUTED_HOURS_FROM_YEAR) return [];
   let alerts = [];
@@ -183,14 +179,7 @@ function compareDutyAlerts(year, pilots, daysMap) {
       let computed = computedPresent ? Math.round(num(dutyVal)) : null;
       if (!importPresent && !computedPresent) return;
       if (!importPresent && computedPresent) {
-        if (computed === daysInFdrMonth(year, month)) return;
-        alerts.push({
-          pilotName: p.name,
-          month,
-          imported: null,
-          computed,
-          kind: 'missing_import'
-        });
+        // Blank import cell — not an audit signal (paper F&D is source; spreadsheet often empty).
         return;
       }
       if (importPresent && !computedPresent) {
@@ -890,7 +879,8 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
       dutyCalendarSparse: dutyCalendarSparse,
       dutySyncedAt: pilotDutySyncedAt(dutySyncedAtByPilot, row.pilotName),
       hoursEditable: false,
-      daysOffEditable: year >= COMPUTED_HOURS_FROM_YEAR && (!hasDutySynced || dutyIndexMissing),
+      daysOffEditable: year >= COMPUTED_HOURS_FROM_YEAR &&
+        (!hasDutySynced || dutyIndexMissing || dutyCalendarSparse),
       hourNotesEditable: year >= COMPUTED_HOURS_FROM_YEAR
     });
   });

@@ -222,6 +222,10 @@
 .rot-fdr-duty-label {
   font-style: italic;
   padding-left: 1.5em !important;
+  white-space: normal !important;
+  overflow: hidden;
+  vertical-align: top;
+  line-height: 1.25;
 }
 
 .rot-fdr-days-input {
@@ -360,7 +364,8 @@
 
 .rot-fdr-duty-hint {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10px;
+  white-space: normal;
 }
 
 .rot-fdr-th-incomplete {

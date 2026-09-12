@@ -308,7 +308,7 @@
             <tr ng-repeat-end class="rot-fdr-duty-row" ng-class="fdr.pilotStripeClass($index)" ng-if="fdr.pilotPassesSyncFilter(p)">
               <td class="rot-fdr-name-col rot-fdr-duty-label"
                   ng-class="{'rot-fdr-duty-sync-missing': p.hoursFromFirebase && p.dutySyncNeeded, 'rot-fdr-duty-index-missing': p.dutyIndexMissing || p.dutyCalendarSparse}"
-                  title="{{fdr.dutyRowTitle(p)}}">Days off<span ng-if="p.dutyCalendarSparse" class="rot-fdr-duty-hint"> — incomplete ON calendar, enter from paper</span><span ng-if="p.dutyIndexMissing && !p.dutyCalendarSparse" class="rot-fdr-duty-hint"> — no index, enter manually</span></td>
+                  title="{{fdr.dutyRowTitle(p)}}">Days off<span ng-if="p.dutyCalendarSparse" class="rot-fdr-duty-hint" title="Duty calendar is incomplete (few ON days in Firebase) — enter days off from the paper F&amp;D sheet."> (paper)</span><span ng-if="p.dutyIndexMissing && !p.dutyCalendarSparse" class="rot-fdr-duty-hint" title="No duty index in Firebase — enter days off manually."> (manual)</span></td>
               <td ng-repeat="m in fdr.months" ng-class="fdr.dutyCellClass(p, m)">
                 <span class="rot-fdr-duty-cell" ng-if="fdr.daysOffEditable(p)">
                   <input type="number" min="0" max="31" class="rot-fdr-days-input"
