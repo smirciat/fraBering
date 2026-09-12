@@ -1,6 +1,7 @@
 'use strict';
 
 import {num} from './rot.fdr.math.js';
+import {fetchFlightsForEmployeeYear} from './rot.fdr.hours.js';
 
 const admin = require('firebase-admin');
 const serviceAccount = require('../../firebase.json');
@@ -63,6 +64,27 @@ export function mergeClaimedDatesFromIndexDocs(docs) {
   return dates;
 }
 
+/** Positive-time PFR days count as duty (flightIndex can lag backup). */
+export function mergeClaimedDatesFromFlights(flights, year) {
+  let dates = {};
+  let yearPrefix = String(year) + '-';
+  (flights || []).forEach(f => {
+    if (!f || num(f.flightTime) <= 0) return;
+    let ymd = timestampToAlaskaYmd(f.date);
+    if (ymd && ymd.indexOf(yearPrefix) === 0) dates[ymd] = true;
+  });
+  return dates;
+}
+
+export function mergeDutyClaimedDates(indexDocs, flights, year) {
+  let dates = mergeClaimedDatesFromIndexDocs(indexDocs);
+  let fromFlights = mergeClaimedDatesFromFlights(flights, year);
+  Object.keys(fromFlights).forEach(ymd => {
+    dates[ymd] = true;
+  });
+  return dates;
+}
+
 function alaskaTodayParts(asOfDate) {
   let d = asOfDate || new Date();
   let ymd = timestampToAlaskaYmd(d);
@@ -79,6 +101,22 @@ function daysInCalendarMonth(year, month) {
   return new Date(year, month, 0).getDate();
 }
 
+/** True when this Alaska calendar date is fully in the past (before today AK). */
+export function isDateElapsedForDaysOff(ymd, asOfDate) {
+  let today = alaskaTodayParts(asOfDate);
+  let parts = String(ymd || '').split('-');
+  if (parts.length !== 3) return false;
+  let y = parseInt(parts[0], 10);
+  let m = parseInt(parts[1], 10);
+  let d = parseInt(parts[2], 10);
+  if (!y || !m || !d) return false;
+  if (y > today.year) return false;
+  if (y < today.year) return true;
+  if (m > today.month) return false;
+  if (m < today.month) return true;
+  return d < today.day;
+}
+
 function auditableDaysInMonth(year, month, asOfDate) {
   let dim = daysInCalendarMonth(year, month);
   let today = alaskaTodayParts(asOfDate);
@@ -86,30 +124,40 @@ function auditableDaysInMonth(year, month, asOfDate) {
   if (year < today.year) return dim;
   if (month > today.month) return null;
   if (month < today.month) return dim;
-  return today.day;
+  // Current month: only completed days count; today and future days in month are undetermined.
+  return Math.max(0, today.day - 1);
 }
 
-function countClaimedInMonth(claimedDates, year, month) {
+function countClaimedInMonth(claimedDates, year, month, asOfDate) {
   let prefix = year + '-' + String(month).padStart(2, '0') + '-';
   let n = 0;
   Object.keys(claimedDates || {}).forEach(ymd => {
-    if (ymd.indexOf(prefix) === 0) n += 1;
+    if (ymd.indexOf(prefix) !== 0) return;
+    if (!isDateElapsedForDaysOff(ymd, asOfDate)) return;
+    n += 1;
   });
   return n;
 }
 
-/** @returns {{ months: Object.<number, number|null>, claimedByMonth: Object.<number, number> }} */
+/**
+ * Snapshot days off for a month (not a permanent ledger):
+ * elapsed calendar days in month (Alaska, strictly before today for the current month)
+ * minus distinct elapsed dates with duty (flightIndex ∪ beta ∪ flights w/ time).
+ * Today and future dates in the month are null/undetermined in the grid.
+ * @returns {{ months: Object.<number, number|null>, claimedByMonth: Object.<number, number> }}
+ */
 export function computeDaysOffByMonth(year, claimedDates, asOfDate) {
+  asOfDate = asOfDate || new Date();
   let months = {};
   let claimedByMonth = {};
   for (let m = 1; m <= 12; m++) {
     let auditable = auditableDaysInMonth(year, m, asOfDate);
     if (auditable === null) {
       months[m] = null;
-      claimedByMonth[m] = countClaimedInMonth(claimedDates, year, m);
+      claimedByMonth[m] = countClaimedInMonth(claimedDates, year, m, asOfDate);
       continue;
     }
-    let claimed = countClaimedInMonth(claimedDates, year, m);
+    let claimed = countClaimedInMonth(claimedDates, year, m, asOfDate);
     claimedByMonth[m] = claimed;
     let off = auditable - claimed;
     if (off < 0) off = 0;
@@ -172,11 +220,13 @@ export async function fetchFlightIndexDocsForEmployee(employeeId) {
 
 export async function computeDutyForEmployeeYear(employeeId, year, asOfDate) {
   let docs = await fetchFlightIndexDocsForEmployee(employeeId);
-  let claimedAll = mergeClaimedDatesFromIndexDocs(docs);
+  let flights = await fetchFlightsForEmployeeYear(employeeId, year);
+  let claimedInYear = mergeDutyClaimedDates(docs, flights, year);
+  let fromIndexOnly = mergeClaimedDatesFromIndexDocs(docs);
   let yearPrefix = String(year) + '-';
-  let claimedInYear = {};
-  Object.keys(claimedAll).forEach(ymd => {
-    if (ymd.indexOf(yearPrefix) === 0) claimedInYear[ymd] = true;
+  let indexDatesInYear = Object.keys(fromIndexOnly).filter(ymd => ymd.indexOf(yearPrefix) === 0);
+  let flightOnlyDates = Object.keys(claimedInYear).filter(ymd => {
+    return ymd.indexOf(yearPrefix) === 0 && !fromIndexOnly[ymd];
   });
   let hasAnyIndex = docs.length > 0;
   let result = computeDaysOffByMonth(year, claimedInYear, asOfDate);
@@ -185,6 +235,8 @@ export async function computeDutyForEmployeeYear(employeeId, year, asOfDate) {
     claimedByMonth: result.claimedByMonth,
     claimedDates: Object.keys(claimedInYear).sort(),
     indexDocCount: docs.length,
+    flightDutyDatesInYear: Object.keys(mergeClaimedDatesFromFlights(flights, year)).length,
+    flightOnlyDutyDates: flightOnlyDates.length,
     hasAnyIndex
   };
 }

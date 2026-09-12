@@ -334,8 +334,15 @@ class RotFdrComponent {
     if (!this.dutySyncFailures || !this.dutySyncFailures.length) return;
     let names = this.dutySyncFailures.map(f => f.pilotName).join(', ');
     let detail = this.dutySyncFailures[0].message || 'duty index fetch failed';
+    let extra = '';
+    if (detail === 'fdr_duty_no_months_written') {
+      extra = ' Duty math produced no saveable months for this snapshot.';
+    } else if (detail === 'fdr_duty_year_not_started') {
+      extra = ' That FDR calendar year has not started yet in Alaska — days off stay blank until the year is in progress.';
+    }
     this.hoursLoadError =
-      'Hours saved, but days off did not sync for: ' + names + '. (' + detail + ') Re-sync those pilots after deploy or check server logs.';
+      'Hours saved, but days off did not sync for: ' + names + '. (' + detail + ').' + extra +
+      ' Re-sync after deploy or check server logs.';
     this.dutySyncFailures = [];
   }
 
@@ -452,7 +459,7 @@ class RotFdrComponent {
   dutyCellTitle(pilot) {
     if (!pilot) return '';
     if (pilot.dutyFromFirebase) {
-      let t = 'Days off from Firebase duty index';
+      let t = 'Days off snapshot (elapsed days in month minus duty; today/future not counted as off)';
       if (pilot.dutySyncedAt) t += ' (synced ' + this.formatSyncDate(pilot.dutySyncedAt) + ')';
       return t;
     }

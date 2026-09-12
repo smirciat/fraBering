@@ -11,6 +11,8 @@ require('babel-polyfill');
 const {
   indexDocClaimsDuty,
   mergeClaimedDatesFromIndexDocs,
+  mergeClaimedDatesFromFlights,
+  mergeDutyClaimedDates,
   computeDaysOffByMonth,
   computeDutyForEmployeeYear
 } = require('../../server/api/rot/rot.fdr.duty.js');
@@ -37,8 +39,34 @@ let merged = mergeClaimedDatesFromIndexDocs([
 ]);
 assert(merged['2026-09-09'] && merged['2026-09-13'], 'union merges two ON dates');
 
-let sep = computeDaysOffByMonth(2026, merged, new Date('2026-09-12T20:00:00Z'));
-assert(sep.claimedByMonth[9] === 2, 'Sep 2026 claimed count');
+let sepSnap = computeDaysOffByMonth(2026, merged, new Date('2026-09-12T20:00:00Z'));
+assert(sepSnap.claimedByMonth[9] === 1, 'Sep 12 snapshot: only elapsed claim 9/9 counts (not 9/13)');
+assert(sepSnap.months[9] === 10, 'Sep 12 snapshot: 11 elapsed days minus 1 duty = 10 days off');
+
+let sepDuty = computeDaysOffByMonth(2026, {
+  '2026-09-02': true,
+  '2026-09-11': true,
+  '2026-09-12': true,
+  '2026-09-23': true
+}, new Date('2026-09-12T20:00:00Z'));
+assert(sepDuty.months[9] === 9, 'Sep 12: 9/2 and 9/11 duty; 9/12 and 9/23 not elapsed → 11−2=9 off');
+assert(sepDuty.months[10] === null, 'October undetermined on Sep 12 snapshot');
+
+let sepClosed = computeDaysOffByMonth(2026, {
+  '2026-09-11': true,
+  '2026-09-12': true,
+  '2026-09-23': true
+}, new Date('2026-09-30T12:00:00Z'));
+assert(sepClosed.months[9] === 26, 'Sep 30 snapshot: 29 elapsed (excl. today) minus 3 duty = 26 days off');
+assert(!mergeClaimedDatesFromIndexDocs([{id: '99OFF', data: {date: {toDate: () => new Date('2026-09-12T15:00:00Z')}}}])['2026-09-12'],
+  'OFF doc does not claim duty on that date');
+
+let flightMerge = mergeDutyClaimedDates([], [{
+  date: {toDate: () => new Date('2026-09-23T18:00:00Z')},
+  flightTime: 60
+}], 2026);
+assert(flightMerge['2026-09-23'], 'flight with time claims 9/23 duty');
+assert(!flightMerge['2026-09-11'], 'no flight does not claim 9/11');
 
 async function live933() {
   if (process.env.SKIP_FDR_DUTY_LIVE) {
