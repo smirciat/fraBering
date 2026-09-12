@@ -114,21 +114,10 @@ export async function upsertComputedDutyForPilot(year, pilotName, employeeId, du
     }
   }
   if (monthsWithDaysOff < 1) {
-    let today = new Date();
-    let ymd = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Anchorage',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(today);
-    let parts = ymd.split('-');
-    let calYear = parseInt(parts[0], 10);
-    if (year > calYear) {
-      throw new Error('fdr_duty_year_not_started');
-    }
     let err = new Error('fdr_duty_no_months_written');
     err.dutyMonths = months;
     err.indexDocCount = dutyResult.indexDocCount;
+    err.dutySnapshotAk = dutyResult.dutySnapshotAk;
     throw err;
   }
   return {monthsWithDaysOff, indexDocCount: dutyResult.indexDocCount};

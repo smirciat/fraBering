@@ -321,7 +321,7 @@ Ignore `{n}OFF`, empty types, and PFR docs that are only hours with no assignmen
 daysOff = daysInMonth − |claimedDates in M|
 ```
 
-Days off are a **snapshot**, not a permanent day-by-day ledger. For each month: count **elapsed** Alaska calendar days only (for the current month, **strictly before today**). Subtract distinct elapsed dates with duty (flightIndex ∪ beta ∪ flights with time). **Today** and **future** dates in the month are **undetermined** (month cell can still show a partial count; today/future are not treated as days off). Future calendar years / future months → null until in range. Do **not** treat “no index at all” as 30 days off — if both collections are empty for that year, keep imported/manual `FdrDaysOff` and flag **unsynced**.
+Days off are a **snapshot** (re-sync updates numbers), not a permanent ledger. Only when the **real Alaska calendar is on or after Jan 1 of the FDR sheet year**. Before that, days off stay **blank** (hours may still sync). Within the sheet year: elapsed days in each month (current month = strictly before today AK) minus distinct elapsed duty dates (flightIndex ∪ beta ∪ flights with time). Today and future dates in the month are **undetermined** — not counted as days off. Do **not** treat “no index at all” as 30 days off — if both collections are empty for that year, keep imported/manual `FdrDaysOff` and flag **unsynced**.
 
 **5. Postgres cache (parallel to `FdrComputedHour`)**
 

@@ -14,7 +14,10 @@ const {
   mergeClaimedDatesFromFlights,
   mergeDutyClaimedDates,
   computeDaysOffByMonth,
-  computeDutyForEmployeeYear
+  computeDutyForEmployeeYear,
+  snapshotTodayForFdrYear,
+  fdrTabYearIsAvailable,
+  filterFdrTabYears
 } = require('../../server/api/rot/rot.fdr.duty.js');
 
 let failed = 0;
@@ -67,6 +70,16 @@ let flightMerge = mergeDutyClaimedDates([], [{
 }], 2026);
 assert(flightMerge['2026-09-23'], 'flight with time claims 9/23 duty');
 assert(!flightMerge['2026-09-11'], 'no flight does not claim 9/11');
+
+assert(snapshotTodayForFdrYear(2027, new Date('2026-09-12T20:00:00Z')) === null,
+  '2027 sheet before Jan 1 2027 has no snapshot');
+assert(!fdrTabYearIsAvailable(2027, new Date('2026-09-12T20:00:00Z')), '2027 tab hidden before 2027');
+assert(fdrTabYearIsAvailable(2026, new Date('2026-09-12T20:00:00Z')), '2026 tab visible in 2026');
+assert(fdrTabYearIsAvailable(2027, new Date('2027-01-01T12:00:00Z')), '2027 tab visible on Jan 1 2027 AK');
+assert(filterFdrTabYears([2025, 2026, 2027], new Date('2026-09-12T20:00:00Z')).join() === '2025,2026',
+  'meta years exclude future sheet year');
+let future = computeDaysOffByMonth(2027, {'2027-01-15': true}, new Date('2026-12-31T20:00:00Z'));
+assert(future.sheetYearNotStarted && future.months[1] === null, '2027 sheet in 2026: all months blank');
 
 async function live933() {
   if (process.env.SKIP_FDR_DUTY_LIVE) {

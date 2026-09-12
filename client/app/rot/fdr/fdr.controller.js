@@ -337,9 +337,6 @@ class RotFdrComponent {
     let extra = '';
     if (detail === 'fdr_duty_no_months_written') {
       extra = ' Duty math produced no saveable months for this snapshot.';
-    } else if (detail === 'fdr_duty_year_not_started') {
-      extra = ' That FDR calendar year has not started yet in Alaska — days off stay blank until the year is in progress.';
-    }
     this.hoursLoadError =
       'Hours saved, but days off did not sync for: ' + names + '. (' + detail + ').' + extra +
       ' Re-sync after deploy or check server logs.';
@@ -836,13 +833,20 @@ class RotFdrComponent {
       let line = 'Sync finished for ' + names.join(', ') + '.';
       if (hc.dutySyncReport && hc.dutySyncReport.length) {
         let r = hc.dutySyncReport[0];
-        if (r.indexDocCount !== undefined) {
-          line += ' Duty index: ' + r.indexDocCount + ' docs';
-        }
-        if (r.dutyMonthsSaved !== undefined) {
-          line += ', ' + r.dutyMonthsSaved + ' months saved to DB.';
+        if (r.dutySkipped === 'sheet_year_not_started') {
+          line += ' Days off not synced — ' + (r.dutySkippedDetail || 'sheet year not started yet') + '.';
         } else {
-          line += '.';
+          if (r.indexDocCount !== undefined) {
+            line += ' Duty index: ' + r.indexDocCount + ' docs';
+          }
+          if (r.dutyMonthsSaved !== undefined) {
+            line += ', ' + r.dutyMonthsSaved + ' months saved to DB';
+          }
+          if (r.dutySnapshotAk) {
+            line += ' (snapshot as-of ' + r.dutySnapshotAk + ' AK).';
+          } else {
+            line += '.';
+          }
         }
       }
       this.syncFeedback = line;

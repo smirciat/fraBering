@@ -7,7 +7,7 @@ import {
 } from './rot.fdr.math.js';
 import {ensureFdrImported, COMPUTED_HOURS_FROM_YEAR, STATIC_HOURS_THROUGH_YEAR} from './rot.fdr.import.js';
 import {computeHoursForEmployeeIds} from './rot.fdr.hours.js';
-import {computeDutyForEmployeeYear} from './rot.fdr.duty.js';
+import {computeDutyForEmployeeYear, filterFdrTabYears} from './rot.fdr.duty.js';
 import {runComputeOnce} from './rot.fdr.cache.js';
 import {
   loadComputedHoursState, upsertComputedHoursForPilot, clearComputedHoursForYear,
@@ -195,7 +195,7 @@ export async function getFdrMeta() {
     group: ['year'],
     order: [['year', 'ASC']]
   });
-  let yearList = years.map(r => r.year);
+  let yearList = filterFdrTabYears(years.map(r => r.year));
   let sections = await listFdrSectionNames();
   if (!yearList.length) {
     return {
@@ -520,13 +520,22 @@ export async function computeFdrYearHours(year, options) {
         return upsertComputedHoursForPilot(year, row.pilotName, eid, partial[eid], syncedBy)
           .then(() => computeDutyForEmployeeYear(eid, year))
           .then(duty => {
+            if (duty.sheetYearNotStarted) {
+              dutySyncReport.push({
+                pilotName: row.pilotName,
+                dutySkipped: 'sheet_year_not_started',
+                dutySkippedDetail: year + ' days off stay blank until ' + year + '-01-01 Alaska'
+              });
+              return;
+            }
             return upsertComputedDutyForPilot(year, row.pilotName, eid, duty, syncedBy)
               .then(stats => {
                 dutySyncReport.push({
                   pilotName: row.pilotName,
                   indexDocCount: duty.indexDocCount,
                   hasAnyIndex: duty.hasAnyIndex,
-                  dutyMonthsSaved: stats.monthsWithDaysOff
+                  dutyMonthsSaved: stats.monthsWithDaysOff,
+                  dutySnapshotAk: duty.dutySnapshotAk
                 });
               });
           })
@@ -833,9 +842,10 @@ export async function buildFdrSummary() {
     group: ['year'],
     order: [['year', 'ASC']]
   });
+  let visibleYears = filterFdrTabYears(years.map(r => r.year));
   let rows = [];
-  for (let i = 0; i < years.length; i++) {
-    let y = years[i].year;
+  for (let i = 0; i < visibleYears.length; i++) {
+    let y = visibleYears[i];
     if (y < COMPUTED_HOURS_FROM_YEAR) {
       let totals = await companyTotalsFromImportHours(y);
       rows.push({
@@ -884,9 +894,10 @@ export async function exportFdrWorkbookXlsx() {
     group: ['year'],
     order: [['year', 'ASC']]
   });
+  let visibleYears = filterFdrTabYears(years.map(r => r.year));
   let yearDataList = [];
-  for (let i = 0; i < years.length; i++) {
-    let y = years[i].year;
+  for (let i = 0; i < visibleYears.length; i++) {
+    let y = visibleYears[i];
     let data = await buildFdrYear(y);
     if (data) yearDataList.push(data);
   }

@@ -97,57 +97,101 @@ function alaskaTodayParts(asOfDate) {
   };
 }
 
+/**
+ * "Today" for elapsed vs undetermined within an FDR sheet year at sync time (Alaska).
+ * Returns null when the real calendar has not reached Jan 1 of that sheet year yet.
+ */
+export function alaskaCalendarYear(asOfDate) {
+  return alaskaTodayParts(asOfDate).year;
+}
+
+/** Year tabs / sheets are not shown until Alaska calendar has reached Jan 1 of that year. */
+export function fdrTabYearIsAvailable(fdrYear, asOfDate) {
+  let y = parseInt(fdrYear, 10);
+  if (!Number.isFinite(y)) return false;
+  return y <= alaskaCalendarYear(asOfDate);
+}
+
+export function filterFdrTabYears(yearList, asOfDate) {
+  return (yearList || []).filter(y => fdrTabYearIsAvailable(y, asOfDate));
+}
+
+export function snapshotTodayForFdrYear(fdrYear, realAsOf) {
+  let real = alaskaTodayParts(realAsOf);
+  if (real.year < fdrYear) {
+    return null;
+  }
+  if (real.year > fdrYear) {
+    return {year: fdrYear, month: 12, day: 31};
+  }
+  return real;
+}
+
+export function formatSnapshotTodayAk(snap) {
+  if (!snap) return '';
+  let m = String(snap.month).padStart(2, '0');
+  let d = String(snap.day).padStart(2, '0');
+  return snap.year + '-' + m + '-' + d;
+}
+
 function daysInCalendarMonth(year, month) {
   return new Date(year, month, 0).getDate();
 }
 
-/** True when this Alaska calendar date is fully in the past (before today AK). */
-export function isDateElapsedForDaysOff(ymd, asOfDate) {
-  let today = alaskaTodayParts(asOfDate);
+/** True when this date (in the FDR sheet year) is before the snapshot "today" for that year. */
+export function isDateElapsedForDaysOff(ymd, fdrYear, asOfDate) {
+  let snap = snapshotTodayForFdrYear(fdrYear, asOfDate);
+  if (!snap) return false;
   let parts = String(ymd || '').split('-');
   if (parts.length !== 3) return false;
   let y = parseInt(parts[0], 10);
   let m = parseInt(parts[1], 10);
   let d = parseInt(parts[2], 10);
-  if (!y || !m || !d) return false;
-  if (y > today.year) return false;
-  if (y < today.year) return true;
-  if (m > today.month) return false;
-  if (m < today.month) return true;
-  return d < today.day;
+  if (!y || !m || !d || y !== fdrYear) return false;
+  if (m > snap.month) return false;
+  if (m < snap.month) return true;
+  return d < snap.day;
 }
 
-function auditableDaysInMonth(year, month, asOfDate) {
-  let dim = daysInCalendarMonth(year, month);
-  let today = alaskaTodayParts(asOfDate);
-  if (year > today.year) return null;
-  if (year < today.year) return dim;
-  if (month > today.month) return null;
-  if (month < today.month) return dim;
-  // Current month: only completed days count; today and future days in month are undetermined.
-  return Math.max(0, today.day - 1);
+function auditableDaysInMonth(fdrYear, month, asOfDate) {
+  let snap = snapshotTodayForFdrYear(fdrYear, asOfDate);
+  if (!snap) return null;
+  let dim = daysInCalendarMonth(fdrYear, month);
+  if (month > snap.month) return null;
+  if (month < snap.month) return dim;
+  return Math.max(0, snap.day - 1);
 }
 
-function countClaimedInMonth(claimedDates, year, month, asOfDate) {
-  let prefix = year + '-' + String(month).padStart(2, '0') + '-';
+function countClaimedInMonth(claimedDates, fdrYear, month, asOfDate) {
+  let prefix = fdrYear + '-' + String(month).padStart(2, '0') + '-';
   let n = 0;
   Object.keys(claimedDates || {}).forEach(ymd => {
     if (ymd.indexOf(prefix) !== 0) return;
-    if (!isDateElapsedForDaysOff(ymd, asOfDate)) return;
+    if (!isDateElapsedForDaysOff(ymd, fdrYear, asOfDate)) return;
     n += 1;
   });
   return n;
 }
 
 /**
- * Snapshot days off for a month (not a permanent ledger):
- * elapsed calendar days in month (Alaska, strictly before today for the current month)
- * minus distinct elapsed dates with duty (flightIndex ∪ beta ∪ flights w/ time).
- * Today and future dates in the month are null/undetermined in the grid.
+ * Snapshot days off for a month (not a permanent ledger), using snapshot "today"
+ * inside the FDR sheet year (see snapshotTodayForFdrYear). Elapsed days in month
+ * minus distinct elapsed duty dates (index ∪ beta ∪ flights w/ time). Today and
+ * later dates in that month are undetermined — not counted as days off.
  * @returns {{ months: Object.<number, number|null>, claimedByMonth: Object.<number, number> }}
  */
 export function computeDaysOffByMonth(year, claimedDates, asOfDate) {
   asOfDate = asOfDate || new Date();
+  let snap = snapshotTodayForFdrYear(year, asOfDate);
+  if (!snap) {
+    let months = {};
+    let claimedByMonth = {};
+    for (let m = 1; m <= 12; m++) {
+      months[m] = null;
+      claimedByMonth[m] = 0;
+    }
+    return {months, claimedByMonth, sheetYearNotStarted: true};
+  }
   let months = {};
   let claimedByMonth = {};
   for (let m = 1; m <= 12; m++) {
@@ -229,14 +273,18 @@ export async function computeDutyForEmployeeYear(employeeId, year, asOfDate) {
     return ymd.indexOf(yearPrefix) === 0 && !fromIndexOnly[ymd];
   });
   let hasAnyIndex = docs.length > 0;
-  let result = computeDaysOffByMonth(year, claimedInYear, asOfDate);
+  let realAsOf = asOfDate || new Date();
+  let snap = snapshotTodayForFdrYear(year, realAsOf);
+  let result = computeDaysOffByMonth(year, claimedInYear, realAsOf);
   return {
     months: result.months,
     claimedByMonth: result.claimedByMonth,
     claimedDates: Object.keys(claimedInYear).sort(),
+    sheetYearNotStarted: !!result.sheetYearNotStarted,
     indexDocCount: docs.length,
     flightDutyDatesInYear: Object.keys(mergeClaimedDatesFromFlights(flights, year)).length,
     flightOnlyDutyDates: flightOnlyDates.length,
+    dutySnapshotAk: result.sheetYearNotStarted ? null : formatSnapshotTodayAk(snap),
     hasAnyIndex
   };
 }
