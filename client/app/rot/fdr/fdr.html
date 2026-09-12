@@ -16,6 +16,10 @@
       Print / Save as PDF
     </button>
     <span class="text-muted rot-fdr-export-hint" ng-if="fdr.exporting">Building export…</span>
+    <label class="rot-fdr-compare-toggle">
+      <input type="checkbox" ng-model="fdr.hideSpreadsheetCompare" ng-change="fdr.persistHideSpreadsheetCompare()">
+      Hide spreadsheet compare
+    </label>
   </div>
   <div class="alert rot-fdr-hours-banner rot-fdr-no-print"
        ng-class="{'alert-info': fdr.hoursLoading, 'alert-warning': !fdr.hoursLoading && (fdr.hoursLocked || fdr.hoursSource === 'import' || fdr.hoursSource === 'firebase_partial'), 'alert-success': !fdr.hoursLoading && !fdr.hoursLocked && fdr.hoursSource === 'firebase'}"
@@ -97,6 +101,9 @@
       Hour mismatches are fixed on the Flight Report (Hobbs for helicopters), not in this grid.
     </span>
   </p>
+  <p class="text-muted rot-fdr-meta rot-fdr-no-print" ng-if="fdr.hideSpreadsheetCompare && !fdr.loading && !fdr.viewSummary">
+    Spreadsheet compare is hidden. Audit hours and days off against the paper F&amp;D sheet only.
+  </p>
   <p class="text-success rot-fdr-meta rot-fdr-sync-feedback" ng-if="fdr.syncFeedback && !fdr.hoursLoading">{{fdr.syncFeedback}}</p>
   <p class="text-muted rot-fdr-meta" ng-if="fdr.showLimitsKey()">
     <span class="rot-fdr-legend-limit-warn">Gold outline</span> = approaching limit (90% of cap).
@@ -151,7 +158,7 @@
     </div>
   </div>
 
-  <div class="alert alert-warning" ng-if="fdr.compareAlerts.length">
+  <div class="alert alert-warning" ng-if="fdr.showSpreadsheetCompare() && fdr.compareAlerts.length">
     <strong>Computed hours differ from imported spreadsheet</strong> (by more than 15% for months with ≥5h imported):
     <ul class="rot-fdr-alert-list">
       <li ng-repeat="a in fdr.compareAlerts">
@@ -162,7 +169,7 @@
       </li>
     </ul>
   </div>
-  <div class="alert alert-warning" ng-if="fdr.dutyCompareAlerts.length">
+  <div class="alert alert-warning" ng-if="fdr.showSpreadsheetCompare() && fdr.dutyCompareAlerts.length">
     <strong>Days off differ from imported spreadsheet</strong> (any month where Firebase does not exactly match the import):
     <ul class="rot-fdr-alert-list">
       <li ng-repeat="a in fdr.dutyCompareAlerts">

@@ -24,6 +24,20 @@
   margin-left: 0.5em;
 }
 
+.rot-fdr-compare-toggle {
+  display: inline-block;
+  font-weight: normal;
+  font-size: 13px;
+  margin-left: 0.75em;
+  margin-bottom: 0.35em;
+  white-space: nowrap;
+}
+
+.rot-fdr-compare-toggle input {
+  margin-right: 0.35em;
+  vertical-align: middle;
+}
+
 @media print {
   .rot-fdr-no-print,
   .navbar,

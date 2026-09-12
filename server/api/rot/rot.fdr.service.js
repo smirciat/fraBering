@@ -156,6 +156,10 @@ function compareAlerts(year, pilots, importHoursMap) {
   return alerts.slice(0, 50);
 }
 
+function daysInFdrMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
 function compareDutyAlerts(year, pilots, daysMap) {
   if (year < COMPUTED_HOURS_FROM_YEAR) return [];
   let alerts = [];
@@ -179,6 +183,7 @@ function compareDutyAlerts(year, pilots, daysMap) {
       let computed = computedPresent ? Math.round(num(dutyVal)) : null;
       if (!importPresent && !computedPresent) return;
       if (!importPresent && computedPresent) {
+        if (computed === daysInFdrMonth(year, month)) return;
         alerts.push({
           pilotName: p.name,
           month,

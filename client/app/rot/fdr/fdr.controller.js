@@ -60,6 +60,32 @@ class RotFdrComponent {
     this.hoursLockEditable = false;
     this.savingYearLock = false;
     this.syncFeedback = '';
+    this.hideSpreadsheetCompare = this.readHideSpreadsheetCompare();
+  }
+
+  comparePrefKey() {
+    return 'fdrHideSpreadsheetCompare';
+  }
+
+  readHideSpreadsheetCompare() {
+    try {
+      return sessionStorage.getItem(this.comparePrefKey()) === '1' ||
+        localStorage.getItem(this.comparePrefKey()) === '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  persistHideSpreadsheetCompare() {
+    let val = this.hideSpreadsheetCompare ? '1' : '0';
+    try {
+      localStorage.setItem(this.comparePrefKey(), val);
+      sessionStorage.setItem(this.comparePrefKey(), val);
+    } catch (e) {}
+  }
+
+  showSpreadsheetCompare() {
+    return !this.hideSpreadsheetCompare;
   }
 
   loggedIn() {
