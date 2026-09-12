@@ -367,6 +367,9 @@ export async function computeFdrYearHours(year, options) {
   let continuePrior = !!options.continue;
   let scope = options.scope || 'all';
 
+  let computeOnceKey = scope === 'all'
+    ? 'all'
+    : scope + ':' + String(options.pilotName || options.base || options.section || '') + ':' + offset;
   return runComputeOnce('fdr-hours-' + year, async () => {
     await ensureFdrImported(fdrModels);
     let yearSettings = await loadFdrYearSettings(year);
@@ -393,14 +396,31 @@ export async function computeFdrYearHours(year, options) {
     }
 
     let pgBeforeSync = await loadComputedHoursState(year);
-    let startOffset = firstUnsyncedPilotOffset(syncRoster, pgBeforeSync.syncedPilotKeys, 0);
-    if (startOffset >= syncRoster.length) {
-      let builtEarly = await buildFdrYear(year, {viewer: options.viewer});
-      if (!builtEarly) throw new Error('no_data');
-      builtEarly.hoursCompute = buildSyncProgress(syncRoster, pgBeforeSync.syncedPilotKeys, startOffset, limit);
-      builtEarly.hoursCompute.syncedPilotNames = [];
-      builtEarly.hoursPending = false;
-      return builtEarly;
+    let scopedSync = scope === 'pilot' || scope === 'section' || scope === 'base';
+    let startOffset;
+    if (scopedSync) {
+      startOffset = Math.max(0, parseInt(offset, 10) || 0);
+      if (startOffset >= syncRoster.length) {
+        let builtEarly = await buildFdrYear(year, {viewer: options.viewer});
+        if (!builtEarly) throw new Error('no_data');
+        builtEarly.hoursCompute = buildSyncProgress(syncRoster, pgBeforeSync.syncedPilotKeys, startOffset, limit);
+        builtEarly.hoursCompute.syncedPilotNames = [];
+        builtEarly.hoursCompute.done = true;
+        builtEarly.hoursPending = false;
+        return builtEarly;
+      }
+    } else {
+      startOffset = continuePrior
+        ? firstUnsyncedPilotOffset(syncRoster, pgBeforeSync.syncedPilotKeys, offset)
+        : firstUnsyncedPilotOffset(syncRoster, pgBeforeSync.syncedPilotKeys, 0);
+      if (startOffset >= syncRoster.length) {
+        let builtEarly = await buildFdrYear(year, {viewer: options.viewer});
+        if (!builtEarly) throw new Error('no_data');
+        builtEarly.hoursCompute = buildSyncProgress(syncRoster, pgBeforeSync.syncedPilotKeys, startOffset, limit);
+        builtEarly.hoursCompute.syncedPilotNames = [];
+        builtEarly.hoursPending = false;
+        return builtEarly;
+      }
     }
     let sliceRoster = syncRoster.slice(startOffset, startOffset + limit);
     let todoIds = [];
@@ -452,13 +472,19 @@ export async function computeFdrYearHours(year, options) {
     let pgAfter = await loadComputedHoursState(year);
     let progress = buildSyncProgress(syncRoster, pgAfter.syncedPilotKeys, offset, limit, stallExtra);
     progress.syncedPilotNames = syncedPilotNames;
+    if (scopedSync && !stallExtra) {
+      let advanced = startOffset + sliceRoster.length;
+      progress.nextOffset = advanced;
+      progress.done = advanced >= syncRoster.length;
+      progress.processed = Math.min(syncRoster.length, advanced);
+    }
     if (stallExtra && stallExtra.stalled) {
       progress.done = true;
     }
     built.hoursCompute = progress;
     built.hoursPending = false;
     return built;
-  });
+  }, computeOnceKey);
 }
 
 export async function buildFdrYear(year, options) {

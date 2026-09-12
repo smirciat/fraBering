@@ -28,8 +28,9 @@ export function bustHoursCache(year) {
   delete hoursByYear[String(year)];
 }
 
-export function runComputeOnce(year, fn) {
+export function runComputeOnce(year, fn, keySuffix) {
   let key = String(year);
+  if (keySuffix) key = key + ':' + keySuffix;
   if (computeInFlight[key]) return computeInFlight[key];
   computeInFlight[key] = fn().then(result => {
     delete computeInFlight[key];
