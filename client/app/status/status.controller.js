@@ -2331,7 +2331,7 @@ class StatusComponent {
         if (activeBase==="OME") return pilot.location==='NOME'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==='D');
         if (activeBase==="OTZ") {
           if (pilot.location==="NOME"&&pilot.label==="ND") return true;
-          return pilot.location==='KOTZEBUE';
+          return pilot.location==='KOTZEBUE'&&(pilot.position==='CAPT'||pilot.position==='FO'||pilot.label==='CS'||pilot.label==='F'||pilot.label==='D');
         }
         return true;
       });
