@@ -7,7 +7,8 @@ import {
 } from './rot.fdr.math.js';
 import {ensureFdrImported, COMPUTED_HOURS_FROM_YEAR, STATIC_HOURS_THROUGH_YEAR} from './rot.fdr.import.js';
 import {computeHoursForEmployeeIds} from './rot.fdr.hours.js';
-import {computeDutyForEmployeeYear, filterFdrTabYears} from './rot.fdr.duty.js';
+import {computeDutyForEmployeeYear} from './rot.fdr.duty.js';
+import {filterFdrTabYears, alaskaCalendarYear} from './rot.fdr.calendar.js';
 import {runComputeOnce} from './rot.fdr.cache.js';
 import {
   loadComputedHoursState, upsertComputedHoursForPilot, clearComputedHoursForYear,
@@ -38,6 +39,34 @@ import {
 } from './rot.fdr.export.js';
 
 const fdrModels = {FdrPilot, FdrDaysOff, FdrImportHour, FdrHourNote};
+
+async function distinctFdrPilotYears() {
+  let sequelize = FdrPilot.sequelize;
+  let rows = await FdrPilot.findAll({
+    attributes: [[sequelize.fn('DISTINCT', sequelize.col('year')), 'year']],
+    order: [[sequelize.col('year'), 'ASC']],
+    raw: true
+  });
+  let years = [];
+  rows.forEach(r => {
+    let y = parseInt(r.year, 10);
+    if (Number.isFinite(y)) years.push(y);
+  });
+  return years;
+}
+
+/** UI year tabs: hide sheet years after Alaska calendar year; never return [] if roster has years. */
+function fdrYearsForUiTabs(dbYears) {
+  let all = dbYears || [];
+  if (!all.length) return [];
+  let visible = filterFdrTabYears(all);
+  if (visible.length) return visible;
+  let cap = alaskaCalendarYear();
+  visible = all.filter(y => y <= cap);
+  if (visible.length) return visible;
+  console.log('fdr meta: tab filter left no years; roster', all.join(','), 'alaskaYear', cap);
+  return all.slice();
+}
 
 async function loadDaysOffMap(year) {
   let rows = await FdrDaysOff.findAll({where: {year}});
@@ -190,12 +219,7 @@ function sectionTotalLabel(title) {
 
 export async function getFdrMeta() {
   await ensureFdrImported(fdrModels);
-  let years = await FdrPilot.findAll({
-    attributes: ['year'],
-    group: ['year'],
-    order: [['year', 'ASC']]
-  });
-  let yearList = filterFdrTabYears(years.map(r => r.year));
+  let yearList = fdrYearsForUiTabs(await distinctFdrPilotYears());
   let sections = await listFdrSectionNames();
   if (!yearList.length) {
     return {
@@ -837,12 +861,7 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
 
 export async function buildFdrSummary() {
   await ensureFdrImported(fdrModels);
-  let years = await FdrPilot.findAll({
-    attributes: ['year'],
-    group: ['year'],
-    order: [['year', 'ASC']]
-  });
-  let visibleYears = filterFdrTabYears(years.map(r => r.year));
+  let visibleYears = fdrYearsForUiTabs(await distinctFdrPilotYears());
   let rows = [];
   for (let i = 0; i < visibleYears.length; i++) {
     let y = visibleYears[i];
@@ -889,12 +908,7 @@ export async function exportFdrSummaryXlsx() {
 
 export async function exportFdrWorkbookXlsx() {
   await ensureFdrImported(fdrModels);
-  let years = await FdrPilot.findAll({
-    attributes: ['year'],
-    group: ['year'],
-    order: [['year', 'ASC']]
-  });
-  let visibleYears = filterFdrTabYears(years.map(r => r.year));
+  let visibleYears = fdrYearsForUiTabs(await distinctFdrPilotYears());
   let yearDataList = [];
   for (let i = 0; i < visibleYears.length; i++) {
     let y = visibleYears[i];

@@ -3,7 +3,6 @@
 import xlsx from 'node-xlsx';
 import {resolveFdrWorkbookPath} from './rot.storage.js';
 import {listFdrYearSheetNames, parseFdrYearSheet} from './rot.fdr.parse.js';
-import {fdrTabYearIsAvailable} from './rot.fdr.duty.js';
 import {MONTHS, monthKeyToIndex} from './rot.fdr.math.js';
 
 const COMPUTED_HOURS_FROM_YEAR = 2025;
@@ -34,11 +33,8 @@ export async function importFdrFromWorkbook(models, options) {
   }
 
   let sortBase = 0;
-  let importedYearNames = [];
   for (let yi = 0; yi < yearNames.length; yi++) {
     let year = yearNames[yi];
-    if (!fdrTabYearIsAvailable(year)) continue;
-    importedYearNames.push(year);
     let sheet = loaded.sheets.find(s => String(s.name) === String(year));
     if (!sheet) continue;
     let parsed = parseFdrYearSheet(sheet.data);
@@ -86,7 +82,7 @@ export async function importFdrFromWorkbook(models, options) {
 
   return {
     workbook: loaded.path,
-    years: importedYearNames,
+    years: yearNames,
     computedHoursFromYear: COMPUTED_HOURS_FROM_YEAR,
     staticHoursThroughYear: STATIC_HOURS_THROUGH_YEAR
   };
