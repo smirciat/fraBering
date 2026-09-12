@@ -520,12 +520,15 @@ export async function computeFdrYearHours(year, options) {
         return upsertComputedHoursForPilot(year, row.pilotName, eid, partial[eid], syncedBy)
           .then(() => computeDutyForEmployeeYear(eid, year))
           .then(duty => {
-            dutySyncReport.push({
-              pilotName: row.pilotName,
-              indexDocCount: duty.indexDocCount,
-              hasAnyIndex: duty.hasAnyIndex
-            });
-            return upsertComputedDutyForPilot(year, row.pilotName, eid, duty, syncedBy);
+            return upsertComputedDutyForPilot(year, row.pilotName, eid, duty, syncedBy)
+              .then(stats => {
+                dutySyncReport.push({
+                  pilotName: row.pilotName,
+                  indexDocCount: duty.indexDocCount,
+                  hasAnyIndex: duty.hasAnyIndex,
+                  dutyMonthsSaved: stats.monthsWithDaysOff
+                });
+              });
           })
           .catch(err => {
             let msg = err && err.message ? String(err.message) : 'duty_sync_failed';
@@ -591,6 +594,7 @@ export async function buildFdrYear(year, options) {
   let syncedPilotKeys = {};
   let syncedAtByPilot = {};
   let dutyByPilotMonth = {};
+  let dutyByEmployeeMonth = {};
   let dutySyncedPilotKeys = {};
   let dutySyncedAtByPilot = {};
   let dutyLastSyncedAt = null;
@@ -620,6 +624,7 @@ export async function buildFdrYear(year, options) {
 
     let dutyState = await loadComputedDutyState(year);
     dutyByPilotMonth = dutyState.byPilotMonth;
+    dutyByEmployeeMonth = dutyState.byEmployeeMonth || {};
     dutySyncedPilotKeys = dutyState.syncedPilotKeys;
     dutySyncedAtByPilot = dutyState.syncedAtByPilot || {};
     dutyLastSyncedAt = dutyState.lastSyncedAt;
@@ -636,7 +641,7 @@ export async function buildFdrYear(year, options) {
   return assembleFdrYearPayload(
     year, roster, daysMap, importHoursMap, hourNotesMap, useComputed,
     computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map,
-    dutyByPilotMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, monthAuditMap,
+    dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, monthAuditMap,
     {
       hoursPending,
       hoursSource,
@@ -650,13 +655,35 @@ export async function buildFdrYear(year, options) {
   );
 }
 
-function buildDaysOffRowForPilot(manualMonthInts, dutyByPilotMonth, pilotName, hasDutySynced) {
-  if (!hasDutySynced) return buildDaysOffRow(manualMonthInts || {});
+function dutyMonthEntry(dutyMonths, month) {
+  if (!dutyMonths) return null;
+  return dutyMonths[month] || dutyMonths[String(month)] || null;
+}
+
+function resolveDutyMonthsMap(byPilotMonth, byEmployeeMonth, pilotName, employeeId) {
   let key = normalizePilotName(pilotName);
-  let dutyMonths = (dutyByPilotMonth && dutyByPilotMonth[key]) || {};
+  let dutyMonths = (byPilotMonth && byPilotMonth[key]) || {};
+  let hasValues = false;
+  for (let m = 1; m <= 12; m++) {
+    let entry = dutyMonthEntry(dutyMonths, m);
+    if (entry && entry.daysOff !== null && entry.daysOff !== undefined) {
+      hasValues = true;
+      break;
+    }
+  }
+  if (!hasValues && employeeId && byEmployeeMonth) {
+    let ek = String(employeeId);
+    dutyMonths = byEmployeeMonth[ek] || byEmployeeMonth[String(parseInt(ek, 10))] || {};
+  }
+  return dutyMonths;
+}
+
+function buildDaysOffRowForPilot(manualMonthInts, byPilotMonth, byEmployeeMonth, pilotName, employeeId, hasDutySynced) {
+  if (!hasDutySynced) return buildDaysOffRow(manualMonthInts || {});
+  let dutyMonths = resolveDutyMonthsMap(byPilotMonth, byEmployeeMonth, pilotName, employeeId);
   let merged = {};
   for (let m = 1; m <= 12; m++) {
-    let entry = dutyMonths[m];
+    let entry = dutyMonthEntry(dutyMonths, m);
     if (entry && entry.daysOff !== null && entry.daysOff !== undefined) {
       merged[m] = entry.daysOff;
     } else {
@@ -666,12 +693,13 @@ function buildDaysOffRowForPilot(manualMonthInts, dutyByPilotMonth, pilotName, h
   return buildDaysOffRow(merged);
 }
 
-function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotesMap, useComputed, computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map, dutyByPilotMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, monthAuditMap, meta) {
+function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotesMap, useComputed, computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map, dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, monthAuditMap, meta) {
   meta = meta || {};
   syncedPilotKeys = syncedPilotKeys || {};
   syncedAtByPilot = syncedAtByPilot || {};
   priorQ4Map = priorQ4Map || {};
   dutyByPilotMonth = dutyByPilotMonth || {};
+  dutyByEmployeeMonth = dutyByEmployeeMonth || {};
   dutySyncedPilotKeys = dutySyncedPilotKeys || {};
   dutySyncedAtByPilot = dutySyncedAtByPilot || {};
   let sections = [];
@@ -684,12 +712,16 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
     }
     let key = normalizePilotName(row.pilotName);
     let monthInts = daysMap[key] || {};
+    let eid = useComputed
+      ? (row.employeeId || matchPilotEmployeeId(row.pilotName, employeeKeyIndex, fbPilots))
+      : null;
     let hasDutySynced = useComputed && pilotHasComputedDuty(dutySyncedPilotKeys, row.pilotName);
-    let daysOff = buildDaysOffRowForPilot(monthInts, dutyByPilotMonth, row.pilotName, hasDutySynced);
+    let daysOff = buildDaysOffRowForPilot(
+      monthInts, dutyByPilotMonth, dutyByEmployeeMonth, row.pilotName, eid, hasDutySynced
+    );
     let hours;
     let hasComputed = false;
     if (useComputed) {
-      let eid = row.employeeId || matchPilotEmployeeId(row.pilotName, employeeKeyIndex, fbPilots);
       let monthHours = resolveCachedMonthHours(computedByEmployee, eid);
       hasComputed = pilotHasComputedHours(syncedPilotKeys, row.pilotName);
       if (hasComputed && monthHours) {

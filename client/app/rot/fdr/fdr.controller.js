@@ -295,6 +295,7 @@ class RotFdrComponent {
         if (p && p.name) names.push(p.name);
       });
     });
+    names.sort((a, b) => String(a).localeCompare(String(b), undefined, {sensitivity: 'base'}));
     this.syncPilotOptions = names;
     if (!this.syncPilotName && names.length) {
       this.syncPilotName = names[0];
@@ -539,6 +540,9 @@ class RotFdrComponent {
             this.hoursLoadError =
               'Sync did not save hours or days off for ' + stallName +
               '. Check server logs (fdr compute-hours / duty sync) and roster name vs Firebase employee ID.';
+          } else if (hc.stallReason === 'fdr_computed_duty_unavailable') {
+            this.hoursLoadError =
+              'Duty cache table is not available on the server (FdrComputedDuty). Run grunt babel:server and restart so Sequelize creates the table.';
           } else {
             this.hoursLoadError =
               'Could not sync ' + stallName +
@@ -826,7 +830,12 @@ class RotFdrComponent {
       if (hc.dutySyncReport && hc.dutySyncReport.length) {
         let r = hc.dutySyncReport[0];
         if (r.indexDocCount !== undefined) {
-          line += ' Duty index: ' + r.indexDocCount + ' docs.';
+          line += ' Duty index: ' + r.indexDocCount + ' docs';
+        }
+        if (r.dutyMonthsSaved !== undefined) {
+          line += ', ' + r.dutyMonthsSaved + ' months saved to DB.';
+        } else {
+          line += '.';
         }
       }
       this.syncFeedback = line;
