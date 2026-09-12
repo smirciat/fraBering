@@ -16,7 +16,8 @@ const FDR_ACCESS_NAMES = [
   'Fen Kinneen',
   'Scott Gordon',
   'Kyle Lefebvre',
-  'Brian Weckwerth'
+  'Brian Weckwerth',
+  'Patrik Toerdal'
 ];
 
 const COMPANY_INSTRUCTORS = [

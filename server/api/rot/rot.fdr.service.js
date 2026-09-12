@@ -161,11 +161,16 @@ function compareDutyAlerts(year, pilots, daysMap) {
   let alerts = [];
   pilots.forEach(p => {
     if (!p.dutyFromFirebase) return;
+    if (p.dutyIndexMissing || p.dutyCalendarSparse) return;
     let key = normalizePilotName(p.name);
     let imp = daysMap[key] || {};
     MONTHS.forEach((m, idx) => {
       let month = idx + 1;
       if (!isMonthInAuditScope(year, month)) return;
+      if (p.dutyAudit && p.dutyAudit[m] && p.dutyAudit[m].overrideDaysOff !== null &&
+          p.dutyAudit[m].overrideDaysOff !== undefined && p.dutyAudit[m].overrideDaysOff !== '') {
+        return;
+      }
       let imported = imp[month];
       let importPresent = valuePresent(imported);
       let impN = importPresent ? Math.round(num(imported)) : null;
@@ -560,6 +565,17 @@ export async function computeFdrYearHours(year, options) {
             }
             return upsertComputedDutyForPilot(year, row.pilotName, eid, duty, syncedBy)
               .then(stats => {
+                if (stats && stats.calendarSparse) {
+                  dutySyncReport.push({
+                    pilotName: row.pilotName,
+                    dutySkipped: 'sparse_duty_calendar',
+                    dutySkippedDetail: 'Too few ON days in the duty index — enter days off from paper F&D',
+                    indexDocCount: duty.indexDocCount || 0,
+                    onDatesInYear: duty.onDatesInYear || 0,
+                    hasAnyIndex: !!duty.hasAnyIndex
+                  });
+                  return;
+                }
                 if (stats && stats.indexMissing) {
                   dutySyncReport.push({
                     pilotName: row.pilotName,
@@ -648,6 +664,7 @@ export async function buildFdrYear(year, options) {
   let dutySyncedPilotKeys = {};
   let dutySyncedAtByPilot = {};
   let dutyIndexMissingPilotKeys = {};
+  let dutySparseCalendarPilotKeys = {};
   let dutyLastSyncedAt = null;
 
   if (useComputed) {
@@ -679,6 +696,7 @@ export async function buildFdrYear(year, options) {
     dutySyncedPilotKeys = dutyState.syncedPilotKeys;
     dutySyncedAtByPilot = dutyState.syncedAtByPilot || {};
     dutyIndexMissingPilotKeys = dutyState.indexMissingPilotKeys || {};
+    dutySparseCalendarPilotKeys = dutyState.sparseCalendarPilotKeys || {};
     dutyLastSyncedAt = dutyState.lastSyncedAt;
   }
 
@@ -694,7 +712,7 @@ export async function buildFdrYear(year, options) {
     year, roster, daysMap, importHoursMap, hourNotesMap, useComputed,
     computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map,
     dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot,
-    dutyIndexMissingPilotKeys, monthAuditMap,
+    dutyIndexMissingPilotKeys, dutySparseCalendarPilotKeys, monthAuditMap,
     {
       hoursPending,
       hoursSource,
@@ -754,8 +772,9 @@ function overlayJustSyncedDuty(built, justSyncedDuty) {
       let duty = justSyncedDuty[normalizePilotName(p.name)];
       if (!duty) return;
       if (duty.sheetYearNotStarted) return;
-      if (!dutyHasIndexOrFlightSignal(duty)) {
+      if (!dutyHasIndexOrFlightSignal(duty) || duty.calendarSparse) {
         p.dutyIndexMissing = true;
+        p.dutyCalendarSparse = !!duty.calendarSparse;
         p.dutyFromFirebase = false;
         p.dutySyncNeeded = false;
         p.daysOffEditable = true;
@@ -765,12 +784,30 @@ function overlayJustSyncedDuty(built, justSyncedDuty) {
       p.dutyFromFirebase = true;
       p.dutySyncNeeded = false;
       p.dutyIndexMissing = false;
+      p.dutyCalendarSparse = false;
       p.daysOffEditable = false;
+      if (p.dutyAudit) p.duty = applyDutyAuditOverrides(p.duty, p.dutyAudit);
     });
   });
 }
 
-function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotesMap, useComputed, computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map, dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, dutyIndexMissingPilotKeys, monthAuditMap, meta) {
+function applyDutyAuditOverrides(daysOff, dutyAudit) {
+  if (!daysOff || !dutyAudit) return daysOff;
+  let monthInts = {};
+  MONTHS.forEach((m, idx) => {
+    let cell = dutyAudit[m];
+    let ov = cell && cell.overrideDaysOff;
+    if (ov !== null && ov !== undefined && ov !== '') {
+      monthInts[idx + 1] = parseInt(ov, 10);
+    } else {
+      let v = daysOff.months ? daysOff.months[m] : null;
+      monthInts[idx + 1] = v;
+    }
+  });
+  return buildDaysOffRow(monthInts);
+}
+
+function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotesMap, useComputed, computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map, dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, dutyIndexMissingPilotKeys, dutySparseCalendarPilotKeys, monthAuditMap, meta) {
   meta = meta || {};
   syncedPilotKeys = syncedPilotKeys || {};
   syncedAtByPilot = syncedAtByPilot || {};
@@ -780,6 +817,7 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
   dutySyncedPilotKeys = dutySyncedPilotKeys || {};
   dutySyncedAtByPilot = dutySyncedAtByPilot || {};
   dutyIndexMissingPilotKeys = dutyIndexMissingPilotKeys || {};
+  dutySparseCalendarPilotKeys = dutySparseCalendarPilotKeys || {};
   let sections = [];
   let sectionOrder = [];
   let sectionMap = {};
@@ -795,6 +833,7 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
       : null;
     let hasDutySynced = useComputed && pilotHasComputedDuty(dutySyncedPilotKeys, row.pilotName);
     let dutyIndexMissing = useComputed && !!dutyIndexMissingPilotKeys[key];
+    let dutyCalendarSparse = useComputed && !!dutySparseCalendarPilotKeys[key];
     let daysOff = buildDaysOffRowForPilot(
       monthInts, dutyByPilotMonth, dutyByEmployeeMonth, row.pilotName, eid, hasDutySynced
     );
@@ -819,6 +858,7 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
     }
     let hourNotes = hourNotesForPilot(hourNotesMap, row.pilotName);
     let auditRows = monthAuditRowsForPilot(monthAuditMap, row.pilotName);
+    daysOff = applyDutyAuditOverrides(daysOff, auditRows.dutyAudit);
     let monthStatus = buildPilotMonthStatus(year, hours.months, daysOff.months, undefined, {
       treatNullHoursAsZero: useComputed && (meta.hoursSource === 'firebase' || meta.hoursSource === 'firebase_partial')
     });
@@ -842,9 +882,10 @@ function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotes
       dutyFromFirebase: hasDutySynced,
       dutySyncNeeded: hasComputed && !hasDutySynced && !dutyIndexMissing,
       dutyIndexMissing: dutyIndexMissing,
+      dutyCalendarSparse: dutyCalendarSparse,
       dutySyncedAt: pilotDutySyncedAt(dutySyncedAtByPilot, row.pilotName),
       hoursEditable: false,
-      daysOffEditable: year >= COMPUTED_HOURS_FROM_YEAR && !hasDutySynced,
+      daysOffEditable: year >= COMPUTED_HOURS_FROM_YEAR && (!hasDutySynced || dutyIndexMissing),
       hourNotesEditable: year >= COMPUTED_HOURS_FROM_YEAR
     });
   });

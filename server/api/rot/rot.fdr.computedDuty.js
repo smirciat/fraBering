@@ -19,6 +19,7 @@ export async function loadComputedDutyState(year) {
       syncedPilotKeys: {},
       syncedAtByPilot: {},
       indexMissingPilotKeys: {},
+      sparseCalendarPilotKeys: {},
       lastSyncedAt: null
     };
   }
@@ -28,6 +29,7 @@ export async function loadComputedDutyState(year) {
   let syncedPilotKeys = {};
   let syncedAtByPilot = {};
   let indexMissingPilotKeys = {};
+  let sparseCalendarPilotKeys = {};
   let lastSyncedAt = null;
 
   rows.forEach(r => {
@@ -36,10 +38,13 @@ export async function loadComputedDutyState(year) {
     let hasNumber = r.daysOff !== null && r.daysOff !== undefined;
     if (source === 'no_index') {
       indexMissingPilotKeys[pilotKey] = true;
+    } else if (source === 'sparse_index') {
+      sparseCalendarPilotKeys[pilotKey] = true;
+      indexMissingPilotKeys[pilotKey] = true;
     } else if (hasNumber) {
       syncedPilotKeys[pilotKey] = true;
     }
-    if (r.syncedAt && (hasNumber || source === 'no_index')) {
+    if (r.syncedAt && (hasNumber || source === 'no_index' || source === 'sparse_index')) {
       let t = new Date(r.syncedAt).getTime();
       if (!syncedAtByPilot[pilotKey] || t > new Date(syncedAtByPilot[pilotKey]).getTime()) {
         syncedAtByPilot[pilotKey] = r.syncedAt;
@@ -67,7 +72,7 @@ export async function loadComputedDutyState(year) {
     }
   });
 
-  return {byPilotMonth, byEmployeeMonth, syncedPilotKeys, syncedAtByPilot, indexMissingPilotKeys, lastSyncedAt};
+  return {byPilotMonth, byEmployeeMonth, syncedPilotKeys, syncedAtByPilot, indexMissingPilotKeys, sparseCalendarPilotKeys, lastSyncedAt};
 }
 
 export function pilotHasComputedDuty(syncedPilotKeys, pilotName) {
@@ -136,6 +141,23 @@ export async function upsertComputedDutyForPilot(year, pilotName, employeeId, du
     }
     await writeDutyMonths(year, rosterName, eid, emptyMonths, emptyClaimed, 'no_index', syncedBy, now);
     return {monthsWithDaysOff: 0, indexDocCount: dutyResult.indexDocCount || 0, indexMissing: true};
+  }
+
+  if (dutyResult.calendarSparse) {
+    let emptyMonths = {};
+    let emptyClaimed = {};
+    for (let m = 1; m <= 12; m++) {
+      emptyMonths[m] = null;
+      emptyClaimed[m] = 0;
+    }
+    await writeDutyMonths(year, rosterName, eid, emptyMonths, emptyClaimed, 'sparse_index', syncedBy, now);
+    return {
+      monthsWithDaysOff: 0,
+      indexDocCount: dutyResult.indexDocCount || 0,
+      indexMissing: true,
+      calendarSparse: true,
+      onDatesInYear: dutyResult.onDatesInYear || 0
+    };
   }
 
   let monthsWithDaysOff = 0;

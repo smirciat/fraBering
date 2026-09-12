@@ -19,7 +19,9 @@ const {
   fdrTabYearIsAvailable,
   filterFdrTabYears,
   parseLooseYmd,
-  alaskaTodayParts
+  alaskaTodayParts,
+  countOnDatesInYear,
+  isDutyCalendarSparse
 } = require('../../server/api/rot/rot.fdr.duty.js');
 
 let failed = 0;
@@ -94,6 +96,15 @@ let emptyClaims = computeDaysOffByMonth(2026, {}, new Date('2026-09-12T20:00:00Z
 assert(emptyClaims.months[1] === 31, 'Jan with no duty claims is full month off');
 assert(emptyClaims.months[9] === 11, 'Sep 12 snapshot: 11 elapsed days, 0 duty → 11 off');
 assert(emptyClaims.months[10] === null, 'Oct still undetermined');
+
+assert(isDutyCalendarSparse(0), '0 ON dates is sparse');
+assert(isDutyCalendarSparse(5), '5 ON dates is sparse (Patrik-style)');
+assert(!isDutyCalendarSparse(10), '10 ON dates is enough');
+assert(countOnDatesInYear([
+  {id: '898ON', data: {date: {toDate: () => new Date('2026-01-19T15:00:00Z')}}},
+  {id: '898OFF', data: {date: {toDate: () => new Date('2026-01-20T15:00:00Z')}}},
+  {id: '898-011926-1', data: {date: {toDate: () => new Date('2026-01-19T15:00:00Z')}}}
+], 2026) === 1, 'only ON docs count toward calendar');
 
 async function live933() {
   if (process.env.SKIP_FDR_DUTY_LIVE) {

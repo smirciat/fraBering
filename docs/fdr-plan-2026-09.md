@@ -27,7 +27,7 @@ Shipped in app code (deploy: `grunt babel:server`, `grunt build`, `pm2 restart f
 
 - **Management** dropdown and ROT sub-nav: **FDR** → `/rot/flight-duty` (**FDR name allowlist**, not general records access)
 - ROT nav sibling of Training Records
-- **FDR-only allowlist** by user name (hidden from nav otherwise): Andy, Nathaniel, Kaleb, Fen, Scott, Kyle, Brian — see `FDR_ACCESS_NAMES` in `server/api/rot/rot.access.js` and `client/app/rot/rotAccess.service.js`
+- **FDR-only allowlist** by user name (hidden from nav otherwise): Andy, Nathaniel, Kaleb, Fen, Scott, Kyle, Brian, Patrik — see `FDR_ACCESS_NAMES` in `server/api/rot/rot.access.js` and `client/app/rot/rotAccess.service.js`
 - Training Records keeps its own access rules (`canAccessRecords`)
 - Not part of the records upload/approve flow
 - ROT **Fileserver** removed from Management dropdown (out of scope for #35); `/rot/files` route remains if needed

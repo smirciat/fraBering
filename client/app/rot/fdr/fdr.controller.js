@@ -460,6 +460,9 @@ class RotFdrComponent {
 
   dutyCellTitle(pilot) {
     if (!pilot) return '';
+    if (pilot.dutyCalendarSparse) {
+      return 'Duty calendar is incomplete (few ON days in Firebase) — enter days off from the paper F&D sheet.';
+    }
     if (pilot.dutyIndexMissing) {
       return 'No Firebase duty index for this pilot — enter days off from the paper F&D sheet.';
     }
@@ -712,7 +715,17 @@ class RotFdrComponent {
   }
 
   dutyCellClass(pilot, monthKey) {
-    return this.pilotMonthCellClass(pilot, monthKey, 'duty');
+    let classes = this.pilotMonthCellClass(pilot, monthKey, 'duty');
+    if (this.daysOffOverridden(pilot, monthKey)) {
+      classes['rot-fdr-duty-overridden'] = true;
+    }
+    return classes;
+  }
+
+  daysOffOverridden(pilot, monthKey) {
+    let cell = this.monthAuditCell(pilot, monthKey, 'duty');
+    if (!cell) return false;
+    return cell.overrideDaysOff !== null && cell.overrideDaysOff !== undefined && cell.overrideDaysOff !== '';
   }
 
   pilotStripeClass(pilotIndex) {
@@ -763,6 +776,9 @@ class RotFdrComponent {
     if (cell.at) parts.push(this.formatSyncDate(cell.at));
     let line = parts.join(' ');
     if (cell.note) line += ' — ' + String(cell.note).trim();
+    if (this.daysOffOverridden(pilot, monthKey) && parameter === 'duty') {
+      line += ' · paper override ' + cell.overrideDaysOff + ' days off';
+    }
     return line;
   }
 
@@ -783,7 +799,9 @@ class RotFdrComponent {
       monthKey: monthKey,
       parameter: parameter,
       audited: !!cell.audited,
-      text: cell.note || ''
+      text: cell.note || '',
+      daysOff: this.daysOffOverridden(pilot, monthKey) ? cell.overrideDaysOff : '',
+      currentDaysOff: (pilot.duty && pilot.duty.months) ? pilot.duty.months[monthKey] : null
     };
     this.timeout(() => {
       window.scrollTo(0, scrollTop);
@@ -797,11 +815,11 @@ class RotFdrComponent {
   saveMonthAuditNote() {
     if (!this.auditEditor || this.selectedYear === 'summary') return;
     let ed = this.auditEditor;
-    this.saveMonthAuditEntry(ed.pilotName, ed.monthKey, ed.parameter, true, ed.text);
+    this.saveMonthAuditEntry(ed.pilotName, ed.monthKey, ed.parameter, true, ed.text, ed.daysOff);
     this.auditEditor = null;
   }
 
-  saveMonthAuditEntry(pilotName, monthKey, parameter, audited, note) {
+  saveMonthAuditEntry(pilotName, monthKey, parameter, audited, note, daysOff) {
     if (!this.monthAuditEditable || this.selectedYear === 'summary') return;
     let monthIndex = this.months.indexOf(monthKey) + 1;
     if (!monthIndex) return;
@@ -812,6 +830,9 @@ class RotFdrComponent {
       audited: audited
     };
     if (note !== undefined) entry.note = note;
+    if (parameter === 'duty' && daysOff !== undefined) {
+      entry.daysOff = daysOff === '' || daysOff === null ? '' : parseInt(daysOff, 10);
+    }
     this.savingMonthAudit = true;
     this.http.put('/api/rot/fdr/' + this.selectedYear + '/month-audit', {
       entries: [entry]
@@ -845,6 +866,8 @@ class RotFdrComponent {
           line += ' Days off not synced — ' + (r.dutySkippedDetail || 'sheet year not started yet') + '.';
         } else if (r.dutySkipped === 'no_duty_index') {
           line += ' No duty index found — enter days off manually in the grid.';
+        } else if (r.dutySkipped === 'sparse_duty_calendar') {
+          line += ' Duty calendar incomplete (few ON days) — enter days off from paper F&D.';
         } else {
           if (r.indexDocCount !== undefined) {
             line += ' Duty index: ' + r.indexDocCount + ' docs';

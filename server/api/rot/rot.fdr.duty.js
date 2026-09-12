@@ -214,6 +214,25 @@ export async function fetchFlightIndexDocsForEmployee(employeeId) {
   return merged;
 }
 
+/** Unique flightIndex *ON* calendar dates in the FDR sheet year. */
+export function countOnDatesInYear(docs, year) {
+  let dates = {};
+  let yearPrefix = String(year) + '-';
+  (docs || []).forEach(function(item) {
+    let id = String(item.id || item._id || '');
+    if (!/ON$/.test(id)) return;
+    let data = item.data || item;
+    let ymd = timestampToAlaskaYmd(data.date);
+    if (ymd && ymd.indexOf(yearPrefix) === 0) dates[ymd] = true;
+  });
+  return Object.keys(dates).length;
+}
+
+/** ON/OFF calendar is too thin to treat "no claim" as a day off (heli chiefs with PFR-only index). */
+export function isDutyCalendarSparse(onDatesInYear) {
+  return (onDatesInYear || 0) < 10;
+}
+
 export async function computeDutyForEmployeeYear(employeeId, year, asOfDate) {
   let docs = await fetchFlightIndexDocsForEmployee(employeeId);
   let flights = await fetchFlightsForEmployeeYear(employeeId, year);
@@ -228,6 +247,8 @@ export async function computeDutyForEmployeeYear(employeeId, year, asOfDate) {
   let flightDutyDatesInYear = Object.keys(mergeClaimedDatesFromFlights(flights, year)).length;
   let realAsOf = asOfDate || new Date();
   let snap = snapshotTodayForFdrYear(year, realAsOf);
+  let onDatesInYear = countOnDatesInYear(docs, year);
+  let calendarSparse = isDutyCalendarSparse(onDatesInYear);
   let result = computeDaysOffByMonth(year, claimedInYear, realAsOf);
   return {
     months: result.months,
@@ -239,6 +260,8 @@ export async function computeDutyForEmployeeYear(employeeId, year, asOfDate) {
     flightOnlyDutyDates: flightOnlyDates.length,
     dutySnapshotAk: result.sheetYearNotStarted ? null : formatSnapshotTodayAk(snap),
     hasAnyIndex,
-    hasDutySignal: hasAnyIndex || flightDutyDatesInYear > 0
+    hasDutySignal: hasAnyIndex || flightDutyDatesInYear > 0,
+    onDatesInYear,
+    calendarSparse
   };
 }

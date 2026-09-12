@@ -93,7 +93,8 @@
     <span ng-if="fdr.monthAuditEditable">
       <span class="rot-fdr-legend-audit">Blue outline</span> = auditor sign-off;
       <strong>✓</strong> toggles reviewed (hours or days-off row);
-      <strong>+</strong> optional audit note (name and time stored).
+      <strong>+</strong> audit note; for days off, + also lets you enter a paper number (purple cell = override).
+      Hour mismatches are fixed on the Flight Report (Hobbs for helicopters), not in this grid.
     </span>
   </p>
   <p class="text-success rot-fdr-meta rot-fdr-sync-feedback" ng-if="fdr.syncFeedback && !fdr.hoursLoading">{{fdr.syncFeedback}}</p>
@@ -191,11 +192,20 @@
       <button type="button" class="close" ng-click="fdr.closeMonthAuditNote()">&times;</button>
     </div>
     <div class="panel-body">
-      <p class="text-muted">Optional note stored with your sign-off (auditor name and time are recorded automatically).</p>
-      <textarea class="form-control" rows="2" ng-model="fdr.auditEditor.text" maxlength="2000"></textarea>
+      <p class="text-muted" ng-if="fdr.auditEditor.parameter !== 'duty'">Optional note stored with your sign-off (auditor name and time are recorded automatically).</p>
+      <div ng-if="fdr.auditEditor.parameter === 'duty'">
+        <p class="text-muted">Paper days off for this month. Saving a number overrides Firebase and marks the cell purple. Leave blank to sign off without changing the number. Hour mismatches stay on the Flight Report / Hobbs — do not override hours here.</p>
+        <label class="rot-fdr-audit-days-label">Days off (paper)</label>
+        <input type="number" min="0" max="31" class="form-control rot-fdr-audit-days-input"
+               ng-model="fdr.auditEditor.daysOff"
+               placeholder="{{fdr.auditEditor.currentDaysOff === null || fdr.auditEditor.currentDaysOff === undefined ? '' : fdr.auditEditor.currentDaysOff}}">
+      </div>
+      <textarea class="form-control" rows="2" ng-model="fdr.auditEditor.text" maxlength="2000" placeholder="Optional note"></textarea>
       <div class="rot-fdr-note-actions">
         <button type="button" class="btn btn-primary btn-sm" ng-click="fdr.saveMonthAuditNote()" ng-disabled="fdr.savingMonthAudit">Save &amp; mark audited</button>
         <button type="button" class="btn btn-default btn-sm" ng-click="fdr.closeMonthAuditNote()">Cancel</button>
+        <button type="button" class="btn btn-link btn-sm" ng-if="fdr.auditEditor.parameter === 'duty'"
+                ng-click="fdr.auditEditor.daysOff = ''; fdr.saveMonthAuditNote()" ng-disabled="fdr.savingMonthAudit">Clear override</button>
       </div>
     </div>
   </div>
@@ -290,8 +300,8 @@
             </tr>
             <tr ng-repeat-end class="rot-fdr-duty-row" ng-class="fdr.pilotStripeClass($index)" ng-if="fdr.pilotPassesSyncFilter(p)">
               <td class="rot-fdr-name-col rot-fdr-duty-label"
-                  ng-class="{'rot-fdr-duty-sync-missing': p.hoursFromFirebase && p.dutySyncNeeded, 'rot-fdr-duty-index-missing': p.dutyIndexMissing}"
-                  title="{{fdr.dutyRowTitle(p)}}">Days off<span ng-if="p.dutyIndexMissing" class="rot-fdr-duty-hint"> — no index, enter manually</span></td>
+                  ng-class="{'rot-fdr-duty-sync-missing': p.hoursFromFirebase && p.dutySyncNeeded, 'rot-fdr-duty-index-missing': p.dutyIndexMissing || p.dutyCalendarSparse}"
+                  title="{{fdr.dutyRowTitle(p)}}">Days off<span ng-if="p.dutyCalendarSparse" class="rot-fdr-duty-hint"> — incomplete ON calendar, enter from paper</span><span ng-if="p.dutyIndexMissing && !p.dutyCalendarSparse" class="rot-fdr-duty-hint"> — no index, enter manually</span></td>
               <td ng-repeat="m in fdr.months" ng-class="fdr.dutyCellClass(p, m)">
                 <span class="rot-fdr-duty-cell" ng-if="fdr.daysOffEditable(p)">
                   <input type="number" min="0" max="31" class="rot-fdr-days-input"

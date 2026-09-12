@@ -25,7 +25,8 @@ export default function(sequelize, DataTypes) {
     hoursAuditNote: DataTypes.TEXT,
     dutyAuditedAt: DataTypes.DATE,
     dutyAuditedBy: DataTypes.STRING,
-    dutyAuditNote: DataTypes.TEXT
+    dutyAuditNote: DataTypes.TEXT,
+    dutyOverrideDaysOff: DataTypes.INTEGER
   }, {
     indexes: [
       {unique: true, fields: ['year', 'pilotName', 'month']}

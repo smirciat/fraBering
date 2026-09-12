@@ -17,7 +17,8 @@ angular.module('workspaceApp')
       'Fen Kinneen',
       'Scott Gordon',
       'Kyle Lefebvre',
-      'Brian Weckwerth'
+      'Brian Weckwerth',
+      'Patrik Toerdal'
     ];
 
     const COMPANY_INSTRUCTORS = [

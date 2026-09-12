@@ -329,6 +329,21 @@
   font-weight: 600;
 }
 
+.rot-fdr-duty-overridden {
+  background: #f3e5f5 !important;
+}
+
+.rot-fdr-audit-days-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.rot-fdr-audit-days-input {
+  max-width: 8em;
+  margin-bottom: 8px;
+}
+
 .rot-fdr-duty-hint {
   font-weight: 600;
   font-size: 11px;

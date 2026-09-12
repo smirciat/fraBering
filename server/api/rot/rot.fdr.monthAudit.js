@@ -3,13 +3,36 @@
 import {FdrMonthAudit} from '../../sqldb';
 import {MONTHS, normalizePilotName} from './rot.fdr.math.js';
 import {COMPUTED_HOURS_FROM_YEAR} from './rot.fdr.import.js';
+import Sequelize from 'sequelize';
 
 function emptyMonthAuditCell() {
   return {audited: false, at: null, by: '', note: ''};
 }
 
+export async function ensureFdrMonthAuditSchema() {
+  if (!FdrMonthAudit || !FdrMonthAudit.sequelize) return;
+  let sequelize = FdrMonthAudit.sequelize;
+  let queryInterface = sequelize.getQueryInterface();
+  let tableName = FdrMonthAudit.tableName || FdrMonthAudit.getTableName();
+  if (tableName && typeof tableName === 'object') {
+    tableName = tableName.tableName || 'FdrMonthAudits';
+  }
+  let description = null;
+  try {
+    description = await queryInterface.describeTable(tableName);
+  } catch (err) {
+    return;
+  }
+  if (!description || description.dutyOverrideDaysOff) return;
+  await queryInterface.addColumn(tableName, 'dutyOverrideDaysOff', {
+    type: Sequelize.INTEGER,
+    allowNull: true
+  });
+}
+
 export async function loadMonthAuditMap(year) {
   if (!FdrMonthAudit) return {};
+  await ensureFdrMonthAuditSchema();
   let rows = await FdrMonthAudit.findAll({where: {year}});
   let map = {};
   rows.forEach(r => {
@@ -33,12 +56,17 @@ export function monthAuditRowsForPilot(auditMap, pilotName) {
       by: row.hoursAuditedBy || '',
       note: row.hoursAuditNote ? String(row.hoursAuditNote) : ''
     } : emptyMonthAuditCell();
+    let override = row && row.dutyOverrideDaysOff !== null && row.dutyOverrideDaysOff !== undefined
+      ? parseInt(row.dutyOverrideDaysOff, 10)
+      : null;
+    if (override !== null && !Number.isFinite(override)) override = null;
     dutyAudit[m] = row && row.dutyAuditedAt ? {
       audited: true,
       at: row.dutyAuditedAt,
       by: row.dutyAuditedBy || '',
-      note: row.dutyAuditNote ? String(row.dutyAuditNote) : ''
-    } : emptyMonthAuditCell();
+      note: row.dutyAuditNote ? String(row.dutyAuditNote) : '',
+      overrideDaysOff: override
+    } : Object.assign(emptyMonthAuditCell(), {overrideDaysOff: override});
   });
   return {hoursAudit, dutyAudit};
 }
@@ -47,6 +75,7 @@ export async function saveMonthAuditEntries(year, entries, userName) {
   if (!FdrMonthAudit) {
     throw new Error('month_audit_unavailable');
   }
+  await ensureFdrMonthAuditSchema();
   if (year < COMPUTED_HOURS_FROM_YEAR) {
     throw new Error('month_audit_readonly');
   }
@@ -87,6 +116,21 @@ export async function saveMonthAuditEntries(year, entries, userName) {
         patch.dutyAuditedAt = null;
         patch.dutyAuditedBy = null;
         patch.dutyAuditNote = null;
+        patch.dutyOverrideDaysOff = null;
+      }
+      if (item.daysOff !== undefined) {
+        if (item.daysOff === '' || item.daysOff === null) {
+          patch.dutyOverrideDaysOff = null;
+        } else {
+          let n = parseInt(item.daysOff, 10);
+          if (Number.isFinite(n) && n >= 0 && n <= 31) {
+            patch.dutyOverrideDaysOff = n;
+            if (!audited) {
+              patch.dutyAuditedAt = new Date();
+              patch.dutyAuditedBy = userName;
+            }
+          }
+        }
       }
     }
 
@@ -101,7 +145,8 @@ export async function saveMonthAuditEntries(year, entries, userName) {
     }
 
     let refreshed = await FdrMonthAudit.findOne({where: {year, pilotName, month}});
-    if (refreshed && !refreshed.hoursAuditedAt && !refreshed.dutyAuditedAt) {
+    if (refreshed && !refreshed.hoursAuditedAt && !refreshed.dutyAuditedAt &&
+        (refreshed.dutyOverrideDaysOff === null || refreshed.dutyOverrideDaysOff === undefined)) {
       await refreshed.destroy();
     }
   }
