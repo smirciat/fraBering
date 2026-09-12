@@ -5,10 +5,12 @@ import {fetchFlightsForEmployeeYear} from './rot.fdr.hours.js';
 import {
   timestampToAlaskaYmd,
   alaskaCalendarYear,
+  alaskaTodayParts,
   fdrTabYearIsAvailable,
   filterFdrTabYears,
   snapshotTodayForFdrYear,
-  formatSnapshotTodayAk
+  formatSnapshotTodayAk,
+  parseLooseYmd
 } from './rot.fdr.calendar.js';
 
 export {
@@ -17,7 +19,9 @@ export {
   fdrTabYearIsAvailable,
   filterFdrTabYears,
   snapshotTodayForFdrYear,
-  formatSnapshotTodayAk
+  formatSnapshotTodayAk,
+  parseLooseYmd,
+  alaskaTodayParts
 };
 
 const admin = require('firebase-admin');

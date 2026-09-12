@@ -8,7 +8,7 @@ import {
 import {ensureFdrImported, COMPUTED_HOURS_FROM_YEAR, STATIC_HOURS_THROUGH_YEAR} from './rot.fdr.import.js';
 import {computeHoursForEmployeeIds} from './rot.fdr.hours.js';
 import {computeDutyForEmployeeYear} from './rot.fdr.duty.js';
-import {filterFdrTabYears, alaskaCalendarYear} from './rot.fdr.calendar.js';
+import {filterFdrTabYears, alaskaCalendarYear, snapshotTodayForFdrYear, formatSnapshotTodayAk} from './rot.fdr.calendar.js';
 import {runComputeOnce} from './rot.fdr.cache.js';
 import {
   loadComputedHoursState, upsertComputedHoursForPilot, clearComputedHoursForYear,
@@ -16,7 +16,7 @@ import {
 } from './rot.fdr.computed.js';
 import {
   loadComputedDutyState, upsertComputedDutyForPilot, clearComputedDutyForYear,
-  pilotHasComputedDuty, pilotDutySyncedAt
+  pilotHasComputedDuty, pilotDutySyncedAt, dutyHasIndexOrFlightSignal
 } from './rot.fdr.computedDuty.js';
 import {loadFirebasePilots} from './rot.fdr.firebaseQuery.js';
 import {buildPilotEmployeeIndex, matchPilotEmployeeId} from './rot.fdr.pilotMatch.js';
@@ -520,10 +520,15 @@ export async function computeFdrYearHours(year, options) {
     }
 
     let t0 = Date.now();
-    console.log('fdr compute-hours', year, 'scope', scope, 'startOffset', startOffset, 'todo', todoIds.length);
+    let snapNow = snapshotTodayForFdrYear(year);
+    console.log(
+      'fdr compute-hours', year, 'scope', scope, 'startOffset', startOffset, 'todo', todoIds.length,
+      'alaskaYear', alaskaCalendarYear(), 'dutySnap', formatSnapshotTodayAk(snapNow) || 'null'
+    );
     let syncedPilotNames = [];
     let dutySyncFailed = [];
     let dutySyncReport = [];
+    let justSyncedDuty = {};
     let stallExtra = null;
     if (sliceRoster.length && !todoIds.length) {
       let row = sliceRoster[0];
@@ -544,6 +549,7 @@ export async function computeFdrYearHours(year, options) {
         return upsertComputedHoursForPilot(year, row.pilotName, eid, partial[eid], syncedBy)
           .then(() => computeDutyForEmployeeYear(eid, year))
           .then(duty => {
+            justSyncedDuty[normalizePilotName(row.pilotName)] = duty;
             if (duty.sheetYearNotStarted) {
               dutySyncReport.push({
                 pilotName: row.pilotName,
@@ -592,6 +598,7 @@ export async function computeFdrYearHours(year, options) {
 
     let built = await buildFdrYear(year, {viewer: options.viewer});
     if (!built) throw new Error('no_data');
+    overlayJustSyncedDuty(built, justSyncedDuty);
 
     let pgAfter = await loadComputedHoursState(year);
     let progress = buildSyncProgress(syncRoster, pgAfter.syncedPilotKeys, offset, limit, stallExtra);
@@ -737,6 +744,30 @@ function buildDaysOffRowForPilot(manualMonthInts, byPilotMonth, byEmployeeMonth,
     }
   }
   return buildDaysOffRow(merged);
+}
+
+function overlayJustSyncedDuty(built, justSyncedDuty) {
+  if (!built || !built.sections || !justSyncedDuty) return;
+  (built.sections || []).forEach(function(sec) {
+    (sec.pilots || []).forEach(function(p) {
+      if (!p || !p.name) return;
+      let duty = justSyncedDuty[normalizePilotName(p.name)];
+      if (!duty) return;
+      if (duty.sheetYearNotStarted) return;
+      if (!dutyHasIndexOrFlightSignal(duty)) {
+        p.dutyIndexMissing = true;
+        p.dutyFromFirebase = false;
+        p.dutySyncNeeded = false;
+        p.daysOffEditable = true;
+        return;
+      }
+      p.duty = buildDaysOffRow(duty.months || {});
+      p.dutyFromFirebase = true;
+      p.dutySyncNeeded = false;
+      p.dutyIndexMissing = false;
+      p.daysOffEditable = false;
+    });
+  });
 }
 
 function assembleFdrYearPayload(year, roster, daysMap, importHoursMap, hourNotesMap, useComputed, computedByEmployee, fbPilots, employeeKeyIndex, syncedPilotKeys, syncedAtByPilot, priorQ4Map, dutyByPilotMonth, dutyByEmployeeMonth, dutySyncedPilotKeys, dutySyncedAtByPilot, dutyIndexMissingPilotKeys, monthAuditMap, meta) {

@@ -17,7 +17,9 @@ const {
   computeDutyForEmployeeYear,
   snapshotTodayForFdrYear,
   fdrTabYearIsAvailable,
-  filterFdrTabYears
+  filterFdrTabYears,
+  parseLooseYmd,
+  alaskaTodayParts
 } = require('../../server/api/rot/rot.fdr.duty.js');
 
 let failed = 0;
@@ -71,6 +73,13 @@ let flightMerge = mergeDutyClaimedDates([], [{
 assert(flightMerge['2026-09-23'], 'flight with time claims 9/23 duty');
 assert(!flightMerge['2026-09-11'], 'no flight does not claim 9/11');
 
+assert(parseLooseYmd('2026-09-12') === '2026-09-12', 'ISO ymd parse');
+assert(parseLooseYmd('09/12/2026') === '2026-09-12', 'US date year is last, not first token');
+assert(parseLooseYmd('12/09/2026') === '2026-12-09', 'US 12/09/2026 is Dec 9, not year 12');
+assert(!parseLooseYmd('12-09-12'), 'two-digit year is rejected');
+let akSep = alaskaTodayParts(new Date('2026-09-12T20:00:00Z'));
+assert(akSep.year === 2026, 'Alaska parts year is 2026 not 12');
+assert(akSep.month === 9, 'Alaska parts month is September');
 assert(snapshotTodayForFdrYear(2027, new Date('2026-09-12T20:00:00Z')) === null,
   '2027 sheet before Jan 1 2027 has no snapshot');
 assert(!fdrTabYearIsAvailable(2027, new Date('2026-09-12T20:00:00Z')), '2027 tab hidden before 2027');
