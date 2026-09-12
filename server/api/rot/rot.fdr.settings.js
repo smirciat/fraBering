@@ -32,7 +32,12 @@ export async function setFdrYearHoursLocked(year, hoursLocked, lockedBy) {
     if (row) {
       await row.update(payload);
     } else {
-      await FdrYearSettings.create({year, ...payload});
+      await FdrYearSettings.create({
+        year: year,
+        hoursLocked: payload.hoursLocked,
+        lockedAt: payload.lockedAt,
+        lockedBy: payload.lockedBy
+      });
     }
   } else if (row) {
     await row.update({
