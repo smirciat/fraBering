@@ -133,6 +133,17 @@ export async function getManifestsResBering(req, res) {
   try {
     let exported = await fetchStatusExport(range.dateFrom, range.dateTo);
     let rows = exported.flights || [];
+    let seen = {};
+    rows = rows.filter(row => {
+      if (!row) return false;
+      let iso = isoDateFromRow(row);
+      let num = row.flightNumber;
+      if (!iso || !num) return true;
+      let key = iso + '|' + String(num);
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
     let flights = await mapPool(rows, MANIFEST_CONCURRENCY, async row => {
       let iso = isoDateFromRow(row);
       let num = row.flightNumber;

@@ -51,6 +51,25 @@ Restart PM2 after changing env (`grunt babel:server` if you deploy compiled `dis
 
 Auth: `Authorization: Bearer <RESBERING_INTEGRATION_TOKEN>`.
 
+## Dev soak (`TAKEFLITE_DATA_SOURCE=resbering`)
+
+Leave dev on resBering for a few days before prod flip. Watch `/status` and server logs each `tf()` cycle (~1 min).
+
+**Match / duplicate behavior (Sep 2026 fix):** `tf()` matches manifest flights to existing `TodaysFlight` rows across recent DB history (not only today/tomorrow), so the same flight # + date should not be **created** every interval. Manifest fetch still covers ~**yesterday through today+2**.
+
+**Log noise after a bad soak is normal:**
+
+| Log | Meaning |
+|-----|--------|
+| `creating flight:NNN M/D/YYYY` | New row — should **not** repeat every minute for the same # + date once matching works. |
+| `More than one Flight matching NNN` | Two+ DB rows for that # + date (often from an earlier duplicate-create bug). |
+| `destroyed duplicate flight …` | Extra row had no pilot agree / OC / dispatch release — removed (intended). |
+| `Deletion Reprieve for flight …` | Duplicate row **has** a release — **not** deleted; message may repeat each minute until that date leaves the manifest window or you merge/delete rows manually. |
+
+Optional cleanup: for a noisy date (e.g. yesterday still in the window), dedupe in DB — keep the `_id` with real release/PFR data, remove stray duplicates without releases.
+
+**Regression checks:** no back-to-back `creating flight` for the same # + date; today’s board crew/route/times look right vs reservations.
+
 ## Cutover checklist (fraBering)
 
 1. Confirm resBering prod has integration token set and slices 1–3 deployed.

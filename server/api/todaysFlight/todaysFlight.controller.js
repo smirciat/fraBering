@@ -177,6 +177,35 @@ function localeDateFromQuery(dateString) {
   return new Date(trimmed).toLocaleDateString();
 }
 
+/** Normalize manifest vs DB date strings for flightNum+date matching (tf sync). */
+function flightMatchDateKey(value) {
+  if (value === null || value === undefined || value === '') return '';
+  let text = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
+    return localeDateFromQuery(text.slice(0, 10)) || '';
+  }
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(text)) {
+    let parsed = new Date(text);
+    if (!isNaN(parsed.getTime())) return parsed.toLocaleDateString();
+  }
+  let d = new Date(value);
+  if (!isNaN(d.getTime())) return d.toLocaleDateString();
+  return text;
+}
+
+function flightMatchNumKey(num) {
+  let s = String(num === null || num === undefined ? '' : num).trim();
+  if (/^8e/i.test(s)) s = s.replace(/^8e/i, '');
+  return s;
+}
+
+function flightsMatchManifest(manifestFlight, row) {
+  if (!row || row.flightNum === null || row.flightNum === undefined || row.flightNum === '') return false;
+  if (!row.date) return false;
+  return flightMatchDateKey(manifestFlight.date) === flightMatchDateKey(row.date) &&
+    flightMatchNumKey(manifestFlight.flightNum) === flightMatchNumKey(row.flightNum);
+}
+
 function getCachedPublicDayFlights(date) {
   let entry = publicDayFlightsCache[date];
   if (!entry) return null;
@@ -838,8 +867,14 @@ export async function tf(req,res) {
         console.log('TakeFlite API has failed to retrieve Flights!');
         //doubleFail=true;
       }
-      let manifests=resp.flights;
+      let manifests=(resp && resp.flights) ? resp.flights : [];
       for (let flight of manifests){
+        if (!flight.flightLegs || !flight.flightLegs.length) {
+          continue;
+        }
+        flight.flightLegs.forEach(leg => {
+          if (leg && !leg.crew) leg.crew = [];
+        });
         //make sure each flight date is midnight for Daylight Savings Time
         let tempDate=new Date(flight.departureDate);
         let currentHours=tempDate.getHours();
@@ -853,14 +888,17 @@ export async function tf(req,res) {
           departFrom = tfliteAirportLabel(flight.flightLegs[0].origin);
         }
 
-        if (flight.flightLegs[0]&&flight.flightLegs[0].crew.length===0&&flight.flightLegs[1]&&flight.flightLegs[1].crew.length>0){
+        let leg0 = flight.flightLegs[0];
+        let leg1 = flight.flightLegs[1];
+        if (leg0 && leg0.crew && leg0.crew.length === 0 && leg1 && leg1.crew && leg1.crew.length > 0) {
           flight.flightLegs=flight.flightLegs.filter((leg,i)=>{return (leg.crew&&leg.crew.length>0)||i===flight.flightLegs.length-1});//weird empty routing from api on 4/13/25 for 844 and 846
         }
-        if (flight.flightLegs[0].crew&&flight.flightLegs[0].crew.length>0) {
-          if (flight.flightLegs[0].crew[0].position==="First Officer") flight.flightLegs[0].crew.reverse();
-          flight.pilot=flight.flightLegs[0].crew[0].name;
+        leg0 = flight.flightLegs[0];
+        if (leg0 && leg0.crew && leg0.crew.length > 0) {
+          if (leg0.crew[0].position==="First Officer") leg0.crew.reverse();
+          flight.pilot=leg0.crew[0].name;
         }
-        if (flight.flightLegs[0].crew&&flight.flightLegs[0].crew.length>1) flight.coPilot=flight.flightLegs[0].crew[1].name;
+        if (leg0 && leg0.crew && leg0.crew.length > 1) flight.coPilot=leg0.crew[1].name;
         else flight.coPilot="";
         //flight.aircraft=??????
         flight.flightStatus=null;
@@ -868,8 +906,8 @@ export async function tf(req,res) {
         flight.tfliteDepart=null;
         flight.tfliteArrive=null;
         flight.active=true;
-        flight.date=new Date(flight.departureDate).toLocaleDateString();
-        flight.flightNum=flight.flightNumber;
+        flight.date=flightMatchDateKey(flight.departureDate || flight.dateString || flight.date);
+        flight.flightNum=flight.flightNumber || flight.flightNum;
         flight.operation=flight.type;
         for (let line of flightLog){
           if (!line.flightNum||!line.date) continue;
@@ -1052,7 +1090,7 @@ export async function tf(req,res) {
       flight.autoOnboard=computeAutoOnboard(flight, pfrsByAircraft[flight.aircraft]||[]);
       
      //map flights array(from getManifests API) to todaysFlights array (from postgresql database)
-      let matchedFA=todaysFlights.filter(f=>{return flight.date===f.date&&f.flightNum===flight.flightNum}).sort((a,b)=>{return b._id-a._id});
+      let matchedFA=allFlights.filter(f=>flightsMatchManifest(flight, f)).sort((a,b)=>{return b._id-a._id});
       for (let x=1;x<matchedFA.length;x++){
         let i=todaysFlights.map(e=>e._id).indexOf(matchedFA[x]._id);
         if (i>-1) todaysFlights.splice(i,1);
@@ -1065,11 +1103,8 @@ export async function tf(req,res) {
           console.log('destroyed duplicate flight ' + matchedFA[x].flightNum + ' ' + matchedFA[x].date );
         }
       }
-      let fa=todaysFlights.filter(f=>{
-        if (!f.date||!f.flightNum) return false;
-        return flight.date.toString()===f.date.toString()&&flight.flightNum.toString()===f.flightNum.toString();
-      });
-      if (fa.length>1) console.log('More than one Flight matching ' + flight.flightNum);
+      let fa=matchedFA.length ? [matchedFA[0]] : [];
+      if (matchedFA.length>1) console.log('More than one Flight matching ' + flight.flightNum);
       if (fa.length===0) {
           flight.colorPatch='false';
           console.log('creating flight:' + flight.flightNum + ' ' + flight.date);
@@ -1081,9 +1116,8 @@ export async function tf(req,res) {
         updated.push(fa[0]._id);
         let index=todaysFlights.map(e=>e._id).indexOf(fa[0]._id);
         if (index<0) {
-          console.log('**********************');
-          console.log('Missing flight '+flight.flightNum);
-          return;
+          // Already in DB (e.g. manifest window date outside today/tomorrow slice) — skip recreate
+          continue;
         }
         let lastFlights=[];
         let instance;
