@@ -43,6 +43,13 @@ module.exports = {
   // Optional: reservations API base for safety bulletin nag at flight release (#159)
   // Uses FRAT_OPS_EXPORT_TOKEN above (same secret as reservations .env) on server-to-server GET.
   RESERVATIONS_API_BASE_URL: 'https://reservations.beringair.com',
+  // Takeflite → resBering cutover (FRA status poll). Default: direct api.tflite.com.
+  // Flip: TAKEFLITE_DATA_SOURCE: 'resbering'. Preferred source is status-export (see docs/takeflite-resbering-cutover.md).
+  TAKEFLITE_DATA_SOURCE: 'takeflite',
+  // Same-host override, e.g. http://127.0.0.1:8081 — else RESERVATIONS_API_BASE_URL
+  RESBERING_API_BASE_URL: '',
+  // Bearer for fraBering → resBering integrations (must match resBering RESBERING_INTEGRATION_TOKEN).
+  RESBERING_INTEGRATION_TOKEN: '',
   // ROT integration — source Postgres for one-time Evaluations import (scripts/migrate-rot-evaluations)
   ROT_SOURCE_URI: '',
   // ROT document storage root (default: <repo>/server/fileserver/rot)

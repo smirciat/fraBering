@@ -15,6 +15,13 @@ import {firebaseMin,firebaseFlights,firebaseAircraft,firebasePilots,previousPfrs
 import {getMetarSynoptic,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
 import localEnv from '../../config/local.env.js';
 import config from '../../config/environment';
+import {useResBeringTakeflite, takefliteDataSource} from '../../config/takefliteSource.js';
+import {
+  setBearerResBering,
+  getManifestsResBering,
+  getManifestResBering,
+  getFlightLogsResBering
+} from './takeflite.resbering.js';
 const MOBILE_TOKEN=localEnv.MOBILE_TOKEN;
 let bearer='';
 let allAirports=[];
@@ -1677,6 +1684,10 @@ function lookupPilotObjects(flight){
 }
 
 export async function setBearer(){
+  if (useResBeringTakeflite()) {
+    console.log('Takeflite data source: resBering (' + takefliteDataSource() + ')');
+    return setBearerResBering();
+  }
   let data = JSON.stringify({
     "client_id": localEnv.TF_ID,
     "client_secret": localEnv.TF_SECRET
@@ -1716,6 +1727,11 @@ const toISOStringWithTimezone = date => {
 };
 
 export async function getFlightLogs(req,res){
+  if (useResBeringTakeflite()) {
+    let data = await getFlightLogsResBering(req, res);
+    if (Array.isArray(data)) flightLog = data;
+    return data;
+  }
   let date=new Date();
   if (req&&req.body&&req.body.date) date=new Date(req.body.date);
   if (req&&!req.body&&!req.headers&&!isNaN(new Date(req))&&new Date(req).toString!=='Invalid Date') date=new Date(req);
@@ -1760,6 +1776,9 @@ export async function getFlightLogs(req,res){
 }
 
 export async function getManifests(req,res){
+  if (useResBeringTakeflite()) {
+    return getManifestsResBering(req, res);
+  }
   let date=new Date();
   let range=3;
   if (req&&req.body&&req.body.range) range=req.body.range+2;
@@ -1807,6 +1826,9 @@ export async function getManifests(req,res){
 }
 
 export async function getManifest(req,res){
+  if (useResBeringTakeflite()) {
+    return getManifestResBering(req, res);
+  }
   let date=new Date();
   let flightNum='860';
   if (req.body&&req.body.date) {
