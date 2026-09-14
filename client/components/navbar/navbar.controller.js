@@ -64,6 +64,7 @@ class NavbarController {
                {v:'AMBLER',c:'PAFM'},
                {v:'SHUNGNAK',c:'PAGH'},
                {v:'KOBUK',c:'PAOB'},
+               {v:'DAHL CREEK',c:'KDL'},
                {v:'BUCKLAND',c:'PABL'},
                {v:'DEERING',c:'PADE'}
     ];
@@ -169,7 +170,7 @@ class NavbarController {
   }
   
   stoppedFunction(){
-    let version='174';
+    let version='175';
     const reloadGuardKey='fratStoppedReload';
     this.http.post('/api/todaysFlights/stopped'+version).then(res=>{
       window.sessionStorage.removeItem(reloadGuardKey);

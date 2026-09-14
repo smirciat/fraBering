@@ -295,6 +295,24 @@
         return String(t).substring(0, 5);
       },
 
+      /** ETA from actual Takeflite OFF + scheduled block (same math as server createETA). */
+      createEtaFromActualDepart(flight) {
+        if (!flight || !flight.tfliteDepart || !flight.departTimes || !flight.departTimes.length) return '';
+        let start = flight.departTimes[0];
+        let end = flight.departTimes[flight.departTimes.length - 1];
+        let diff = Util.minutesFromTimeString(end) - Util.minutesFromTimeString(start);
+        if (diff < 0) diff += 24 * 60;
+        let final = Util.minutesFromTimeString(flight.tfliteDepart) + diff;
+        return Util.minutesToHHMM(final);
+      },
+
+      /** ETA shown on status board and Flight Release Amendments header. */
+      releaseEtaDisplay(flight) {
+        let effective = Util.displayFinalEta(flight);
+        if (effective && String(effective).trim()) return String(effective).trim();
+        return Util.plannedFinalEta(flight);
+      },
+
       minutesNowLocal() {
         let d = new Date();
         return d.getHours() * 60 + d.getMinutes();
@@ -385,6 +403,53 @@
         flight.miscObject.updatedEta = Util.minutesToHHMM(planFinal + lastDelta);
       },
 
+      /** Ending fuel (lbs) after a PFR leg; null when not computable. */
+      pfrLegEndingFuelLbs(leg) {
+        if (!leg) return null;
+        let fuel = Number(leg.fuel);
+        let burn = Number(leg.burn);
+        if (!isFinite(fuel) || fuel <= 0) return null;
+        if (!isFinite(burn)) burn = 0;
+        let end = Math.round(fuel - burn);
+        if (end < 0 || end > 15000) return null;
+        return end;
+      },
+
+      pfrAirportCount(flight) {
+        if (!flight) return 0;
+        let objs = flight.airportObjsLocked || flight.airportObjs;
+        if (objs && objs.length) return objs.length;
+        if (flight.airports && flight.airports.length) return flight.airports.length;
+        return 0;
+      },
+
+      /**
+       * Takeoff fuel for the leg departing airportIndex (0 = first leg only in UI).
+       * Multi-stop: legArray is per leg, not per airport — do not use airport index as leg index.
+       */
+      pfrTakeoffFuelForAirportIndex(pfr, airportIndex, airportCount) {
+        if (!pfr || !pfr.legArray || !pfr.legArray.length) return null;
+        if (airportIndex !== 0) return null;
+        let fuel = Number(pfr.legArray[0].fuel);
+        if (!isFinite(fuel) || fuel <= 0) return null;
+        return Math.round(fuel);
+      },
+
+      /**
+       * Ending fuel shown at airportIndex (arrival after leg airportIndex - 1).
+       */
+      pfrEndingFuelForAirportIndex(pfr, airportIndex, airportCount) {
+        if (!pfr || !pfr.legArray || !pfr.legArray.length) return null;
+        if (!airportCount || airportIndex <= 0 || airportIndex >= airportCount) return null;
+        let legs = pfr.legArray;
+        let legIdx = airportIndex - 1;
+        if (airportIndex === airportCount - 1) {
+          legIdx = legs.length - 1;
+        }
+        if (legIdx < 0 || legIdx >= legs.length) return null;
+        return Util.pfrLegEndingFuelLbs(legs[legIdx]);
+      },
+
       displayFinalEta(flight) {
         if (!flight) return '';
         if (flight.miscObject && flight.miscObject.updatedEta && String(flight.miscObject.updatedEta).trim()) {
@@ -392,6 +457,10 @@
         }
         if (flight.tfliteArrive && String(flight.tfliteArrive).trim()) {
           return String(flight.tfliteArrive).trim();
+        }
+        if (flight.tfliteDepart) {
+          let fromOff = Util.createEtaFromActualDepart(flight);
+          if (fromOff) return fromOff;
         }
         if (flight.pfr && flight.pfr.legArray && flight.pfr.legArray.length) {
           let leg = flight.pfr.legArray[flight.pfr.legArray.length - 1];

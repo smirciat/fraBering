@@ -343,7 +343,7 @@ class RecordsComponent {
     return true;
   }
 
-  logApprovalExpHistory(record,expKey,expValue,expKeyAlt){
+  logApprovalExpHistory(record,expKey,expValue,expKeyAlt,priorOverride){
     const context={
       baseMonth: record.baseMonth,
       checkDate: record.date,
@@ -351,7 +351,9 @@ class RecordsComponent {
       newBaseMonth: record.newBaseMonth,
       source: 'approval',
     };
-    const prior=this.fullPilot[expKey];
+    const prior=priorOverride !== undefined && priorOverride !== null && priorOverride !== ''
+      ? priorOverride
+      : this.fullPilot[expKey];
     if (prior&&prior!==expValue) {
       this.prependExpHistory(expKey,this.buildExpHistoryEntry(prior,{source:'superseded',checkDate:record.date}));
     }
@@ -582,6 +584,31 @@ class RecordsComponent {
     return isNaN(d.getTime())?null:d;
   }
 
+  formatPilotExpDateStr(raw){
+    if (raw === null || raw === undefined || raw === '') return null;
+    const parsed=this.parseShortExpDate(String(raw).trim());
+    if (parsed && !isNaN(parsed.getTime())) {
+      return parsed.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric'});
+    }
+    const d=new Date(raw);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric'});
+    }
+    return String(raw);
+  }
+
+  priorExpForPreview(priorExpDates, expKey, expKeyAlt){
+    if (priorExpDates) {
+      if (priorExpDates[expKey]) return priorExpDates[expKey];
+      if (expKeyAlt && priorExpDates[expKeyAlt]) return priorExpDates[expKeyAlt];
+    }
+    if (this.fullPilot) {
+      if (this.fullPilot[expKey]) return this.fullPilot[expKey];
+      if (expKeyAlt && this.fullPilot[expKeyAlt]) return this.fullPilot[expKeyAlt];
+    }
+    return null;
+  }
+
   getCheckrideGraceState(expirationDateStr, checkrideDateStr){
     const exp=new Date(expirationDateStr);
     const check=new Date(checkrideDateStr);
@@ -593,8 +620,10 @@ class RecordsComponent {
     return 'outside';
   }
 
-  shouldAutoRebase(record, expKey){
-    const existingRaw=this.fullPilot&&this.fullPilot[expKey];
+  shouldAutoRebase(record, expKey, existingExpiration){
+    const existingRaw=existingExpiration !== undefined && existingExpiration !== null && existingExpiration !== ''
+      ? existingExpiration
+      : (this.fullPilot && this.fullPilot[expKey]);
     if (!existingRaw) return false;
     const grace=this.getCheckrideGraceState(existingRaw, record.date);
     return grace==='outside';
@@ -604,12 +633,18 @@ class RecordsComponent {
     const {tab,seat}=this.typeToTab(row.type);
     const {expKey,timeframe}=this.setExp(tab,seat);
     if (!timeframe||!expKey) return;
-    const newDate=this.computeExpDate(record, expKey, timeframe, {preview:true, newBase:!!row.newBase});
+    const existingForCalc=row.priorExpiration ||
+      (row.current && row.current !== '—' ? row.current : null);
+    const newDate=this.computeExpDate(record, expKey, timeframe, {
+      preview: true,
+      newBase: !!row.newBase,
+      existingExpiration: existingForCalc
+    });
     if (!newDate||isNaN(newDate.getTime())) return;
     row.newDate=newDate;
-    row.proposed=newDate.toLocaleDateString();
+    row.proposed=this.formatPilotExpDateStr(newDate) || newDate.toLocaleDateString();
     row.action=row.newBase?'rebase':(row.current&&row.current!=='—'?'extend':'initial');
-    const existingDate=row.current&&row.current!=='—'?new Date(row.current):null;
+    const existingDate=existingForCalc ? this.parseExpInputDate(existingForCalc) : null;
     row.warnEarlier=existingDate&&!isNaN(existingDate.getTime())&&newDate<existingDate;
   }
 
@@ -629,8 +664,12 @@ class RecordsComponent {
   computeExpDate(record, expKey, timeframe, options){
     options = options || {};
     let recordDate=new Date(record.date);
-    let existingRaw=this.fullPilot[expKey];
-    let existingDate=existingRaw?new Date(existingRaw):null;
+    let existingRaw=options.existingExpiration !== undefined && options.existingExpiration !== null &&
+      options.existingExpiration !== ''
+      ? options.existingExpiration
+      : this.fullPilot[expKey];
+    let existingDate=this.parseExpInputDate(existingRaw);
+    if (!existingDate && existingRaw) existingDate=new Date(existingRaw);
     let hasExisting=existingDate&&!isNaN(existingDate.getTime());
     const useRebase=options.newBase!==undefined?!!options.newBase:this.isNewBaseMonth(record);
 
@@ -882,7 +921,7 @@ class RecordsComponent {
     this.applyExpUpdates(record, rows);
   }
 
-  buildExpPreviewRows(record){
+  buildExpPreviewRows(record, priorExpDates){
     const rows=[];
     const seen={};
     if (!record||!record.trainingTypeArray||record.trainingTypeArray.length===0) return rows;
@@ -892,20 +931,25 @@ class RecordsComponent {
       const {expKey,expKeyAlt,timeframe}=this.setExp(tab,seat);
       if (!timeframe||!expKey||seen[expKey]) return;
       seen[expKey]=true;
-      const newBase=this.shouldAutoRebase(record, expKey);
-      const newDate=this.computeExpDate(record, expKey, timeframe, {preview:true, newBase:newBase});
-      if (!newDate||isNaN(newDate.getTime())) return;
-      const existingRaw=this.fullPilot[expKey];
-      const existingDate=existingRaw?new Date(existingRaw):null;
+      const existingRaw=this.priorExpForPreview(priorExpDates, expKey, expKeyAlt);
+      const existingDate=existingRaw ? this.parseExpInputDate(existingRaw) : null;
       const hasExisting=existingDate&&!isNaN(existingDate.getTime());
+      const newBase=this.shouldAutoRebase(record, expKey, existingRaw);
+      const newDate=this.computeExpDate(record, expKey, timeframe, {
+        preview: true,
+        newBase: newBase,
+        existingExpiration: existingRaw
+      });
+      if (!newDate||isNaN(newDate.getTime())) return;
       rows.push({
         type:type,
         expKey:expKey,
         expKeyAlt:expKeyAlt,
         newDate:newDate,
         newBase:newBase,
-        current:existingRaw||'—',
-        proposed:newDate.toLocaleDateString(),
+        priorExpiration: existingRaw || null,
+        current: existingRaw ? (this.formatPilotExpDateStr(existingRaw) || existingRaw) : '—',
+        proposed: this.formatPilotExpDateStr(newDate) || newDate.toLocaleDateString(),
         action:newBase?'rebase':(hasExisting?'extend':'initial'),
         warnEarlier:hasExisting&&newDate<existingDate
       });
@@ -920,7 +964,7 @@ class RecordsComponent {
       const expValue=row.newDate.toLocaleDateString();
       doc[row.expKey]=expValue;
       if (row.expKeyAlt) doc[row.expKeyAlt]=expValue;
-      this.logApprovalExpHistory(record,row.expKey,expValue,row.expKeyAlt);
+      this.logApprovalExpHistory(record, row.expKey, expValue, row.expKeyAlt, row.priorExpiration);
     });
     doc.trainingExpHistory=this.fullPilot.trainingExpHistory;
     this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
@@ -958,7 +1002,8 @@ class RecordsComponent {
     if (!this.isApprover()) return this.toaster.error('Error','Only approvers can approve records');
     if (!record||!record._id) return this.toaster.error('Error','Save the record before approving');
     const localRecord=typeof index==='number'&&index>-1?this.records[index]:record;
-    const previewRows=this.buildExpPreviewRows(localRecord);
+    const priorSnapshot=this.snapshotPriorExpDates(localRecord);
+    const previewRows=this.buildExpPreviewRows(localRecord, priorSnapshot);
     if (!previewRows.length) return this.toaster.error('Error','Select training types on this record before approving');
     this._expPreviewOpen=true;
     this.expPreviewModal(localRecord, previewRows, this.pilot.name, {

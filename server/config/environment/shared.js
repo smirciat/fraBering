@@ -173,6 +173,11 @@ exports = module.exports = {
       forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 1, ifr: 1, night: 2},
       windRequirement:{level1: 35, level15: 30}
     },
+    {icao:'KDL',name:'Dahl Creek',threeLetter:'KDL',baseGroup:'PAOT',provisionMissing:true,base:false,
+      ceilingRequirement:{yellow: 1000, red: 500, ifr: 500, night: 1000},
+      forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 1, ifr: 1, night: 2},
+      windRequirement:{level1: 35, level15: 30}
+    },
     {icao:'PAIK',name:'Kiana',base:false,ceilingRequirement:{yellow: 1000, red: 500, ifr: 500, night: 1000},
       forecastRequirement:null,runwayCondition:1,visibilityRequirement:{yellow: 3, red: 1, ifr: 1, night: 2},
       windRequirement:{level1: 35, level15: 30}

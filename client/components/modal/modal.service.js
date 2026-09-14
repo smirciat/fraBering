@@ -157,7 +157,7 @@ angular.module('workspaceApp')
             formRows = [];
             for (i = 0; i < rows.length; i++) {
               formRows.push(angular.extend({}, rows[i], {
-                newBase: rows[i].action === 'rebase',
+                newBase: rows[i].newBase !== undefined ? !!rows[i].newBase : rows[i].action === 'rebase',
                 newDateInput: rows[i].proposed
               }));
             }
@@ -694,6 +694,20 @@ angular.module('workspaceApp')
                   if (!flight.pfr.legArray[0].fuel) return 0;
                   return (flight.pfr.legArray[0].fuel/flight.equipment.fuelBurn).toFixed(1);
                 },
+                pfrTakeoffFuelLbs:function(airportIndex) {
+                  return Util.pfrTakeoffFuelForAirportIndex(
+                    flight.pfr,
+                    airportIndex,
+                    Util.pfrAirportCount(flight)
+                  );
+                },
+                pfrEndingFuelLbs:function(airportIndex) {
+                  return Util.pfrEndingFuelForAirportIndex(
+                    flight.pfr,
+                    airportIndex,
+                    Util.pfrAirportCount(flight)
+                  );
+                },
                 upOrDown:function(bool){
                   if (!bool) return "fa fa-solid fa-angle-down fa-lg";
                   return "fa fa-solid fa-angle-up fa-lg";
@@ -706,6 +720,7 @@ angular.module('workspaceApp')
                 standbyLegTimesDisabled:function(){return flight.active==='false';},
                 enrouteFieldsDisabled:function(){return flight.flightStatus==='Completed';},
                 plannedFinalEta:function(){return Util.plannedFinalEta(flight);},
+                releaseEtaDisplay:function(){return Util.releaseEtaDisplay(flight);},
                 dismissable: true,
                 show:false,
                 flightModal:true,

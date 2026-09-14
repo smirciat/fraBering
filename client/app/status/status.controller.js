@@ -54,7 +54,7 @@ class StatusComponent {
     this.BE20Equipments=[0,0,40,40,40,40,40,40,40,0];
     this.alternateArray=['OME','OTZ','UNK','BET','GAL','ANC','FAI'];
     this.airportOrder=['PAOM','PAUN','PAOT','A06','NAV','PAGM','PASA','PASH','PAIW','PATC','PFKT','PATE','PAWM','PAGL','PFEL',
-            'PAKK','PFSH','PAMK','WBB','PADG','PAPO','PALU','PAVL','PAWN','PFNO','PAIK','PASK','PAFM','PAGH','PAOB','PABL','PADE'];
+            'PAKK','PFSH','PAMK','WBB','PADG','PAPO','PALU','PAVL','PAWN','PFNO','PAIK','PASK','PAFM','PAGH','PAOB','KDL','PABL','PADE'];
     this.captainPlusMinus="+";
     this.copilotPlusMinus="+";
     this.showLoadSheet=[];

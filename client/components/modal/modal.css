@@ -307,6 +307,12 @@
   margin:4px 0 6px;
 }
 
+.eta-hint-scheduled{
+  font-size:11px;
+  color:#999;
+  margin-top:0;
+}
+
 .eta-terminated-check{
   margin-top:12px;
   font-weight:bold;

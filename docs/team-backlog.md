@@ -6,6 +6,25 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
+## #36 the 1900 fuel weight is -1 after the 1st leg
+
+- **Type:** bug · medium · open
+- **Reporter:** Chelsea Fagerstrom
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: This is actually Dawson's catch, so lets not email CHelsea about it
+
+**Latest screenshot:**
+
+![image.png](team-backlog/attachments/issue-36-att-28-image.png)
+
+**Comments:**
+- Andy Smircich: This is actually Dawson's catch, so lets not email CHelsea about it
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-36-att-28-image.png)
+
 ## #23 Trying to rebase when not told to do so
 
 - **Type:** bug · medium · in_progress
@@ -219,6 +238,22 @@ Please verify on an enroute flight: open Flight Release → Amendments, confirm 
 
 **Attachments:**
 - ![screenshot-1788716221662.png](team-backlog/attachments/issue-16-att-25-screenshot-1788716221662.png)
+
+## #37 vrf for Dahl Creek
+
+- **Type:** bug · low · open
+- **Reporter:** SCOTT GORDON
+
+**Original report:**
+
+Could not mark Dahl Creek as VFR.
+
+**Progress (changed, not resolved):**
+
+Andy Smircich: Need to add dahl creek as an airport in frat.  I've been doing additions manually like Point Lay, maybe there's a way to make it quicker and easier
+
+**Comments:**
+- Andy Smircich: Need to add dahl creek as an airport in frat.  I've been doing additions manually like Point Lay, maybe there's a way to make it quicker and easier
 
 ## Ready for review (shipped — reporter verify, do not build)
 
@@ -496,31 +531,38 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
 
-## #34 Not VFR purple to red to purple....
+## #35 FDR
 
-- **Type:** bug · medium · ready_for_review
-- **Reporter:** Lil Buddy
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** Kaleb Janke
 - **Status:** ready for review
 
 **Original report:**
 
-I entered a "Not VFR (below VFR mins — blocks dispatch)" manual observation on PHO and it keeps switching back and forth from red with an orange border to purple with an orange border.
+I'm going to email you the spread sheet
 
 **Comments:**
-- LOGAN BAGLEY: Screenshots I tried to upload are “too large for the server proxy” I was prompted to ask admin to raise nginx client_max_body_size
-- Cursor Agent: **Ready for review — two fixes on prod**
+- Andy Smircich: I uploaded Flight and Duty Records XLSX file to /uploads .  We want to incorporate this workflow into the training records area (likely a separate view) so that Kaleb doesn't use the spreadsheet anymore to update these things manually, but it looks similar in the browser.  Also, many of the formulas are "broken" so we want to review those.  Tabs for calendar years is a behavior/ui we'd like to preserve, as well as similar formatting.  A side note: we cannot upload an xlsx file in issues on ~/fraBering, lets address that too.
+- Cursor Agent: Ready for your review on prod (Management → FDR).
 
-**1. Not VFR color flip (original report)**  
-On the status board, a **Not VFR** manual observation could bounce between **red** and **purple** because risk color was calculated before the manual observation was applied, and some paths still required `usingManual`. Manual observation is applied first now, flight/airport colors refresh after you save from the sidebar, and **Not VFR** should stay **red** (with the orange border) for the full hour.
+What shipped:
+• Year tabs + Summary — spreadsheet-style layout; 2025+ flight hours from Firebase (on demand), days off manual from paper F&D
+• Sync toolbar — all pilots, by base (OME / OTZ / Rotorwing), or one pilot; progress banner; hours saved in the database
+• Sync markers — green = saved Firebase hours; blue = synced in this browser session
+• Duty limits — outlines for 500h/quarter, 1400h/year, 800h consecutive quarter pairs (including Q4 prior year + Q1 this year), 13 days off/quarter when auditable
+• Lock Firebase sync per year — freezes hour refresh only; days off still editable (for when a year is closed)
+• Excel download (this tab, summary, full workbook)
+• Compare alerts when saved Firebase hours look materially below imported spreadsheet months (QA aid)
 
-**2. Screenshot uploads (Logan)**  
-nginx on **frat.beringair.com** now allows **50M** bodies (same as reservations issues), so paste/upload should no longer hit “too large for the server proxy.”
+Please check:
+1. 2025 and 2026 — do hours look right for pilots you know?
+2. Change a days off cell — does it save and stick after reload?
+3. Optional: Sync one pilot you care about; full Sync all is batched and slow — only if you want everyone refreshed
+4. When you’re happy with 2025 hours, tell Andy and we can lock sync for that year
 
-**Please verify**
-- **Lil Buddy** — PHO (or any airport): set **Not VFR**, watch the column for a minute; it should not flip back to purple.
-- **Logan** — please paste or attach the screenshots you tried earlier on **#34** so we can confirm the color behavior if anything is still wrong.
+Reply here with any wrong pilot-month, limit highlight, or compare flag. Minor UI cleanup waits until after we soak in ops.
 
-Reply here when it looks good and we can mark **Done**.
+Thanks — Andy
 
 ## #24 Manual weather input
 

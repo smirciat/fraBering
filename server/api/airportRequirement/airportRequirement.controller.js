@@ -10,8 +10,11 @@
 'use strict';
 
 import _ from 'lodash';
+import Sequelize from 'sequelize';
 import {AirportRequirement} from '../../sqldb';
 import config from '../../config/environment';
+
+const Op = Sequelize.Op;
 import localEnv from '../../config/local.env.js';
 const baseUrl = 'http://localhost:' + config.port;
 const url1="https://api.synopticlabs.org/v2/stations/latest?stid="; //data.com/v2/stations/latest?stid=";
@@ -25,6 +28,50 @@ let allPireps=[];
 let count=0;
 let xwind=0;
 let alternateArray=['OME','OTZ','UNK','BET','GAL','ANC','FAI'];
+let configuredAirportsEnsured = false;
+
+/** Insert airports marked provisionMissing in shared config when absent from Postgres (#37). */
+export async function ensureConfiguredAirports() {
+  const templates = (config.airportRequirements || []).filter(t => t && t.provisionMissing);
+  if (!templates.length) return;
+  for (let i = 0; i < templates.length; i++) {
+    const tpl = templates[i];
+    if (!tpl.icao || !tpl.name) continue;
+    const existing = await AirportRequirement.findOne({
+      where: {
+        [Op.or]: [
+          { icao: tpl.icao },
+          { name: tpl.name },
+          { threeLetter: tpl.threeLetter || tpl.icao }
+        ]
+      }
+    });
+    if (existing) continue;
+    const threeLetter = tpl.threeLetter || (String(tpl.icao).length === 3 ? tpl.icao : '');
+    if (!threeLetter) {
+      console.log('ensureConfiguredAirports: skip ' + tpl.name + ' (no threeLetter)');
+      continue;
+    }
+    try {
+      await AirportRequirement.create({
+        name: tpl.name,
+        icao: tpl.icao,
+        threeLetter: threeLetter,
+        base: tpl.base === true,
+        baseGroup: tpl.baseGroup || null,
+        ceilingRequirement: tpl.ceilingRequirement,
+        visibilityRequirement: tpl.visibilityRequirement,
+        windRequirement: tpl.windRequirement,
+        runwayCondition: tpl.runwayCondition || 1,
+        forecastRequirement: tpl.forecastRequirement || null,
+        openClosed: 'Open'
+      });
+      console.log('ensureConfiguredAirports: created ' + tpl.name + ' (' + tpl.icao + ')');
+    } catch (err) {
+      console.log('ensureConfiguredAirports failed for ' + tpl.name, err.message || err);
+    }
+  }
+}
 
 function respondWithResult(res, statusCode) {
   statusCode = statusCode || 200;
@@ -338,6 +385,10 @@ export async function tafs(req,res) {
 export async function metars(req,res) {
   let allAirports=[];
   try {
+    if (!configuredAirportsEnsured) {
+      configuredAirportsEnsured = true;
+      await ensureConfiguredAirports();
+    }
     const hour=new Date().getHours();
     //initialize airport list from database table if it is empty
     if (true){//(allAirports.length===0||count>=24) {
@@ -386,6 +437,15 @@ export async function metars(req,res) {
         if (airport.threeLetter==='WBB') {
           try {
             let resp=await getMetarSynoptic('PAMK');
+            airport.metarObj={adjacentMetar:resp.metar};
+          }
+          catch(err) {
+            console.log(err);
+          }
+        }
+        if (airport.threeLetter==='KDL') {
+          try {
+            let resp=await getMetarSynoptic('PAOB');
             airport.metarObj={adjacentMetar:resp.metar};
           }
           catch(err) {
