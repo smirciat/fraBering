@@ -445,7 +445,8 @@ export async function metars(req,res) {
         }
         if (airport.threeLetter==='KDL') {
           try {
-            let resp=await getMetarSynoptic('PAOB');
+            // No AWOS at KDL; Shungnak (SHG / PAGH) is the ops reference, not Kobuk (PAOB).
+            let resp=await getMetarSynoptic('PAGH');
             airport.metarObj={adjacentMetar:resp.metar};
           }
           catch(err) {
