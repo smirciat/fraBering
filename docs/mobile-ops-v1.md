@@ -62,7 +62,7 @@ All below except `auth/assertion` require `auth.isAuthenticated()` (Bearer JWT).
 |--------|------|---------|
 | GET | `/me` | Mapped user + which sign roles apply (`canSignDispatch`, `canSignOc`, `canSignPilot` for a given `flightId` query optional) |
 | GET | `/board?date=YYYY-MM-DD&base=OME\|OTZ\|UNK\|HEL\|ALL` | Slim day list. Omit `base` or pass `ALL` for all FW bases (city-name filter: Nome / Kotzebue / Unalakleet). HEL is empty — use frat web. |
-| GET | `/flights/:id` | Release DTO: legs, colors, PFR summary, release fields, `whoCanSign`, bulletin nag flag |
+| GET | `/flights/:id` | Release DTO. **Today:** slim (board row + `whoCanSign` + timestamps). **Target (later slices):** payload enough to render web `modal.flightModal` (flight info, fuel/weights, crew, FIKI, airport/METAR cards, alternate, remarks, bulletin nag, inspections) so crew overlay can sign after reviewing the same data. |
 | POST | `/flights/:id/sign` | `{ "as": "dispatch" \| "oc" \| "pilot" }` — server enforces same rules as web modal |
 | GET | `/hel?date=YYYY-MM-DD` | Slim HEL cards (v1 may merge into `/board?base=HEL`) |
 
@@ -71,7 +71,8 @@ All below except `auth/assertion` require `auth.isAuthenticated()` (Bearer JWT).
 Not the full `dayFlights` Sequelize row. Example:
 
 - `_id`, `flightNum`, `airports[]`, `departTimes[]`, `flightStatus`, `color` / `colorLock`
-- `dispatchRelease`, `ocRelease`, `pilotAgree` (booleans or names)
+- `dispatchRelease`, `ocRelease`, `pilotAgree` (names/strings — list UI: **thumb** if dispatch or OC, **rocket** if PIC; `released` is both)
+- `knownIce` (optional list snowflake)
 - `pilotObject`, `equipment` (minimal)
 - `updatedEta` / display ETA fields as on web strip
 

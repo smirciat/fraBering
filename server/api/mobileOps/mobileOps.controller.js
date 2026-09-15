@@ -5,6 +5,7 @@ import config from '../../config/environment';
 import { User, TodaysFlight } from '../../sqldb';
 import { signToken } from '../../auth/auth.service';
 import localEnv from '../../config/local.env.js';
+import { buildReleaseModalView } from './release-modal-view.js';
 
 const MOBILE_BOARD_ATTRS = [
   '_id',
@@ -36,6 +37,22 @@ const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
   'airportObjsLocked',
   'pilot',
   'coPilot',
+  'coPilotObject',
+  'mel',
+  'other',
+  'bew',
+  'block',
+  'alternate',
+  'security',
+  'fuelPreviouslyOnboard',
+  'otherEnvironment',
+  'crewId',
+  'cockpitInspection',
+  'cabinInspection',
+  'cargoInspection',
+  'wheelWellInspection',
+  'departTimesZulu',
+  'nonRevFlight',
 ]);
 
 function opsExportTokenSecret() {
@@ -295,6 +312,7 @@ function toReleaseDto(flight, user) {
     ocRequired: ocRequired(flight),
     whoCanSign: user ? whoCanSign(flight, user) : undefined,
     bulletinNag: false,
+    modalView: buildReleaseModalView(flight),
   });
 }
 
