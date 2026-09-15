@@ -335,7 +335,10 @@ export function authAssertion(req, res) {
 
 export function getBoard(req, res) {
   const date = localeDateFromQuery(req.query.date);
-  const base = String(req.query.base || 'OME').trim().toUpperCase();
+  const rawBase =
+    req.query.base == null ? '' : String(req.query.base).trim().toUpperCase();
+  const allBases = !rawBase || rawBase === 'ALL';
+  const base = allBases ? 'ALL' : rawBase;
   if (!date) {
     return res.status(400).json({ message: 'Query date is required (YYYY-MM-DD)' });
   }
@@ -354,7 +357,7 @@ export function getBoard(req, res) {
           const ac = String(row.aircraft || '');
           return ac.startsWith('N');
         })
-        .filter(row => flightMatchesBase(row, base))
+        .filter(row => allBases || flightMatchesBase(row, base))
         .map(toBoardRow)
     )
     .then(flights => res.status(200).json({ date, base, flights }))

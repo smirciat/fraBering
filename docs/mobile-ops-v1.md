@@ -61,7 +61,7 @@ All below except `auth/assertion` require `auth.isAuthenticated()` (Bearer JWT).
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/me` | Mapped user + which sign roles apply (`canSignDispatch`, `canSignOc`, `canSignPilot` for a given `flightId` query optional) |
-| GET | `/board?base=OME\|OTZ\|UNK\|HEL&date=YYYY-MM-DD` | Slim day list for base (FW filter same as web navbar; HEL from Firebase path) |
+| GET | `/board?date=YYYY-MM-DD&base=OME\|OTZ\|UNK\|HEL\|ALL` | Slim day list. Omit `base` or pass `ALL` for all FW bases (city-name filter: Nome / Kotzebue / Unalakleet). HEL is empty — use frat web. |
 | GET | `/flights/:id` | Release DTO: legs, colors, PFR summary, release fields, `whoCanSign`, bulletin nag flag |
 | POST | `/flights/:id/sign` | `{ "as": "dispatch" \| "oc" \| "pilot" }` — server enforces same rules as web modal |
 | GET | `/hel?date=YYYY-MM-DD` | Slim HEL cards (v1 may merge into `/board?base=HEL`) |
