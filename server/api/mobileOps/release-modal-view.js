@@ -50,9 +50,18 @@ function legDestinationType(index, airportCount) {
   return 'Enroute';
 }
 
+function asLegArray(value) {
+  if (Array.isArray(value)) return value;
+  return [];
+}
+
 function mapLegCards(f) {
-  const objs = f.airportObjsLocked || f.airportObjs || [];
-  const zulu = f.departTimesZulu || {};
+  const objs = asLegArray(f.airportObjsLocked).length
+    ? asLegArray(f.airportObjsLocked)
+    : asLegArray(f.airportObjs);
+  const zulu = f.departTimesZulu && typeof f.departTimesZulu === 'object'
+    ? f.departTimesZulu
+    : {};
   const count = objs.length;
   return objs.map(function (metarObj, index) {
     const airport = metarObj.airport || {};

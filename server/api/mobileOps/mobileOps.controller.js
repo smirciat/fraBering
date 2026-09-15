@@ -41,7 +41,6 @@ const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
   'mel',
   'other',
   'bew',
-  'block',
   'alternate',
   'security',
   'fuelPreviouslyOnboard',
@@ -305,6 +304,12 @@ function whoCanSign(flight, user) {
 function toReleaseDto(flight, user) {
   const f = flight.dataValues || flight;
   const row = toBoardRow(flight);
+  let modalView = null;
+  try {
+    modalView = buildReleaseModalView(flight);
+  } catch (modalErr) {
+    console.error('[mobileOps] modalView build failed', modalErr);
+  }
   return Object.assign({}, row, {
     dispatchReleaseTimestamp: f.dispatchReleaseTimestamp || null,
     ocReleaseTimestamp: f.ocReleaseTimestamp || null,
@@ -312,7 +317,7 @@ function toReleaseDto(flight, user) {
     ocRequired: ocRequired(flight),
     whoCanSign: user ? whoCanSign(flight, user) : undefined,
     bulletinNag: false,
-    modalView: buildReleaseModalView(flight),
+    modalView,
   });
 }
 
