@@ -2,16 +2,24 @@
 
 import express from 'express';
 import * as auth from '../../auth/auth.service';
-import * as controller from './mobileOps.controller';
+import {
+  allowOpsExportAccess,
+  authAssertion,
+  getBoard,
+  getFlight,
+  patchFlight,
+  signFlight,
+} from './mobileOps.controller';
 
 const router = express.Router();
 
-router.post('/auth/assertion', controller.allowOpsExportAccess, controller.authAssertion);
+router.post('/auth/assertion', allowOpsExportAccess, authAssertion);
 
 router.use(auth.isAuthenticated());
 
-router.get('/board', controller.getBoard);
-router.get('/flights/:id', controller.getFlight);
-router.post('/flights/:id/sign', controller.signFlight);
+router.get('/board', getBoard);
+router.get('/flights/:id', getFlight);
+router.patch('/flights/:id', patchFlight);
+router.post('/flights/:id/sign', signFlight);
 
 module.exports = router;

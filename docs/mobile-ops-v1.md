@@ -63,6 +63,7 @@ All below except `auth/assertion` require `auth.isAuthenticated()` (Bearer JWT).
 | GET | `/me` | Mapped user + which sign roles apply (`canSignDispatch`, `canSignOc`, `canSignPilot` for a given `flightId` query optional) |
 | GET | `/board?date=YYYY-MM-DD&base=OME\|OTZ\|UNK\|HEL\|ALL` | Slim day list. Omit `base` or pass `ALL` for all FW bases (city-name filter: Nome / Kotzebue / Unalakleet). HEL is empty — use frat web. |
 | GET | `/flights/:id` | Release DTO. **Today:** slim (board row + `whoCanSign` + timestamps). **Target (later slices):** payload enough to render web `modal.flightModal` (flight info, fuel/weights, crew, FIKI, airport/METAR cards, alternate, remarks, bulletin nag, inspections) so crew overlay can sign after reviewing the same data. |
+| PATCH | `/flights/:id` | Whitelisted fields until release locked: `mel`, `other`, `fuelPreviouslyOnboard`, `knownIce`, `otherEnvironment`, `crewId`, `security` (PFR remark) |
 | POST | `/flights/:id/sign` | `{ "as": "dispatch" \| "oc" \| "pilot" }` — server enforces same rules as web modal |
 | GET | `/hel?date=YYYY-MM-DD` | Slim HEL cards (v1 may merge into `/board?base=HEL`) |
 

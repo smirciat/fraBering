@@ -5,7 +5,8 @@ import config from '../../config/environment';
 import { User, TodaysFlight } from '../../sqldb';
 import { signToken } from '../../auth/auth.service';
 import localEnv from '../../config/local.env.js';
-import { buildReleaseModalView } from './release-modal-view.js';
+
+const { buildReleaseModalView } = require('./release-modal-view.js');
 
 const MOBILE_BOARD_ATTRS = [
   '_id',
@@ -316,6 +317,24 @@ function signGate(flight, user, as) {
   return { ok: false, message: 'Invalid sign role.' };
 }
 
+function releaseFieldsLocked(flight) {
+  const f = flight.dataValues || flight;
+  return Boolean(
+    (f.dispatchRelease || f.ocRelease) &&
+      f.pilotAgree &&
+      String(f.pilotAgree).trim()
+  );
+}
+
+const PATCHABLE_STRING_FIELDS = new Set([
+  'mel',
+  'other',
+  'fuelPreviouslyOnboard',
+  'otherEnvironment',
+  'crewId',
+  'security',
+]);
+
 function whoCanSign(flight, user) {
   const tryDispatch = signGate(flight, user, 'dispatch');
   const tryOc = signGate(flight, user, 'oc');
@@ -413,6 +432,56 @@ export function getBoard(req, res) {
     .catch(err => {
       console.error('[mobileOps] board', err);
       return res.status(500).json({ message: 'Board load failed' });
+    });
+}
+
+export function patchFlight(req, res) {
+  const id = req.params.id;
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+
+  return TodaysFlight.findOne({ where: { _id: id } })
+    .then(flight => {
+      if (!flight) return res.status(404).json({ message: 'Flight not found' });
+      if (releaseFieldsLocked(flight)) {
+        return res.status(403).json({ message: 'Release is locked after sign-off.' });
+      }
+
+      let changed = false;
+      if (Object.prototype.hasOwnProperty.call(body, 'knownIce')) {
+        flight.knownIce = body.knownIce === true || body.knownIce === 'true';
+        changed = true;
+      }
+
+      PATCHABLE_STRING_FIELDS.forEach(field => {
+        if (!Object.prototype.hasOwnProperty.call(body, field)) return;
+        const value = body[field];
+        flight[field] = value == null ? '' : String(value);
+        changed = true;
+        if (field === 'security') {
+          const pfr =
+            flight.pfr && typeof flight.pfr === 'object'
+              ? Object.assign({}, flight.pfr)
+              : {};
+          pfr.remarks1 = flight.security;
+          flight.pfr = pfr;
+          flight.changed('pfr', true);
+        }
+      });
+
+      if (!changed) {
+        return res.status(400).json({
+          message:
+            'No editable fields in body (mel, other, fuelPreviouslyOnboard, knownIce, otherEnvironment, crewId, security).',
+        });
+      }
+
+      return flight
+        .save()
+        .then(saved => res.status(200).json(toReleaseDto(saved, req.user)));
+    })
+    .catch(err => {
+      console.error('[mobileOps] patch', err);
+      return res.status(500).json({ message: 'Flight update failed' });
     });
 }
 
