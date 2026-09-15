@@ -188,20 +188,46 @@ function pilotLastNameMismatch(user, flight) {
   return userLast.toLowerCase() !== pilotLast.toLowerCase();
 }
 
+const FRAT_RISK_COLORS = [
+  'airport-green',
+  'airport-blue',
+  'airport-purple',
+  'airport-yellow',
+  'airport-orange',
+  'airport-pink',
+];
+
+function worstRiskColorIndex(colorStr) {
+  if (!colorStr) return 0;
+  const tokens = String(colorStr)
+    .replace(/\s+unofficial/g, '')
+    .split(/\s+/)
+    .filter(Boolean);
+  let max = 0;
+  for (let i = 0; i < tokens.length; i += 1) {
+    const idx = FRAT_RISK_COLORS.indexOf(tokens[i]);
+    if (idx > max) max = idx;
+  }
+  return max;
+}
+
+/** Blue or purple leg — pilot needs OC first (modal.service.js `flightHasBlueOrPurpleLeg`). */
+function flightHasBlueOrPurpleLeg(flight) {
+  const f = flight.dataValues || flight;
+  const legs = f.airportObjs || f.airportObjsLocked || [];
+  for (let i = 0; i < legs.length; i += 1) {
+    const idx = worstRiskColorIndex(legs[i].color);
+    if (idx === 1 || idx === 2) return true;
+  }
+  return false;
+}
+
 function legHasHighRiskColor(flight) {
   const f = flight.dataValues || flight;
   const legs = f.airportObjsLocked || f.airportObjs || [];
   for (let i = 0; i < legs.length; i += 1) {
-    const c = String(legs[i].color || '').toLowerCase();
-    if (
-      c.indexOf('airport-blue') > -1 ||
-      c.indexOf('airport-purple') > -1 ||
-      c.indexOf('airport-orange') > -1 ||
-      c.indexOf('airport-red') > -1 ||
-      c.indexOf('airport-pink') > -1
-    ) {
-      return true;
-    }
+    const idx = worstRiskColorIndex(legs[i].color);
+    if (idx === 1 || idx === 2 || idx === 4 || idx === 5) return true;
   }
   return false;
 }
@@ -269,19 +295,19 @@ function signGate(flight, user, as) {
   }
 
   if (as === 'pilot') {
+    if (String(user.name || '').trim() === 'Bering Air') {
+      return { ok: false, message: 'Pilot acceptance cannot be signed as Bering Air.' };
+    }
     if (pilotLastNameMismatch(user, flight)) {
       return { ok: false, message: 'Pilot acceptance must be signed by the assigned captain.' };
     }
     if (f.pilotAgree) {
       return { ok: false, message: 'Pilot acceptance already signed.' };
     }
-    if (legHasHighRiskColor(flight) && !f.ocRelease) {
-      return { ok: false, message: 'OC must sign before pilot acceptance on this route.' };
-    }
-    if (!f.dispatchRelease && !f.ocRelease) {
+    if (flightHasBlueOrPurpleLeg(flight) && !f.ocRelease) {
       return {
         ok: false,
-        message: 'Dispatch or OC release must be signed before pilot acceptance.',
+        message: 'OC must sign before pilot acceptance on blue or purple routes.',
       };
     }
     return { ok: true };
