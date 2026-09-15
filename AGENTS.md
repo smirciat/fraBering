@@ -72,3 +72,4 @@ See `README.md` for full install steps (npm, bower, node version quirks).
 - `docs/day-planner-2026-09.md` — Day Planner view (Gantt by pilot, Sep 2026)
 - `docs/fdr-plan-2026-09.md` — Flight & Duty Records (#35) — status, limits, on-demand Firebase sync, year lock; Phase 4 cleanup deferred during soak
 - `docs/takeflite-resbering-cutover.md` — Oct 2026 Takeflite API flip via `TAKEFLITE_DATA_SOURCE`; FRA uses **status-export** (not extra webhooks; N+1 manifest shim is temporary)
+- `docs/mobile-ops-v1.md` — **draft** mobile ops API for bering_crew FRAT board + release (assertion JWT, `/api/mobile/ops/v1/*`); Flutter build doc in resBering
