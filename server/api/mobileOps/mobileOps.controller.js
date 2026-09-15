@@ -58,8 +58,11 @@ function localeDateFromQuery(dateString) {
   if (!dateString) return null;
   const trimmed = String(dateString).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const d = new Date(trimmed + 'T12:00:00');
-    if (!Number.isNaN(d.getTime())) return d.toLocaleDateString();
+    const parts = trimmed.split('-');
+    const year = Number(parts[0]);
+    const month = Number(parts[1]) - 1;
+    const day = Number(parts[2]);
+    return new Date(year, month, day).toLocaleDateString();
   }
   const d = new Date(trimmed);
   if (Number.isNaN(d.getTime())) return null;
@@ -109,19 +112,25 @@ function toBoardRow(flight) {
 
 function flightMatchesBase(flight, base) {
   const code = String(base || '').trim().toUpperCase();
-  if (!code || code === 'HEL') return false;
   const airports = flight.airports || [];
   if (!airports.length) return false;
-  if (code === 'OME') {
-    return airports[0] === 'OME' || airports.includes('OME');
-  }
+  if (code === 'HEL') return false;
   if (code === 'OTZ') {
-    return airports[0] === 'OTZ' || airports.includes('OTZ');
+    return airports.some(function (a) {
+      return String(a).trim() === 'Kotzebue';
+    });
   }
   if (code === 'UNK') {
-    return airports.includes('UNK');
+    return airports.some(function (a) {
+      return String(a).trim() === 'Unalakleet';
+    });
   }
-  return airports.includes(code);
+  if (code === 'OME') {
+    return airports.some(function (a) {
+      return String(a).trim() === 'Nome';
+    });
+  }
+  return false;
 }
 
 function moreThanOneHourBeforeDepart(flight) {
