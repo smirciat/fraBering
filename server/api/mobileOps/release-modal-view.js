@@ -1,5 +1,7 @@
 'use strict';
 
+const { buildAmendmentsView } = require('./standby-charter.js');
+
 function str(val) {
   if (val == null) return '';
   return String(val).trim();
@@ -186,6 +188,7 @@ function buildReleaseModalView(flight) {
     allDisabled: Boolean(
       (f.dispatchRelease || f.ocRelease) && f.pilotAgree && str(f.pilotAgree)
     ),
+    amendments: buildAmendmentsView(flight),
   };
 }
 

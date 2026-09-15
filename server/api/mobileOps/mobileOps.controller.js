@@ -7,6 +7,7 @@ import { signToken } from '../../auth/auth.service';
 import localEnv from '../../config/local.env.js';
 
 const { buildReleaseModalView } = require('./release-modal-view.js');
+const { applyStandbyLegTimesPatch } = require('./standby-charter.js');
 
 const MOBILE_BOARD_ATTRS = [
   '_id',
@@ -53,6 +54,12 @@ const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
   'wheelWellInspection',
   'departTimesZulu',
   'nonRevFlight',
+  'enrouteChanges',
+  'miscObject',
+  'arriveTimes',
+  'active',
+  'tfliteDepart',
+  'tfliteArrive',
 ]);
 
 function opsExportTokenSecret() {
@@ -361,7 +368,6 @@ function toReleaseDto(flight, user) {
     releaseTimestamp: f.releaseTimestamp || null,
     ocRequired: ocRequired(flight),
     whoCanSign: user ? whoCanSign(flight, user) : undefined,
-    bulletinNag: false,
     modalView,
   });
 }
@@ -442,11 +448,40 @@ export function patchFlight(req, res) {
   return TodaysFlight.findOne({ where: { _id: id } })
     .then(flight => {
       if (!flight) return res.status(404).json({ message: 'Flight not found' });
-      if (releaseFieldsLocked(flight)) {
-        return res.status(403).json({ message: 'Release is locked after sign-off.' });
-      }
+      const locked = releaseFieldsLocked(flight);
 
       let changed = false;
+      if (locked) {
+        if (Object.prototype.hasOwnProperty.call(body, 'enrouteChanges')) {
+          flight.enrouteChanges =
+            body.enrouteChanges == null ? '' : String(body.enrouteChanges);
+          changed = true;
+        }
+        if (Object.prototype.hasOwnProperty.call(body, 'updatedEta')) {
+          if (!flight.miscObject || typeof flight.miscObject !== 'object') {
+            flight.miscObject = {};
+          }
+          flight.miscObject.updatedEta =
+            body.updatedEta == null ? '' : String(body.updatedEta);
+          flight.changed('miscObject', true);
+          changed = true;
+        }
+        if (Object.prototype.hasOwnProperty.call(body, 'standbyLegTimes')) {
+          if (applyStandbyLegTimesPatch(flight, body.standbyLegTimes)) {
+            changed = true;
+          }
+        }
+        if (!changed) {
+          return res.status(403).json({
+            message:
+              'Release is locked — only enroute amendments (enrouteChanges, updatedEta, standbyLegTimes) can be updated.',
+          });
+        }
+        return flight
+          .save()
+          .then(saved => res.status(200).json(toReleaseDto(saved, req.user)));
+      }
+
       if (Object.prototype.hasOwnProperty.call(body, 'knownIce')) {
         flight.knownIce = body.knownIce === true || body.knownIce === 'true';
         changed = true;
@@ -468,10 +503,32 @@ export function patchFlight(req, res) {
         }
       });
 
+      if (Object.prototype.hasOwnProperty.call(body, 'enrouteChanges')) {
+        flight.enrouteChanges =
+          body.enrouteChanges == null ? '' : String(body.enrouteChanges);
+        changed = true;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(body, 'updatedEta')) {
+        if (!flight.miscObject || typeof flight.miscObject !== 'object') {
+          flight.miscObject = {};
+        }
+        flight.miscObject.updatedEta =
+          body.updatedEta == null ? '' : String(body.updatedEta);
+        flight.changed('miscObject', true);
+        changed = true;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(body, 'standbyLegTimes')) {
+        if (applyStandbyLegTimesPatch(flight, body.standbyLegTimes)) {
+          changed = true;
+        }
+      }
+
       if (!changed) {
         return res.status(400).json({
           message:
-            'No editable fields in body (mel, other, fuelPreviouslyOnboard, knownIce, otherEnvironment, crewId, security).',
+            'No editable fields in body (mel, other, fuelPreviouslyOnboard, knownIce, otherEnvironment, crewId, security, enrouteChanges, updatedEta, standbyLegTimes).',
         });
       }
 
