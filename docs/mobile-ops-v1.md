@@ -1,6 +1,6 @@
 # Mobile ops API v1 (fraBering) — contract draft
 
-**Status:** design only — routes not implemented yet.
+**Status:** **implemented in repo** — deploy fraBering before broker + crew tab.
 
 **Product:** FRAT status board + flight release sign-off inside **bering_crew** (resBering Flutter). One employee login; reservations brokers a short-lived FRAT JWT for a **1:1 mapped** fraBering `User`.
 

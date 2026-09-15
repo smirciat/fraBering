@@ -29,6 +29,7 @@ export default function(app) {
   app.use('/api/signatures', require('./api/signature'));
   app.use('/api/snapshots', require('./api/snapshot'));
   app.use('/api/todaysFlights', require('./api/todaysFlight'));
+  app.use('/api/mobile/ops/v1', require('./api/mobileOps'));
   app.use('/api/airportRequirements', require('./api/airportRequirement'));
   app.use('/api/monitors', require('./api/monitor'));
   app.use('/api/airplanes', require('./api/airplane'));

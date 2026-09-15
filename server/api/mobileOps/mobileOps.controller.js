@@ -1,0 +1,414 @@
+'use strict';
+
+import { Op } from 'sequelize';
+import config from '../../config/environment';
+import { User, TodaysFlight } from '../../sqldb';
+import { signToken } from '../../auth/auth.service';
+import localEnv from '../../config/local.env.js';
+
+const MOBILE_BOARD_ATTRS = [
+  '_id',
+  'active',
+  'date',
+  'flightNum',
+  'aircraft',
+  'airports',
+  'departTimes',
+  'flightStatus',
+  'color',
+  'colorLock',
+  'dispatchRelease',
+  'ocRelease',
+  'pilotAgree',
+  'pilotObject',
+  'equipment',
+  'tfliteDepart',
+];
+
+const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
+  'dispatchReleaseTimestamp',
+  'ocReleaseTimestamp',
+  'releaseTimestamp',
+  'pfr',
+  'operation',
+  'knownIce',
+  'airportObjs',
+  'airportObjsLocked',
+  'pilot',
+  'coPilot',
+]);
+
+function opsExportTokenSecret() {
+  return process.env.FRAT_OPS_EXPORT_TOKEN || localEnv.FRAT_OPS_EXPORT_TOKEN || '';
+}
+
+function allowOpsExportAccess(req, res, next) {
+  const secret = opsExportTokenSecret();
+  if (!secret) {
+    return res.status(503).json({ message: 'FRAT ops export is not configured' });
+  }
+  const provided = req.get('x-frat-ops-export-token') || req.query.exportToken;
+  if (provided && String(provided) === String(secret)) {
+    return next();
+  }
+  return res.status(401).json({ message: 'Invalid export token' });
+}
+
+function localeDateFromQuery(dateString) {
+  if (!dateString) return null;
+  const trimmed = String(dateString).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const d = new Date(trimmed + 'T12:00:00');
+    if (!Number.isNaN(d.getTime())) return d.toLocaleDateString();
+  }
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString();
+}
+
+function roleIndex(role) {
+  return config.userRoles.indexOf(role);
+}
+
+function normalizeFratColorClass(raw) {
+  if (!raw) return 'airport-green';
+  const tokens = String(raw).trim().split(/\s+/);
+  for (let i = tokens.length - 1; i >= 0; i -= 1) {
+    const token = tokens[i];
+    if (token.indexOf('airport-') === 0) return token;
+  }
+  return 'airport-green';
+}
+
+function toBoardRow(flight) {
+  const f = flight.dataValues || flight;
+  const colorRaw = String(f.colorLock || f.color || '').trim();
+  return {
+    _id: f._id,
+    flightNum: String(f.flightNum || '').trim(),
+    airports: f.airports || [],
+    departTimes: f.departTimes || [],
+    flightStatus: f.flightStatus || '',
+    color: normalizeFratColorClass(colorRaw),
+    colorRaw,
+    dispatchRelease: f.dispatchRelease || '',
+    ocRelease: f.ocRelease || '',
+    pilotAgree: f.pilotAgree || '',
+    pilotLastName:
+      f.pilotObject && f.pilotObject.lastName ? f.pilotObject.lastName : '',
+    equipmentName:
+      f.equipment && f.equipment.name ? f.equipment.name : '',
+    registration: f.aircraft || '',
+    released: Boolean(
+      f.pilotAgree &&
+        String(f.pilotAgree).trim() &&
+        (f.dispatchRelease || f.ocRelease)
+    ),
+  };
+}
+
+function flightMatchesBase(flight, base) {
+  const code = String(base || '').trim().toUpperCase();
+  if (!code || code === 'HEL') return false;
+  const airports = flight.airports || [];
+  if (!airports.length) return false;
+  if (code === 'OME') {
+    return airports[0] === 'OME' || airports.includes('OME');
+  }
+  if (code === 'OTZ') {
+    return airports[0] === 'OTZ' || airports.includes('OTZ');
+  }
+  if (code === 'UNK') {
+    return airports.includes('UNK');
+  }
+  return airports.includes(code);
+}
+
+function moreThanOneHourBeforeDepart(flight) {
+  const f = flight.dataValues || flight;
+  if (!f.date || !f.departTimes || !f.departTimes[0]) return true;
+  const targetTime = new Date(f.date);
+  const parts = String(f.departTimes[0]).split(':').map(Number);
+  targetTime.setHours(parts[0] || 0, parts[1] || 0, parts[2] || 0);
+  const now = new Date();
+  now.setHours(now.getHours() + 1);
+  return targetTime >= now;
+}
+
+function noPfr(flight) {
+  const f = flight.dataValues || flight;
+  const op = String(f.operation || '');
+  if (op === 'Test' || op === 'Training' || op === 'Ferry') return false;
+  return (
+    !f.pfr ||
+    !f.pfr.legArray ||
+    !f.pfr.legArray[0] ||
+    !f.pfr.legArray[0].fuel
+  );
+}
+
+function pilotLastNameMismatch(user, flight) {
+  const f = flight.dataValues || flight;
+  let userLast = '';
+  if (user.name) {
+    const parts = String(user.name).trim().split(/\s+/);
+    userLast = parts.length ? parts[parts.length - 1] : '';
+  }
+  if (userLast === 'K.' || userLast === 'R.') userLast = 'Evans';
+  const pilotLast =
+    f.pilotObject && typeof f.pilotObject.lastName === 'string'
+      ? f.pilotObject.lastName
+      : '';
+  if (!pilotLast) return false;
+  return userLast.toLowerCase() !== pilotLast.toLowerCase();
+}
+
+function legHasHighRiskColor(flight) {
+  const f = flight.dataValues || flight;
+  const legs = f.airportObjsLocked || f.airportObjs || [];
+  for (let i = 0; i < legs.length; i += 1) {
+    const c = String(legs[i].color || '').toLowerCase();
+    if (
+      c.indexOf('airport-blue') > -1 ||
+      c.indexOf('airport-purple') > -1 ||
+      c.indexOf('airport-orange') > -1 ||
+      c.indexOf('airport-red') > -1 ||
+      c.indexOf('airport-pink') > -1
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function ocRequired(flight) {
+  const f = flight.dataValues || flight;
+  if (legHasHighRiskColor(flight)) return true;
+  if (
+    f.pfr &&
+    f.pfr.legArray &&
+    f.pfr.legArray[0] &&
+    f.equipment &&
+    f.pfr.legArray[0].fuel < f.equipment.minFuel
+  ) {
+    return true;
+  }
+  if (f.knownIce && f.equipment && f.equipment.name === 'Caravan') return true;
+  return false;
+}
+
+function signGate(flight, user, as) {
+  const f = flight.dataValues || flight;
+  const isAdmin = roleIndex(user.role) >= roleIndex('admin');
+  const isSuperAdmin = roleIndex(user.role) >= roleIndex('superadmin');
+  const allDone =
+    (f.dispatchRelease || f.ocRelease) && f.pilotAgree && String(f.pilotAgree).trim();
+
+  if (moreThanOneHourBeforeDepart(flight)) {
+    return { ok: false, message: 'Flight is more than one hour before departure.' };
+  }
+  if (noPfr(flight)) {
+    return { ok: false, message: 'PFR with fuel is required before release sign-off.' };
+  }
+  if (allDone) {
+    return { ok: false, message: 'Release is already complete for this flight.' };
+  }
+
+  if (as === 'dispatch') {
+    if (!isAdmin) {
+      return { ok: false, message: 'Dispatch release requires admin role.' };
+    }
+    if (f.dispatchRelease) {
+      return { ok: false, message: 'Dispatch release already signed.' };
+    }
+    if (ocRequired(flight)) {
+      return {
+        ok: false,
+        message: 'OC release is required for this flight (use OC sign, not dispatch).',
+      };
+    }
+    return { ok: true };
+  }
+
+  if (as === 'oc') {
+    if (!isSuperAdmin) {
+      return { ok: false, message: 'OC release requires superadmin role.' };
+    }
+    if (!ocRequired(flight)) {
+      return { ok: false, message: 'OC release is not required for this flight.' };
+    }
+    if (f.ocRelease) {
+      return { ok: false, message: 'OC release already signed.' };
+    }
+    return { ok: true };
+  }
+
+  if (as === 'pilot') {
+    if (pilotLastNameMismatch(user, flight)) {
+      return { ok: false, message: 'Pilot acceptance must be signed by the assigned captain.' };
+    }
+    if (f.pilotAgree) {
+      return { ok: false, message: 'Pilot acceptance already signed.' };
+    }
+    if (legHasHighRiskColor(flight) && !f.ocRelease) {
+      return { ok: false, message: 'OC must sign before pilot acceptance on this route.' };
+    }
+    if (!f.dispatchRelease && !f.ocRelease) {
+      return {
+        ok: false,
+        message: 'Dispatch or OC release must be signed before pilot acceptance.',
+      };
+    }
+    return { ok: true };
+  }
+
+  return { ok: false, message: 'Invalid sign role.' };
+}
+
+function whoCanSign(flight, user) {
+  const tryDispatch = signGate(flight, user, 'dispatch');
+  const tryOc = signGate(flight, user, 'oc');
+  const tryPilot = signGate(flight, user, 'pilot');
+  return {
+    dispatch: { allowed: tryDispatch.ok, reason: tryDispatch.ok ? '' : tryDispatch.message },
+    oc: { allowed: tryOc.ok, reason: tryOc.ok ? '' : tryOc.message },
+    pilot: { allowed: tryPilot.ok, reason: tryPilot.ok ? '' : tryPilot.message },
+  };
+}
+
+function toReleaseDto(flight, user) {
+  const f = flight.dataValues || flight;
+  const row = toBoardRow(flight);
+  return Object.assign({}, row, {
+    dispatchReleaseTimestamp: f.dispatchReleaseTimestamp || null,
+    ocReleaseTimestamp: f.ocReleaseTimestamp || null,
+    releaseTimestamp: f.releaseTimestamp || null,
+    ocRequired: ocRequired(flight),
+    whoCanSign: user ? whoCanSign(flight, user) : undefined,
+    bulletinNag: false,
+  });
+}
+
+export function authAssertion(req, res) {
+  const emailRaw =
+    (req.body && req.body.email) || (req.body && req.body.userEmail) || '';
+  const email = String(emailRaw).trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ message: 'email is required' });
+  }
+
+  return User.findOne({
+    where: {
+      email: { [Op.iLike]: email },
+    },
+  })
+    .then(user => {
+      if (!user) {
+        return res.status(404).json({ message: 'No FRAT user for that email' });
+      }
+      const token = signToken(user._id, user.role);
+      return res.status(200).json({
+        token,
+        tokenType: 'Bearer',
+        user: {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
+      });
+    })
+    .catch(err => {
+      console.error('[mobileOps] assertion', err);
+      return res.status(500).json({ message: 'Assertion failed' });
+    });
+}
+
+export function getBoard(req, res) {
+  const date = localeDateFromQuery(req.query.date);
+  const base = String(req.query.base || 'OME').trim().toUpperCase();
+  if (!date) {
+    return res.status(400).json({ message: 'Query date is required (YYYY-MM-DD)' });
+  }
+  if (base === 'HEL') {
+    return res.status(200).json({ date, base, flights: [], message: 'HEL board read-only — use frat web for v1.2' });
+  }
+
+  return TodaysFlight.findAll({
+    where: { date, active: 'true' },
+    attributes: MOBILE_BOARD_ATTRS,
+    order: [['flightNum', 'ASC']],
+  })
+    .then(rows =>
+      rows
+        .filter(row => {
+          const ac = String(row.aircraft || '');
+          return ac.startsWith('N');
+        })
+        .filter(row => flightMatchesBase(row, base))
+        .map(toBoardRow)
+    )
+    .then(flights => res.status(200).json({ date, base, flights }))
+    .catch(err => {
+      console.error('[mobileOps] board', err);
+      return res.status(500).json({ message: 'Board load failed' });
+    });
+}
+
+export function getFlight(req, res) {
+  const id = req.params.id;
+  return TodaysFlight.findOne({
+    where: { _id: id },
+    attributes: MOBILE_RELEASE_ATTRS,
+  })
+    .then(flight => {
+      if (!flight) return res.status(404).json({ message: 'Flight not found' });
+      return res.status(200).json(toReleaseDto(flight, req.user));
+    })
+    .catch(err => {
+      console.error('[mobileOps] flight', err);
+      return res.status(500).json({ message: 'Flight load failed' });
+    });
+}
+
+export function signFlight(req, res) {
+  const id = req.params.id;
+  const as = String((req.body && req.body.as) || '').trim().toLowerCase();
+  if (as !== 'dispatch' && as !== 'oc' && as !== 'pilot') {
+    return res.status(400).json({ message: 'Body as must be dispatch, oc, or pilot' });
+  }
+
+  return TodaysFlight.findOne({ where: { _id: id } })
+    .then(flight => {
+      if (!flight) return res.status(404).json({ message: 'Flight not found' });
+      const gate = signGate(flight, req.user, as);
+      if (!gate.ok) {
+        return res.status(403).json({ message: gate.message });
+      }
+
+      const now = new Date();
+      if (as === 'dispatch') {
+        flight.dispatchRelease = req.user.name;
+        flight.dispatchReleaseTimestamp = now;
+      } else if (as === 'oc') {
+        flight.ocRelease = req.user.name;
+        flight.ocReleaseTimestamp = now;
+      } else if (as === 'pilot') {
+        flight.pilotAgree = req.user.name;
+        flight.releaseTimestamp = now;
+        if (!flight.crewId) flight.crewId = 'checked';
+        flight.cockpitInspection = 'secure';
+        flight.cabinInspection = 'secure';
+        flight.cargoInspection = 'secure';
+        flight.wheelWellInspection = 'secure';
+      }
+
+      return flight.save().then(saved => res.status(200).json(toReleaseDto(saved, req.user)));
+    })
+    .catch(err => {
+      console.error('[mobileOps] sign', err);
+      return res.status(500).json({ message: 'Sign failed' });
+    });
+}
+
+export { allowOpsExportAccess };
