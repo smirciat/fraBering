@@ -4,7 +4,7 @@
 
 **Product:** FRAT status board + flight release sign-off inside **bering_crew** (resBering Flutter). One employee login; reservations brokers a short-lived FRAT JWT for a **1:1 mapped** fraBering `User`.
 
-**Flutter / deploy / tab gating:** build doc lives in **resBering** (planned: `docs/bering-crew-frat-board.md`). This file is **API on frat.beringair.com only**.
+**Flutter / deploy / tab gating:** [`resBering/docs/bering-crew-frat-board.md`](../../resBering/docs/bering-crew-frat-board.md). This file is **API on frat.beringair.com only**.
 
 **Do not use:** legacy `POST /api/todaysFlights/mobile/*` + `MOBILE_TOKEN` (shared secret, no per-user identity).
 
@@ -115,4 +115,4 @@ Planned on reservations API:
 - `POST /api/mobile/employee/v1/frat/session` → returns FRAT JWT
 - `GET /api/mobile/employee/v1/frat/status` → `{ linked: boolean }` for tab empty state
 
-Documented in resBering `docs/mobile-api-v1.md` when implemented.
+Documented in resBering [`docs/mobile-api-v1.md`](../../resBering/docs/mobile-api-v1.md) (planned routes) and [`docs/bering-crew-frat-board.md`](../../resBering/docs/bering-crew-frat-board.md).
