@@ -1,0 +1,11 @@
+{
+  "label": "case-01 — short description (e.g. C408 SIC checkride Flight Test)",
+  "form": "ROT | FlightTest | FlightTestINDOC",
+  "pilotName": "",
+  "recordDate": "",
+  "recordId": "",
+  "pdfFilename": "ROT_PilotName_2026_3_15.pdf",
+  "record": {},
+  "pdfformFields": {},
+  "notes": "Nate's complaint (required for iterate loop). Optional: paste generatePdf console fields / enriched record."
+}

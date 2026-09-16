@@ -1607,11 +1607,121 @@ class RecordsComponent {
       });
     }
     let instructorIndex=this.pilots.map(e=>e.name).indexOf(record.instructor);
-    if (instructorIndex>-1) record.instructorCert=this.pilots[instructorIndex].cert;
-    else if (!record.instructorCert) record.instructorCert="";
+    if (instructorIndex>-1) {
+      record.instructorCert=this.pilots[instructorIndex].cert;
+      record.instructorCertType=this.pilots[instructorIndex].certType;
+    } else if (!record.instructorCert) record.instructorCert="";
     let checkAirmanIndex=this.pilots.map(e=>e.name).indexOf(record.checkAirman);
-    if (checkAirmanIndex>-1) record.checkAirmanCert=this.pilots[checkAirmanIndex].cert;
-    else if (!record.checkAirmanCert) record.checkAirmanCert="";
+    if (checkAirmanIndex>-1) {
+      record.checkAirmanCert=this.pilots[checkAirmanIndex].cert;
+      record.checkAirmanCertType=this.pilots[checkAirmanIndex].certType;
+    } else if (!record.checkAirmanCert) record.checkAirmanCert="";
+  }
+
+  pdfFormCertType(raw){
+    if (!raw) return '';
+    const u=String(raw).toUpperCase();
+    if (u==='ATP'||u==='ATP/') return 'ATP/';
+    return 'COMM/';
+  }
+
+  /** ROT curriculum / cert line: instructor, else check airman (checkrides often omit instructor). */
+  rotPdfSigner(record){
+    const name=record&&record.instructor;
+    if (name&&name!=='none'&&name!=='not listed') return name;
+    const check=record&&record.checkAirman;
+    if (check&&check!=='none') return check;
+    return '';
+  }
+
+  rotPdfSignerCert(record){
+    const signer=this.rotPdfSigner(record);
+    if (!signer) return '';
+    if (signer===record.instructor) return record.instructorCert||'';
+    if (signer===record.checkAirman) return record.checkAirmanCert||'';
+    return '';
+  }
+
+  pdfFieldScalar(raw){
+    if (raw===undefined||raw===null) return undefined;
+    if (Array.isArray(raw)) return raw[0];
+    return raw;
+  }
+
+  pdfSelectChoice(field, str){
+    const opts=field.getOptions();
+    if (opts.indexOf(str)>=0) {
+      field.select(str);
+      return;
+    }
+    const monthAbbr={
+      JANUARY:'JAN', FEBRUARY:'FEB', MARCH:'MAR', APRIL:'APR', MAY:'MAY', JUNE:'JUN',
+      JULY:'JUL', AUGUST:'AUG', SEPTEMBER:'SEP', OCTOBER:'OCT', NOVEMBER:'NOV', DECEMBER:'DEC'
+    };
+    const abbr=monthAbbr[String(str).toUpperCase()];
+    if (!abbr) return;
+    for (let i=0;i<opts.length;i++) {
+      if (String(opts[i]).split('/').indexOf(abbr)>=0) {
+        field.select(opts[i]);
+        return;
+      }
+    }
+  }
+
+  /** Flight Test 297 Dropdown5: template pairs, base month first then +6 (March → MAR/SEP). */
+  pdf297MonthPair(baseMonth){
+    const abbrs=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const i=this.months.indexOf(baseMonth);
+    if (i<0) return '';
+    return abbrs[i]+'/'+abbrs[(i+6)%12];
+  }
+
+  fillAndFlattenPdf(buf, fields){
+    const lib=(typeof window!=='undefined'&&window.PDFLib)?window.PDFLib:null;
+    if (!lib||!lib.PDFDocument) {
+      return Promise.reject(new Error('PDF flatten library not loaded'));
+    }
+    const PDFTextField=lib.PDFTextField;
+    const PDFCheckBox=lib.PDFCheckBox;
+    const PDFDropdown=lib.PDFDropdown;
+    const PDFOptionList=lib.PDFOptionList;
+    const PDFRadioGroup=lib.PDFRadioGroup;
+    const PDFSignature=lib.PDFSignature;
+    return lib.PDFDocument.load(buf).then(pdfDoc=>{
+      const form=pdfDoc.getForm();
+      Object.keys(fields).forEach(name=>{
+        const val=this.pdfFieldScalar(fields[name]);
+        if (val===undefined||val===null) return;
+        let field;
+        try { field=form.getField(name); } catch (e) { return; }
+        if (field instanceof PDFTextField) {
+          field.setText(val===true?'X':String(val));
+          return;
+        }
+        if (field instanceof PDFCheckBox) {
+          const on=val===true||val==='X'||val==='Yes'||val==='true'||val==='On';
+          if (on) field.check();
+          else field.uncheck();
+          return;
+        }
+        if (field instanceof PDFDropdown||field instanceof PDFOptionList) {
+          const str=String(val);
+          if (!str) return;
+          this.pdfSelectChoice(field, str);
+          return;
+        }
+        if (field instanceof PDFRadioGroup) {
+          try { field.select(String(val)); } catch (e) {}
+        }
+      });
+      form.getFields().slice().forEach(field=>{
+        if (PDFSignature&&field instanceof PDFSignature) {
+          try { form.removeField(field); } catch (e) {}
+        }
+      });
+      form.flatten();
+      return pdfDoc.save();
+    });
   }
 
   buildRecordsChoice(){
@@ -1728,13 +1838,20 @@ class RecordsComponent {
         return this.toaster.error('Error','Check this records for completeness before loading a form from it');
       }
       this.enrichRecordForForms(pilot);
+      const isRot=PDFFileName==="ROT";
+      const signer=this.rotPdfSigner(pilot);
+      const signerCert=this.rotPdfSignerCert(pilot);
+      const certLine=signer?(signerCert?signer+'/'+signerCert:signer):'';
       const baseMonthUpper=pilot.baseMonth?String(pilot.baseMonth).toUpperCase():'';
-      let certType = "ATP/";
-      if (pilot.certType&&pilot.certType.toUpperCase()!="ATP"&&pilot.certType.toUpperCase()!="ATP/") certType="COMM/";
+      let certType = this.pdfFormCertType(pilot.certType)||'ATP/';
       let medClass="FIRST";
       if (pilot.medicalClass&&pilot.medicalClass.toUpperCase()!=="FIRST") medClass="SECOND";
       let trainingClass;
-      if (pilot.trainingTypeCombo) trainingClass=pilot.trainingTypeCombo.split(' ')[0].toUpperCase();
+      if (pilot.trainingType) trainingClass=String(pilot.trainingType).toUpperCase();
+      else if (pilot.trainingTypeCombo) {
+        const first=pilot.trainingTypeCombo.split(' ')[0];
+        if (first&&first.toLowerCase()!=='undefined') trainingClass=first.toUpperCase();
+      }
   		let dateObj = pilot.date;//new Date(pilot.date).toLocaleDateString();
   		let dateArray=dateObj.split('/');
 	    let m, month, day, year;
@@ -1784,190 +1901,146 @@ class RecordsComponent {
                   "Medical Class":[medClass],
                   "Medical EXP":[pilot.medicalDate],
                   "Date of Check":[dateObj],
-                  "Check Airman":[pilot.checkAirman],
-                  "Check Airman Cert #":[pilot.checkAirmanCert],
+                  "Check Airman":[pilot.checkAirman||''],
+                  "Check Airman Cert #":[pilot.checkAirmanCert||''],
                   "Group44":["44"],
                   "44":"X",
                   "BaseMonth":[baseMonthUpper],
                   "NewBaseMonth":[nbm],
                   "Group24":["X"],
-                  "Text1":[pilot.instructor+'/'+pilot.instructorCert]
+                  "Text1":[certLine]
       };
-      if (PDFFileName!=="ROT") fields.Dropdown19=[trainingClass];
-      //this.formTypes.forEach(form=>{
-        //if (form.radio) {
-          let fieldName,frequency,eventIndex;
+      if (!isRot && trainingClass) fields.Dropdown19=[trainingClass];
+      if (!isRot && pilot.checkAirman) {
+        fields['Cert Type2']=[this.pdfFormCertType(pilot.checkAirmanCertType)||''];
+      }
+      const tail=pilot.aircraftN||pilot.nNumber||pilot.tailNumber||pilot.acftNumber;
+      const hours=pilot.flightTime||pilot.hours;
+      if (tail) fields['Aircraft N']=[String(tail)];
+      if (hours) fields['Flight Time']=[String(hours)];
+      const hasC208Flight=pilot.C208PIC==="true";
+      const hasC208Ground=pilot.C208Ground==="true";
+      const hasBE20Flight=pilot.BE20PIC==="true";
+      const hasBE20Ground=pilot.BE20Ground==="true";
+      const hasB190Flight=pilot.B190PIC==="true"||pilot.B190SIC==="true";
+      const hasB190Ground=pilot.B190Ground==="true";
+      const hasC408Flight=pilot.C408PIC==="true"||pilot.C408SIC==="true";
+      const hasC408Ground=pilot.C408Ground==="true";
+      const hasC212Flight=pilot.C212PIC==="true"||pilot.C212SIC==="true";
+      const hasC212Ground=pilot.C212Ground==="true";
+      const hasAnyFlight=hasC208Flight||hasBE20Flight||hasB190Flight||hasC408Flight||hasC212Flight;
+      const hasAnyGround=hasC208Ground||hasBE20Ground||hasB190Ground||hasC408Ground||hasC212Ground;
+      const setRotFtAcType=function(type){
+        if (!isRot) {
+          fields['AC Type']=[type];
+          fields.Dropdown25=[type];
+          fields.Dropdown26=[type];
+          return;
+        }
+        if (hasAnyGround) {
+          fields.Dropdown25=[type];
+          fields.Dropdown26=[type];
+        }
+        if (hasAnyFlight) fields.Dropdown17=[type];
+      };
+          let frequency,eventIndex;
           //switch (form.label) {
-            if (pilot.BasicIndoc&&pilot.BasicIndoc==="true") {//"Basic Indoc": 
+            if (pilot.BasicIndoc&&pilot.BasicIndoc==="true") {
               eventIndex = this.appConfig.trainingEvents.map(e => e.name).indexOf('BasicIndoc');
               frequency=this.appConfig.trainingEvents[eventIndex].frequency;
-              fieldName = "Check Box1";
-              fields[fieldName]=["X"];
-              fields.Dropdown2=[baseMonthUpper];
-              fieldName="BI TEST EXPIRATION";
-              fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
-              fieldName="Instructor 1";
-              fields[fieldName]=[pilot.instructor];
-              if (PDFFileName==="ROT") fields.Dropdown1=["S"];
-              fieldName="Date1_af_date";
-              fields[fieldName]=[dateObj];
-              fieldName="Instructor 2";
-              fields[fieldName]=[pilot.instructor];
-              if (PDFFileName==="ROT") fields.Dropdown2=["S"];
-              fieldName="Date2_af_date";
-              fields[fieldName]=[dateObj];
+              if (!isRot) {
+                fields["Check Box1"]=["X"];
+                fields.Dropdown2=[baseMonthUpper];
+                fields["BI TEST EXPIRATION"]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
+              } else {
+                fields["Instructor 1"]=[signer];
+                fields.Dropdown1=["S"];
+                fields["Date1_af_date"]=[dateObj];
+                fields["Instructor 2"]=[signer];
+                fields.Dropdown2=["S"];
+                fields["Date2_af_date"]=[dateObj];
+              }
             }
             if (pilot.far293a&&pilot.far293a==="true"&&!(pilot.BasicIndoc&&pilot.BasicIndoc==="true")) {
               eventIndex = this.appConfig.trainingEvents.map(e => e.name).indexOf('far293a');
               frequency=eventIndex>-1?this.appConfig.trainingEvents[eventIndex].frequency:'12';
-              fieldName = "Check Box1";
-              fields[fieldName]=["X"];
-              fields.Dropdown2=[baseMonthUpper];
-              fieldName="BI TEST EXPIRATION";
-              fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
-              fieldName="Instructor 1";
-              fields[fieldName]=[pilot.instructor];
-              if (PDFFileName==="ROT") fields.Dropdown1=["S"];
-              fieldName="Date1_af_date";
-              fields[fieldName]=[dateObj];
-              fieldName="Instructor 2";
-              fields[fieldName]=[pilot.instructor];
-              if (PDFFileName==="ROT") fields.Dropdown2=["S"];
-              fieldName="Date2_af_date";
-              fields[fieldName]=[dateObj];
+              if (!isRot) {
+                fields["Check Box1"]=["X"];
+                fields.Dropdown2=[baseMonthUpper];
+                fields["BI TEST EXPIRATION"]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
+              } else {
+                fields["Instructor 1"]=[signer];
+                fields.Dropdown1=["S"];
+                fields["Date1_af_date"]=[dateObj];
+                fields["Instructor 2"]=[signer];
+                fields.Dropdown2=["S"];
+                fields["Date2_af_date"]=[dateObj];
+              }
             }
-            if ((pilot.C208Ground&&pilot.C208Ground==="true")||
-                    (pilot.C408Ground&&pilot.C408Ground==="true")||
-                    (pilot.B190Ground&&pilot.B190Ground==="true")||
-                    (pilot.BE20Ground&&pilot.BE20Ground==="true")||
-                    (pilot.C212Ground&&pilot.C212Ground==="true")
-                    ){
+            if (hasAnyGround && isRot){
+                fields["Instructor 8"]=[signer];
+                fields.Dropdown8=["S"];
+                fields["Date8_af_date"]=[dateObj];
+                fields["Instructor 9"]=[signer];
+                fields.Dropdown9=["S"];
+                fields["Date9_af_date"]=[dateObj];
+            }
+            if (hasAnyFlight){
               frequency='12';
-              fieldName="Instructor 8";
-              fields[fieldName]=[pilot.instructor];
-              if (PDFFileName==="ROT") fields.Dropdown8=["S"];
-              fieldName="Date8_af_date";
-              fields[fieldName]=[dateObj];
-              fieldName="Instructor 9";
-              fields[fieldName]=[pilot.instructor];
-              if (PDFFileName==="ROT") fields.Dropdown9=["S"];
-              fieldName="Date9_af_date";
-              fields[fieldName]=[dateObj];
+              if (!isRot) {
+                fields["AC ORAL/WRITTEN EXP"]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
+                fields.Dropdown3=[baseMonthUpper];
+                fields["Check Box2"]=["X"];
+                fields["293 EXP"]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
+                fields.Dropdown4=[baseMonthUpper];
+                fields["Check Box3"]=["X"];
+              } else {
+                fields["Instructor 10"]=[signer];
+                fields.Dropdown10=["S"];
+                fields["Date10_af_date"]=[dateObj];
+              }
             }
-            if ((pilot.C208PIC&&pilot.C208PIC==="true")||
-                    (pilot.C408PIC&&pilot.C408PIC==="true")||
-                    (pilot.C408SIC&&pilot.C408SIC==="true")||
-                    (pilot.B190PIC&&pilot.B190PIC==="true")||
-                    (pilot.B190SIC&&pilot.B190SIC==="true")||
-                    (pilot.BE20PIC&&pilot.BE20PIC==="true")||
-                    (pilot.C212PIC&&pilot.C212PIC==="true")||
-                    (pilot.C212SIC&&pilot.C212SIC==="true")
-                    ){
-              frequency='12';
-              fieldName="AC ORAL/WRITTEN EXP";
-              fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
-              fields.Dropdown3=[baseMonthUpper];
-              fieldName = "Check Box2";
-              fields[fieldName] =["X"];
-              fieldName="293 EXP";
-              fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
-              fields.Dropdown4=[baseMonthUpper];
-              fieldName = "Check Box3";
-              fields[fieldName] =["X"];
-              fieldName="Instructor 10";
-              fields[fieldName]=[pilot.instructor];
-              if (PDFFileName==="ROT") fields.Dropdown10=["S"];
-              fieldName="Date10_af_date";
-              fields[fieldName]=[dateObj];
+            if (!isRot) {
+              if (pilot.C208PIC==="true"||pilot.C408PIC==="true"||pilot.C212PIC==="true"||
+                  pilot.B190PIC==="true"||pilot.BE20PIC==="true"){
+                fields["Check Box7"]=["X"];
+              }
+              if (pilot.C408SIC==="true"||pilot.C212SIC==="true"||pilot.B190SIC==="true"){
+                fields["Check Box8"]=["X"];
+              }
             }
-            if ((pilot.C208PIC&&pilot.C208PIC==="true")||
-                  (pilot.C408PIC&&pilot.C408PIC==="true")||
-                  (pilot.C212PIC&&pilot.C212PIC==="true")||
-                  (pilot.B190PIC&&pilot.B190PIC==="true")||
-                  (pilot.BE20PIC&&pilot.BE20PIC==="true")
-                  ){
-              fieldName="Check Box7";
-              fields[fieldName]=["X"];
-            }
-            if ((pilot.C408SIC&&pilot.C408SIC==="true")||
-                  (pilot.C212SIC&&pilot.C212SIC==="true")||
-                  (pilot.B190SIC&&pilot.B190SIC==="true")
-                  ){
-              fieldName="Check Box8";
-              fields[fieldName]=["X"];
-            }
-            if ((pilot.C208PIC&&pilot.C208PIC==="true")||(pilot.C208Ground&&pilot.C208Ground==="true")){
-              fieldName="AC Type";
-              fields[fieldName]=["C208"];
-              fields.Dropdown26=["C208"];
-              //fields.Dropdown17=["C208"];
-              fields.Dropdown25=["C208"];
-            }
-            if ((pilot.BE20PIC&&pilot.BE20PIC==="true")||(pilot.BE20Ground&&pilot.BE20Ground==="true")){
-              fieldName="AC Type";
-              fields[fieldName]=["BE20"];
-              fields.Dropdown25=["BE20"];
-              fields.Dropdown26=["BE20"];
-              //fields.Dropdown17=["BE20"];
-            }
-            if ((pilot.B190PIC&&pilot.B190PIC==="true")||(pilot.B190SIC&&pilot.B190SIC==="true")||(pilot.B190Ground&&pilot.B190Ground==="true")){
-              fieldName="AC Type";
-              fields[fieldName]=["B190"];
-              fields.Dropdown25=["B190"];
-              fields.Dropdown26=["B190"];
-              //fields.Dropdown17=["B190"];
-            }
-            if ((pilot.C408PIC&&pilot.C408PIC==="true")||(pilot.C408SIC&&pilot.C408SIC==="true")||(pilot.C408Ground&&pilot.C408Ground==="true")){
-              fieldName="AC Type";
-              fields[fieldName]=["C408"];
-              fields.Dropdown25=["C408"];
-              fields.Dropdown26=["C408"];
-              //fields.Dropdown17=["C408"];
-            }
-            if ((pilot.C212PIC&&pilot.C212PIC==="true")||(pilot.C212SIC&&pilot.C212SIC==="true")||(pilot.C212Ground&&pilot.C212Ground==="true")){
-              fieldName="AC Type";
-              fields[fieldName]=["C212"];
-              fields.Dropdown25=["C212"];
-              fields.Dropdown26=["C212"];
-              //fields.Dropdown17=["C212"];
-            }
-            if (pilot['far299']&&pilot['far299']==="true") {//case "293(b) & 299": 
+            if (hasC208Flight||hasC208Ground) setRotFtAcType("C208");
+            if (hasBE20Flight||hasBE20Ground) setRotFtAcType("BE20");
+            if (hasB190Flight||hasB190Ground) setRotFtAcType("B190");
+            if (hasC408Flight||hasC408Ground) setRotFtAcType("C408");
+            if (hasC212Flight||hasC212Ground) setRotFtAcType("C212");
+            if (pilot['far299']&&pilot['far299']==="true"&&!isRot) {
               eventIndex = this.appConfig.trainingEvents.map(e => e.name).indexOf('far299');
               frequency=this.appConfig.trainingEvents[eventIndex].frequency;
-              fieldName = "Check Box6";
-              fields[fieldName] =["X"];
+              fields["Check Box6"]=["X"];
               fields.Dropdown4=[baseMonthUpper];
               fields.Dropdown7=[baseMonthUpper];
-              fieldName="299 Enroute Check EXP";
-              fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
+              fields["299 Enroute Check EXP"]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
             }
-            if (pilot['far297g']&&pilot['far297g']==="true") {//case "297":
+            if (pilot['far297g']&&pilot['far297g']==="true"&&!isRot) {
               eventIndex = this.appConfig.trainingEvents.map(e => e.name).indexOf('far297g');
-              frequency=this.appConfig.trainingEvents[eventIndex].frequency; 
-              fieldName="297(G) Autopilot EXP";
-              fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
+              frequency=this.appConfig.trainingEvents[eventIndex].frequency;
+              fields["297(G) Autopilot EXP"]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
               fields.Dropdown6=[baseMonthUpper];
-              fieldName = "Check Box5";
-              fields[fieldName]=["X"];
+              fields["Check Box5"]=["X"];
             }
-            if (pilot['far297']&&pilot['far297']==="true") {//case "297":
+            if (pilot['far297']&&pilot['far297']==="true"&&!isRot) {
               eventIndex = this.appConfig.trainingEvents.map(e => e.name).indexOf('far297');
-              frequency=this.appConfig.trainingEvents[eventIndex].frequency; 
-              fieldName = "Check Box4";
-              let i=this.months.indexOf(pilot.baseMonth);
-              if (i<6) i+=6;
-              else i-=6;
-              fields.Dropdown5=[this.months[i].toUpperCase()];
-              fields[fieldName]=["X"];
-              fieldName="297 EXP";
-              fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
+              frequency=this.appConfig.trainingEvents[eventIndex].frequency;
+              fields["Check Box4"]=["X"];
+              const pair=this.pdf297MonthPair(pilot.baseMonth);
+              if (pair) fields.Dropdown5=[pair];
+              fields["297 EXP"]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
             }
-            if (pilot.Hazmat&&pilot.Hazmat==="true") {//case "HAZMAT":
-              fieldName="Instructor 3";
-              fields[fieldName]=[pilot.instructor];
-              if (PDFFileName==="ROT") fields.Dropdown3=["S"];
-              fieldName="Date3_af_date";
-              fields[fieldName]=[dateObj];
+            if (pilot.Hazmat&&pilot.Hazmat==="true"&&isRot) {
+                fields["Instructor 3"]=[signer];
+                fields.Dropdown3=["S"];
+                fields["Date3_af_date"]=[dateObj];
             }
             //default:
             //  break;
@@ -1980,16 +2053,16 @@ class RecordsComponent {
           headers: { 'Accept': 'application/pdf' }, //'text/plain'
           responseType: 'arraybuffer' })
         .then(response=> {
-          var filled_pdf; // Uint8Array
-  		    filled_pdf = pdfform().transform(response.data, fields);
-  		    //console.log(pdfform().list_fields(response.data));
+          this.fillAndFlattenPdf(response.data, fields).then(filled_pdf=>{
   		    var blob = new Blob([filled_pdf], {type: 'application/pdf'});
-  		    
   		    var filename=PDFFileName + "_" + pilot.name + '_' + year + '_' + month + '_' + day + '.pdf';
   	      saveAs(blob, filename);
-  	      //unspin buttons
   	      this.loading=false;
-  	      //
+          }).catch(err=>{
+            alert(err);
+            console.log(err);
+            this.loading=false;
+          });
         }).catch(err=>{
           alert(err);
           console.log(err);
