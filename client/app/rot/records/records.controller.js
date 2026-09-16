@@ -1579,25 +1579,39 @@ class RecordsComponent {
   
   enrichRecords(){
     this.records.forEach(record=>{
-      if (this.fullPilot&&this.fullPilot._id){
-        if (!record.dateOfBirth) record.dateOfBirth=this.fullPilot.dateOfBirth;
-        if (!record.medicalDate) record.medicalDate=this.fullPilot.medicalDate;
-        if (!record.medicalClass) record.medicalClass=this.fullPilot.medicalClass;
-        if (!record.medicalInterval) record.medicalInterval=this.fullPilot.medicalInterval;
-        if (!record.cert) record.cert=this.fullPilot.cert;
-        if (!record.certType) record.certType=this.fullPilot.certType;
-        if (!record.name) record.name=this.fullPilot.name;
-        record.trainingTypeCombo=record.trainingType + ' ' + record.flightOrGround;
-        record.trainingTypeArray=[];
-        this.appConfig.trainingEventKeys.forEach(key=>{
-          if (record[key]&&record[key]==="true") {
-            let typeKey=key;
-            if (typeKey.slice(0,3)==="far"&&typeKey!=='far293a') typeKey=typeKey.substring(3);
-            if (record.trainingTypeArray.indexOf(typeKey)<0) record.trainingTypeArray.push(typeKey);
-          }
-        });
-      }
+      this.enrichRecordForForms(record);
     });
+  }
+
+  /** Pilot profile + roster certs before ROT / Flight Test PDF fill (#40). */
+  enrichRecordForForms(record){
+    if (!record) return;
+    if (this.fullPilot&&this.fullPilot._id){
+      if (!record.dateOfBirth) record.dateOfBirth=this.fullPilot.dateOfBirth;
+      if (!record.medicalDate) record.medicalDate=this.fullPilot.medicalDate;
+      if (!record.medicalClass) record.medicalClass=this.fullPilot.medicalClass;
+      if (!record.medicalInterval) record.medicalInterval=this.fullPilot.medicalInterval;
+      if (!record.cert) record.cert=this.fullPilot.cert;
+      if (!record.certType) record.certType=this.fullPilot.certType;
+      if (!record.name) record.name=this.fullPilot.name;
+      if (record.trainingType&&record.flightOrGround) {
+        record.trainingTypeCombo=record.trainingType + ' ' + record.flightOrGround;
+      }
+      record.trainingTypeArray=[];
+      this.appConfig.trainingEventKeys.forEach(key=>{
+        if (record[key]&&record[key]==="true") {
+          let typeKey=key;
+          if (typeKey.slice(0,3)==="far"&&typeKey!=='far293a') typeKey=typeKey.substring(3);
+          if (record.trainingTypeArray.indexOf(typeKey)<0) record.trainingTypeArray.push(typeKey);
+        }
+      });
+    }
+    let instructorIndex=this.pilots.map(e=>e.name).indexOf(record.instructor);
+    if (instructorIndex>-1) record.instructorCert=this.pilots[instructorIndex].cert;
+    else if (!record.instructorCert) record.instructorCert="";
+    let checkAirmanIndex=this.pilots.map(e=>e.name).indexOf(record.checkAirman);
+    if (checkAirmanIndex>-1) record.checkAirmanCert=this.pilots[checkAirmanIndex].cert;
+    else if (!record.checkAirmanCert) record.checkAirmanCert="";
   }
 
   buildRecordsChoice(){
@@ -1713,6 +1727,8 @@ class RecordsComponent {
         this.loading=false;
         return this.toaster.error('Error','Check this records for completeness before loading a form from it');
       }
+      this.enrichRecordForForms(pilot);
+      const baseMonthUpper=pilot.baseMonth?String(pilot.baseMonth).toUpperCase():'';
       let certType = "ATP/";
       if (pilot.certType&&pilot.certType.toUpperCase()!="ATP"&&pilot.certType.toUpperCase()!="ATP/") certType="COMM/";
       let medClass="FIRST";
@@ -1760,9 +1776,6 @@ class RecordsComponent {
 	      pilot.baseMonth=new Date(dateObj).toLocaleString('default', { month: 'long' })
 	      nbm="YES";
 	    }
-	    let pilotIndex = this.pilots.map(e => e.name).indexOf(pilot.instructor);
-	    if (pilotIndex>-1) pilot.instructorCert=this.pilots[pilotIndex].cert;
-	    else pilot.instructorCert="";
       var fields={"Cert Type1":[certType],
                   "CertType":[certType],
                   "Pilots Name":[pilot.name],
@@ -1775,7 +1788,7 @@ class RecordsComponent {
                   "Check Airman Cert #":[pilot.checkAirmanCert],
                   "Group44":["44"],
                   "44":"X",
-                  "BaseMonth":[pilot.baseMonth.toUpperCase()],
+                  "BaseMonth":[baseMonthUpper],
                   "NewBaseMonth":[nbm],
                   "Group24":["X"],
                   "Text1":[pilot.instructor+'/'+pilot.instructorCert]
@@ -1790,7 +1803,7 @@ class RecordsComponent {
               frequency=this.appConfig.trainingEvents[eventIndex].frequency;
               fieldName = "Check Box1";
               fields[fieldName]=["X"];
-              fields.Dropdown2=[pilot.baseMonth.toUpperCase()];
+              fields.Dropdown2=[baseMonthUpper];
               fieldName="BI TEST EXPIRATION";
               fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
               fieldName="Instructor 1";
@@ -1809,7 +1822,7 @@ class RecordsComponent {
               frequency=eventIndex>-1?this.appConfig.trainingEvents[eventIndex].frequency:'12';
               fieldName = "Check Box1";
               fields[fieldName]=["X"];
-              fields.Dropdown2=[pilot.baseMonth.toUpperCase()];
+              fields.Dropdown2=[baseMonthUpper];
               fieldName="BI TEST EXPIRATION";
               fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
               fieldName="Instructor 1";
@@ -1853,12 +1866,12 @@ class RecordsComponent {
               frequency='12';
               fieldName="AC ORAL/WRITTEN EXP";
               fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
-              fields.Dropdown3=[pilot.baseMonth.toUpperCase()];
+              fields.Dropdown3=[baseMonthUpper];
               fieldName = "Check Box2";
               fields[fieldName] =["X"];
               fieldName="293 EXP";
               fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
-              fields.Dropdown4=[pilot.baseMonth.toUpperCase()];
+              fields.Dropdown4=[baseMonthUpper];
               fieldName = "Check Box3";
               fields[fieldName] =["X"];
               fieldName="Instructor 10";
@@ -1876,7 +1889,7 @@ class RecordsComponent {
               fieldName="Check Box7";
               fields[fieldName]=["X"];
             }
-            if ((pilot.C408SIC&&pilot.CS08PIC==="true")||
+            if ((pilot.C408SIC&&pilot.C408SIC==="true")||
                   (pilot.C212SIC&&pilot.C212SIC==="true")||
                   (pilot.B190SIC&&pilot.B190SIC==="true")
                   ){
@@ -1923,8 +1936,8 @@ class RecordsComponent {
               frequency=this.appConfig.trainingEvents[eventIndex].frequency;
               fieldName = "Check Box6";
               fields[fieldName] =["X"];
-              fields.Dropdown4=[pilot.baseMonth.toUpperCase()];
-              fields.Dropdown7=[pilot.baseMonth.toUpperCase()];
+              fields.Dropdown4=[baseMonthUpper];
+              fields.Dropdown7=[baseMonthUpper];
               fieldName="299 Enroute Check EXP";
               fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
             }
@@ -1933,7 +1946,7 @@ class RecordsComponent {
               frequency=this.appConfig.trainingEvents[eventIndex].frequency; 
               fieldName="297(G) Autopilot EXP";
               fields[fieldName]=[this.getExp(pilot.baseMonth,dateObj,frequency,1)];
-              fields.Dropdown6=[pilot.baseMonth.toUpperCase()];
+              fields.Dropdown6=[baseMonthUpper];
               fieldName = "Check Box5";
               fields[fieldName]=["X"];
             }
