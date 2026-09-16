@@ -62,6 +62,39 @@ const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
   'tfliteArrive',
 ]);
 
+function hasReleaseSignature(flight) {
+  const f = flight.dataValues || flight;
+  return Boolean(
+    (f.dispatchRelease && String(f.dispatchRelease).trim()) ||
+      (f.ocRelease && String(f.ocRelease).trim()) ||
+      (f.pilotAgree && String(f.pilotAgree).trim())
+  );
+}
+
+function removeReleaseGate(flight, user) {
+  if (!user) {
+    return { ok: false, message: 'Not signed in to FRAT.' };
+  }
+  const f = flight.dataValues || flight;
+  if (!hasReleaseSignature(flight)) {
+    return { ok: false, message: 'No release signatures on this flight.' };
+  }
+  if (f.tfliteDepart) {
+    return {
+      ok: false,
+      message: 'Cannot remove a release after flight has taken off',
+    };
+  }
+  const isAdmin = roleIndex(user.role) >= roleIndex('admin');
+  if (!isAdmin) {
+    return {
+      ok: false,
+      message: 'Remove release requires dispatch admin role.',
+    };
+  }
+  return { ok: true, message: '' };
+}
+
 function opsExportTokenSecret() {
   return process.env.FRAT_OPS_EXPORT_TOKEN || localEnv.FRAT_OPS_EXPORT_TOKEN || '';
 }
@@ -362,12 +395,19 @@ function toReleaseDto(flight, user) {
   } catch (modalErr) {
     console.error('[mobileOps] modalView build failed', modalErr);
   }
+  const removeGate = user ? removeReleaseGate(flight, user) : { ok: false, message: '' };
   return Object.assign({}, row, {
     dispatchReleaseTimestamp: f.dispatchReleaseTimestamp || null,
     ocReleaseTimestamp: f.ocReleaseTimestamp || null,
     releaseTimestamp: f.releaseTimestamp || null,
     ocRequired: ocRequired(flight),
     whoCanSign: user ? whoCanSign(flight, user) : undefined,
+    removeRelease: user
+      ? {
+          allowed: removeGate.ok,
+          reason: removeGate.ok ? '' : removeGate.message,
+        }
+      : undefined,
     modalView,
   });
 }
@@ -555,6 +595,35 @@ export function getFlight(req, res) {
     .catch(err => {
       console.error('[mobileOps] flight', err);
       return res.status(500).json({ message: 'Flight load failed' });
+    });
+}
+
+export function removeReleaseFlight(req, res) {
+  const id = req.params.id;
+
+  return TodaysFlight.findOne({ where: { _id: id } })
+    .then(flight => {
+      if (!flight) return res.status(404).json({ message: 'Flight not found' });
+      const gate = removeReleaseGate(flight, req.user);
+      if (!gate.ok) {
+        return res.status(403).json({ message: gate.message });
+      }
+
+      flight.dispatchRelease = null;
+      flight.ocRelease = null;
+      flight.pilotAgree = null;
+      flight.releaseTimestamp = null;
+      flight.dispatchReleaseTimestamp = null;
+      flight.ocReleaseTimestamp = null;
+      flight.colorLock = null;
+
+      return flight
+        .save()
+        .then(saved => res.status(200).json(toReleaseDto(saved, req.user)));
+    })
+    .catch(err => {
+      console.error('[mobileOps] removeRelease', err);
+      return res.status(500).json({ message: 'Remove release failed' });
     });
 }
 

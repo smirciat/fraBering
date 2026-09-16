@@ -65,6 +65,7 @@ All below except `auth/assertion` require `auth.isAuthenticated()` (Bearer JWT).
 | GET | `/flights/:id` | Release DTO. **Today:** slim (board row + `whoCanSign` + timestamps). **Target (later slices):** payload enough to render web `modal.flightModal` (flight info, fuel/weights, crew, FIKI, airport/METAR cards, alternate, remarks, bulletin nag, inspections) so crew overlay can sign after reviewing the same data. |
 | PATCH | `/flights/:id` | Whitelisted fields until release locked: `mel`, `other`, `fuelPreviouslyOnboard`, `knownIce`, `otherEnvironment`, `crewId`, `security` (PFR remark) |
 | POST | `/flights/:id/sign` | `{ "as": "dispatch" \| "oc" \| "pilot" }` — server enforces same rules as web modal |
+| POST | `/flights/:id/remove-release` | Clears dispatch/OC/PIC release + timestamps + `colorLock` — **admin/superadmin** only; blocked if `tfliteDepart` (same as web **Remove Release**) |
 | GET | `/hel?date=YYYY-MM-DD` | Slim HEL cards (v1 may merge into `/board?base=HEL`) |
 
 ### Board row (fixed-wing) — illustrative fields

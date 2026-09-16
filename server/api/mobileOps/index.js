@@ -8,6 +8,7 @@ import {
   getBoard,
   getFlight,
   patchFlight,
+  removeReleaseFlight,
   signFlight,
 } from './mobileOps.controller';
 
@@ -21,5 +22,6 @@ router.get('/board', getBoard);
 router.get('/flights/:id', getFlight);
 router.patch('/flights/:id', patchFlight);
 router.post('/flights/:id/sign', signFlight);
+router.post('/flights/:id/remove-release', removeReleaseFlight);
 
 module.exports = router;
