@@ -1,16 +1,34 @@
 'use strict';
 
 /**
- * PFR leg fuel labels: airport index vs leg index (issue #36).
+ * PFR leg fuel labels: airport index vs leg index (#36); C208 burnOff1/fuelRemain1 (#38).
  * node scripts/pfr-leg-fuel-display-test/index.js
  */
 
-function pfrLegEndingFuelLbs(leg) {
+function pfrLegPlannedBurnLbs(leg, legIndex) {
   if (!leg) return null;
-  let fuel = Number(leg.fuel);
   let burn = Number(leg.burn);
+  if (isFinite(burn) && burn > 0) return burn;
+  let legNum = (legIndex != null ? legIndex : 0) + 1;
+  let burnOff = Number(leg['burnOff' + legNum]);
+  if (isFinite(burnOff) && burnOff > 0) return burnOff;
+  return 0;
+}
+
+function pfrLegEndingFuelLbs(leg, legIndex) {
+  if (!leg) return null;
+  let legNum = (legIndex != null ? legIndex : 0) + 1;
+  let remainKey = 'fuelRemain' + legNum;
+  if (leg[remainKey] != null && leg[remainKey] !== '') {
+    let remain = Number(leg[remainKey]);
+    if (isFinite(remain) && remain >= 0 && remain <= 15000) {
+      return Math.round(remain);
+    }
+  }
+  let fuel = Number(leg.takeoffFuel);
+  if (!isFinite(fuel) || fuel <= 0) fuel = Number(leg.fuel);
   if (!isFinite(fuel) || fuel <= 0) return null;
-  if (!isFinite(burn)) burn = 0;
+  let burn = pfrLegPlannedBurnLbs(leg, legIndex);
   let end = Math.round(fuel - burn);
   if (end < 0 || end > 15000) return null;
   return end;
@@ -19,7 +37,9 @@ function pfrLegEndingFuelLbs(leg) {
 function pfrTakeoffFuelForAirportIndex(pfr, airportIndex, airportCount) {
   if (!pfr || !pfr.legArray || !pfr.legArray.length) return null;
   if (airportIndex !== 0) return null;
-  let fuel = Number(pfr.legArray[0].fuel);
+  let leg0 = pfr.legArray[0];
+  let fuel = Number(leg0.takeoffFuel);
+  if (!isFinite(fuel) || fuel <= 0) fuel = Number(leg0.fuel);
   if (!isFinite(fuel) || fuel <= 0) return null;
   return Math.round(fuel);
 }
@@ -33,7 +53,7 @@ function pfrEndingFuelForAirportIndex(pfr, airportIndex, airportCount) {
     legIdx = legs.length - 1;
   }
   if (legIdx < 0 || legIdx >= legs.length) return null;
-  return pfrLegEndingFuelLbs(legs[legIdx]);
+  return pfrLegEndingFuelLbs(legs[legIdx], legIdx);
 }
 
 let failed = 0;
@@ -62,6 +82,18 @@ assert(pfrTakeoffFuelForAirportIndex(pfr, 2, n) === null, 'final airport no take
 
 pfr.legArray[1] = {fuel: 2200, burn: 350};
 assert(pfrEndingFuelForAirportIndex(pfr, 2, n) === 1850, 'OME return ending leg1');
+
+let caravan = {
+  legArray: [
+    {fuel: 1495, takeoffFuel: 1495, burnOff1: 302, fuelRemain1: 1193}
+  ]
+};
+assert(pfrTakeoffFuelForAirportIndex(caravan, 0, 2) === 1495, 'C208 takeoffFuel');
+assert(pfrEndingFuelForAirportIndex(caravan, 1, 2) === 1193, 'C208 fuelRemain1 at destination');
+assert(
+  pfrLegEndingFuelLbs({fuel: 1495, burnOff1: 302}, 0) === 1193,
+  'C208 burnOff1 when fuelRemain missing'
+);
 
 if (failed) process.exit(1);
 console.log('All passed.');

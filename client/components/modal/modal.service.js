@@ -670,7 +670,7 @@ angular.module('workspaceApp')
                             {title:'Takeoff Fuel',val:startFuel},
                             {title:'TKS (From iPad)',val:tksCalc().lbs,gals:tksCalc().gals},
                             {title:'Load Available',val:isNaN(Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-flight.pfr.legArray[0].tksWeight)) ? 0 : Math.round(flight.pfr.legArray[0].mgtow-flight.pfr.legArray[0].operatingWeightEmpty-startFuel-flight.pfr.legArray[0].tksWeight)},
-                            {title:'Actual Load',val:flight.pfr.legArray[0].totalLoad},
+                            {title:'Actual Load (Flight Report)',val:flight.pfr.legArray[0].totalLoad},
                             {title:'TOW',val:Math.round(flight.pfr.legArray[0].tow)}
                             ],
                 calcSeatWeight:function(num){
@@ -690,6 +690,14 @@ angular.module('workspaceApp')
                 tksCalc:tksCalc,
                 checkPirep:checkPirep,
                 startFuel:startFuel,
+                actualLoadPfrHint:function(){
+                  let l0=flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0];
+                  let n=l0&&Number(l0.totalLoad);
+                  if (!l0||!isFinite(n)||n===0) {
+                    return 'From iPad Flight Report weights, not Takeflite manifest. Stays 0 until the pilot completes the PFR load section.';
+                  }
+                  return 'From iPad Flight Report load plan (not Takeflite manifest).';
+                },
                 fuelCalc:function(){
                   if (!flight.pfr.legArray[0].fuel) return 0;
                   return (flight.pfr.legArray[0].fuel/flight.equipment.fuelBurn).toFixed(1);

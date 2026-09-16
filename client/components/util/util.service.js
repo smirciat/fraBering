@@ -403,13 +403,32 @@
         flight.miscObject.updatedEta = Util.minutesToHHMM(planFinal + lastDelta);
       },
 
-      /** Ending fuel (lbs) after a PFR leg; null when not computable. */
-      pfrLegEndingFuelLbs(leg) {
+      /** Planned burn (lbs) for a PFR leg — iPad/C208 sheets often use burnOff1, not burn. */
+      pfrLegPlannedBurnLbs(leg, legIndex) {
         if (!leg) return null;
-        let fuel = Number(leg.fuel);
         let burn = Number(leg.burn);
+        if (isFinite(burn) && burn > 0) return burn;
+        let legNum = (legIndex != null ? legIndex : 0) + 1;
+        let burnOff = Number(leg['burnOff' + legNum]);
+        if (isFinite(burnOff) && burnOff > 0) return burnOff;
+        return 0;
+      },
+
+      /** Ending fuel (lbs) after a PFR leg; null when not computable. */
+      pfrLegEndingFuelLbs(leg, legIndex) {
+        if (!leg) return null;
+        let legNum = (legIndex != null ? legIndex : 0) + 1;
+        let remainKey = 'fuelRemain' + legNum;
+        if (leg[remainKey] != null && leg[remainKey] !== '') {
+          let remain = Number(leg[remainKey]);
+          if (isFinite(remain) && remain >= 0 && remain <= 15000) {
+            return Math.round(remain);
+          }
+        }
+        let fuel = Number(leg.takeoffFuel);
+        if (!isFinite(fuel) || fuel <= 0) fuel = Number(leg.fuel);
         if (!isFinite(fuel) || fuel <= 0) return null;
-        if (!isFinite(burn)) burn = 0;
+        let burn = Util.pfrLegPlannedBurnLbs(leg, legIndex);
         let end = Math.round(fuel - burn);
         if (end < 0 || end > 15000) return null;
         return end;
@@ -430,7 +449,9 @@
       pfrTakeoffFuelForAirportIndex(pfr, airportIndex, airportCount) {
         if (!pfr || !pfr.legArray || !pfr.legArray.length) return null;
         if (airportIndex !== 0) return null;
-        let fuel = Number(pfr.legArray[0].fuel);
+        let leg0 = pfr.legArray[0];
+        let fuel = Number(leg0.takeoffFuel);
+        if (!isFinite(fuel) || fuel <= 0) fuel = Number(leg0.fuel);
         if (!isFinite(fuel) || fuel <= 0) return null;
         return Math.round(fuel);
       },
@@ -447,7 +468,7 @@
           legIdx = legs.length - 1;
         }
         if (legIdx < 0 || legIdx >= legs.length) return null;
-        return Util.pfrLegEndingFuelLbs(legs[legIdx]);
+        return Util.pfrLegEndingFuelLbs(legs[legIdx], legIdx);
       },
 
       displayFinalEta(flight) {

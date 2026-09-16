@@ -138,7 +138,13 @@ function buildReleaseModalView(flight) {
       weightSummary.push({ title: 'OWE', value: String(l0.operatingWeightEmpty) });
     }
     if (l0.totalLoad != null) {
-      weightSummary.push({ title: 'Actual Load', value: String(l0.totalLoad) });
+      weightSummary.push({
+        title: 'Actual Load (Flight Report)',
+        value: String(l0.totalLoad),
+        hint: Number(l0.totalLoad) === 0
+          ? 'From iPad Flight Report weights, not Takeflite manifest.'
+          : 'From iPad Flight Report load plan (not Takeflite manifest).',
+      });
     }
     if (l0.tow != null) {
       weightSummary.push({ title: 'TOW', value: String(Math.round(l0.tow)) });
