@@ -77,9 +77,9 @@ Stakeholder for “that dropdown / month pair looks wrong” is **Nate**.
 | Type of check | Prefer `trainingType` (avoid `recurrent undefined`) |
 | BI + General Emergency | Unchanged — one BI event fills both ROT lines |
 | 297 six-month math | Unchanged — last day of base+6 month (`getExp`) |
-| N# / flight time | Filled only if the record has `aircraftN` / `nNumber` / `tailNumber` / `acftNumber` or `flightTime` / `hours` (not on current rows) |
+| N# / flight time | Filled if the record has `aircraftN` / `nNumber` / `tailNumber` / `acftNumber` or `flightTime` / `hours`. Those two AcroForm fields (`Aircraft N`, `Flight Time`) stay **editable text** after generate so you can type before print; the rest of the form is still flattened. |
 
-**Flatten (Sep 15):** ROT / Flight Test / INDOC are filled with **pdf-lib** (`client/vendor/pdf-lib/pdf-lib.min.js`) then **fully flattened**. Chrome and Preview show instructor names, S/U, and aircraft type without clicking. Live AcroForm widgets are gone on purpose.
+**Flatten (Sep 15, updated Sep 16):** ROT / Flight Test / INDOC are filled with **pdf-lib** (`client/vendor/pdf-lib/pdf-lib.min.js`) then flattened **except** `Aircraft N` and `Flight Time`. Those stay live text widgets (empty when the record has no tail/hours). Chrome and Preview show the rest (instructor, S/U, aircraft type) without clicking. Signature widgets are still removed before flatten.
 
 **Regenerate the whole PDF** after any mapping change — do not patch a downloaded file. Same generate buttons on `/rot/records`.
 

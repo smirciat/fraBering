@@ -1676,7 +1676,7 @@ class RecordsComponent {
     return abbrs[i]+'/'+abbrs[(i+6)%12];
   }
 
-  fillAndFlattenPdf(buf, fields){
+  fillAndFlattenPdf(buf, fields, keepEditable){
     const lib=(typeof window!=='undefined'&&window.PDFLib)?window.PDFLib:null;
     if (!lib||!lib.PDFDocument) {
       return Promise.reject(new Error('PDF flatten library not loaded'));
@@ -1687,6 +1687,8 @@ class RecordsComponent {
     const PDFOptionList=lib.PDFOptionList;
     const PDFRadioGroup=lib.PDFRadioGroup;
     const PDFSignature=lib.PDFSignature;
+    const keep={};
+    (keepEditable||[]).forEach(name=>{ keep[name]=true; });
     return lib.PDFDocument.load(buf).then(pdfDoc=>{
       const form=pdfDoc.getForm();
       Object.keys(fields).forEach(name=>{
@@ -1719,7 +1721,21 @@ class RecordsComponent {
           try { form.removeField(field); } catch (e) {}
         }
       });
-      form.flatten();
+      Object.keys(keep).forEach(name=>{
+        try {
+          const field=form.getField(name);
+          if (field instanceof PDFTextField && field.disableReadOnly) field.disableReadOnly();
+        } catch (e) {}
+      });
+      form.updateFieldAppearances();
+      const origGetFields=form.getFields.bind(form);
+      form.getFields=function(){
+        return origGetFields().filter(function(field){
+          try { return !keep[field.getName()]; } catch (e) { return true; }
+        });
+      };
+      form.flatten({updateFieldAppearances: false});
+      form.getFields=origGetFields;
       return pdfDoc.save();
     });
   }
@@ -2053,7 +2069,7 @@ class RecordsComponent {
           headers: { 'Accept': 'application/pdf' }, //'text/plain'
           responseType: 'arraybuffer' })
         .then(response=> {
-          this.fillAndFlattenPdf(response.data, fields).then(filled_pdf=>{
+          this.fillAndFlattenPdf(response.data, fields, ['Aircraft N', 'Flight Time']).then(filled_pdf=>{
   		    var blob = new Blob([filled_pdf], {type: 'application/pdf'});
   		    var filename=PDFFileName + "_" + pilot.name + '_' + year + '_' + month + '_' + day + '.pdf';
   	      saveAs(blob, filename);
