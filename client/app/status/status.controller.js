@@ -2164,7 +2164,6 @@ class StatusComponent {
     if (!flight || !(flight.pilotAgree || flight.ocRelease || flight.dispatchRelease)) return;
     let pfrId = this.releasePfrDocId(flight);
     if (!pfrId) {
-      console.log('writeReleaseToFirebase skip: no PFR id', flight.flightNum);
       return;
     }
     this.http.post('/api/airplanes/updateFirebaseHeli', {flight: {
@@ -2180,10 +2179,8 @@ class StatusComponent {
       knownIce: flight.knownIce == null ? null : flight.knownIce,
       aircraft: flight.aircraft,
       pfrNum: pfrId
-    }}).then(() => {
-      console.log('writeReleaseToFirebase ok', pfrId, flight.flightNum);
-    }).catch(err => {
-      console.log('writeReleaseToFirebase failed', err);
+    }}).catch(err => {
+      console.log(err);
     });
   }
 

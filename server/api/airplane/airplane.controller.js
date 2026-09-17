@@ -364,7 +364,6 @@ async function updateDocumentSub(collection,docId,data) {
    let docRef = firebase_db.collection(collection).doc(String(docId));
    try {
      await docRef.collection("release").doc("releaseStatus").set(data,{merge:true});
-     console.log('Flight Release Document successfully updated!', String(docId));
      return true;
    } catch (error) {
      console.error('Error updating release subcollection:', String(docId), error);
@@ -624,7 +623,6 @@ export async function firebaseMin(flight){
   if (!flight) return 'need flight!';
   let pfrId = resolvePfrId(flight);
   if (!pfrId) {
-    console.log('firebaseMin skip: no PFR id', flight.flightNum || flight._id, flight.aircraft, flight.date);
     return 'No Pfr Attached to Flight';
   }
   let minFlight={
@@ -653,10 +651,7 @@ export async function firebaseMin(flight){
           ocReleaseTimestamp: minFlight.ocReleaseTimestamp,
           dispatchReleaseTimestamp: minFlight.dispatchReleaseTimestamp
         }, {merge: true});
-      } catch (parentErr) {
-        console.log('firebaseMin parent merge failed', pfrId, parentErr && parentErr.message);
-      }
-      console.log('minFlight updated', pfrId, flight.flightNum);
+      } catch (parentErr) {}
       return 'Updated';
     }
     return 'Firebase Write Failure';

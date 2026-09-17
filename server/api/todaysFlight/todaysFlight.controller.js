@@ -447,11 +447,7 @@ function flightForFirebaseMin(saved, merged, existingPfr) {
 export function runFlightUpdateSideEffects(flight) {
   if (!flight) return;
   try {
-    if (typeof firebaseMin !== 'function') {
-      console.log('runFlightUpdateSideEffects: firebaseMin is not a function');
-    } else {
-      firebaseMin(flight);
-    }
+    firebaseMin(flight);
   } catch (err) { console.log(err); }
 
   try {
