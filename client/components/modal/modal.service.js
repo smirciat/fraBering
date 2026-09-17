@@ -113,10 +113,23 @@ angular.module('workspaceApp')
               if (formData[key] === 'true' && key !== 'newBaseMonth' && key !== 'includes297G') formData[key] = true;
               if (formData[key] === 'false' && key !== 'newBaseMonth' && key !== 'includes297G') formData[key] = false;
             }
+            if (!formData.eventResult || typeof formData.eventResult !== 'object') formData.eventResult = {};
+            rotAppConfig.trainingEvents.forEach(function(t) {
+              if (formData[t.name] && !formData.eventResult[t.name]) formData.eventResult[t.name] = 'S';
+            });
             theModal = openModal({
               modal: {
                 formData: formData,
                 radio: true,
+                eventGrades: ['S', 'W', 'U/S'],
+                onTypeToggle: function(name) {
+                  if (!formData.eventResult) formData.eventResult = {};
+                  if (formData[name]) {
+                    if (!formData.eventResult[name]) formData.eventResult[name] = 'S';
+                  } else {
+                    delete formData.eventResult[name];
+                  }
+                },
                 trainingTypes: rotAppConfig.trainingEvents,
                 dismissable: true,
                 title: 'Click Each Training Type Accomplished on this Training Record',
@@ -137,6 +150,53 @@ angular.module('workspaceApp')
             }, 'modal-success');
             if (theModal) theModal.result.then(function(event) {
               cb.apply(event, [formData]);
+            }).catch(function(err) {
+              console.log(err);
+            });
+          };
+        },
+        flightTestItems(cb) {
+          cb = cb || angular.noop;
+          return function() {
+            var args = Array.prototype.slice.call(arguments),
+                record = args.shift() || {},
+                items = args.shift() || [],
+                grades = args.shift() || {},
+                remarksText = args.shift() || '',
+                theModal;
+            theModal = openModal({
+              modal: {
+                flightTestItems: true,
+                dismissable: true,
+                title: 'Flight Test items',
+                items: items,
+                grades: grades,
+                remarksText: remarksText,
+                gradeOptions: ['', 'S', 'W', 'U/S'],
+                onGradeChange: function() {
+                  var remarks = [];
+                  Object.keys(grades).forEach(function(n) {
+                    if (grades[n] === 'U/S') remarks.push('Event ' + n + ' retrained/Rechecked');
+                  });
+                  this.remarksText = remarks.join('; ');
+                },
+                buttons: [{
+                  classes: 'btn-primary',
+                  text: 'Confirm/Save',
+                  click: function(event) {
+                    theModal.close(event);
+                  }
+                }, {
+                  classes: 'btn-danger',
+                  text: 'Cancel',
+                  click: function(event) {
+                    theModal.dismiss(event);
+                  }
+                }]
+              }
+            }, 'modal-success');
+            if (theModal) theModal.result.then(function(event) {
+              cb.apply(event, [record, grades]);
             }).catch(function(err) {
               console.log(err);
             });

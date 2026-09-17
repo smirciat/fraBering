@@ -181,20 +181,19 @@
             <tr>
                 <th></th>
                 <th></th>
-                <th></th>
                 <th>Pilot</th>
                 <th>Emp#</th>
                 <th>Date</th>
                 <th>Initial/Recurrent</th>
                 <th>Aircraft</th>
+                <th>N#</th>
+                <th>Flight Time</th>
                 <th>Type</th>
                 <th>Base Month</th>
                 <th ng-if="false">New Base</th>
                 <th>Instructor</th>
                 <th>CheckAirman</th>
                 <th>Result</th>
-                <th>Additional Instruction</th>
-                <th>Outcome</th>
                 <th></th>
                 <th></th>
                 <th ng-if="rotRecords.isApprover()"></th>
@@ -215,12 +214,6 @@
                     Flight Test
                   </button>
                 </td>
-                <td>
-                  <button class="btn btn-success" ng-class="{'disabled': rotRecords.isItLoading()}" ng-click="rotRecords.pdf(record,'FlightTestINDOC')">
-                    <span ng-if="rotRecords.isItLoading()" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
-                    INDOC
-                  </button>
-                </td>                
                 <!--<td><input class="form-control" ng-model="record.name" type="text" ng-click="rotRecords.showPilotModal(record.pilotNumber,record)"></td>-->
                 <td style="padding-top:15px;">{{record.name}}</td>
                 <!--<td><input class="form-control" ng-model="record.pilotNumber" type="text" ng-blur="rotRecords.fillPilotData(record,recordIndex)"><!-- style="width:70px;"></td>-->
@@ -241,6 +234,18 @@
                     <div ng-bind-html="choice | highlight: $select.search"></div>
                   </ui-select-choices>
                 </ui-select></td>
+                <td>
+                  <ui-select ng-if="rotRecords.nNumbers.length" ng-model="record.aircraftN" theme="bootstrap" ng-disabled="disabled">
+                    <ui-select-match allow-clear="true" placeholder="N#">{{$select.selected}}</ui-select-match>
+                    <ui-select-choices repeat="n in rotRecords.nNumbers | filter:$select.search">
+                      <div ng-bind-html="n | highlight: $select.search"></div>
+                    </ui-select-choices>
+                  </ui-select>
+                  <input ng-if="!rotRecords.nNumbers.length" class="form-control" ng-model="record.aircraftN" type="text" style="min-width:6em" placeholder="N#">
+                </td>
+                <td>
+                  <input class="form-control" ng-model="record.flightTime" type="text" style="min-width:4em" placeholder="hrs">
+                </td>
                 <td ng-click="rotRecords.radioModal(record)" style="padding-top:15px;">
                   <p tooltip-placement="auto" uib-tooltip="Click to Edit">{{rotRecords.displayArray(record)}}</p>
                 </td>
@@ -271,12 +276,10 @@
                 </ui-select></td>
                 <td><ui-select ng-model="record.result" theme="bootstrap" ng-disabled="disabled">
                   <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>
-                  <ui-select-choices repeat="item in ['Satisfactory','Unsatisfactory','Discontinued']" >
+                  <ui-select-choices repeat="item in ['S','W','U/S','Discontinued']" >
                     <div ng-bind-html="item | highlight: $select.search"></div>
                   </ui-select-choices>
                 </ui-select></td>
-                <td><textarea rows="1" style="width:10em;" ng-model="record.additionalInstruction"></textarea></td>
-                <td><textarea rows="1" style="width:4em;" ng-model="record.outcome"></textarea></td>
                 <td><button class="btn btn-success" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.update(record,$index)">Save</button></td>
                 <td><button class="btn btn-danger" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.delete(record,$index)">Delete</button></td>
                 <td ng-if="rotRecords.isApprover()">

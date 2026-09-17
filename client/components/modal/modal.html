@@ -6,11 +6,41 @@
 <div class="modal-body wheat" ng-class="modal.highMinsClass()">
   <div ng-if="modal.html" ng-bind-html="modal.html"></div>
   <form ng-if="modal.radio" name="radios">
-    <div ng-repeat="type in modal.trainingTypes">
-      <input type="checkbox" ng-model="modal.formData[type.name]">
+    <div ng-repeat="type in modal.trainingTypes" style="margin-bottom:6px;">
+      <input type="checkbox" ng-model="modal.formData[type.name]" ng-change="modal.onTypeToggle(type.name)">
       <label>{{type.label}}</label>
+      <select ng-if="modal.formData[type.name]" ng-model="modal.formData.eventResult[type.name]"
+          ng-options="g for g in modal.eventGrades" style="margin-left:8px;">
+      </select>
     </div>
   </form>
+  <div ng-if="modal.flightTestItems" style="max-height:70vh;overflow:auto;">
+    <p>All 44 items are listed. Required items are pre-marked <strong>S</strong>; others show <strong>-</strong> so the instructor can still grade them if flown. <strong>U/S</strong> prints S on the Flight Test and adds a retrain remark (shown below; a Remarks box on the PDF waits on the PTP).</p>
+    <p ng-if="modal.remarksText" style="font-size:13px;"><strong>Remarks:</strong> {{modal.remarksText}}</p>
+    <table class="table table-condensed table-bordered">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Item</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="item in modal.items track by item.n" ng-class="{'text-muted': !item.required}">
+          <td>{{item.n}}</td>
+          <td>{{item.label}}<span ng-if="!item.required" style="font-size:11px;color:#888;"> (not required)</span></td>
+          <td>
+            <select ng-model="modal.grades[item.n]" ng-change="modal.onGradeChange()">
+              <option value="-">-</option>
+              <option value="S">S</option>
+              <option value="W">W</option>
+              <option value="U/S">U/S</option>
+            </select>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <div ng-if="modal.expPreview">
     <p>Review expiration updates for <strong>{{modal.pilotName}}</strong> before approving this record. Adjust <em>New base</em> or edit dates as needed.</p>
     <table class="table table-bordered table-condensed">

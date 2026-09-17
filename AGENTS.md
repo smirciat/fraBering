@@ -31,6 +31,11 @@ npm test             # Unit tests (Grunt + Karma/Mocha)
 npm start            # Production server from dist/
 ```
 
+## Deploy workflow (Andy)
+
+- **Agents:** implement and verify in source (e.g. `npm test`, local `grunt serve` when useful). Do **not** run **`grunt build`**, **`pm2 restart`**, or bump **`stopped{N}`** unless Andy explicitly asks.
+- **Andy:** production **`grunt build`** (prod serves `dist/`), **`pm2 restart fraBering`**, and **`stopped{N}`** bump when a client reload is needed. Server-only fixes may skip `grunt build` but still need pm2 restart.
+
 ## Protected areas — read `.cursor/rules/` before editing
 
 1. **Secrets / local config** — never commit or overwrite: `local.env.js`, `development.js`, `firebase.json`, `.env`

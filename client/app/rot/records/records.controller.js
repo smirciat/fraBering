@@ -3,9 +3,10 @@
 (function(){
 
 class RecordsComponent {
-  constructor($scope,$timeout,$interval,$http,rotAppConfig,Modal,categoryFilterFilter,$state,Auth,RotPilotContext,RotAccess) {
+  constructor($scope,$timeout,$interval,$http,rotAppConfig,rotFlightTestItems,Modal,categoryFilterFilter,$state,Auth,RotPilotContext,RotAccess) {
     this.categoryFilter=categoryFilterFilter;
     this.appConfig=rotAppConfig;
+    this.rotFlightTestItems=rotFlightTestItems;
     this.Auth=Auth;
     this.RotAccess=RotAccess;
     this.RotPilotContext=RotPilotContext;
@@ -15,6 +16,7 @@ class RecordsComponent {
     this.interval=$interval;
     this.scope=$scope;
     this.state=$state;
+    this.nNumbers=[];
     this.testString-'Test String';
     this.fileName='';
     this.file=null;
@@ -69,6 +71,9 @@ class RecordsComponent {
           this.records[recordIndex].baseMonth=savedBaseMonth;
         }
         this.records[recordIndex].trainingTypeArray=[];
+        if (!this.records[recordIndex].eventResult || typeof this.records[recordIndex].eventResult !== 'object') {
+          this.records[recordIndex].eventResult={};
+        }
         for (let key in this.records[recordIndex]) {
           if (this.appConfig.trainingEventKeys.indexOf(key)<0) continue;
           if (this.records[recordIndex][key]&&typeof this.records[recordIndex][key]=="boolean") {
@@ -76,6 +81,7 @@ class RecordsComponent {
             if (this.records[recordIndex].trainingTypeArray.indexOf(key)<0) {
               this.records[recordIndex].trainingTypeArray.push(key);
             }
+            if (!this.records[recordIndex].eventResult[key]) this.records[recordIndex].eventResult[key]='S';
             if (key!=='far297'&&!this.records[recordIndex].baseMonthManual){
               let expKey=key+'Exp';
               //find pilot record
@@ -88,6 +94,7 @@ class RecordsComponent {
           }
           if (!this.records[recordIndex][key]&&typeof this.records[recordIndex][key]=="boolean") {
             this.records[recordIndex][key]="false";
+            if (this.records[recordIndex].eventResult) delete this.records[recordIndex].eventResult[key];
           }
         }
         this.enrichRecords();
@@ -96,6 +103,24 @@ class RecordsComponent {
       this.expPreviewModal = this.Modal.confirm.expPreview((record, rows) => {
         this._expPreviewOpen = false;
         this.finalizeApproval(record, rows);
+      });
+      this.flightTestItemsModal = this.Modal.confirm.flightTestItems((record, grades) => {
+        record.flightTestItems = {};
+        Object.keys(grades||{}).forEach(n=>{
+          record.flightTestItems[String(n)]=grades[n];
+        });
+        this.rotFlightTestItems.rebuildRemarks(record);
+        this.persistRecord(record, this.records.indexOf(record), {skipNewRow:true, silent:true}).then(saved => {
+          if (this._pendingPdfName) {
+            const name=this._pendingPdfName;
+            this._pendingPdfName=null;
+            this.loading=true;
+            this.generatePdf(saved||record, name);
+          }
+        }).catch(err=>{
+          this.loading=false;
+          this.persistRecordError(err);
+        });
       });
       this.pilotModal = this.Modal.confirm.pilotData(formData =>{
         if (!formData||!formData.name) {
@@ -126,8 +151,18 @@ class RecordsComponent {
     this.showApproved=false;
     this.showSLEArray=[];
     this.bootstrapped=false;
+    this.nNumbers=[];
     this.date=new Date();
     this.upDate();
+    this.http.get('/api/airplanes').then(res=>{
+      const list=(res.data||[]).filter(a=>a.registration&&!a.isInactive&&a.active!==false);
+      const seen={};
+      this.nNumbers=list.map(a=>String(a.registration).trim()).filter(n=>{
+        if (!n||seen[n]) return false;
+        seen[n]=true;
+        return true;
+      }).sort();
+    }).catch(()=>{ this.nNumbers=[]; });
     window.categories=this.categories;
     window.subtabs=this.subtabs;
     this.assignmentSource.forEach(a=>{
@@ -1379,7 +1414,7 @@ class RecordsComponent {
   
   createNewRecord(){
     let nr=JSON.parse(JSON.stringify(this.fullPilot));
-    let newObj={name:this.fullPilot.name,pilotNumber:this.fullPilot._id,dateObj:new Date(),date:new Date().toLocaleDateString(),newBaseMonth:'false',baseMonthManual:false,trainingType:'recurrent',baseMonth:new Date().toLocaleString('default', { month: 'long' })};
+    let newObj={name:this.fullPilot.name,pilotNumber:this.fullPilot._id,dateObj:new Date(),date:new Date().toLocaleDateString(),newBaseMonth:'false',baseMonthManual:false,trainingType:'recurrent',baseMonth:new Date().toLocaleString('default', { month: 'long' }),eventResult:{},flightTestItems:{},remarks:[],aircraftN:'',flightTime:'',result:'S'};
     Object.assign(nr, newObj );
     delete nr._id;
     return nr;
@@ -1447,6 +1482,10 @@ class RecordsComponent {
         if (r.far297g) obj["135.297g"]="X";
         if (r.far299) obj["135.299"]="X";
         if (!r.result) obj["Pass Fail"]="Satisfactory";
+        else if (r.result==='S') obj["Pass Fail"]="Satisfactory";
+        else if (r.result==='U/S') obj["Pass Fail"]="Unsatisfactory";
+        else if (r.result==='W') obj["Pass Fail"]="Waived";
+        else obj["Pass Fail"]=r.result;
         records.push(obj);
       }); 
       this.http({ url: "/api/rot/files/pdfs?filename=quarterly.xlsx", 
@@ -1559,18 +1598,26 @@ class RecordsComponent {
   }
   
   newRecordClass(record){
-    if (!record._id) return "darkBackground";
+    if (!record._id) return "newDraftBackground";
     if (!record.approved) return "blueBackground";
     return "approvedBackground";
   }
   
+  eventGradeForType(record, type){
+    if (!record||!record.eventResult) return '';
+    if (record.eventResult[type]) return record.eventResult[type];
+    if (record.eventResult['far'+type]) return record.eventResult['far'+type];
+    return '';
+  }
+
   displayArray(record){
     if (!record) return "No Type Selected";
     let result="";
     if (record.trainingTypeArray&&record.trainingTypeArray.length>0) {
       record.trainingTypeArray.forEach((type,index)=>{
         if (index>0) result+=", ";
-        result+=type;
+        const grade=this.eventGradeForType(record, type);
+        result+=grade?type+' ('+grade+')':type;
       });
     }
     else return "No Type Selected";
@@ -1616,6 +1663,13 @@ class RecordsComponent {
       record.checkAirmanCert=this.pilots[checkAirmanIndex].cert;
       record.checkAirmanCertType=this.pilots[checkAirmanIndex].certType;
     } else if (!record.checkAirmanCert) record.checkAirmanCert="";
+    if (!record.eventResult || typeof record.eventResult !== 'object') record.eventResult={};
+    if (!record.flightTestItems || typeof record.flightTestItems !== 'object') record.flightTestItems={};
+    if (!Array.isArray(record.remarks)) record.remarks=[];
+    if (record.result==='Satisfactory') record.result='S';
+    if (record.result==='Unsatisfactory') record.result='U/S';
+    if (!record.aircraftN) record.aircraftN=record.nNumber||record.tailNumber||record.acftNumber||'';
+    if (!record.flightTime) record.flightTime=record.hours||'';
   }
 
   pdfFormCertType(raw){
@@ -1841,11 +1895,33 @@ class RecordsComponent {
       const index=this.records.indexOf(record);
       this.loading=true;
       this.persistRecord(record,index,{skipNewRow:true,silent:true}).then(saved=>{
-        this.generatePdf(saved||record,PDFFileName);
+        const rec=saved||record;
+        if (PDFFileName==='FlightTest' && this.rotFlightTestItems.needsPopup(rec)) {
+          this.loading=false;
+          this.openFlightTestItemsModal(rec, PDFFileName);
+          return;
+        }
+        this.generatePdf(rec,PDFFileName);
       }).catch(err=>{
         this.loading=false;
         this.persistRecordError(err);
       });
+  }
+
+  openFlightTestItemsModal(record, PDFFileName){
+      this._pendingPdfName=PDFFileName||null;
+      const existing=record.flightTestItems||{};
+      const items=this.rotFlightTestItems.items.map(item=>{
+        return Object.assign({}, item, {required: this.rotFlightTestItems.isItemRequired(item, record)});
+      });
+      const grades={};
+      items.forEach(item=>{
+        const cur=existing[String(item.n)]||existing[item.n];
+        if (cur===undefined||cur===null||cur==='') grades[item.n]=item.required?'S':'-';
+        else grades[item.n]=cur;
+      });
+      const remarks=(record.remarks||[]).join('; ');
+      this.flightTestItemsModal(record, items, grades, remarks);
   }
 
   generatePdf(pilot,PDFFileName) {
@@ -2058,6 +2134,12 @@ class RecordsComponent {
                 fields.Dropdown3=["S"];
                 fields["Date3_af_date"]=[dateObj];
             }
+            if (!isRot) {
+              this.rotFlightTestItems.items.forEach(item=>{
+                const raw=(pilot.flightTestItems&&(pilot.flightTestItems[String(item.n)]||pilot.flightTestItems[item.n]))||'';
+                fields[item.pdfField]=[this.rotFlightTestItems.pdfGrade(raw)];
+              });
+            }
             //default:
             //  break;
           //}
@@ -2069,7 +2151,7 @@ class RecordsComponent {
           headers: { 'Accept': 'application/pdf' }, //'text/plain'
           responseType: 'arraybuffer' })
         .then(response=> {
-          this.fillAndFlattenPdf(response.data, fields, ['Aircraft N', 'Flight Time']).then(filled_pdf=>{
+          this.fillAndFlattenPdf(response.data, fields).then(filled_pdf=>{
   		    var blob = new Blob([filled_pdf], {type: 'application/pdf'});
   		    var filename=PDFFileName + "_" + pilot.name + '_' + year + '_' + month + '_' + day + '.pdf';
   	      saveAs(blob, filename);
@@ -2086,6 +2168,8 @@ class RecordsComponent {
         });
     }
 }
+
+RecordsComponent.$inject = ['$scope','$timeout','$interval','$http','rotAppConfig','rotFlightTestItems','Modal','categoryFilterFilter','$state','Auth','RotPilotContext','RotAccess'];
 
 angular.module('workspaceApp')
   .filter('monthYear', () => {

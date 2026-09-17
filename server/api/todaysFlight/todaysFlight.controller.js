@@ -22,6 +22,7 @@ import {
   getManifestResBering,
   getFlightLogsResBering
 } from './takeflite.resbering.js';
+import {mergeFlightReleaseFields} from './releaseMerge.js';
 const MOBILE_TOKEN=localEnv.MOBILE_TOKEN;
 let bearer='';
 let allAirports=[];
@@ -413,25 +414,27 @@ export function create(req, res) {
     .catch(handleError(res));
 }
 
-// Updates an existing TodaysFlight in the DB
-export function update(req, res) {
-  let flight=req.body;
+function runFlightUpdateSideEffects(flight) {
   try {
-    if (flight.pfr&&flight.pfr._id) firebaseMin(flight);
-  }
-  catch(err){console.log(err)}
-  
+    if (flight.pfr && flight.pfr._id) firebaseMin(flight);
+  } catch (err) { console.log(err); }
+
   try {
-    if (flight.flightNum&&flight.flightNum.length===3&&flight.flightNum.substring(0,2)==='56'&&flight.newlyReleased) {
-      mailOptions.html+='Flight#: ' + flight.flightNum + '<br>';
-      mailOptions.html+='Time: ' + new Date().toLocaleString() + '<br>';
-      mailOptions.html+='Pilot: ' + flight.pilotObject.displayName + '<br>';
-      mailOptions.html+='Aircraft: ' + flight.aircraft + '<br>';
-      mailOptions.html+='Route: ' + flight.airports.toString() + '<br>';
-      mailOptions.html+='Pilot Release: ' + flight.pilotAgree + ' ' + flight.releaseTimestamp + '<br>';
-      if (flight.dispatchRelease) mailOptions.html+='Dispatch Release: ' + flight.dispatchRelease + ' ' + flight.dispatchReleaseTimestamp + '<br>';
-      if (flight.ocRelease) mailOptions.html+='Operational Control Release: ' + flight.ocRelease + ' ' + flight.ocReleaseTimestamp + '<br>';
-      transporter.sendMail(mailOptions, function(error, info){
+    if (flight.flightNum && flight.flightNum.length === 3 &&
+        flight.flightNum.substring(0, 2) === '56' && flight.newlyReleased) {
+      mailOptions.html += 'Flight#: ' + flight.flightNum + '<br>';
+      mailOptions.html += 'Time: ' + new Date().toLocaleString() + '<br>';
+      mailOptions.html += 'Pilot: ' + flight.pilotObject.displayName + '<br>';
+      mailOptions.html += 'Aircraft: ' + flight.aircraft + '<br>';
+      mailOptions.html += 'Route: ' + flight.airports.toString() + '<br>';
+      mailOptions.html += 'Pilot Release: ' + flight.pilotAgree + ' ' + flight.releaseTimestamp + '<br>';
+      if (flight.dispatchRelease) {
+        mailOptions.html += 'Dispatch Release: ' + flight.dispatchRelease + ' ' + flight.dispatchReleaseTimestamp + '<br>';
+      }
+      if (flight.ocRelease) {
+        mailOptions.html += 'Operational Control Release: ' + flight.ocRelease + ' ' + flight.ocReleaseTimestamp + '<br>';
+      }
+      transporter.sendMail(mailOptions, function(error, info) {
         if (error) {
           console.log('Error:', error);
         } else {
@@ -439,9 +442,11 @@ export function update(req, res) {
         }
       });
     }
-  }
-  catch(err){console.log(err)}
-  
+  } catch (err) { console.log(err); }
+}
+
+// Updates an existing TodaysFlight in the DB
+export function update(req, res) {
   if (req.body._id) {
     delete req.body._id;
   }
@@ -451,7 +456,12 @@ export function update(req, res) {
     }
   })
     .then(handleEntityNotFound(res))
-    .then(saveUpdates(req.body))
+    .then(function(entity) {
+      if (!entity) return null;
+      const merged = mergeFlightReleaseFields(entity, req.body);
+      runFlightUpdateSideEffects(merged);
+      return saveUpdates(merged)(entity);
+    })
     .then(respondWithResult(res))
     .catch(handleError(res));
 }
@@ -464,13 +474,18 @@ export function updateMobile(req, res) {
   if (req.body.flight._id) {
     delete req.body.flight._id;
   }
+  const payload = req.body.flight || req.body;
   return TodaysFlight.findOne({
     where: {
       _id: id
     }
   })
     .then(handleEntityNotFound(res))
-    .then(saveUpdates(req.body.flight||req.body))
+    .then(function(entity) {
+      if (!entity) return null;
+      const merged = mergeFlightReleaseFields(entity, payload);
+      return saveUpdates(merged)(entity);
+    })
     .then(respondWithResult(res))
     .catch(handleError(res));
 }

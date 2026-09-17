@@ -21,7 +21,7 @@ grunt build && grunt babel:server
 pm2 restart fraBering
 ```
 
-**Client reload:** This pass bumps `stopped179` (navbar + `server/api/todaysFlight/index.js`) so open tabs pick up `dist/` after restart. See [`stopped-version-deploy.md`](./stopped-version-deploy.md).
+**Client reload:** This pass bumps `stopped183` (navbar + `server/api/todaysFlight/index.js`) so open tabs pick up `dist/` after restart. See [`stopped-version-deploy.md`](./stopped-version-deploy.md).
 
 **Templates (no git — must exist on disk):**
 
@@ -53,7 +53,7 @@ Nate generates on prod whenever he needs a form. When a PDF is wrong, he sends A
 3. Agent: rasterize / read the **flattened** page (there are no live AcroForm values), look up the Firebase training row + pilot profile, diff vs `generatePdf`, patch, **regenerate the whole form** (do not edit the PDF by hand).
 4. `grunt build`, bump `stopped{N}` in **both** places, `pm2 restart fraBering`. Nate generates again from `/rot/records`.
 
-Enough from Nate: the PDF + the complaint. Pilot name and date on the filename are usually enough to find the row. Helpful extras (not required): record id, which button (ROT / Flight Test / INDOC), screenshot.
+Enough from Nate: the PDF + the complaint. Pilot name and date on the filename are usually enough to find the row. Helpful extras (not required): record id, which button (ROT / Flight Test), screenshot.
 
 Stakeholder for “that dropdown / month pair looks wrong” is **Nate**.
 
@@ -77,15 +77,22 @@ Stakeholder for “that dropdown / month pair looks wrong” is **Nate**.
 | Type of check | Prefer `trainingType` (avoid `recurrent undefined`) |
 | BI + General Emergency | Unchanged — one BI event fills both ROT lines |
 | 297 six-month math | Unchanged — last day of base+6 month (`getExp`) |
-| N# / flight time | Filled if the record has `aircraftN` / `nNumber` / `tailNumber` / `acftNumber` or `flightTime` / `hours`. Those two AcroForm fields (`Aircraft N`, `Flight Time`) stay **editable text** after generate so you can type before print; the rest of the form is still flattened. |
+| N# / flight time | Training-line columns `aircraftN` and `flightTime` (N# from `GET /api/airplanes`). Flattened onto the PDF. |
 
-**Flatten (Sep 15, updated Sep 16):** ROT / Flight Test / INDOC are filled with **pdf-lib** (`client/vendor/pdf-lib/pdf-lib.min.js`) then flattened **except** `Aircraft N` and `Flight Time`. Those stay live text widgets (empty when the record has no tail/hours). Chrome and Preview show the rest (instructor, S/U, aircraft type) without clicking. Signature widgets are still removed before flatten.
+**Flatten:** ROT / Flight Test are filled with **pdf-lib** then fully flattened (signature widgets removed first). INDOC green button is **gone** — 293(a)1,4-8 is a Type event, then generate **Flight Test**.
 
-**Regenerate the whole PDF** after any mapping change — do not patch a downloaded file. Same generate buttons on `/rot/records`.
+**Nate 9/16 (training line + maneuvers):**
 
-**Paper signatures:** live signature widgets are **removed before flatten** so Acrobat is not required and we do not bake a second widget appearance. The template already prints a yellow **Signature:** prompt in the cert rows — that cell stays empty for wet-sign on paper. Bottom “Inspector’s Signature:” is printed artwork, not a widget.
+- Type modal: each selected event has **S / W / U/S** (`record.eventResult`).
+- Row Result: S / W / U/S / Discontinued (old Satisfactory → S).
+- Additional Instruction and Outcome columns removed (old fields left on saved rows).
+- **Flight Test** on a PIC/SIC / 297 / 297g row opens a popup of **all 44** items from [`client/app/rot/flight-test-items.js`](../client/app/rot/flight-test-items.js). Required items pre-mark **S**; others default to **-** so the instructor can still grade them if flown. Required set is seeded from form suffixes plus 8900 Table 3-70 / N 8900.685. Nate can override in the popup.
+- **U/S** prints **S** on that Flight Test line and stores `Event {n} retrained/Rechecked` on `record.remarks` (shown in the popup). No Remarks AcroForm on the current template — PDF remarks wait on Nate’s PTP revision.
+- Electronic signature: later.
 
-**Chrome vs Adobe (old files):** on the previous `pdfform` / NeedAppearances PDFs, Chrome often showed dropdowns better than Adobe Reader. Flattened files should look the same in both. Stakeholder for “that dropdown looks wrong” is **Nate**.
+**Regenerate the whole PDF** after any mapping change — do not patch a downloaded file.
+
+**Paper signatures:** live signature widgets are **removed before flatten**. The template already prints a yellow **Signature:** prompt in the cert rows — wet-sign on paper.
 
 **297 base-month dropdown (`Dropdown5` on FlightTest.pdf):** the template is not a single month. Options are:
 
