@@ -57,6 +57,131 @@ function asLegArray(value) {
   return [];
 }
 
+function manualObsRecent(airport) {
+  if (!airport || !airport.manualObs || !airport.manualTimestamp) return false;
+  const oneHourAgo = new Date();
+  oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+  oneHourAgo.setMinutes(oneHourAgo.getMinutes() - 10);
+  return new Date(airport.manualTimestamp) > oneHourAgo;
+}
+
+/** Read-only parity with modal.service.js enrichMetarWithManualObs. */
+function enrichMetarWithManualObs(metarObj) {
+  if (!metarObj || !metarObj.airport || !manualObsRecent(metarObj.airport)) return;
+  const mo = metarObj.airport.manualObs;
+  if (mo.webcam) {
+    metarObj['Raw-Report'] = 'WebCam Observation, VFR Only';
+    metarObj.usingManual = true;
+    return;
+  }
+  if (mo.webcamIFR) {
+    metarObj['Raw-Report'] = 'Official WebCam Observation';
+    metarObj.usingManual = true;
+    return;
+  }
+  if (mo.notVfr) {
+    metarObj['Raw-Report'] = 'Manual Observation: Not VFR';
+    metarObj.usingManual = true;
+    return;
+  }
+  const priorColor = String(metarObj.color || '');
+  const needsManual =
+    !metarObj['Raw-Report'] ||
+    priorColor.indexOf('airport-blue') > -1 ||
+    priorColor.indexOf('airport-purple') > -1;
+  if (!needsManual) return;
+  let obs = 'UNOFFICIAL: ';
+  if (mo.isOfficial) obs = 'OFFICIAL OBSERVATION: ';
+  if (mo.windSpeed && mo.windDirection) {
+    obs = obs + 'Wind ' + mo.windDirection + '@' + mo.windSpeed + 'kts';
+  }
+  if (mo.visibility) obs = obs + ', Visibility ' + mo.visibility;
+  if (mo.ceiling) obs = obs + ', Ceiling ' + mo.ceiling;
+  if (mo.altimeter) obs = obs + ', Altimeter ' + mo.altimeter;
+  metarObj['Raw-Report'] = obs;
+  metarObj.Visibility = mo.visibility;
+  metarObj.Ceiling = mo.ceiling;
+  metarObj['Wind-Gust'] = mo.windSpeed;
+  metarObj['Wind-Direction'] = mo.windDirection;
+  metarObj.altimeter = mo.altimeter;
+  metarObj.usingManual = true;
+}
+
+function formatManualObsSummary(airport) {
+  if (!airport || !airport.manualObs || !manualObsRecent(airport)) {
+    return { hasRecentManual: false, lines: [], signature: '', timestamp: '' };
+  }
+  const mo = airport.manualObs;
+  const lines = [];
+  if (mo.webcam) lines.push('WebCam observation — VFR only');
+  else if (mo.webcamIFR) lines.push('Official WebCam observation (IFR)');
+  else if (mo.notVfr) lines.push('Manual observation: not VFR');
+  else {
+    if (mo.windDirection || mo.windSpeed) {
+      lines.push(
+        'Wind ' +
+          str(mo.windDirection) +
+          '@' +
+          str(mo.windSpeed) +
+          ' kts'
+      );
+    }
+    if (mo.visibility) lines.push('Visibility ' + str(mo.visibility));
+    if (mo.ceiling) lines.push('Ceiling ' + str(mo.ceiling));
+    if (mo.altimeter) lines.push('Altimeter ' + str(mo.altimeter));
+    if (mo.isOfficial) lines.unshift('Official manual observation');
+    else lines.unshift('Unofficial manual observation');
+  }
+  return {
+    hasRecentManual: true,
+    lines: lines,
+    signature: str(mo.signature),
+    timestamp: airport.manualTimestamp
+      ? String(airport.manualTimestamp)
+      : '',
+  };
+}
+
+function metarTrendList(metarObj) {
+  const seen = new Set();
+  const out = [];
+  function push(raw) {
+    const line = str(raw);
+    if (!line || seen.has(line)) return;
+    seen.add(line);
+    out.push(line);
+  }
+  const trend = metarObj.metars;
+  if (Array.isArray(trend)) trend.forEach(push);
+  const airport = metarObj.airport || {};
+  const history = airport.currentMetarArray;
+  if (Array.isArray(history)) {
+    for (let i = history.length - 1; i >= 0; i -= 1) push(history[i]);
+  }
+  const current = str(airport.currentMetar);
+  if (current) push(current);
+  return out;
+}
+
+function weatherSnapshot(metarObj) {
+  const windGust = str(metarObj['Wind-Gust']);
+  const windDir = str(metarObj['Wind-Direction']);
+  const wind =
+    windDir || windGust
+      ? windGust + (metarObj.xwind ? ' / xwind ' + str(metarObj.xwind) : '')
+      : str(metarObj.wind);
+  return {
+    visibility: str(metarObj.Visibility),
+    ceiling: str(metarObj.Ceiling),
+    wind: wind,
+    windDirection: windDir,
+    windGust: windGust,
+    xwind: str(metarObj.xwind),
+    altimeter: str(metarObj.altimeter),
+    freezing: str(metarObj.Freezing),
+  };
+}
+
 function mapLegCards(f) {
   const objs = asLegArray(f.airportObjsLocked).length
     ? asLegArray(f.airportObjsLocked)
@@ -69,15 +194,31 @@ function mapLegCards(f) {
     const airport = metarObj.airport || {};
     const pireps = airport.pireps || [];
     const companyPireps = airport.companyPireps || [];
+    const automatedMetar = str(metarObj['Raw-Report']);
+    let displayMetar = metarObj;
+    try {
+      displayMetar = JSON.parse(JSON.stringify(metarObj));
+      enrichMetarWithManualObs(displayMetar);
+    } catch (e) {
+      displayMetar = metarObj;
+    }
+    const manual = formatManualObsSummary(airport);
+    const trend = metarTrendList(metarObj);
+    const weather = weatherSnapshot(displayMetar);
     return {
       airportCode: str(airport.threeLetter),
       legType: legDestinationType(index, count),
       colorClass: str(metarObj.color),
       departZulu: zulu[index] != null ? String(zulu[index]) : '',
-      rawReport: str(metarObj['Raw-Report']),
+      rawReport: str(displayMetar['Raw-Report']) || automatedMetar,
+      automatedMetar: automatedMetar,
+      usingManual: displayMetar.usingManual === true,
       adjacentMetar: str(metarObj.adjacentMetar),
       taf: str(metarObj.taf),
       runwayNote: runwayLine(airport),
+      weather: weather,
+      metarTrend: trend,
+      manualObs: manual,
       companyPireps: companyPireps.filter(Boolean).slice(0, 4),
       icingPireps: pireps
         .map(function (p) {
