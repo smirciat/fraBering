@@ -420,10 +420,38 @@ function asPlainFlight(flight) {
   return flight;
 }
 
+function preserveExistingPfr(entity, merged) {
+  if (!merged) return merged;
+  const existing = entity && entity.pfr;
+  const incoming = merged.pfr;
+  const incomingId = incoming && (incoming._id || incoming.id);
+  const existingId = existing && (existing._id || existing.id);
+  if (!incomingId && existingId) {
+    merged.pfr = existing;
+  } else if (incoming && !incomingId && !incoming.flightNumber && !incoming.acftNumber) {
+    delete merged.pfr;
+  }
+  return merged;
+}
+
+function flightForFirebaseMin(saved, merged, existingPfr) {
+  const forFb = asPlainFlight(saved) || merged;
+  if (!forFb) return forFb;
+  if (merged && merged.newlyReleased) forFb.newlyReleased = true;
+  if (!(forFb.pfr && (forFb.pfr._id || forFb.pfr.id)) && existingPfr && (existingPfr._id || existingPfr.id)) {
+    forFb.pfr = existingPfr;
+  }
+  return forFb;
+}
+
 export function runFlightUpdateSideEffects(flight) {
   if (!flight) return;
   try {
-    firebaseMin(flight);
+    if (typeof firebaseMin !== 'function') {
+      console.log('runFlightUpdateSideEffects: firebaseMin is not a function');
+    } else {
+      firebaseMin(flight);
+    }
   } catch (err) { console.log(err); }
 
   try {
@@ -465,14 +493,10 @@ export function update(req, res) {
     .then(handleEntityNotFound(res))
     .then(function(entity) {
       if (!entity) return null;
-      const merged = mergeFlightReleaseFields(entity, req.body);
+      const existingPfr = entity.pfr;
+      const merged = preserveExistingPfr(entity, mergeFlightReleaseFields(entity, req.body));
       return saveUpdates(merged)(entity).then(function(saved) {
-        const forFb = asPlainFlight(saved) || merged;
-        if (merged && merged.newlyReleased) forFb.newlyReleased = true;
-        if (forFb && !(forFb.pfr && (forFb.pfr._id || forFb.pfr.id)) && entity.pfr) {
-          forFb.pfr = entity.pfr;
-        }
-        runFlightUpdateSideEffects(forFb);
+        runFlightUpdateSideEffects(flightForFirebaseMin(saved, merged, existingPfr));
         return saved;
       });
     })
@@ -497,13 +521,10 @@ export function updateMobile(req, res) {
     .then(handleEntityNotFound(res))
     .then(function(entity) {
       if (!entity) return null;
-      const merged = mergeFlightReleaseFields(entity, payload);
+      const existingPfr = entity.pfr;
+      const merged = preserveExistingPfr(entity, mergeFlightReleaseFields(entity, payload));
       return saveUpdates(merged)(entity).then(function(saved) {
-        const forFb = asPlainFlight(saved) || merged;
-        if (forFb && !(forFb.pfr && (forFb.pfr._id || forFb.pfr.id)) && entity.pfr) {
-          forFb.pfr = entity.pfr;
-        }
-        runFlightUpdateSideEffects(forFb);
+        runFlightUpdateSideEffects(flightForFirebaseMin(saved, merged, existingPfr));
         return saved;
       });
     })

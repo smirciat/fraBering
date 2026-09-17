@@ -285,6 +285,17 @@ export async function getCollectionQuery(collectionName,limit,parameter,operator
   }
 }
 
+function attachReleaseToFlightDoc(doc, releaseDocs) {
+  const release = (releaseDocs || []).map(releaseDoc => (
+    Object.assign({}, releaseDoc.data(), { _id: releaseDoc.id })
+  ));
+  return Object.assign({}, doc.data(), {
+    _id: doc.id,
+    firestoreId: doc.id,
+    release: release
+  });
+}
+
 export async function getCollectionDateWithSub(collectionName,limit,date) {
   try {
     const collectionRef = firebase_db.collection(collectionName);
@@ -292,25 +303,8 @@ export async function getCollectionDateWithSub(collectionName,limit,date) {
 
     const results = await Promise.all(
       querySnapshot.docs.map(async (doc) => {
-        const data = doc.data();
-    
-        // Get the release subcollection
         const releaseSnapshot = await doc.ref.collection('release').get();
-    
-        const release = releaseSnapshot.docs.map(releaseDoc => (
-          Object.assign(
-            { _id: releaseDoc.id },
-            releaseDoc.data()
-          )
-        ));
-    
-        return Object.assign(
-          {
-            _id: doc.id,
-            release: release
-          },
-          data
-        );
+        return attachReleaseToFlightDoc(doc, releaseSnapshot.docs);
       })
     );
     
@@ -432,25 +426,8 @@ export function observe() {
     unsub=fbQuery.onSnapshot(async querySnapshot=>{
       const results = await Promise.all(
         querySnapshot.docs.map(async (doc) => {
-          const data = doc.data();
-      
-          // Get the release subcollection
           const releaseSnapshot = await doc.ref.collection('release').get();
-      
-          const release = releaseSnapshot.docs.map(releaseDoc => (
-            Object.assign(
-              { _id: releaseDoc.id },
-              releaseDoc.data()
-            )
-          ));
-      
-          return Object.assign(
-            {
-              _id: doc.id,
-              release: release
-            },
-            data
-          );
+          return attachReleaseToFlightDoc(doc, releaseSnapshot.docs);
         })
       );
       
@@ -552,36 +529,114 @@ export async function firebaseHeliRelease(req,res){
   
 }
 
+function isLikelyPfrDocId(id) {
+  if (id === undefined || id === null || id === '') return false;
+  let s = String(id);
+  if (s === 'undefined' || s === 'null') return false;
+  if (/^\d+$/.test(s) && s.length < 10) return false;
+  return true;
+}
+
+function livePfrDocId(pfr) {
+  if (!pfr) return null;
+  if (isLikelyPfrDocId(pfr.firestoreId)) return String(pfr.firestoreId);
+  if (isLikelyPfrDocId(pfr._id)) return String(pfr._id);
+  if (isLikelyPfrDocId(pfr.id)) return String(pfr.id);
+  if (isLikelyPfrDocId(pfr.pfrNum)) return String(pfr.pfrNum);
+  return null;
+}
+
 function pfrDocId(flight) {
   let pfr = flight && flight.pfr;
   if (typeof pfr === 'string') {
     try { pfr = JSON.parse(pfr); } catch (err) { pfr = null; }
   }
-  if (!pfr) return null;
-  return pfr._id || pfr.id || null;
+  return livePfrDocId(pfr);
 }
 
 function releaseValue(val) {
   return val === undefined ? null : val;
 }
 
+function asFirestoreTime(val) {
+  if (val === undefined || val === null || val === '') return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val === 'object' && typeof val.toDate === 'function') {
+    try { return val.toDate(); } catch (err) { return null; }
+  }
+  let d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function flightDateString(flight) {
+  if (!flight || !flight.date) return formatDate(new Date());
+  let d = new Date(flight.date);
+  if (isNaN(d.getTime())) return formatDate(new Date());
+  return formatDate(d);
+}
+
+/** Same matching tf() uses to attach a PFR — live Firestore docs, not the modal stub. */
+export function matchLivePfr(flight) {
+  if (!flight) return null;
+  let ds = flightDateString(flight);
+  let pools = [];
+  function addPool(arr) {
+    if (!arr || !arr.length) return;
+    for (let i = 0; i < arr.length; i++) pools.push(arr[i]);
+  }
+  addPool(allFlights);
+  addPool(firebaseFlights);
+  addPool(previousPfrs);
+  let seen = {};
+  let fallback = null;
+  for (let i = 0; i < pools.length; i++) {
+    let pfr = pools[i];
+    let pfrId = livePfrDocId(pfr);
+    if (!pfr || !pfrId || seen[pfrId]) continue;
+    seen[pfrId] = true;
+    if (pfr.isArchived) continue;
+    if (pfr.dateString && pfr.dateString !== ds) continue;
+    if (String(pfr.acftNumber || '') !== String(flight.aircraft || '')) continue;
+    let matchFlightNum = String(pfr.flightNumber) === String(flight.flightNum);
+    if (pfr.flightNumber && String(pfr.flightNumber).charAt(0) === '9' &&
+        (flight.operation === 'Training' || flight.operation === 'Test' || flight.operation === 'Ferry')) {
+      matchFlightNum = true;
+    }
+    if (!matchFlightNum) continue;
+    let display = flight.pilotObject && flight.pilotObject.displayName;
+    if (display && pfr.pilot && pfr.pilot !== display) {
+      if (!fallback) fallback = pfr;
+      continue;
+    }
+    return pfr;
+  }
+  return fallback;
+}
+
+function resolvePfrId(flight) {
+  let fromDoc = pfrDocId(flight);
+  if (fromDoc) return fromDoc;
+  let live = matchLivePfr(flight);
+  return livePfrDocId(live);
+}
+
 export async function firebaseMin(flight){
   if (!flight) return 'need flight!';
-  let pfrId = pfrDocId(flight);
+  let pfrId = resolvePfrId(flight);
   if (!pfrId) {
-    console.log('firebaseMin skip: no PFR id', flight.flightNum || flight._id);
+    console.log('firebaseMin skip: no PFR id', flight.flightNum || flight._id, flight.aircraft, flight.date);
     return 'No Pfr Attached to Flight';
   }
   let minFlight={
     dbId: releaseValue(flight._id),
-    dateString: flight.date ? formatDate(new Date(flight.date)) : formatDate(new Date()),
+    dateString: flightDateString(flight),
     flightNumber: releaseValue(flight.flightNum),
     pilotAgree: releaseValue(flight.pilotAgree),
     ocRelease: releaseValue(flight.ocRelease),
     dispatchRelease: releaseValue(flight.dispatchRelease),
-    releaseTimestamp: releaseValue(flight.releaseTimestamp),
-    ocReleaseTimestamp: releaseValue(flight.ocReleaseTimestamp),
-    dispatchReleaseTimestamp: releaseValue(flight.dispatchReleaseTimestamp),
+    releaseTimestamp: asFirestoreTime(flight.releaseTimestamp),
+    ocReleaseTimestamp: asFirestoreTime(flight.ocReleaseTimestamp),
+    dispatchReleaseTimestamp: asFirestoreTime(flight.dispatchReleaseTimestamp),
     knownIce: releaseValue(flight.knownIce),
     aircraft: releaseValue(flight.aircraft),
     pfrNum: pfrId
@@ -589,7 +644,19 @@ export async function firebaseMin(flight){
   try {
     const response = await updateDocumentSub('flights', pfrId, minFlight);
     if (response) {
-      console.log('minFlight updated', pfrId);
+      try {
+        await firebase_db.collection('flights').doc(String(pfrId)).set({
+          pilotAgree: minFlight.pilotAgree,
+          ocRelease: minFlight.ocRelease,
+          dispatchRelease: minFlight.dispatchRelease,
+          releaseTimestamp: minFlight.releaseTimestamp,
+          ocReleaseTimestamp: minFlight.ocReleaseTimestamp,
+          dispatchReleaseTimestamp: minFlight.dispatchReleaseTimestamp
+        }, {merge: true});
+      } catch (parentErr) {
+        console.log('firebaseMin parent merge failed', pfrId, parentErr && parentErr.message);
+      }
+      console.log('minFlight updated', pfrId, flight.flightNum);
       return 'Updated';
     }
     return 'Firebase Write Failure';

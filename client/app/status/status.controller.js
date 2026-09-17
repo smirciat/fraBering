@@ -242,6 +242,7 @@ class StatusComponent {
       this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
         this.spinner=false;
         console.log('Updated Flight ' + flight.flightNum);
+        this.writeReleaseToFirebase(flight);
         if (flight.pilotAgree||flight.ocRelease||flight.dispatchRelease) this.quickModal("Flight Release Signature has Been Recorded","Success!",false);
         //updates have been failing occasionally, even with positive confimation, try to prevent that
         this.timeout(()=>{
@@ -504,6 +505,7 @@ class StatusComponent {
   }
   
   filterTodaysFlights(array,aircraftFilter){
+    if (!array) return [];
     if (this.aircraft&&this.aircraft._id!=='All') {
       
       return array.filter(flight=>flight.aircraft===this.aircraft._id && flight.date===this.dateString );
@@ -639,7 +641,7 @@ class StatusComponent {
   }
   
   bulkFIKI(selection){
-    let flights=this.todaysFlights.filter(this.todaysFlightDisplayFilter);
+    let flights=(this.todaysFlights||[]).filter(this.todaysFlightDisplayFilter);
     console.log(flights);
     switch (selection) {
       case 'No Selection':
@@ -2117,6 +2119,74 @@ class StatusComponent {
     }
   }
   
+  isLikelyPfrDocId(id) {
+    if (id === undefined || id === null || id === '') return false;
+    let s = String(id);
+    if (s === 'undefined' || s === 'null') return false;
+    if (/^\d+$/.test(s) && s.length < 10) return false;
+    return true;
+  }
+
+  releasePfrDocId(flight) {
+    let pfr = flight && flight.pfr;
+    if (pfr && this.isLikelyPfrDocId(pfr.firestoreId)) return String(pfr.firestoreId);
+    if (pfr && this.isLikelyPfrDocId(pfr._id)) return String(pfr._id);
+    if (pfr && this.isLikelyPfrDocId(pfr.pfrNum)) return String(pfr.pfrNum);
+    let live = this.matchRecentPfr(flight);
+    if (live && this.isLikelyPfrDocId(live.firestoreId || live._id)) {
+      return String(live.firestoreId || live._id);
+    }
+    return null;
+  }
+
+  matchRecentPfr(flight) {
+    if (!flight || !this.recentFlights || !this.recentFlights.length) return null;
+    let flightNum = String(flight.flightNum || '');
+    let tail = String(flight.aircraft || '');
+    let display = flight.pilotObject && flight.pilotObject.displayName;
+    let fallback = null;
+    for (let i = 0; i < this.recentFlights.length; i++) {
+      let pfr = this.recentFlights[i];
+      if (!pfr || pfr.isArchived) continue;
+      if (String(pfr.acftNumber || '') !== tail) continue;
+      let matchNum = String(pfr.flightNumber || '') === flightNum;
+      if (!matchNum) continue;
+      if (display && pfr.pilot && pfr.pilot !== display) {
+        if (!fallback) fallback = pfr;
+        continue;
+      }
+      return pfr;
+    }
+    return fallback;
+  }
+
+  writeReleaseToFirebase(flight) {
+    if (!flight || !(flight.pilotAgree || flight.ocRelease || flight.dispatchRelease)) return;
+    let pfrId = this.releasePfrDocId(flight);
+    if (!pfrId) {
+      console.log('writeReleaseToFirebase skip: no PFR id', flight.flightNum);
+      return;
+    }
+    this.http.post('/api/airplanes/updateFirebaseHeli', {flight: {
+      _id: pfrId,
+      dbId: flight._id,
+      flightNumber: flight.flightNum,
+      pilotAgree: flight.pilotAgree || null,
+      ocRelease: flight.ocRelease || null,
+      dispatchRelease: flight.dispatchRelease || null,
+      releaseTimestamp: flight.releaseTimestamp || null,
+      ocReleaseTimestamp: flight.ocReleaseTimestamp || null,
+      dispatchReleaseTimestamp: flight.dispatchReleaseTimestamp || null,
+      knownIce: flight.knownIce == null ? null : flight.knownIce,
+      aircraft: flight.aircraft,
+      pfrNum: pfrId
+    }}).then(() => {
+      console.log('writeReleaseToFirebase ok', pfrId, flight.flightNum);
+    }).catch(err => {
+      console.log('writeReleaseToFirebase failed', err);
+    });
+  }
+
   lookAtFlight(flight){
     try{
       if (!flight.fuelPreviouslyOnboard&&!isNaN(flight.autoOnboard)&&flight.autoOnboard>0) flight.fuelPreviouslyOnboard=Math.floor(flight.autoOnboard);
@@ -2186,6 +2256,10 @@ class StatusComponent {
       if (!flight.airplaneObj.tempBew) flight.airplaneObj.tempBew={};
       if (!flight.bew||!flight.bew.bew) flight.bew={fo:0,bew:flight.airplaneObj.tempBew.aircraftAsWeighed,equipment:equipment,tks:tks,captain:200,jumpseater:0,seatsRemoved:0,seatWeight:0};
       flight.bew.bew=flight.airplaneObj.tempBew.aircraftAsWeighed;
+      if (!flight.pfr || !this.isLikelyPfrDocId(flight.pfr.firestoreId || flight.pfr._id)) {
+        let live = this.matchRecentPfr(flight);
+        if (live) flight.pfr = live;
+      }
       if (!flight.pfr) flight.pfr={legArray:[{}]};
       let alts=angular.copy(this.alternateAirports);
       alts.shift({});
@@ -3709,6 +3783,7 @@ class StatusComponent {
   
   availablePilots(){
     if (!this.sortedPilots) return;
+    if (!this.allTodaysFlights) return;
     let todaysFlights=this.allTodaysFlights.filter(flight=>{
       return flight.date===this.dateString;
     });
