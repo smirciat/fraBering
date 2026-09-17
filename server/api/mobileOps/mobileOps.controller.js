@@ -26,6 +26,8 @@ const MOBILE_BOARD_ATTRS = [
   'pilotObject',
   'equipment',
   'tfliteDepart',
+  'airportObjs',
+  'airportObjsLocked',
 ];
 
 const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
@@ -140,6 +142,55 @@ function normalizeFratColorClass(raw) {
   return 'airport-green';
 }
 
+const CITY_TO_AIRPORT_CODE = {
+  Nome: 'OME',
+  Kotzebue: 'OTZ',
+  Unalakleet: 'UNK',
+};
+
+function airportCodeFromCityName(name, index) {
+  const trimmed = String(name || '').trim();
+  if (!trimmed) return '—';
+  if (CITY_TO_AIRPORT_CODE[trimmed]) return CITY_TO_AIRPORT_CODE[trimmed];
+  if (/^[A-Z0-9]{3}$/i.test(trimmed)) return trimmed.toUpperCase();
+  return trimmed.length >= 3 ? trimmed.substring(0, 3).toUpperCase() : trimmed;
+}
+
+function toBoardLegs(f) {
+  const locked = f.airportObjsLocked;
+  const live = f.airportObjs;
+  const objs =
+    locked && locked.length ? locked : live && live.length ? live : [];
+  const colorRaw = String(f.colorLock || f.color || '').trim();
+  const flightColor = normalizeFratColorClass(colorRaw);
+
+  if (objs.length) {
+    return objs.map(function (leg, index) {
+      const airport = leg.airport || {};
+      const code = str(airport.threeLetter) || airportCodeFromCityName(
+        (f.airports || [])[index],
+        index
+      );
+      return {
+        airportCode: code,
+        colorClass: normalizeFratColorClass(leg.color || colorRaw),
+      };
+    });
+  }
+
+  return (f.airports || []).map(function (name, index) {
+    return {
+      airportCode: airportCodeFromCityName(name, index),
+      colorClass: flightColor,
+    };
+  });
+}
+
+function str(val) {
+  if (val == null) return '';
+  return String(val).trim();
+}
+
 function toBoardRow(flight) {
   const f = flight.dataValues || flight;
   const colorRaw = String(f.colorLock || f.color || '').trim();
@@ -147,6 +198,7 @@ function toBoardRow(flight) {
     _id: f._id,
     flightNum: String(f.flightNum || '').trim(),
     airports: f.airports || [],
+    legs: toBoardLegs(f),
     departTimes: f.departTimes || [],
     flightStatus: f.flightStatus || '',
     color: normalizeFratColorClass(colorRaw),

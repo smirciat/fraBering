@@ -72,7 +72,7 @@ All below except `auth/assertion` require `auth.isAuthenticated()` (Bearer JWT).
 
 Not the full `dayFlights` Sequelize row. Example:
 
-- `_id`, `flightNum`, `airports[]`, `departTimes[]`, `flightStatus`, `color` / `colorLock`
+- `_id`, `flightNum`, `airports[]`, `legs[]` (`airportCode`, `colorClass` per leg — status-board chips), `departTimes[]`, `flightStatus`, `color` / `colorLock`
 - `dispatchRelease`, `ocRelease`, `pilotAgree` (names/strings — list UI: **thumb** if dispatch or OC, **rocket** if PIC; `released` is both)
 - `knownIce` (optional list snowflake)
 - `pilotObject`, `equipment` (minimal)
