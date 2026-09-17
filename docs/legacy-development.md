@@ -33,6 +33,8 @@ Sequelize pool timeouts, sluggish `/status`, and public-board load were investig
 ## Where else this is documented
 
 - `docs/performance-status-board-2026-08.md` — dayFlights pool exhaustion, benchmarks, deploy checklist
+- `docs/flight-release-firebase.md` — Flight Release Firestore writes; do not convert missing PIC/dispatch/OC fields to `null` on merge
+- `.cursor/rules/safe-changes.mdc` — always-on agent guardrails
 - `.cursor/rules/safe-changes.mdc` — always-on agent guardrails
 - `AGENTS.md` — agent entry point
 - `.cursor/rules/project-overview.mdc` — stack and layout

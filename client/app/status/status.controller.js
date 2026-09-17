@@ -2166,20 +2166,27 @@ class StatusComponent {
     if (!pfrId) {
       return;
     }
-    this.http.post('/api/airplanes/updateFirebaseHeli', {flight: {
+    let payload = {
       _id: pfrId,
       dbId: flight._id,
       flightNumber: flight.flightNum,
-      pilotAgree: flight.pilotAgree || null,
-      ocRelease: flight.ocRelease || null,
-      dispatchRelease: flight.dispatchRelease || null,
-      releaseTimestamp: flight.releaseTimestamp || null,
-      ocReleaseTimestamp: flight.ocReleaseTimestamp || null,
-      dispatchReleaseTimestamp: flight.dispatchReleaseTimestamp || null,
-      knownIce: flight.knownIce == null ? null : flight.knownIce,
       aircraft: flight.aircraft,
       pfrNum: pfrId
-    }}).catch(err => {
+    };
+    if (flight.knownIce != null) payload.knownIce = flight.knownIce;
+    if (flight.pilotAgree) {
+      payload.pilotAgree = flight.pilotAgree;
+      if (flight.releaseTimestamp) payload.releaseTimestamp = flight.releaseTimestamp;
+    }
+    if (flight.dispatchRelease) {
+      payload.dispatchRelease = flight.dispatchRelease;
+      if (flight.dispatchReleaseTimestamp) payload.dispatchReleaseTimestamp = flight.dispatchReleaseTimestamp;
+    }
+    if (flight.ocRelease) {
+      payload.ocRelease = flight.ocRelease;
+      if (flight.ocReleaseTimestamp) payload.ocReleaseTimestamp = flight.ocReleaseTimestamp;
+    }
+    this.http.post('/api/airplanes/updateFirebaseHeli', {flight: payload}).catch(err => {
       console.log(err);
     });
   }

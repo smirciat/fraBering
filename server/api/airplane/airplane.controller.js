@@ -11,6 +11,7 @@
 
 import _ from 'lodash';
 import {Airplane} from '../../sqldb';
+import {releaseFieldSet} from '../todaysFlight/releaseMerge.js';
 let io;
 const admin = require('firebase-admin');
 const serviceAccount = require('../../firebase.json');
@@ -557,6 +558,61 @@ function releaseValue(val) {
   return val === undefined ? null : val;
 }
 
+function assignIfSet(payload, key, val) {
+  if (val === undefined || val === null) return;
+  payload[key] = val;
+}
+
+/** Merge-only payload: never send null for a signature this save did not set. */
+function compactReleaseWrite(flight, pfrId) {
+  const payload = {
+    dbId: releaseValue(flight._id),
+    dateString: flightDateString(flight),
+    flightNumber: releaseValue(flight.flightNum),
+    aircraft: releaseValue(flight.aircraft),
+    knownIce: releaseValue(flight.knownIce),
+    pfrNum: pfrId
+  };
+  const clear = !releaseFieldSet(flight.pilotAgree) &&
+    !releaseFieldSet(flight.dispatchRelease) &&
+    !releaseFieldSet(flight.ocRelease);
+  if (clear) {
+    payload.pilotAgree = null;
+    payload.ocRelease = null;
+    payload.dispatchRelease = null;
+    payload.releaseTimestamp = null;
+    payload.ocReleaseTimestamp = null;
+    payload.dispatchReleaseTimestamp = null;
+    return payload;
+  }
+  if (releaseFieldSet(flight.pilotAgree)) {
+    payload.pilotAgree = flight.pilotAgree;
+    assignIfSet(payload, 'releaseTimestamp', asFirestoreTime(flight.releaseTimestamp));
+  }
+  if (releaseFieldSet(flight.dispatchRelease)) {
+    payload.dispatchRelease = flight.dispatchRelease;
+    assignIfSet(payload, 'dispatchReleaseTimestamp', asFirestoreTime(flight.dispatchReleaseTimestamp));
+  }
+  if (releaseFieldSet(flight.ocRelease)) {
+    payload.ocRelease = flight.ocRelease;
+    assignIfSet(payload, 'ocReleaseTimestamp', asFirestoreTime(flight.ocReleaseTimestamp));
+  }
+  return payload;
+}
+
+function parentReleaseFields(minFlight) {
+  const parent = {};
+  ['pilotAgree', 'ocRelease', 'dispatchRelease',
+    'releaseTimestamp', 'ocReleaseTimestamp', 'dispatchReleaseTimestamp'
+  ].forEach(function(key) {
+    if (!Object.prototype.hasOwnProperty.call(minFlight, key)) return;
+    let val = minFlight[key];
+    if (val instanceof Date) val = val.toISOString();
+    parent[key] = val;
+  });
+  return parent;
+}
+
 function asFirestoreTime(val) {
   if (val === undefined || val === null || val === '') return null;
   if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
@@ -625,32 +681,15 @@ export async function firebaseMin(flight){
   if (!pfrId) {
     return 'No Pfr Attached to Flight';
   }
-  let minFlight={
-    dbId: releaseValue(flight._id),
-    dateString: flightDateString(flight),
-    flightNumber: releaseValue(flight.flightNum),
-    pilotAgree: releaseValue(flight.pilotAgree),
-    ocRelease: releaseValue(flight.ocRelease),
-    dispatchRelease: releaseValue(flight.dispatchRelease),
-    releaseTimestamp: asFirestoreTime(flight.releaseTimestamp),
-    ocReleaseTimestamp: asFirestoreTime(flight.ocReleaseTimestamp),
-    dispatchReleaseTimestamp: asFirestoreTime(flight.dispatchReleaseTimestamp),
-    knownIce: releaseValue(flight.knownIce),
-    aircraft: releaseValue(flight.aircraft),
-    pfrNum: pfrId
-  };
+  let minFlight = compactReleaseWrite(flight, pfrId);
   try {
     const response = await updateDocumentSub('flights', pfrId, minFlight);
     if (response) {
       try {
-        await firebase_db.collection('flights').doc(String(pfrId)).set({
-          pilotAgree: minFlight.pilotAgree,
-          ocRelease: minFlight.ocRelease,
-          dispatchRelease: minFlight.dispatchRelease,
-          releaseTimestamp: minFlight.releaseTimestamp,
-          ocReleaseTimestamp: minFlight.ocReleaseTimestamp,
-          dispatchReleaseTimestamp: minFlight.dispatchReleaseTimestamp
-        }, {merge: true});
+        const parent = parentReleaseFields(minFlight);
+        if (Object.keys(parent).length) {
+          await firebase_db.collection('flights').doc(String(pfrId)).set(parent, {merge: true});
+        }
       } catch (parentErr) {}
       return 'Updated';
     }
