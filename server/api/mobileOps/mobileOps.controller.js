@@ -5,6 +5,7 @@ import config from '../../config/environment';
 import { User, TodaysFlight } from '../../sqldb';
 import { signToken } from '../../auth/auth.service';
 import localEnv from '../../config/local.env.js';
+import {runFlightUpdateSideEffects} from '../todaysFlight/todaysFlight.controller.js';
 
 const { buildReleaseModalView } = require('./release-modal-view.js');
 const { applyStandbyLegTimesPatch } = require('./standby-charter.js');
@@ -671,7 +672,10 @@ export function removeReleaseFlight(req, res) {
 
       return flight
         .save()
-        .then(saved => res.status(200).json(toReleaseDto(saved, req.user)));
+        .then(saved => {
+          runFlightUpdateSideEffects(saved.get ? saved.get({plain: true}) : saved);
+          return res.status(200).json(toReleaseDto(saved, req.user));
+        });
     })
     .catch(err => {
       console.error('[mobileOps] removeRelease', err);
@@ -711,7 +715,14 @@ export function signFlight(req, res) {
         flight.wheelWellInspection = 'secure';
       }
 
-      return flight.save().then(saved => res.status(200).json(toReleaseDto(saved, req.user)));
+      return flight.save().then(saved => {
+        const plain = saved.get ? saved.get({plain: true}) : saved;
+        if ((plain.ocRelease || plain.dispatchRelease) && plain.pilotAgree && !plain.colorLock) {
+          plain.newlyReleased = true;
+        }
+        runFlightUpdateSideEffects(plain);
+        return res.status(200).json(toReleaseDto(saved, req.user));
+      });
     })
     .catch(err => {
       console.error('[mobileOps] sign', err);

@@ -414,9 +414,16 @@ export function create(req, res) {
     .catch(handleError(res));
 }
 
-function runFlightUpdateSideEffects(flight) {
+function asPlainFlight(flight) {
+  if (!flight) return flight;
+  if (typeof flight.get === 'function') return flight.get({plain: true});
+  return flight;
+}
+
+export function runFlightUpdateSideEffects(flight) {
+  if (!flight) return;
   try {
-    if (flight.pfr && flight.pfr._id) firebaseMin(flight);
+    firebaseMin(flight);
   } catch (err) { console.log(err); }
 
   try {
@@ -459,8 +466,15 @@ export function update(req, res) {
     .then(function(entity) {
       if (!entity) return null;
       const merged = mergeFlightReleaseFields(entity, req.body);
-      runFlightUpdateSideEffects(merged);
-      return saveUpdates(merged)(entity);
+      return saveUpdates(merged)(entity).then(function(saved) {
+        const forFb = asPlainFlight(saved) || merged;
+        if (merged && merged.newlyReleased) forFb.newlyReleased = true;
+        if (forFb && !(forFb.pfr && (forFb.pfr._id || forFb.pfr.id)) && entity.pfr) {
+          forFb.pfr = entity.pfr;
+        }
+        runFlightUpdateSideEffects(forFb);
+        return saved;
+      });
     })
     .then(respondWithResult(res))
     .catch(handleError(res));
@@ -484,7 +498,14 @@ export function updateMobile(req, res) {
     .then(function(entity) {
       if (!entity) return null;
       const merged = mergeFlightReleaseFields(entity, payload);
-      return saveUpdates(merged)(entity);
+      return saveUpdates(merged)(entity).then(function(saved) {
+        const forFb = asPlainFlight(saved) || merged;
+        if (forFb && !(forFb.pfr && (forFb.pfr._id || forFb.pfr.id)) && entity.pfr) {
+          forFb.pfr = entity.pfr;
+        }
+        runFlightUpdateSideEffects(forFb);
+        return saved;
+      });
     })
     .then(respondWithResult(res))
     .catch(handleError(res));

@@ -363,17 +363,18 @@ async function getCollection(collectionName) {
 }
 
 async function updateDocumentSub(collection,docId,data) {
-   let docRef;
-   if (docId) {
-     docRef = firebase_db.collection(collection).doc(docId);
-     try {
-       await docRef.collection("release").doc("releaseStatus").set(data,{merge:true});
-       console.log('Flight Release Document successfully updated!');
-       return true;
-     } catch (error) {
-       console.error('Error updating document:', error);
-       return false;
-     }
+   if (!docId) {
+     console.error('updateDocumentSub missing docId');
+     return false;
+   }
+   let docRef = firebase_db.collection(collection).doc(String(docId));
+   try {
+     await docRef.collection("release").doc("releaseStatus").set(data,{merge:true});
+     console.log('Flight Release Document successfully updated!', String(docId));
+     return true;
+   } catch (error) {
+     console.error('Error updating release subcollection:', String(docId), error);
+     return false;
    }
 }
 
@@ -551,31 +552,51 @@ export async function firebaseHeliRelease(req,res){
   
 }
 
+function pfrDocId(flight) {
+  let pfr = flight && flight.pfr;
+  if (typeof pfr === 'string') {
+    try { pfr = JSON.parse(pfr); } catch (err) { pfr = null; }
+  }
+  if (!pfr) return null;
+  return pfr._id || pfr.id || null;
+}
+
+function releaseValue(val) {
+  return val === undefined ? null : val;
+}
+
 export async function firebaseMin(flight){
   if (!flight) return 'need flight!';
-  let minFlight={};
-  minFlight.dbId=flight._id;
-  minFlight.dateString=formatDate(new Date(flight.date));
-  minFlight.flightNumber=flight.flightNum;
-  minFlight.pilotAgree=flight.pilotAgree;
-  minFlight.ocRelease= flight.ocRelease;
-  minFlight.dispatchRelease= flight.dispatchRelease;
-  minFlight.releaseTimestamp= flight.releaseTimestamp;
-  minFlight.ocReleaseTimestamp= flight.ocReleaseTimestamp;
-  minFlight.dispatchReleaseTimestamp= flight.dispatchReleaseTimestamp;
-  minFlight.knownIce= flight.knownIce;
-  //minFlight.pilotObject=flight.pilotObject;
-  minFlight.aircraft=flight.aircraft;
-  if (flight.pfr&&flight.pfr._id) minFlight.pfrNum=flight.pfr._id;
-  else return 'No Pfr Attached to Flight';
-  
-  updateDocumentSub('flights', minFlight.pfrNum, minFlight).then(()=>{
-    console.log('minFlight updated');
-    return 'Updated';
-  }).catch(err=>{
-    console.log(err);
+  let pfrId = pfrDocId(flight);
+  if (!pfrId) {
+    console.log('firebaseMin skip: no PFR id', flight.flightNum || flight._id);
+    return 'No Pfr Attached to Flight';
+  }
+  let minFlight={
+    dbId: releaseValue(flight._id),
+    dateString: flight.date ? formatDate(new Date(flight.date)) : formatDate(new Date()),
+    flightNumber: releaseValue(flight.flightNum),
+    pilotAgree: releaseValue(flight.pilotAgree),
+    ocRelease: releaseValue(flight.ocRelease),
+    dispatchRelease: releaseValue(flight.dispatchRelease),
+    releaseTimestamp: releaseValue(flight.releaseTimestamp),
+    ocReleaseTimestamp: releaseValue(flight.ocReleaseTimestamp),
+    dispatchReleaseTimestamp: releaseValue(flight.dispatchReleaseTimestamp),
+    knownIce: releaseValue(flight.knownIce),
+    aircraft: releaseValue(flight.aircraft),
+    pfrNum: pfrId
+  };
+  try {
+    const response = await updateDocumentSub('flights', pfrId, minFlight);
+    if (response) {
+      console.log('minFlight updated', pfrId);
+      return 'Updated';
+    }
     return 'Firebase Write Failure';
-  });
+  } catch (err) {
+    console.log('firebaseMin error', pfrId, err);
+    return 'Firebase Write Failure';
+  }
 }
 
 export async function firebaseQuery(req,res){
