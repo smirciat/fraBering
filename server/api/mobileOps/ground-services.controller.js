@@ -3,6 +3,7 @@
 import { TodaysFlight } from '../../sqldb';
 
 const fuelDisplay = require('./ground-services-fuel-display.js');
+const heliGround = require('./ground-services-heli.js');
 
 const MOBILE_GROUND_ATTRS = [
   '_id',
@@ -92,6 +93,7 @@ function toGroundEntry(flight) {
       : '99:99';
   return {
     _id: f._id,
+    isHeli: false,
     displayFlightNum: fuelDisplay.displayFlightNum(plain),
     registration: f.aircraft || '',
     airports: plain.airports,
@@ -115,8 +117,10 @@ function toGroundEntry(flight) {
   };
 }
 
-export function getGroundServices(req, res) {
-  const date = localeDateFromQuery(req.query.date);
+export async function getGroundServices(req, res) {
+  const dateIso =
+    typeof req.query.date === 'string' ? req.query.date.trim() : '';
+  const date = localeDateFromQuery(dateIso);
   const rawBase =
     req.query.base == null ? '' : String(req.query.base).trim().toUpperCase();
   const allBases = !rawBase || rawBase === 'ALL';
@@ -124,47 +128,44 @@ export function getGroundServices(req, res) {
   if (!date) {
     return res.status(400).json({ message: 'Query date is required (YYYY-MM-DD)' });
   }
-  if (base === 'HEL') {
+
+  try {
+    const rows = await TodaysFlight.findAll({
+      where: { date, active: 'true' },
+      attributes: MOBILE_GROUND_ATTRS,
+      order: [['flightNum', 'ASC']],
+    });
+
+    const fwEntries = rows
+      .filter(row => {
+        const ac = String(row.aircraft || '');
+        return ac.startsWith('N');
+      })
+      .filter(row => allBases || flightMatchesBase(row, base))
+      .map(toGroundEntry);
+
+    const heliEntries = await heliGround.buildHeliEntries({
+      dateIso: dateIso || req.query.date,
+      base,
+      allBases,
+    });
+
+    const entries = [...fwEntries, ...heliEntries].sort((a, b) =>
+      String(a.fuelSortTime || '99:99').localeCompare(
+        String(b.fuelSortTime || '99:99')
+      )
+    );
+
     return res.status(200).json({
       date,
       base,
-      truckOptions: fuelDisplay.fuelTruckOptionsForBase('HEL'),
-      entries: [],
-      message: 'Helicopter fuel cards use FRAT web for v1 — fixed-wing only on mobile.',
+      truckOptions: fuelDisplay.fuelTruckOptionsForBase(
+        allBases ? 'OME' : base === 'HEL' ? 'OME' : base
+      ),
+      entries,
     });
+  } catch (err) {
+    console.error('[mobileOps] ground-services', err);
+    return res.status(500).json({ message: 'Ground services load failed' });
   }
-
-  return TodaysFlight.findAll({
-    where: { date, active: 'true' },
-    attributes: MOBILE_GROUND_ATTRS,
-    order: [['flightNum', 'ASC']],
-  })
-    .then(rows =>
-      rows
-        .filter(row => {
-          const ac = String(row.aircraft || '');
-          return ac.startsWith('N');
-        })
-        .filter(row => allBases || flightMatchesBase(row, base))
-        .map(toGroundEntry)
-        .sort((a, b) =>
-          String(a.fuelSortTime || '99:99').localeCompare(
-            String(b.fuelSortTime || '99:99')
-          )
-        )
-    )
-    .then(entries =>
-      res.status(200).json({
-        date,
-        base,
-        truckOptions: fuelDisplay.fuelTruckOptionsForBase(
-          allBases ? 'OME' : base
-        ),
-        entries,
-      })
-    )
-    .catch(err => {
-      console.error('[mobileOps] ground-services', err);
-      return res.status(500).json({ message: 'Ground services load failed' });
-    });
 }

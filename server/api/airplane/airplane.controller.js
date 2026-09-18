@@ -529,6 +529,26 @@ export async function firebaseHeliRelease(req,res){
   
 }
 
+/** Mobile Ground Services — heli Fueled checkbox (release subcollection). */
+export async function patchHeliGroundFuel(docId, fields) {
+  if (!docId) return false;
+  const data = {};
+  if (Object.prototype.hasOwnProperty.call(fields, 'fueled')) {
+    data.fueled = fields.fueled === true || fields.fueled === 'true';
+    if (!data.fueled) {
+      data.fueledBy = null;
+      data.fueledTimestamp = null;
+    } else {
+      data.fueledBy = fields.fueledBy || null;
+      data.fueledTimestamp =
+        fields.fueledTimestamp ||
+        new Date().toLocaleTimeString('en-US', { timeStyle: 'short' });
+    }
+  }
+  if (!Object.keys(data).length) return false;
+  return updateDocumentSub('flights', String(docId), data);
+}
+
 function isLikelyPfrDocId(id) {
   if (id === undefined || id === null || id === '') return false;
   let s = String(id);

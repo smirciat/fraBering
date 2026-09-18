@@ -10,6 +10,7 @@ import {runFlightUpdateSideEffects} from '../todaysFlight/todaysFlight.controlle
 const { buildReleaseModalView } = require('./release-modal-view.js');
 const { applyStandbyLegTimesPatch } = require('./standby-charter.js');
 const fuelDisplay = require('./ground-services-fuel-display.js');
+const heliGround = require('./ground-services-heli.js');
 
 const MOBILE_BOARD_ATTRS = [
   '_id',
@@ -857,6 +858,21 @@ export function patchFlightFuel(req, res) {
   const displayName =
     (body.employeeDisplayName && String(body.employeeDisplayName).trim()) ||
     (req.user && req.user.name ? String(req.user.name).trim() : '');
+
+  if (heliGround.parseHeliPatchId(id)) {
+    return heliGround
+      .patchHeliFuelFromMobile(id, body, displayName)
+      .then(result => {
+        if (!result) {
+          return res.status(404).json({ message: 'Flight not found.' });
+        }
+        return res.status(result.status).json(result.body);
+      })
+      .catch(err => {
+        console.error('[mobileOps] patch heli fuel', err);
+        return res.status(500).json({ message: 'Fuel update failed' });
+      });
+  }
 
   return TodaysFlight.findOne({ where: { _id: id } })
     .then(flight => {

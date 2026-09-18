@@ -164,6 +164,8 @@ function updateFuelMeterGallons(flight) {
 module.exports = {
   computeFuelDisplay,
   computeLoadAvailable,
+  computeTwinTankAdd,
+  formatTwinTankAddValue,
   displayFlightNum,
   fuelTruckOptionsForBase,
   updateFuelMeterGallons,
