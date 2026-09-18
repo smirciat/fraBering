@@ -2190,15 +2190,15 @@ class StatusComponent {
     if (flight.knownIce != null) payload.knownIce = flight.knownIce;
     if (flight.pilotAgree) {
       payload.pilotAgree = flight.pilotAgree;
-      if (flight.releaseTimestamp) payload.releaseTimestamp = flight.releaseTimestamp;
+      if (flight.releaseTimestamp) payload.releaseTimestamp = new Date(flight.releaseTimestamp).toISOString();
     }
     if (flight.dispatchRelease) {
       payload.dispatchRelease = flight.dispatchRelease;
-      if (flight.dispatchReleaseTimestamp) payload.dispatchReleaseTimestamp = flight.dispatchReleaseTimestamp;
+      if (flight.dispatchReleaseTimestamp) payload.dispatchReleaseTimestamp = new Date(flight.dispatchReleaseTimestamp).toISOString();
     }
     if (flight.ocRelease) {
       payload.ocRelease = flight.ocRelease;
-      if (flight.ocReleaseTimestamp) payload.ocReleaseTimestamp = flight.ocReleaseTimestamp;
+      if (flight.ocReleaseTimestamp) payload.ocReleaseTimestamp = new Date(flight.ocReleaseTimestamp).toISOString();
     }
     this.http.post('/api/airplanes/updateFirebaseHeli', {flight: payload}).catch(err => {
       console.log(err);
