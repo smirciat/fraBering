@@ -56,5 +56,21 @@ assert(
   'ocr anchor on last name'
 );
 
+assert(
+  parseLegalNameFromDocumentText(
+    'Name And Address): Kaleb D Janke\nClass: First',
+    'Kaleb Janke'
+  ) === 'Kaleb D Janke',
+  'FAA medical Name And Address label'
+);
+
+assert(
+  parseLegalNameFromOcrText(
+    'And Address): Kaleb D Janke DOB',
+    'Kaleb Janke'
+  ) === 'Kaleb D Janke',
+  'scrub leading label junk from OCR'
+);
+
 if (failed) process.exit(1);
 console.log('All passed.');

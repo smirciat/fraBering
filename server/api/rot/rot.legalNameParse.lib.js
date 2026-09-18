@@ -44,8 +44,35 @@ const OCR_NAME_STOP_WORDS = {
   third: 1,
   date: 1,
   of: 1,
-  birth: 1
+  birth: 1,
+  and: 1,
+  address: 1
 };
+
+function isPersonNameToken(word) {
+  let w = String(word || '').trim();
+  if (!w) return false;
+  if (/[):;@#]/.test(w)) return false;
+  if (/^[A-Za-z]\.?$/.test(w)) return true;
+  return /^[A-Za-z][A-Za-z'\-]*\.?$/.test(w) && w.length >= 2;
+}
+
+/** Drop FAA label junk (e.g. "And Address): Kaleb D Janke"). */
+function scrubNameCandidate(raw) {
+  let parts = String(raw || '').split(/\s+/).filter(Boolean);
+  while (parts.length) {
+    let low = parts[0].toLowerCase().replace(/[^a-z]/g, '');
+    if (OCR_NAME_STOP_WORDS[low] || !isPersonNameToken(parts[0])) {
+      parts.shift();
+      continue;
+    }
+    break;
+  }
+  while (parts.length && !isPersonNameToken(parts[parts.length - 1])) {
+    parts.pop();
+  }
+  return parts.join(' ');
+}
 
 /** Anchor on roster last name — helpful for noisy OCR. */
 function parseLegalNameFromLastNameAnchor(text, rosterName) {
@@ -66,8 +93,8 @@ function parseLegalNameFromLastNameAnchor(text, rosterName) {
     slice = slice.slice(1);
   }
   if (slice.length < 2) return null;
-  let c = titleCaseWords(slice.join(' '));
-  if (!lastTokenMatches(c, rosterName)) return null;
+  let c = titleCaseWords(scrubNameCandidate(slice.join(' ')));
+  if (!c || !lastTokenMatches(c, rosterName)) return null;
   return c;
 }
 
@@ -81,7 +108,7 @@ function parseLegalNameFromDocumentText(text, rosterName, options) {
   let bestLen = 0;
 
   function consider(candidate) {
-    let c = String(candidate || '').replace(/\s+/g, ' ').trim();
+    let c = scrubNameCandidate(String(candidate || '').replace(/\s+/g, ' ').trim());
     if (!c || c.length < 4) return;
     if (!lastTokenMatches(c, rosterName)) return;
     if (c.length > bestLen) {
@@ -100,6 +127,10 @@ function parseLegalNameFromDocumentText(text, rosterName, options) {
     /(?:^|\n)\s*Name\s*(?:\([^)]*\))?\s*:\s*([^\n]+)/i
   );
   if (labelMatch) consider(labelMatch[1]);
+  let medNameMatch = normalized.match(
+    /Name\s+And\s+Address\s*\)?\s*:\s*([^\n]+)/i
+  );
+  if (medNameMatch) consider(medNameMatch[1]);
   let capsLabel = normalized.match(/(?:^|\n)\s*NAME\s*:\s*([^\n]+)/m);
   if (capsLabel) consider(capsLabel[1]);
 
