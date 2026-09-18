@@ -9,7 +9,10 @@ const parseLegalNameFromDocumentText = legalNameParse.parseLegalNameFromDocument
 const pickCertScanFilename = legalNameParse.pickCertScanFilename;
 const pickCertScanFilenames = legalNameParse.pickCertScanFilenames;
 
-const MAX_CERT_BYTES = 15 * 1024 * 1024;
+/** Hard limit — file skipped entirely (fallback to other CERT). */
+const MAX_CERT_READ_BYTES = 15 * 1024 * 1024;
+/** Above this size, skip pdftoppm / Tesseract OCR on this file. */
+const MAX_OCR_BYTES = 3 * 1024 * 1024;
 
 function recordsDir() {
   return path.join(rotFileRoot(), 'records');
@@ -26,18 +29,14 @@ function resolveRecordPath(filename) {
   return fullPath;
 }
 
-function extractPdfText(buffer) {
-  let pdfParse;
-  try {
-    pdfParse = require('pdf-parse');
-  } catch (e) {
-    return Promise.reject(new Error('pdf-parse is not installed on the server'));
-  }
-  return pdfParse(buffer).then(data => (data && data.text) ? data.text : '');
-}
-
 function isImageCertFile(filename) {
   return /\.(jpe?g)$/i.test(filename || '');
+}
+
+/** On-file CERT uploads are scanned images (JPEG or image PDF) — OCR only, no pdf-parse. */
+function isCertScanUpload(filename) {
+  if (isImageCertFile(filename)) return true;
+  return /_CERT_(Medical|Certificate)_/i.test(filename || '');
 }
 
 function buildResult(base, legalName, extra) {
@@ -65,6 +64,39 @@ function withOcrFailure(filename, documentKind, promise) {
   });
 }
 
+function runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge) {
+  if (ocrTooLarge) {
+    return Promise.resolve(
+      buildResult(
+        {
+          sourceFile: filename,
+          documentKind: documentKind,
+          method: null,
+          reason: 'ocr_skipped_too_large',
+          ocrAttempted: false
+        },
+        null
+      )
+    );
+  }
+  return withOcrFailure(
+    filename,
+    documentKind,
+    tryOcr(buf, filename, rosterName)
+  ).then(ocr => {
+    return buildResult(
+      {
+        sourceFile: filename,
+        documentKind: documentKind,
+        method: ocr.legalName ? 'ocr' : null,
+        reason: ocr.legalName ? 'ocr' : ocr.reason,
+        ocrAttempted: true
+      },
+      ocr.legalName
+    );
+  });
+}
+
 function inferLegalNameFromOneFile(filename, rosterName) {
   let fullPath = resolveRecordPath(filename);
   if (!fullPath || !fs.existsSync(fullPath)) {
@@ -76,38 +108,32 @@ function inferLegalNameFromOneFile(filename, rosterName) {
     );
   }
   let stat = fs.statSync(fullPath);
-  if (stat.size > MAX_CERT_BYTES) {
+  if (stat.size > MAX_CERT_READ_BYTES) {
     return Promise.resolve(
       buildResult(
-        {sourceFile: filename, reason: 'file_too_large'},
+        {sourceFile: filename, reason: 'file_too_large', ocrAttempted: false},
         null
       )
     );
   }
   let buf = fs.readFileSync(fullPath);
   let documentKind = /_CERT_Medical_/i.test(filename) ? 'medical' : 'certificate';
+  let ocrTooLarge = stat.size > MAX_OCR_BYTES;
 
-  if (isImageCertFile(filename)) {
-    return withOcrFailure(
-      filename,
-      documentKind,
-      tryOcr(buf, filename, rosterName)
-    ).then(ocr => {
-      return buildResult(
-        {
-          sourceFile: filename,
-          documentKind: documentKind,
-          method: ocr.legalName ? 'ocr' : null,
-          reason: ocr.legalName ? 'ocr' : ocr.reason,
-          ocrAttempted: true
-        },
-        ocr.legalName
-      );
-    });
+  if (isCertScanUpload(filename)) {
+    return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge);
   }
 
-  return extractPdfText(buf)
-    .then(text => {
+  // Non-standard CERT filename — rare; try text layer then OCR.
+  let pdfParse;
+  try {
+    pdfParse = require('pdf-parse');
+  } catch (e) {
+    return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge);
+  }
+  return pdfParse(buf)
+    .then(data => {
+      let text = data && data.text ? data.text : '';
       let legalName = parseLegalNameFromDocumentText(text, rosterName);
       if (legalName) {
         return buildResult(
@@ -120,41 +146,11 @@ function inferLegalNameFromOneFile(filename, rosterName) {
           legalName
         );
       }
-      return withOcrFailure(
-        filename,
-        documentKind,
-        tryOcr(buf, filename, rosterName)
-      ).then(ocr => {
-        return buildResult(
-          {
-            sourceFile: filename,
-            documentKind: documentKind,
-            method: ocr.legalName ? 'ocr' : null,
-            reason: ocr.legalName ? 'ocr' : ocr.reason,
-            ocrAttempted: true
-          },
-          ocr.legalName
-        );
-      });
+      return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge);
     })
     .catch(err => {
       console.error('rot infer pdf-parse error', filename, err);
-      return withOcrFailure(
-        filename,
-        documentKind,
-        tryOcr(buf, filename, rosterName)
-      ).then(ocr => {
-        return buildResult(
-          {
-            sourceFile: filename,
-            documentKind: documentKind,
-            method: ocr.legalName ? 'ocr' : null,
-            reason: ocr.legalName ? 'ocr' : ocr.reason || 'pdf_read_failed',
-            ocrAttempted: true
-          },
-          ocr.legalName
-        );
-      });
+      return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge);
     });
 }
 

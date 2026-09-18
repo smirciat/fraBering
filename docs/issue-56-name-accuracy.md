@@ -16,13 +16,14 @@ ROT and Flight Test PDFs and training records used the short **roster** `name` f
 ## Infer from CERT scan (after deploy)
 
 Scans live under `server/fileserver/rot/records/` as  
-`{employee#}_{MMDDYYYY}_CERT_Medical_…` or `_CERT_Certificate_…` (PDF with text layer).
+`{employee#}_{MMDDYYYY}_CERT_Medical_…` or `_CERT_Certificate_…` (typically **scanned image** PDFs or JPEG).
 
 1. Select pilot → **Infer legal name from CERT scan** (or **Edit Pilot Training Dates** → **Infer from scan**).
-2. Server reads the **newest Medical** scan, then **newest Pilot Certificate** if medical yields no match; `pdf-parse` then OCR per file.
-3. Picks the longest name-like line whose **last name matches** roster `name` (safety check).
-4. If PDF text is empty or no match → **OCR** first page via system **`tesseract`** CLI (not `tesseract.js` — incompatible with Node 12).
-5. **Confirm/Save** on the pilot modal to write `legalName` to Firebase.
+2. Server reads the **newest Medical** scan, then **newest Pilot Certificate** if medical yields no match.
+3. **OCR only** on standard CERT filenames (`_CERT_Medical_` / `_CERT_Certificate_` / JPEG) — uploads are image scans, not text PDFs.
+4. First page via **`pdftoppm`** + system **`tesseract`** (skipped when file **> 3 MB** on that file; **> 15 MB** skips the file entirely).
+5. Picks a name whose **last name matches** roster `name` (safety check).
+6. **Confirm/Save** on the pilot modal (or **Legal name** field on Records) to write `legalName` to Firebase.
 
 **Prod deps**
 
@@ -31,7 +32,7 @@ Production runs from **`dist/`** (`npm start` there). Static JS is **`dist/clien
 ```bash
 cd ~/fraBering
 node -v    # should be ^12.22.12 for grunt
-npm install --legacy-peer-deps   # pdf-parse (no tesseract.js — requires Node 14+)
+npm install --legacy-peer-deps   # optional pdf-parse for non-standard CERT names only
 sudo apt-get install -y poppler-utils tesseract-ocr   # pdftoppm + `tesseract` CLI for Node 12
 npx grunt buildServer            # or: grunt babel:server (same as buildServer)
 npx grunt build                  # client → dist/client (required for new toasts/UI)

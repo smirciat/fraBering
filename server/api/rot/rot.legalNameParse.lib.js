@@ -44,6 +44,18 @@ const OCR_NAME_STOP_WORDS = {
   dob: 1,
   class: 1,
   certificate: 1,
+  airman: 1,
+  an: 1,
+  certifies: 1,
+  that: 1,
+  this: 1,
+  the: 1,
+  to: 1,
+  ok: 1,
+  box: 1,
+  ai: 1,
+  ame: 1,
+  iv: 1,
   first: 1,
   second: 1,
   third: 1,
@@ -54,29 +66,56 @@ const OCR_NAME_STOP_WORDS = {
   address: 1
 };
 
+function cleanToken(word) {
+  return String(word || '').replace(/[^A-Za-z'\-]/g, '');
+}
+
 function isPersonNameToken(word) {
-  let w = String(word || '').trim();
+  let w = cleanToken(word);
   if (!w) return false;
-  if (/[):;@#]/.test(w)) return false;
   if (/^[A-Za-z]\.?$/.test(w)) return true;
-  return /^[A-Za-z][A-Za-z'\-]*\.?$/.test(w) && w.length >= 2;
+  return /^[A-Za-z][A-Za-z'\-]*$/.test(w) && w.length >= 2;
+}
+
+function personNameTokenCount(nameLine) {
+  return String(nameLine || '')
+    .split(/\s+/)
+    .map(cleanToken)
+    .filter(w => isPersonNameToken(w)).length;
 }
 
 /** Drop FAA label junk (e.g. "And Address): Kaleb D Janke"). */
 function scrubNameCandidate(raw) {
-  let parts = String(raw || '').split(/\s+/).filter(Boolean);
+  let parts = String(raw || '')
+    .split(/\s+/)
+    .map(cleanToken)
+    .filter(Boolean);
   while (parts.length) {
-    let low = parts[0].toLowerCase().replace(/[^a-z]/g, '');
+    let low = parts[0].toLowerCase();
     if (OCR_NAME_STOP_WORDS[low] || !isPersonNameToken(parts[0])) {
       parts.shift();
       continue;
     }
     break;
   }
-  while (parts.length && !isPersonNameToken(parts[parts.length - 1])) {
-    parts.pop();
+  while (parts.length) {
+    let low = parts[parts.length - 1].toLowerCase();
+    if (OCR_NAME_STOP_WORDS[low] || !isPersonNameToken(parts[parts.length - 1])) {
+      parts.pop();
+      continue;
+    }
+    break;
   }
   return parts.join(' ');
+}
+
+function rosterLastNameInOcrText(text, rosterName) {
+  let last = rosterLastName(rosterName);
+  if (!last || !text) return false;
+  let norm = String(text).toLowerCase();
+  if (norm.indexOf(last) > -1) return true;
+  let parts = normalizeOcrText(text).split(/\s+/);
+  return parts.some(p => cleanToken(p).toLowerCase() === last);
 }
 
 /** Anchor on roster last name — helpful for noisy OCR. */
@@ -86,18 +125,18 @@ function parseLegalNameFromLastNameAnchor(text, rosterName) {
   let parts = String(text).split(/\s+/).filter(Boolean);
   let lastIdx = -1;
   for (let i = parts.length - 1; i >= 0; i--) {
-    if (parts[i].toLowerCase().replace(/[^a-z]/g, '') === last) {
+    if (cleanToken(parts[i]).toLowerCase() === last) {
       lastIdx = i;
       break;
     }
   }
   if (lastIdx < 1) return null;
   let start = Math.max(0, lastIdx - 5);
-  let slice = parts.slice(start, lastIdx + 1);
-  while (slice.length > 2 && OCR_NAME_STOP_WORDS[slice[0].toLowerCase()]) {
+  let slice = parts.slice(start, lastIdx + 1).map(cleanToken).filter(Boolean);
+  while (slice.length && OCR_NAME_STOP_WORDS[slice[0].toLowerCase()]) {
     slice = slice.slice(1);
   }
-  if (slice.length < 2) return null;
+  if (personNameTokenCount(slice.join(' ')) < 2) return null;
   let c = titleCaseWords(scrubNameCandidate(slice.join(' ')));
   if (!c || !lastTokenMatches(c, rosterName)) return null;
   return c;
@@ -114,7 +153,7 @@ function parseLegalNameFromDocumentText(text, rosterName, options) {
 
   function consider(candidate) {
     let c = scrubNameCandidate(String(candidate || '').replace(/\s+/g, ' ').trim());
-    if (!c || c.length < 4) return;
+    if (!c || personNameTokenCount(c) < 2) return;
     if (!lastTokenMatches(c, rosterName)) return;
     if (c.length > bestLen) {
       best = titleCaseWords(c);
@@ -125,6 +164,9 @@ function parseLegalNameFromDocumentText(text, rosterName, options) {
   let normalized = String(text).replace(/\r/g, '\n');
   if (options.ocr) {
     normalized = normalizeOcrText(normalized);
+    if (!rosterLastNameInOcrText(normalized, rosterName)) {
+      return null;
+    }
     let anchored = parseLegalNameFromLastNameAnchor(normalized, rosterName);
     if (anchored) return anchored;
   }

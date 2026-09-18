@@ -604,6 +604,30 @@ class RecordsComponent {
     if (record) record.baseMonthManual=true;
   }
 
+  savePilotLegalName(){
+    if (!this.isApprover()) return this.toaster.error('Error','Only approvers can edit legal name');
+    if (!this.fullPilot||!this.fullPilot._id) return this.toaster.error('Error','Select a pilot first');
+    let legalName=this.fullPilot.legalName!=null ? String(this.fullPilot.legalName).trim() : '';
+    let doc={_id:this.fullPilot._id};
+    if (legalName) doc.legalName=legalName;
+    else doc.legalName='';
+    return this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
+      if (!legalName) this.fullPilot.legalName='';
+      let idx=this.pilots.map(e=>e._id).indexOf(this.fullPilot._id);
+      if (idx>-1) this.pilots[idx].legalName=legalName||'';
+      this.pilot=this.cleanObject(this.fullPilot);
+      let chosen=this.RotPilotContext.getChosenPilot();
+      if (chosen&&chosen._id===this.fullPilot._id) {
+        chosen.legalName=legalName||'';
+        this.RotPilotContext.setChosenPilot(chosen);
+      }
+      this.toaster.success('Legal name saved', legalName||'(cleared)');
+    }).catch(err=>{
+      console.error('savePilotLegalName',err);
+      this.toaster.error('Error','Could not save legal name');
+    });
+  }
+
   inferLegalNameFromScan(pilot, options){
     options=options||{};
     if (!pilot||!pilot._id||!pilot.name) {
@@ -647,6 +671,9 @@ class RecordsComponent {
         }
         if (data.reason==='ocr_needs_tesseract') {
           msg='OCR needs the system package tesseract-ocr on the server (`apt install tesseract-ocr`), then retry.';
+        }
+        if (data.reason==='ocr_skipped_too_large' || data.reason==='file_too_large') {
+          msg='CERT file too large for OCR — trying pilot certificate next, or enter legal name manually.';
         }
         if (data.reason==='ocr_no_name_match') {
           msg='OCR ran but no matching legal name was found — check scan quality or enter manually.';

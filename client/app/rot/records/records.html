@@ -1,5 +1,21 @@
 <div ng-if="rotRecords.loggedIn() && rotRecords.canAccessRecords()" style="background-color:#ffffcc;margin:0;min-height: 100vh;">
-  <rot-pilot-selector></rot-pilot-selector>
+  <div style="width:90%;margin:auto;padding-top:20px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:20px;">
+    <rot-pilot-selector></rot-pilot-selector>
+    <div ng-if="rotRecords.fullPilot._id" style="min-width:20em;max-width:36em;">
+      <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">Legal name (FAA certificate)</label>
+      <div class="input-group">
+        <input type="text" class="form-control" ng-model="rotRecords.fullPilot.legalName"
+          ng-readonly="!rotRecords.isApprover()"
+          placeholder="{{rotRecords.isApprover() ? 'Edit and Save' : 'Set by approvers'}}">
+        <span class="input-group-btn" ng-if="rotRecords.isApprover()">
+          <button type="button" class="btn btn-default" ng-click="rotRecords.savePilotLegalName()">Save</button>
+        </span>
+      </div>
+      <small ng-if="rotRecords.fullPilot.name && rotRecords.fullPilot.legalName !== rotRecords.fullPilot.name" style="color:#666;">
+        Roster: {{rotRecords.fullPilot.name}}
+      </small>
+    </div>
+  </div>
   <div style="width:90%;margin:auto;padding-top:20px;">
     <div class="box">
       <h3 ng-click="rotRecords.showUpcomingEvents=!rotRecords.showUpcomingEvents">

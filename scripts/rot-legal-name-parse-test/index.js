@@ -87,5 +87,31 @@ assert(
   'scrub leading label junk from OCR'
 );
 
+assert(
+  parseLegalNameFromOcrText(
+    'Ok 73125 9867 Charlton Zachary Heckman Class',
+    'Charlton Heckman'
+  ) === 'Charlton Zachary Heckman',
+  'strip AME ok and number junk'
+);
+
+assert(
+  parseLegalNameFromOcrText(
+    'An Airman Certificate Brian Eugene Weckwerth',
+    'Brian Weckwerth'
+  ) === 'Brian Eugene Weckwerth',
+  'strip airman certificate boilerplate'
+);
+
+assert(
+  parseLegalNameFromOcrText('Jones', 'Sean Jones') === null,
+  'reject single-token last name only'
+);
+
+assert(
+  parseLegalNameFromOcrText('garbled text only', 'Sean Jones') === null,
+  'no roster last name in OCR'
+);
+
 if (failed) process.exit(1);
 console.log('All passed.');
