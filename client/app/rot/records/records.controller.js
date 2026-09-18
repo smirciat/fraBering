@@ -147,6 +147,7 @@ class RecordsComponent {
   }
   
   $onInit(){
+    this.fullPilot={};
     this.showTable=true;
     this.showApproved=false;
     this.showSLEArray=[];
@@ -184,7 +185,7 @@ class RecordsComponent {
           () => this.RotPilotContext.getChosenPilot(),
           (newVal, oldVal) => {
             if (newVal) this.queryObj.value = newVal.displayName || newVal.name;
-            if (oldVal && newVal && oldVal._id !== newVal._id) this.init();
+            if (newVal && (!oldVal || oldVal._id !== newVal._id)) this.init();
           }
         );
         this.init();

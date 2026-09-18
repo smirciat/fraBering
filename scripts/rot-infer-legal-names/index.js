@@ -13,6 +13,7 @@
  *   node scripts/rot-infer-legal-names/index.js --pilot "Graham"
  *   node scripts/rot-infer-legal-names/index.js --delay 2000    # ms between pilots (OCR load)
  *   node scripts/rot-infer-legal-names/index.js --limit 5
+ *   node scripts/rot-infer-legal-names/index.js --verbose   # OCR text snippet on no-match
  */
 
 require('babel-register')({
@@ -37,11 +38,13 @@ function parseArgs(argv) {
     pilot: null,
     limit: 0,
     delayMs: 1500,
-    activeOnly: true
+    activeOnly: true,
+    verbose: false
   };
   for (let i = 2; i < argv.length; i++) {
     let a = argv[i];
-    if (a === '--apply') opts.apply = true;
+    if (a === '--verbose') opts.verbose = true;
+    else if (a === '--apply') opts.apply = true;
     else if (a === '--force') opts.force = true;
     else if (a === '--all-pilots') opts.activeOnly = false;
     else if (a === '--dry-run') opts.apply = false;
@@ -138,7 +141,7 @@ async function main() {
       let tried = result && result.alsoTriedSources;
       let triedNote = tried && tried.length ? ' [also tried: ' + tried.join(', ') + ']' : '';
       if (reason === 'ocr_skipped_too_large') {
-        triedNote += ' (file over 3MB — skipped OCR, no pdftoppm)';
+        triedNote += ' (file over 800KB — skipped OCR, no pdftoppm)';
       }
       console.log(
         '[no match] ' + id + ' ' + rosterName +
@@ -146,6 +149,9 @@ async function main() {
           (source ? ' (' + source + ')' : '') +
           triedNote
       );
+      if (opts.verbose && result && result.ocrTextSample) {
+        console.log('        OCR sample: ' + String(result.ocrTextSample).replace(/\s+/g, ' ').slice(0, 200));
+      }
       stats.noMatch += 1;
     } else {
       stats.inferred += 1;

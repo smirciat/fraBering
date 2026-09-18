@@ -21,9 +21,9 @@ Scans live under `server/fileserver/rot/records/` as
 1. Select pilot → **Infer legal name from CERT scan** (or **Edit Pilot Training Dates** → **Infer from scan**).
 2. Server reads the **newest Medical** scan, then **newest Pilot Certificate** if medical yields no match.
 3. **OCR only** on standard CERT filenames (`_CERT_Medical_` / `_CERT_Certificate_` / JPEG) — uploads are image scans, not text PDFs.
-4. First page via **`pdftoppm`** + system **`tesseract`** (skipped when file **> 3 MB** on that file; **> 15 MB** skips the file entirely).
+4. First page via **`pdftoppm`** + system **`tesseract`** (skipped when file **> 800 KB** on that file; **> 15 MB** skips the file entirely).
 5. Picks a name whose **last name matches** roster `name` (safety check).
-6. **Confirm/Save** on the pilot modal (or **Legal name** field on Records) to write `legalName` to Firebase.
+6. **Confirm/Save** on the pilot modal, or **Legal name (FAA certificate)** under the ROT pilot dropdown (Records / SIC Log) — requires **`grunt build`** on prod (`dist/client`).
 
 **Prod deps**
 
@@ -83,7 +83,9 @@ node scripts/rot-infer-legal-names/index.js --pilot Graham --apply
 node scripts/rot-infer-legal-names/index.js --delay 3000 --apply   # slower OCR pacing
 ```
 
-Skips pilots who already have `legalName` unless `--force`. Uses the same infer logic as the UI (`pdf-parse` → OCR). No `grunt build` required — runs against `server/` source via `babel-register`.
+Skips pilots who already have `legalName` unless `--force`. Uses the same infer logic as the UI (OCR on CERT scans). `--verbose` prints a short OCR text sample on no-match. No `grunt build` required — runs against `server/` source via `babel-register`.
+
+**Why medical and certificate both `ocr_no_name_match`:** the cert **is** tried (see `[also tried: …]`). Same Tesseract + same “last name must match roster” rule on both files. If the roster last name does not appear clearly in OCR on either scan (blur, old cert, phone photo, spelling), both fail — not because the second file was skipped. Try `--verbose`, fix roster `name` last token, re-upload a sharper CERT, or use the Records **Legal name** field.
 
 ## Verify
 

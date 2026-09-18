@@ -11,8 +11,8 @@ const pickCertScanFilenames = legalNameParse.pickCertScanFilenames;
 
 /** Hard limit — file skipped entirely (fallback to other CERT). */
 const MAX_CERT_READ_BYTES = 15 * 1024 * 1024;
-/** Above this size, skip pdftoppm / Tesseract OCR on this file. */
-const MAX_OCR_BYTES = 3 * 1024 * 1024;
+/** Above this size, skip pdftoppm / Tesseract OCR on this file (try next CERT). */
+const MAX_OCR_BYTES = 800 * 1024;
 
 function recordsDir() {
   return path.join(rotFileRoot(), 'records');
@@ -55,7 +55,7 @@ function tryOcr(buf, filename, rosterName, fullPath) {
     return certScanOcr.ocrCertImageBuffer(buf, rosterName);
   }
   if (fullPath) {
-    return certScanOcr.ocrCertPdfFile(fullPath, rosterName);
+    return certScanOcr.ocrCertPdfFile(fullPath, rosterName, null);
   }
   return certScanOcr.ocrCertPdfBuffer(buf, rosterName);
 }
@@ -93,11 +93,30 @@ function runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge, 
         documentKind: documentKind,
         method: ocr.legalName ? 'ocr' : null,
         reason: ocr.legalName ? 'ocr' : ocr.reason,
-        ocrAttempted: true
+        ocrAttempted: true,
+        ocrTextSample: ocr.ocrTextSample || ''
       },
       ocr.legalName
     );
   });
+}
+
+function sortCertFilenamesBySize(filenames) {
+  return filenames
+    .map(name => {
+      let fullPath = resolveRecordPath(name);
+      let size = 0;
+      if (fullPath && fs.existsSync(fullPath)) {
+        try {
+          size = fs.statSync(fullPath).size;
+        } catch (e) {
+          size = 0;
+        }
+      }
+      return {name: name, size: size};
+    })
+    .sort((a, b) => a.size - b.size)
+    .map(entry => entry.name);
 }
 
 function inferLegalNameFromOneFile(filename, rosterName) {
@@ -201,7 +220,7 @@ function inferNextFile(filenames, rosterName, priorAttempts) {
 }
 
 export function inferLegalNameFromScanFiles(fileNames, pilotId, rosterName) {
-  let filenames = pickCertScanFilenames(fileNames, pilotId);
+  let filenames = sortCertFilenamesBySize(pickCertScanFilenames(fileNames, pilotId));
   if (!filenames.length) {
     return Promise.resolve(
       buildResult(

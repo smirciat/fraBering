@@ -68,10 +68,20 @@ function pdfFirstPageToPng(pdfBuffer) {
   });
 }
 
-function pdfPagePngForOcr(pdfPath) {
-  return pdfFirstPageToPngFromPath(pdfPath, 200).then(png => {
+function dpiForPdfSize(fileSizeBytes) {
+  let size = fileSizeBytes || 0;
+  if (size > 2.5 * 1024 * 1024) return 100;
+  if (size > 1.25 * 1024 * 1024) return 120;
+  if (size > 600 * 1024) return 150;
+  return 200;
+}
+
+function pdfPagePngForOcr(pdfPath, fileSizeBytes) {
+  let dpi = dpiForPdfSize(fileSizeBytes);
+  return pdfFirstPageToPngFromPath(pdfPath, dpi).then(png => {
     if (png.length <= MAX_OCR_IMAGE_BYTES) return png;
-    return pdfFirstPageToPngFromPath(pdfPath, 120);
+    if (dpi > 100) return pdfFirstPageToPngFromPath(pdfPath, 100);
+    return png;
   });
 }
 
@@ -122,8 +132,16 @@ function ocrCertImageBuffer(imageBuffer, rosterName) {
 }
 
 /** OCR page 1 from PDF on disk — does not load whole PDF into Node. */
-function ocrCertPdfFile(pdfPath, rosterName) {
-  return pdfPagePngForOcr(pdfPath)
+function ocrCertPdfFile(pdfPath, rosterName, fileSizeBytes) {
+  let size = fileSizeBytes;
+  if (size == null) {
+    try {
+      size = fs.statSync(pdfPath).size;
+    } catch (e) {
+      size = 0;
+    }
+  }
+  return pdfPagePngForOcr(pdfPath, size)
     .then(png => ocrCertImageBuffer(png, rosterName))
     .catch(err => {
       let msg = err && err.message ? err.message : String(err);

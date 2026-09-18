@@ -1,4 +1,5 @@
-<div class="rot-pilot-selector" style="width:20em;margin-bottom:1em;">
+<div class="rot-pilot-selector" style="min-width:20em;max-width:32em;margin-bottom:1em;">
+  <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">Pilot</label>
   <ui-select ng-model="rotPilotSelector.pilot" theme="bootstrap" dropdown-position="down"
       on-select="rotPilotSelector.onSelect($item)">
     <ui-select-match placeholder="Choose Pilot">{{$select.selected.name}}</ui-select-match>
@@ -7,4 +8,18 @@
       <small ng-if="pilot.legalName && pilot.name && pilot.legalName !== pilot.name" style="color:#666;">Roster: {{pilot.name}}</small>
     </ui-select-choices>
   </ui-select>
+  <div ng-if="rotPilotSelector.pilot && rotPilotSelector.pilot._id != null" style="margin-top:10px;">
+    <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">Legal name (FAA certificate)</label>
+    <div class="input-group">
+      <input type="text" class="form-control" ng-model="rotPilotSelector.legalNameEdit"
+        ng-readonly="!rotPilotSelector.canEditLegalName"
+        placeholder="{{rotPilotSelector.canEditLegalName ? 'As on FAA cert — Save to Firebase' : 'Approvers can edit'}}">
+      <span class="input-group-btn" ng-if="rotPilotSelector.canEditLegalName">
+        <button type="button" class="btn btn-default" ng-click="rotPilotSelector.saveLegalName()">Save</button>
+      </span>
+    </div>
+    <small ng-if="rotPilotSelector.pilot.name && rotPilotSelector.legalNameEdit && rotPilotSelector.legalNameEdit !== rotPilotSelector.pilot.name" style="color:#666;">
+      Roster: {{rotPilotSelector.pilot.name}}
+    </small>
+  </div>
 </div>
