@@ -169,24 +169,43 @@ function fileDateSortKey(filename) {
   return parseInt(d, 10) || 0;
 }
 
-function pickCertScanFilename(fileNames, pilotId) {
+function certPoolForPilot(fileNames, pilotId) {
   let id = String(pilotId || '').trim();
-  if (!id) return null;
+  if (!id) return [];
   let prefix = id + '_';
-  let pool = (fileNames || []).filter(f => {
+  return (fileNames || []).filter(f => {
     if (!f || f.indexOf(prefix) !== 0) return false;
     if (!/\.(pdf|jpe?g)$/i.test(f)) return false;
     return f.indexOf('_CERT_') > -1;
   });
-  if (!pool.length) return null;
+}
+
+/** Newest medical first, then newest pilot certificate (if different file). */
+function pickCertScanFilenames(fileNames, pilotId) {
+  let pool = certPoolForPilot(fileNames, pilotId);
+  if (!pool.length) return [];
 
   let medical = pool.filter(f => /_CERT_Medical_/i.test(f));
+  medical.sort((a, b) => fileDateSortKey(b) - fileDateSortKey(a));
   let certificate = pool.filter(f => /_CERT_Certificate_/i.test(f));
-  let chosen = medical.length ? medical : certificate;
-  if (!chosen.length) return null;
+  certificate.sort((a, b) => fileDateSortKey(b) - fileDateSortKey(a));
 
-  chosen.sort((a, b) => fileDateSortKey(b) - fileDateSortKey(a));
-  return chosen[0];
+  let out = [];
+  if (medical.length) out.push(medical[0]);
+  if (certificate.length) {
+    let certFile = certificate[0];
+    if (out.indexOf(certFile) === -1) out.push(certFile);
+  }
+  if (!out.length) {
+    pool.sort((a, b) => fileDateSortKey(b) - fileDateSortKey(a));
+    out.push(pool[0]);
+  }
+  return out;
+}
+
+function pickCertScanFilename(fileNames, pilotId) {
+  let list = pickCertScanFilenames(fileNames, pilotId);
+  return list.length ? list[0] : null;
 }
 
 module.exports = {
@@ -194,5 +213,6 @@ module.exports = {
   parseLegalNameFromDocumentText,
   parseLegalNameFromOcrText,
   parseLegalNameFromLastNameAnchor,
-  pickCertScanFilename
+  pickCertScanFilename,
+  pickCertScanFilenames
 };

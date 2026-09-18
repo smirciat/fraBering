@@ -7,6 +7,7 @@ const legalNameParse = require('./rot.legalNameParse.lib.js');
 const certScanOcr = require('./rot.certScanOcr.lib.js');
 const parseLegalNameFromDocumentText = legalNameParse.parseLegalNameFromDocumentText;
 const pickCertScanFilename = legalNameParse.pickCertScanFilename;
+const pickCertScanFilenames = legalNameParse.pickCertScanFilenames;
 
 const MAX_CERT_BYTES = 15 * 1024 * 1024;
 
@@ -14,7 +15,7 @@ function recordsDir() {
   return path.join(rotFileRoot(), 'records');
 }
 
-export {parseLegalNameFromDocumentText, pickCertScanFilename};
+export {parseLegalNameFromDocumentText, pickCertScanFilename, pickCertScanFilenames};
 
 function resolveRecordPath(filename) {
   let safeName = safeRotFilename(filename);
@@ -64,16 +65,7 @@ function withOcrFailure(filename, documentKind, promise) {
   });
 }
 
-export function inferLegalNameFromScanFiles(fileNames, pilotId, rosterName) {
-  let filename = pickCertScanFilename(fileNames, pilotId);
-  if (!filename) {
-    return Promise.resolve(
-      buildResult(
-        {sourceFile: null, reason: 'no_cert_pdf'},
-        null
-      )
-    );
-  }
+function inferLegalNameFromOneFile(filename, rosterName) {
   let fullPath = resolveRecordPath(filename);
   if (!fullPath || !fs.existsSync(fullPath)) {
     return Promise.resolve(
@@ -106,7 +98,7 @@ export function inferLegalNameFromScanFiles(fileNames, pilotId, rosterName) {
           sourceFile: filename,
           documentKind: documentKind,
           method: ocr.legalName ? 'ocr' : null,
-          reason: ocr.reason,
+          reason: ocr.legalName ? 'ocr' : ocr.reason,
           ocrAttempted: true
         },
         ocr.legalName
@@ -164,4 +156,42 @@ export function inferLegalNameFromScanFiles(fileNames, pilotId, rosterName) {
         );
       });
     });
+}
+
+function inferNextFile(filenames, rosterName, priorAttempts) {
+  if (!filenames.length) {
+    let last = priorAttempts[priorAttempts.length - 1];
+    if (last) {
+      return Promise.resolve(
+        Object.assign({}, last, {
+          alsoTriedSources: priorAttempts.slice(0, -1).map(a => a.sourceFile).filter(Boolean)
+        })
+      );
+    }
+    return Promise.resolve(buildResult({sourceFile: null, reason: 'no_cert_pdf'}, null));
+  }
+  let filename = filenames[0];
+  let rest = filenames.slice(1);
+  return inferLegalNameFromOneFile(filename, rosterName).then(result => {
+    if (result.legalName) {
+      if (priorAttempts.length) {
+        result.fallbackFromSources = priorAttempts.map(a => a.sourceFile).filter(Boolean);
+      }
+      return result;
+    }
+    return inferNextFile(rest, rosterName, priorAttempts.concat([result]));
+  });
+}
+
+export function inferLegalNameFromScanFiles(fileNames, pilotId, rosterName) {
+  let filenames = pickCertScanFilenames(fileNames, pilotId);
+  if (!filenames.length) {
+    return Promise.resolve(
+      buildResult(
+        {sourceFile: null, reason: 'no_cert_pdf'},
+        null
+      )
+    );
+  }
+  return inferNextFile(filenames, rosterName, []);
 }

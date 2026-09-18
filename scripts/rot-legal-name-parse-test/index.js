@@ -7,7 +7,8 @@
 const {
   parseLegalNameFromDocumentText,
   parseLegalNameFromOcrText,
-  pickCertScanFilename
+  pickCertScanFilename,
+  pickCertScanFilenames
 } = require('../../server/api/rot/rot.legalNameParse.lib.js');
 
 let failed = 0;
@@ -54,6 +55,12 @@ let files = [
 assert(
   pickCertScanFilename(files, '1183') === '1183_09172026_CERT_Medical_scan.pdf',
   'prefer newest medical'
+);
+
+assert(
+  pickCertScanFilenames(files, '1183').join('|') ===
+    '1183_09172026_CERT_Medical_scan.pdf|1183_09172026_CERT_Certificate_x.pdf',
+  'medical then certificate fallback order'
 );
 
 assert(

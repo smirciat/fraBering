@@ -135,16 +135,21 @@ async function main() {
     let source = result && result.sourceFile;
 
     if (!inferred) {
+      let tried = result && result.alsoTriedSources;
+      let triedNote = tried && tried.length ? ' [also tried: ' + tried.join(', ') + ']' : '';
       console.log(
         '[no match] ' + id + ' ' + rosterName +
           ' — ' + (reason || '?') +
-          (source ? ' (' + source + ')' : '')
+          (source ? ' (' + source + ')' : '') +
+          triedNote
       );
       stats.noMatch += 1;
     } else {
       stats.inferred += 1;
+      let from = result && result.fallbackFromSources;
+      let fromNote = from && from.length ? ' [after medical: ' + from.join(', ') + ']' : '';
       let line = '[infer] ' + id + ' ' + rosterName + ' → ' + inferred +
-        ' (' + (method || reason) + (source ? ', ' + source : '') + ')';
+        ' (' + (method || reason) + (source ? ', ' + source : '') + ')' + fromNote;
       if (existing && opts.force && existing !== inferred) {
         line += ' [was: ' + existing + ']';
       }
