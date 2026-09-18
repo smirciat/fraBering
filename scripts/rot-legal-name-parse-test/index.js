@@ -6,6 +6,7 @@
 
 const {
   parseLegalNameFromDocumentText,
+  parseLegalNameFromOcrText,
   pickCertScanFilename
 } = require('../../server/api/rot/rot.legalNameParse.lib.js');
 
@@ -45,6 +46,14 @@ let files = [
 assert(
   pickCertScanFilename(files, '1183') === '1183_09172026_CERT_Medical_scan.pdf',
   'prefer newest medical'
+);
+
+assert(
+  parseLegalNameFromOcrText(
+    'FAA MEDICAL  Name  Conor  Rocco  Murray  DOB  Class',
+    'Conor Murray'
+  ) === 'Conor Rocco Murray',
+  'ocr anchor on last name'
 );
 
 if (failed) process.exit(1);

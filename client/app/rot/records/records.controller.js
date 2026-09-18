@@ -640,8 +640,14 @@ class RecordsComponent {
         return data;
       }
       if (!options.silent) {
-        let msg='Could not read a legal name from CERT scans (need text PDF; last name must match roster).';
-        if (data.reason==='no_cert_pdf') msg='No CERT Medical or Certificate PDF on file for this employee #.';
+        let msg='Could not read a legal name from CERT scans (last name must match roster).';
+        if (data.reason==='no_cert_pdf') msg='No CERT Medical or Certificate file on file for this employee #.';
+        if (data.reason==='ocr_needs_poppler') {
+          msg='Scanned PDF needs OCR: install poppler-utils on the server (pdftoppm), then retry.';
+        }
+        if (data.reason==='ocr_no_name_match') {
+          msg='OCR ran but no matching legal name was found — check scan quality or enter manually.';
+        }
         this.toaster.warning('Legal name',msg);
       }
       return data;

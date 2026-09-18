@@ -23,7 +23,56 @@ function lastTokenMatches(nameLine, rosterName) {
   return parts[parts.length - 1].toLowerCase() === last;
 }
 
-function parseLegalNameFromDocumentText(text, rosterName) {
+function normalizeOcrText(text) {
+  return String(text || '')
+    .replace(/[|]/g, 'I')
+    .replace(/[—–]/g, '-')
+    .replace(/[^\S\nA-Za-z'\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const OCR_NAME_STOP_WORDS = {
+  faa: 1,
+  medical: 1,
+  name: 1,
+  dob: 1,
+  class: 1,
+  certificate: 1,
+  first: 1,
+  second: 1,
+  third: 1,
+  date: 1,
+  of: 1,
+  birth: 1
+};
+
+/** Anchor on roster last name — helpful for noisy OCR. */
+function parseLegalNameFromLastNameAnchor(text, rosterName) {
+  let last = rosterLastName(rosterName);
+  if (!last || !text) return null;
+  let parts = String(text).split(/\s+/).filter(Boolean);
+  let lastIdx = -1;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    if (parts[i].toLowerCase().replace(/[^a-z]/g, '') === last) {
+      lastIdx = i;
+      break;
+    }
+  }
+  if (lastIdx < 1) return null;
+  let start = Math.max(0, lastIdx - 5);
+  let slice = parts.slice(start, lastIdx + 1);
+  while (slice.length > 2 && OCR_NAME_STOP_WORDS[slice[0].toLowerCase()]) {
+    slice = slice.slice(1);
+  }
+  if (slice.length < 2) return null;
+  let c = titleCaseWords(slice.join(' '));
+  if (!lastTokenMatches(c, rosterName)) return null;
+  return c;
+}
+
+function parseLegalNameFromDocumentText(text, rosterName, options) {
+  options = options || {};
   if (!text || !rosterName) return null;
   let last = rosterLastName(rosterName);
   if (!last) return null;
@@ -42,6 +91,11 @@ function parseLegalNameFromDocumentText(text, rosterName) {
   }
 
   let normalized = String(text).replace(/\r/g, '\n');
+  if (options.ocr) {
+    normalized = normalizeOcrText(normalized);
+    let anchored = parseLegalNameFromLastNameAnchor(normalized, rosterName);
+    if (anchored) return anchored;
+  }
   let labelMatch = normalized.match(
     /(?:^|\n)\s*Name\s*(?:\([^)]*\))?\s*:\s*([^\n]+)/i
   );
@@ -52,13 +106,23 @@ function parseLegalNameFromDocumentText(text, rosterName) {
   let lines = normalized.split('\n');
   let nameLineRe = /^[A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){1,5}$/;
   let capsLineRe = /^[A-Z]{2,}(?:\s+[A-Z]{2,}){1,5}$/;
-  lines.forEach(line => {
+  let lineSource = options.ocr ? normalized.split(/\s+/).join('\n') : normalized;
+  lineSource.split('\n').forEach(line => {
     let t = line.trim();
-    if (t.length > 60) return;
+    if (t.length > 80) return;
     if (nameLineRe.test(t) || capsLineRe.test(t)) consider(t);
+    if (options.ocr && t.length > 8 && t.toLowerCase().indexOf(last) > -1) consider(t);
   });
 
+  if (!best && options.ocr) {
+    best = parseLegalNameFromLastNameAnchor(normalized, rosterName);
+  }
+
   return best;
+}
+
+function parseLegalNameFromOcrText(text, rosterName) {
+  return parseLegalNameFromDocumentText(text, rosterName, {ocr: true});
 }
 
 function fileDateSortKey(filename) {
@@ -75,7 +139,7 @@ function pickCertScanFilename(fileNames, pilotId) {
   let prefix = id + '_';
   let pool = (fileNames || []).filter(f => {
     if (!f || f.indexOf(prefix) !== 0) return false;
-    if (!/\.pdf$/i.test(f)) return false;
+    if (!/\.(pdf|jpe?g)$/i.test(f)) return false;
     return f.indexOf('_CERT_') > -1;
   });
   if (!pool.length) return null;
@@ -92,5 +156,7 @@ function pickCertScanFilename(fileNames, pilotId) {
 module.exports = {
   rosterLastName,
   parseLegalNameFromDocumentText,
+  parseLegalNameFromOcrText,
+  parseLegalNameFromLastNameAnchor,
   pickCertScanFilename
 };

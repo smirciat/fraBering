@@ -21,9 +21,18 @@ Scans live under `server/fileserver/rot/records/` as
 1. Select pilot → **Infer legal name from CERT scan** (or **Edit Pilot Training Dates** → **Infer from scan**).
 2. Server reads the **newest Medical PDF**, else Certificate; extracts text with `pdf-parse`.
 3. Picks the longest name-like line whose **last name matches** roster `name` (safety check).
-4. **Confirm/Save** on the pilot modal to write `legalName` to Firebase.
+4. If PDF text is empty or no match → **OCR** first page via **Tesseract** (`tesseract.js`).
+5. **Confirm/Save** on the pilot modal to write `legalName` to Firebase.
 
-Scanned-image-only PDFs (no text) still need manual entry. Run `npm install` on prod for `pdf-parse`.
+**Prod deps**
+
+```bash
+npm install   # pdf-parse, tesseract.js
+sudo apt-get install -y poppler-utils   # pdftoppm for scanned PDFs
+grunt babel:server && pm2 restart fraBering
+```
+
+JPEG CERT uploads are OCR’d directly. Image-only PDFs need `pdftoppm` on the host.
 
 Optional batch later: `scripts/rot-infer-legal-names/` (not shipped yet).
 
