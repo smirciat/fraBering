@@ -8,6 +8,19 @@ angular.module('workspaceApp')
      * @param  {String} modalClass - (optional) class(es) to be applied to the modal
      * @return {Object}            - the instance $uibModal.open() returns
      */
+    function eachTrainingSelectionLeaf(sections, fn) {
+      if (!sections || !fn) return;
+      sections.forEach(function(section) {
+        (section.rows || []).forEach(function(row) {
+          if (row.children && row.children.length) {
+            row.children.forEach(fn);
+          } else if (row.name) {
+            fn(row);
+          }
+        });
+      });
+    }
+
     function openModal(scope = {}, modalClass = 'modal-default') {
       var modalScope = $rootScope.$new();
       angular.extend(modalScope, scope);
@@ -114,7 +127,7 @@ angular.module('workspaceApp')
               if (formData[key] === 'false' && key !== 'newBaseMonth' && key !== 'includes297G') formData[key] = false;
             }
             if (!formData.eventResult || typeof formData.eventResult !== 'object') formData.eventResult = {};
-            rotAppConfig.trainingEvents.forEach(function(t) {
+            eachTrainingSelectionLeaf(rotAppConfig.trainingSelectionSections, function(t) {
               if (formData[t.name] && !formData.eventResult[t.name]) formData.eventResult[t.name] = 'S';
             });
             theModal = openModal({
@@ -122,15 +135,34 @@ angular.module('workspaceApp')
                 formData: formData,
                 radio: true,
                 eventGrades: ['S', 'W', 'U/S'],
+                linkedTypesFor: function(parentName) {
+                  return rotAppConfig.trainingSelectionLinks[parentName] || [];
+                },
                 onTypeToggle: function(name) {
                   if (!formData.eventResult) formData.eventResult = {};
                   if (formData[name]) {
                     if (!formData.eventResult[name]) formData.eventResult[name] = 'S';
+                    var links = rotAppConfig.trainingSelectionLinks[name];
+                    if (links) {
+                      links.forEach(function(link) {
+                        if (link.defaultChecked) {
+                          formData[link.name] = true;
+                          if (!formData.eventResult[link.name]) formData.eventResult[link.name] = 'S';
+                        }
+                      });
+                    }
                   } else {
                     delete formData.eventResult[name];
+                    var clearLinks = rotAppConfig.trainingSelectionLinks[name];
+                    if (clearLinks) {
+                      clearLinks.forEach(function(link) {
+                        formData[link.name] = false;
+                        delete formData.eventResult[link.name];
+                      });
+                    }
                   }
                 },
-                trainingTypes: rotAppConfig.trainingEvents,
+                trainingSections: rotAppConfig.trainingSelectionSections,
                 dismissable: true,
                 title: 'Click Each Training Type Accomplished on this Training Record',
                 buttons: [{
@@ -147,7 +179,7 @@ angular.module('workspaceApp')
                   }
                 }]
               }
-            }, 'modal-success');
+            }, 'modal-success modal-rot-training-select');
             if (theModal) theModal.result.then(function(event) {
               cb.apply(event, [formData]);
             }).catch(function(err) {
@@ -239,7 +271,9 @@ angular.module('workspaceApp')
                   if (helpers.parseDate) {
                     row.newDate = helpers.parseDate(row.newDateInput);
                     if (row.newDate && !isNaN(row.newDate.getTime())) {
-                      row.proposed = row.newDate.toLocaleDateString();
+                      row.proposed = helpers.formatDate
+                        ? helpers.formatDate(row.newDate)
+                        : row.newDate.toLocaleDateString();
                       row.newDateInput = row.proposed;
                     }
                   }
@@ -312,11 +346,17 @@ angular.module('workspaceApp')
                 aircraftTypes: aircraftTypes,
                 fixDate: function(key) {
                   let dateString = this.formData[key];
-                  if (typeof dateString === 'string') {
-                    let arr = dateString.split('/');
-                    if (arr.length >= 3 && arr[2].length === 2) {
-                      this.formData[key] = arr[0] + '/' + arr[1] + '/20' + arr[2];
+                  if (!dateString || typeof dateString !== 'string') return;
+                  if (key.slice(-3) === 'Exp' || key === 'far293a148') {
+                    if (window.rotPilotExpDate) {
+                      const parsed = window.rotPilotExpDate.parsePilotExpDate(dateString);
+                      if (parsed) this.formData[key] = window.rotPilotExpDate.formatPilotExpDate(parsed);
                     }
+                    return;
+                  }
+                  let arr = dateString.split('/');
+                  if (arr.length >= 3 && arr[2].length === 2) {
+                    this.formData[key] = arr[0] + '/' + arr[1] + '/20' + arr[2];
                   }
                 },
                 title: 'Check or Enter the Pilot`s Information',

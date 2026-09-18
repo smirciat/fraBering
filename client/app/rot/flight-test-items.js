@@ -125,7 +125,7 @@
       },
       needsPopup: function(record) {
         var ctx = context(record);
-        return !!(ctx.has293 || ctx.has297 || ctx.has297g);
+        return !!(ctx.has293 || ctx.has297 || ctx.has297g || truthy(record.far293a));
       },
       pdfGrade: function(g) {
         if (g === 'U/S') return 'S';

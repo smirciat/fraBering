@@ -146,6 +146,71 @@
   background-color:#ffffcc;
 }
 
+/* #44 — training type picker: wide modal, Ground/Flight side-by-side when space allows */
+.modal-rot-training-select .modal-dialog{
+  width:92%;
+  max-width:1280px;
+}
+.modal-rot-training-select .modal-body{
+  max-height:88vh;
+  overflow-y:auto;
+}
+.rot-training-select-form{
+  max-height:none;
+  overflow:visible;
+  padding-right:4px;
+}
+.rot-training-sections-layout{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  gap:16px 28px;
+}
+.rot-training-sections-layout > .rot-training-section{
+  flex:1 1 360px;
+  min-width:0;
+}
+
+.rot-training-section{
+  margin-bottom:12px;
+}
+
+.rot-training-section-title{
+  margin:8px 0 6px;
+  font-weight:bold;
+  border-bottom:1px solid #cc9900;
+  padding-bottom:4px;
+}
+
+.rot-training-group-label{
+  font-weight:600;
+  margin:8px 0 4px 4px;
+  color:#333;
+}
+
+.rot-training-row{
+  margin-bottom:6px;
+  padding-left:4px;
+}
+
+.rot-training-row-nested{
+  padding-left:20px;
+}
+
+.rot-training-linked-block{
+  margin-left:22px;
+  margin-top:4px;
+}
+
+.rot-training-row-linked{
+  padding-left:12px;
+  font-size:13px;
+}
+
+.rot-training-grade{
+  margin-left:8px;
+}
+
 .highMinimums{
   background-color:rgba(152, 255, 152,0.5);
 }

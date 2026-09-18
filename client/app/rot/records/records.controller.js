@@ -3,13 +3,14 @@
 (function(){
 
 class RecordsComponent {
-  constructor($scope,$timeout,$interval,$http,rotAppConfig,rotFlightTestItems,Modal,categoryFilterFilter,$state,Auth,RotPilotContext,RotAccess) {
+  constructor($scope,$timeout,$interval,$http,rotAppConfig,rotFlightTestItems,Modal,categoryFilterFilter,$state,Auth,RotPilotContext,RotAccess,rotPilotExpDate) {
     this.categoryFilter=categoryFilterFilter;
     this.appConfig=rotAppConfig;
     this.rotFlightTestItems=rotFlightTestItems;
     this.Auth=Auth;
     this.RotAccess=RotAccess;
     this.RotPilotContext=RotPilotContext;
+    this.rotPilotExpDate=rotPilotExpDate;
     this.Modal=Modal;
     this.http=$http;
     this.timeout=$timeout;
@@ -27,6 +28,9 @@ class RecordsComponent {
     this.assignments=["Clear Selection"];
     this.tabs=['CERT','BI','HAZ','INTL','C208G','C408G','C212G','BE20G','B190G','RVSM','293A','C208','C408','C212','BE20','B190','297','297g','299','244','CFIT','FLT-INSTRUCTOR','CHECK-AIRMAN','OTHER-RECORDS'];
     this.subtabs=['Recurrent','Initial','Transition','Upgrade','Requalification'];
+    this.unaffiliatedRotSub='Unaffiliated';
+    this.unaffiliatedRotTab='BI';
+    this.unaffiliatedLabel='';
     this.categories=['Annual-Resume','Medical','Certificate','Drivers-License','Passport'];
     this.graces=['Uncurrent','Late Grace','In Base Month','Early Grace'];
     this.tab='CERT';
@@ -129,6 +133,7 @@ class RecordsComponent {
         }
         if (formData._id) {
           this.logManualExpHistoryChanges(formData);
+          this.logManualCertDocHistoryChanges(formData);
           formData.trainingExpHistory=this.fullPilot.trainingExpHistory;
           this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:formData}).then(()=>{
             this.toaster.success('Success','Pilot training dates updated');
@@ -152,18 +157,11 @@ class RecordsComponent {
     this.showApproved=false;
     this.showSLEArray=[];
     this.bootstrapped=false;
+    this.rotAircraft=[];
     this.nNumbers=[];
     this.date=new Date();
     this.upDate();
-    this.http.get('/api/airplanes').then(res=>{
-      const list=(res.data||[]).filter(a=>a.registration&&!a.isInactive&&a.active!==false);
-      const seen={};
-      this.nNumbers=list.map(a=>String(a.registration).trim()).filter(n=>{
-        if (!n||seen[n]) return false;
-        seen[n]=true;
-        return true;
-      }).sort();
-    }).catch(()=>{ this.nNumbers=[]; });
+    this.loadRotAircraftFleet();
     window.categories=this.categories;
     window.subtabs=this.subtabs;
     this.assignmentSource.forEach(a=>{
@@ -188,6 +186,13 @@ class RecordsComponent {
             if (newVal && (!oldVal || oldVal._id !== newVal._id)) this.init();
           }
         );
+        this.scope.$watch(
+          () => {
+            const list = this.RotPilotContext.getPilots();
+            return list.map(p => p._id).join(',');
+          },
+          () => { this.pilots = this.RotPilotContext.getPilots(); }
+        );
         this.init();
       }).catch(err => {
         console.error('Records: pilot load failed', err);
@@ -200,6 +205,7 @@ class RecordsComponent {
         if (newVal==='CERT') this.subs=this.categories;
         else this.subs=this.subtabs;
         this.subtab=undefined;
+        this.unaffiliatedLabel='';
         this.seat=undefined;
       }
     });
@@ -348,6 +354,188 @@ class RecordsComponent {
     if (!this.fullPilot) return;
     if (key==='far293a') return this.fullPilot[key+'148'];
     return this.fullPilot[key+'Exp'];
+  }
+
+  /** #45 — medical expiration (same rules as pilot board; no FIRST→SECOND revert UI). */
+  computeMedicalExpiration(pilot){
+    pilot=pilot||this.fullPilot;
+    if (!pilot||!pilot.medicalDate) return null;
+    const dateString=pilot.medicalDate;
+    const medClass=pilot.medicalClass;
+    let duration=6;
+    if (medClass==='SECOND') duration=12;
+    let age=50;
+    if (pilot.dateOfBirth&&pilot.dateOfBirth!==''&&window.moment) {
+      age=window.moment(dateString).diff(new Date(pilot.dateOfBirth),'years',true);
+    }
+    if (age&&age<40&&age!==0) {
+      duration=12;
+      if (medClass==='SECOND') duration=12;
+    }
+    if (pilot.medicalInterval&&Number.isInteger(pilot.medicalInterval*1)) {
+      duration=pilot.medicalInterval*1;
+    }
+    let expDate;
+    if (window.moment) {
+      expDate=window.moment(new Date(dateString)).add(duration,'M').format('MM/DD/YYYY');
+    } else {
+      const d=new Date(dateString);
+      d.setMonth(d.getMonth()+duration);
+      expDate=(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();
+    }
+    return expDate;
+  }
+
+  getCertDocLiveValue(col){
+    if (!col||!this.fullPilot) return null;
+    if (col.key==='medical') return this.computeMedicalExpiration(this.fullPilot);
+    if (col.key==='passport') return this.fullPilot.passport||null;
+    return null;
+  }
+
+  getCertDocHistoryFieldKey(col){
+    return col&&col.historyField;
+  }
+
+  getCertDocHistoryIndex(col,rowIndex){
+    const fieldKey=this.getCertDocHistoryFieldKey(col);
+    const history=(this.fullPilot&&this.fullPilot.trainingExpHistory&&this.fullPilot.trainingExpHistory[fieldKey])||[];
+    const live=this.getCertDocLiveValue(col);
+    const loggedCurrentMatchesLive=history.length>0&&history[0].exp===live;
+    if (rowIndex===1) return loggedCurrentMatchesLive?1:0;
+    if (rowIndex===2) return loggedCurrentMatchesLive?2:1;
+    return -1;
+  }
+
+  getCertDocHistoryCell(col,rowIndex){
+    if (!col) return null;
+    if (rowIndex===0) return this.getCertDocLiveValue(col);
+    const fieldKey=this.getCertDocHistoryFieldKey(col);
+    const history=(this.fullPilot&&this.fullPilot.trainingExpHistory&&this.fullPilot.trainingExpHistory[fieldKey])||[];
+    const historyIndex=this.getCertDocHistoryIndex(col,rowIndex);
+    if (historyIndex<0||!history[historyIndex]) return null;
+    return history[historyIndex].exp;
+  }
+
+  getCertDocHistoryEntry(col,rowIndex){
+    if (!col||rowIndex===0) return null;
+    const fieldKey=this.getCertDocHistoryFieldKey(col);
+    const history=(this.fullPilot&&this.fullPilot.trainingExpHistory&&this.fullPilot.trainingExpHistory[fieldKey])||[];
+    const historyIndex=this.getCertDocHistoryIndex(col,rowIndex);
+    if (historyIndex<0||!history[historyIndex]) return null;
+    return history[historyIndex];
+  }
+
+  getCertDocHistoryTooltip(col,rowIndex){
+    if (!col||rowIndex===0) {
+      if (col&&col.key==='medical') return 'Computed medical expiration from exam date, class, and age';
+      if (col&&col.key==='passport') return 'Passport expiration on pilot profile';
+      return 'Current value on pilot profile';
+    }
+    const entry=this.getCertDocHistoryEntry(col,rowIndex);
+    if (!entry) return '';
+    const parts=['Logged '+entry.source];
+    if (entry.checkDate) parts.push('check '+entry.checkDate);
+    if (entry.medicalDate) parts.push('exam '+entry.medicalDate);
+    if (entry.medicalClass) parts.push('class '+entry.medicalClass);
+    if (entry.approvedBy) parts.push('by '+entry.approvedBy);
+    if (entry.approvedAt) parts.push('at '+new Date(entry.approvedAt).toLocaleString());
+    if (this.canRestoreCertDocHistory(col,rowIndex)) parts.push('Click to restore');
+    return parts.join(' · ');
+  }
+
+  canRestoreCertDocHistory(col,rowIndex){
+    if (!this.isApprover()||rowIndex===0||!col) return false;
+    const expValue=this.getCertDocHistoryCell(col,rowIndex);
+    if (!expValue) return false;
+    if (expValue===this.getCertDocLiveValue(col)) return false;
+    if (col.key==='medical') {
+      const entry=this.getCertDocHistoryEntry(col,rowIndex);
+      return !!(entry&&entry.medicalDate);
+    }
+    return col.key==='passport';
+  }
+
+  restoreCertDocHistory(col,rowIndex){
+    if (!this.canRestoreCertDocHistory(col,rowIndex)) return;
+    const fieldKey=this.getCertDocHistoryFieldKey(col);
+    const entry=this.getCertDocHistoryEntry(col,rowIndex);
+    const expValue=entry?entry.exp:this.getCertDocHistoryCell(col,rowIndex);
+    const current=this.getCertDocLiveValue(col);
+    const label=col.label;
+    if (!confirm('Restore '+label+' for '+this.pilot.name+' from '+current+' to '+expValue+'?')) return;
+    const context={
+      source:'restore',
+      checkDate:entry&&entry.checkDate,
+      recordId:entry&&entry.recordId,
+    };
+    const doc={_id:this.fullPilot._id};
+    if (col.key==='passport') {
+      doc.passport=expValue;
+      this.fullPilot.passport=expValue;
+    } else if (col.key==='medical'&&entry&&entry.medicalDate) {
+      doc.medicalDate=entry.medicalDate;
+      doc.medicalClass=entry.medicalClass;
+      doc.medicalInterval=entry.medicalInterval;
+      this.fullPilot.medicalDate=entry.medicalDate;
+      this.fullPilot.medicalClass=entry.medicalClass;
+      this.fullPilot.medicalInterval=entry.medicalInterval;
+      context.medicalDate=entry.medicalDate;
+      context.medicalClass=entry.medicalClass;
+      context.medicalInterval=entry.medicalInterval;
+    }
+    const restoredLive=this.getCertDocLiveValue(col);
+    this.prependExpHistory(fieldKey,this.buildExpHistoryEntry(restoredLive,context));
+    doc.trainingExpHistory=this.fullPilot.trainingExpHistory;
+    this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
+      let index=this.pilots.map(e=>e._id).indexOf(this.pilot._id);
+      if (index>-1) Object.assign(this.pilots[index],doc);
+      this.pilot=this.cleanObject(this.fullPilot);
+      this.toaster.success('Success',label+' restored');
+    }).catch(err=>{
+      console.log(err);
+      this.toaster.error('Error','Failed to restore '+label);
+    });
+  }
+
+  logManualCertDocHistoryChanges(updatedPilot){
+    if (!this.fullPilot||!updatedPilot) return;
+    const context={source:'manual'};
+    (this.appConfig.certDocSummaryColumns||[]).forEach(col=>{
+      const fieldKey=this.getCertDocHistoryFieldKey(col);
+      const prior=this.getCertDocLiveValueForPilot(this.fullPilot,col);
+      const next=this.getCertDocLiveValueForPilot(updatedPilot,col);
+      if (prior&&next!==prior) {
+        const entry=this.buildExpHistoryEntry(prior,context);
+        if (col.key==='medical') {
+          entry.medicalDate=this.fullPilot.medicalDate;
+          entry.medicalClass=this.fullPilot.medicalClass;
+          entry.medicalInterval=this.fullPilot.medicalInterval;
+        }
+        this.prependExpHistory(fieldKey,entry);
+      }
+    });
+  }
+
+  getCertDocLiveValueForPilot(pilot,col){
+    if (!pilot||!col) return null;
+    if (col.key==='medical') return this.computeMedicalExpiration(pilot);
+    if (col.key==='passport') return pilot.passport||null;
+    return null;
+  }
+
+  logCertDocHistoryFromPriorSnapshot(col,priorPilot,context){
+    if (!col||!priorPilot) return;
+    const fieldKey=this.getCertDocHistoryFieldKey(col);
+    const prior=this.getCertDocLiveValueForPilot(priorPilot,col);
+    if (!prior) return;
+    const entry=this.buildExpHistoryEntry(prior,context||{source:'update'});
+    if (col.key==='medical') {
+      entry.medicalDate=priorPilot.medicalDate;
+      entry.medicalClass=priorPilot.medicalClass;
+      entry.medicalInterval=priorPilot.medicalInterval;
+    }
+    this.prependExpHistory(fieldKey,entry);
   }
 
   getPilotExpFieldKey(trainingEventKey){
@@ -629,6 +817,62 @@ class RecordsComponent {
     });
   }
 
+  inferMedicalFromScan(options){
+    options=options||{};
+    if (!this.pilot||!this.pilot._id) {
+      return Promise.resolve(null);
+    }
+    return this.http.post('/api/rot/inferMedical',{
+      pilotId:String(this.pilot._id),
+      filename:options.filename||undefined
+    }).then(res=>{
+      let data=res.data||{};
+      let doc={_id:this.pilot._id};
+      let medicalDate=data.medicalDate;
+      if (!medicalDate&&options.fallbackDate) medicalDate=options.fallbackDate;
+      if (!medicalDate&&!data.medicalClass) {
+        if (!options.silent) this.toastMedicalInferFailure(data);
+        return data;
+      }
+      if (medicalDate) doc.medicalDate=medicalDate;
+      if (data.medicalClass) doc.medicalClass=data.medicalClass;
+      const priorSnapshot=JSON.parse(JSON.stringify(this.fullPilot));
+      const nextPilot=Object.assign({},this.fullPilot,doc);
+      const medicalCol=(this.appConfig.certDocSummaryColumns||[]).find(c=>c.key==='medical');
+      const priorMed=medicalCol?this.getCertDocLiveValueForPilot(priorSnapshot,medicalCol):null;
+      const nextMed=medicalCol?this.getCertDocLiveValueForPilot(nextPilot,medicalCol):null;
+      if (medicalCol&&priorMed&&nextMed&&priorMed!==nextMed) {
+        this.logCertDocHistoryFromPriorSnapshot(medicalCol,priorSnapshot,{source:'medical_scan'});
+      }
+      doc.trainingExpHistory=this.fullPilot.trainingExpHistory;
+      return this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
+        Object.assign(this.fullPilot,doc);
+        let pilotIndex=this.pilots.map(e=>e._id).indexOf(this.pilot._id);
+        if (pilotIndex>-1) Object.assign(this.pilots[pilotIndex],doc);
+        if (!options.silent) {
+          let msg=medicalDate+(data.medicalClass?' · '+data.medicalClass:'');
+          if (data.expirationDate) msg+=' (cert shows exp '+data.expirationDate+')';
+          this.toaster.success('Medical from scan',msg);
+        }
+        return data;
+      });
+    }).catch(err=>{
+      console.error('inferMedical',err);
+      if (!options.silent) this.toaster.error('Error','Medical scan read failed');
+      return null;
+    });
+  }
+
+  toastMedicalInferFailure(data){
+    let msg='Could not read exam date/class from the medical scan — enter manually or retry.';
+    if (data.reason==='no_medical_cert') msg='No CERT Medical file on disk for this employee #.';
+    if (data.reason==='ocr_needs_poppler') msg='Server needs poppler-utils (pdftoppm) for scanned PDF medicals.';
+    if (data.reason==='ocr_needs_tesseract') msg='Server needs tesseract-ocr for medical OCR.';
+    if (data.reason==='ocr_skipped_too_large'||data.reason==='file_too_large') msg='Medical file too large for OCR — enter date/class manually.';
+    if (data.reason==='parse_no_medical_fields') msg='OCR ran but could not find exam date or class — check scan quality.';
+    this.toaster.warning('Medical scan',msg);
+  }
+
   inferLegalNameFromScan(pilot, options){
     options=options||{};
     if (!pilot||!pilot._id||!pilot.name) {
@@ -713,6 +957,8 @@ class RecordsComponent {
 
   parseExpInputDate(dateStr){
     if (!dateStr) return null;
+    const fromMonthYear=this.rotPilotExpDate.parsePilotExpDate(dateStr);
+    if (fromMonthYear) return fromMonthYear;
     const parsed=this.parseShortExpDate(String(dateStr).trim());
     if (parsed) return parsed;
     const d=new Date(dateStr);
@@ -721,15 +967,7 @@ class RecordsComponent {
 
   formatPilotExpDateStr(raw){
     if (raw === null || raw === undefined || raw === '') return null;
-    const parsed=this.parseShortExpDate(String(raw).trim());
-    if (parsed && !isNaN(parsed.getTime())) {
-      return parsed.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric'});
-    }
-    const d=new Date(raw);
-    if (!isNaN(d.getTime())) {
-      return d.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric'});
-    }
-    return String(raw);
+    return this.rotPilotExpDate.formatPilotExpDate(raw);
   }
 
   priorExpForPreview(priorExpDates, expKey, expKeyAlt){
@@ -756,6 +994,7 @@ class RecordsComponent {
   }
 
   shouldAutoRebase(record, expKey, existingExpiration){
+    if (expKey==='HazmatExp') return false;
     const existingRaw=existingExpiration !== undefined && existingExpiration !== null && existingExpiration !== ''
       ? existingExpiration
       : (this.fullPilot && this.fullPilot[expKey]);
@@ -777,7 +1016,7 @@ class RecordsComponent {
     });
     if (!newDate||isNaN(newDate.getTime())) return;
     row.newDate=newDate;
-    row.proposed=this.formatPilotExpDateStr(newDate) || newDate.toLocaleDateString();
+    row.proposed=this.formatPilotExpDateStr(newDate);
     row.action=row.newBase?'rebase':(row.current&&row.current!=='—'?'extend':'initial');
     const existingDate=existingForCalc ? this.parseExpInputDate(existingForCalc) : null;
     row.warnEarlier=existingDate&&!isNaN(existingDate.getTime())&&newDate<existingDate;
@@ -790,6 +1029,20 @@ class RecordsComponent {
     let year=parseInt(parts[2],10);
     if (year<100) year+=2000;
     return new Date(year,parseInt(parts[0],10)-1,parseInt(parts[1],10));
+  }
+
+  /** Last calendar day of anchor's month, then +N months (avoids Aug 31 + 6 → Mar 3). */
+  expEndOfMonthAfterMonths(anchorDate, months){
+    if (!anchorDate||isNaN(anchorDate.getTime())) return null;
+    const n=parseInt(months,10);
+    if (!n) return null;
+    const y=anchorDate.getFullYear();
+    const m=anchorDate.getMonth();
+    const eom=new Date(y,m+1,0);
+    const total=eom.getMonth()+n;
+    const ty=eom.getFullYear()+Math.floor(total/12);
+    const tm=((total%12)+12)%12;
+    return new Date(ty,tm+1,0);
   }
 
   isNewBaseMonth(record){
@@ -807,6 +1060,7 @@ class RecordsComponent {
     if (!existingDate && existingRaw) existingDate=new Date(existingRaw);
     let hasExisting=existingDate&&!isNaN(existingDate.getTime());
     const useRebase=options.newBase!==undefined?!!options.newBase:this.isNewBaseMonth(record);
+    const months=parseInt(timeframe,10)||12;
 
     if (useRebase) {
       if (hasExisting&&this.isWithinOneMonth(recordDate, existingDate)) {
@@ -814,25 +1068,33 @@ class RecordsComponent {
           return null;
         }
       }
-      if (record.baseMonth) {
+      // #55 — 299 / 297g new base: end of check month + 12 (not prior base-month getExp).
+      if (expKey==='far299Exp'||expKey==='far297gExp') {
+        const fromCheck=this.expEndOfMonthAfterMonths(recordDate,months);
+        if (fromCheck) return fromCheck;
+      }
+      if (expKey==='far297Exp'&&record.baseMonth) {
         let expFromBase=this.getExp(record.baseMonth,record.date,String(timeframe),1);
         let parsedBaseExp=this.parseShortExpDate(expFromBase);
         if (parsedBaseExp) return parsedBaseExp;
       }
-      let rebased=new Date(recordDate);
-      rebased.setMonth(rebased.getMonth()+timeframe);
-      return rebased;
+      if (record.baseMonth&&expKey!=='far299Exp'&&expKey!=='far297gExp'&&expKey!=='far297Exp') {
+        let expFromBase=this.getExp(record.baseMonth,record.date,String(timeframe),1);
+        let parsedBaseExp=this.parseShortExpDate(expFromBase);
+        if (parsedBaseExp) return parsedBaseExp;
+      }
+      const rebased=this.expEndOfMonthAfterMonths(recordDate,months);
+      if (rebased) return rebased;
     }
 
     // Standard recurrent — extend from current expiration, do not rebase from training date.
     if (hasExisting) {
-      let extended=new Date(existingDate);
-      extended.setMonth(extended.getMonth()+timeframe);
-      return extended;
+      const extended=this.expEndOfMonthAfterMonths(existingDate,months);
+      if (extended) return extended;
     }
-    let initial=new Date(recordDate);
-    initial.setMonth(initial.getMonth()+timeframe);
-    return initial;
+    const initial=this.expEndOfMonthAfterMonths(recordDate,months);
+    if (initial) return initial;
+    return null;
   }
 
   snapshotPriorExpDates(record){
@@ -895,6 +1157,17 @@ class RecordsComponent {
     }
   }
   
+  /** #59 — CERT Certificate / Annual resume / Drivers license: no document date UI; filename uses upload date. */
+  subSkipsCertDocumentDate(sub) {
+    return ['Certificate', 'Annual-Resume', 'Drivers-License', 'Medical'].indexOf(sub) > -1;
+  }
+
+  certUploadSkipsDocumentDate() {
+    if (this.getAssociatedRecord && this.getAssociatedRecord()) return false;
+    if (this.tab !== 'CERT') return false;
+    return this.subSkipsCertDocumentDate(this.subtab);
+  }
+
   formatDate(dateString){
     let date=new Date(dateString);
     const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
@@ -933,13 +1206,36 @@ class RecordsComponent {
   
   whichSubs(cat){
     if (cat==='CERT') return this.categories;
-    return this.subtabs;
+    const subs=this.subtabs.slice();
+    if (cat===this.unaffiliatedRotTab) subs.push(this.unaffiliatedRotSub);
+    return subs;
+  }
+
+  isUnaffiliatedRotSub(sub){
+    return sub===this.unaffiliatedRotSub;
+  }
+
+  sanitizeUnaffiliatedLabel(label){
+    if (!label) return '';
+    return String(label).trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,48);
   }
   
+  isUploadCertChoice(){
+    if (!this.associated) return false;
+    if (this.associated._id===-1) return true;
+    return typeof this.associated.index==='number'&&this.associated.index<0;
+  }
+
+  /** #42 — CERT/Medical picker must stay visible for “UPLOAD A CERT” (_id -1), not only when associated is empty. */
+  showUploadTabPicker(){
+    if (!this.associated||this.associated._id===undefined||this.associated._id===null) return true;
+    if (this.isUploadCertChoice()) return true;
+    return false;
+  }
+
   selectTR(){
-    if (this.associated&&(this.associated._id===-1||(typeof this.associated.index==='number'&&this.associated.index<0))){
+    if (this.isUploadCertChoice()){
       this.tab='CERT';
-      this.subtab=undefined;
     }
   }
 
@@ -962,6 +1258,21 @@ class RecordsComponent {
   
   add(approval){
     if (this.associated&&this.associated._id===undefined) this.associated=undefined;
+    const unaffiliatedUpload=!this.hasAssociatedRecord()&&this.isUnaffiliatedRotSub(this.subtab);
+    if (unaffiliatedUpload) {
+      if (approval) {
+        return this.toaster.error('Error','Unaffiliated ROT uploads do not update expirations — use Upload File only');
+      }
+      if (this.tab!==this.unaffiliatedRotTab) {
+        return this.toaster.error('Error','Unaffiliated ROTs use tab '+this.unaffiliatedRotTab);
+      }
+      if (!this.sanitizeUnaffiliatedLabel(this.unaffiliatedLabel)) {
+        return this.toaster.error('Error','Enter a short training description (e.g. Special approach training)');
+      }
+    }
+    if (approval&&!this.hasAssociatedRecord()) {
+      return this.toaster.error('Error','Select the training record to associate with this upload before Upload and Approve');
+    }
     if ((!this.tab||!this.subtab)&&!this.hasAssociatedRecord()) return this.toaster.error('Error','Need to select a tab before uploading');
     if (this.tab==='C212'||this.tab==='B190'||this.tab==='C408') {
       if (!this.seat) return this.toaster.error('Error','Need to select PIC or SIC for this aircraft');
@@ -973,7 +1284,7 @@ class RecordsComponent {
     if (files&&files.length>0) {
       let f=files[0];
       let tabArray=[];
-      const localAssociated=this.getAssociatedRecord();
+      const localAssociated=unaffiliatedUpload?null:this.getAssociatedRecord();
       const approveAfterUpload=!!(approval && localAssociated && localAssociated._id);
       if (localAssociated) {
         if (!Array.isArray(localAssociated.trainingTypeArray)||localAssociated.trainingTypeArray.length===0) {
@@ -1023,19 +1334,13 @@ class RecordsComponent {
           this.http.post('/api/rot/uploadRecord',{data:encoded,filename:filename}).then(res=>{
             this.toaster.success('Success',filename+' uploaded successfully');
             if (this.subtab==='Medical') {
-              let doc={_id:this.pilot._id};
-              doc.medicalDate=this.dateString;
-              this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(res=>{
-                this.fullPilot.medicalDate=this.dateString;
-                let pilotIndex=this.pilots.map(e=>e._id).indexOf(this.pilot._id);
-                if (pilotIndex>-1) Object.assign(this.pilots[pilotIndex],doc);
-                this.toaster.success('Success','medical updated to '+this.dateString);
-                this.init();
-              }).catch(err=>{
-                console.log(err);
-                this.toaster.error('Error','Failed to update medical date');
+              this.inferMedicalFromScan({
+                filename:filename,
+                fallbackDate:this.dateString,
+                silent:false
+              }).then(()=>{
                 onUploadFinished();
-              });
+              }).catch(()=>{onUploadFinished();});
             }
             else onUploadFinished();
           }).catch(err=>{
@@ -1059,6 +1364,7 @@ class RecordsComponent {
   buildExpPreviewRows(record, priorExpDates){
     const rows=[];
     const seen={};
+    if (record&&record.unaffiliatedRot) return rows;
     if (!record||!record.trainingTypeArray||record.trainingTypeArray.length===0) return rows;
     record.trainingTypeArray.forEach(type=>{
       const {tab,seat}=this.typeToTab(type);
@@ -1084,7 +1390,7 @@ class RecordsComponent {
         newBase:newBase,
         priorExpiration: existingRaw || null,
         current: existingRaw ? (this.formatPilotExpDateStr(existingRaw) || existingRaw) : '—',
-        proposed: this.formatPilotExpDateStr(newDate) || newDate.toLocaleDateString(),
+        proposed: this.formatPilotExpDateStr(newDate),
         action:newBase?'rebase':(hasExisting?'extend':'initial'),
         warnEarlier:hasExisting&&newDate<existingDate
       });
@@ -1096,7 +1402,7 @@ class RecordsComponent {
     if (!rows||!rows.length) return;
     const doc={_id:this.pilot._id};
     rows.forEach(row=>{
-      const expValue=row.newDate.toLocaleDateString();
+      const expValue=this.formatPilotExpDateStr(row.newDate);
       doc[row.expKey]=expValue;
       if (row.expKeyAlt) doc[row.expKeyAlt]=expValue;
       this.logApprovalExpHistory(record, row.expKey, expValue, row.expKeyAlt, row.priorExpiration);
@@ -1105,7 +1411,7 @@ class RecordsComponent {
     this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
       this.toaster.success('Success','Pilot Profile Updated');
       rows.forEach(row=>{
-        const expValue=row.newDate.toLocaleDateString();
+        const expValue=this.formatPilotExpDateStr(row.newDate);
         this.fullPilot[row.expKey]=expValue;
         if (row.expKeyAlt) this.fullPilot[row.expKeyAlt]=expValue;
       });
@@ -1144,10 +1450,145 @@ class RecordsComponent {
     this.expPreviewModal(localRecord, previewRows, this.pilot.name, {
       recalcRow:(row, rec)=>this.recalcExpPreviewRow(row, rec),
       parseDate:(str)=>this.parseExpInputDate(str),
+      formatDate:(d)=>this.formatPilotExpDateStr(d),
       onClose:()=>{this._expPreviewOpen=false;}
     });
   }
   
+  trainingTypeToEventKey(type){
+    if (!type) return null;
+    if (this.appConfig.trainingEventKeys.indexOf(type)>-1) return type;
+    if (type==='293a') return 'far293a';
+    if (type==='299'||type==='297'||type==='297g') return 'far'+type;
+    return type;
+  }
+
+  isAircraftCheckrideKey(key){
+    return !!(key&&/(PIC|SIC)$/.test(key));
+  }
+
+  /** #46 — Firebase aircraft fleet (acftType + N# _id); Postgres /api/airplanes is incomplete for Caravan. */
+  loadRotAircraftFleet(){
+    const applyGrab=(data)=>{
+      const aircraft=(data&&data.aircraft)||[];
+      this.rotAircraft=aircraft.filter(a=>{
+        if (!a||!a._id) return false;
+        if (String(a._id).charAt(0).toUpperCase()!=='N') return false;
+        if (a.isInactive) return false;
+        return true;
+      });
+      this.nNumbers=this._uniqueSortedRegs(this.rotAircraft.map(a=>a._id));
+    };
+    if (window.firebaseGrabData&&window.firebaseGrabData.aircraft&&window.firebaseGrabData.aircraft.length){
+      applyGrab(window.firebaseGrabData);
+      return;
+    }
+    this.http.post('/api/airplanes/firebaseGrab').then(res=>{
+      window.firebaseGrabData=res.data;
+      applyGrab(res.data);
+    }).catch(()=>{
+      this.http.get('/api/airplanes').then(r=>{
+        const list=(r.data||[]).filter(a=>a.registration&&!a.isInactive&&a.active!==false);
+        this.rotAircraft=list.map(a=>({
+          _id:String(a.registration).trim(),
+          acftType:a.airplaneType||a.aircraftType||''
+        }));
+        this.nNumbers=this._uniqueSortedRegs(this.rotAircraft.map(a=>a._id));
+      }).catch(()=>{
+        this.rotAircraft=[];
+        this.nNumbers=[];
+      });
+    });
+  }
+
+  _uniqueSortedRegs(ids){
+    const seen={};
+    return ids.map(id=>String(id).trim()).filter(n=>{
+      if (!n||seen[n]) return false;
+      seen[n]=true;
+      return true;
+    }).sort();
+  }
+
+  normalizeRotAcftType(acftType){
+    let t=(acftType||'').trim();
+    if (t==='Sky Courier') t='Courier';
+    return t;
+  }
+
+  rotAcftTypeForRecord(record){
+    const ac=record&&record.aircraft;
+    if (!ac||ac==='none') return null;
+    const map={
+      C208:'Caravan',
+      BE20:'King Air',
+      B190PIC:'Beech 1900',
+      B190SIC:'Beech 1900',
+      C408PIC:'Courier',
+      C408SIC:'Courier',
+      C212PIC:'Casa',
+      C212SIC:'Casa'
+    };
+    return map[ac]||null;
+  }
+
+  nNumbersForRecord(record){
+    const want=this.rotAcftTypeForRecord(record);
+    let list=this.rotAircraft||[];
+    if (want&&list.length){
+      list=list.filter(a=>this.normalizeRotAcftType(a.acftType)===want);
+    }
+    if (!list.length) return this.nNumbers||[];
+    return this._uniqueSortedRegs(list.map(a=>a._id));
+  }
+
+  onRecordAircraftChange(record){
+    if (!record) return;
+    const allowed=this.nNumbersForRecord(record);
+    if (record.aircraftN&&allowed.indexOf(record.aircraftN)<0) record.aircraftN='';
+  }
+
+  /** #49 — 293(a) and other non-airframe events may use a check airman without aircraft. */
+  recordRequiresAircraft(record){
+    if (!record||!record.checkAirman||record.checkAirman==='none') return false;
+    if (record.trainingTypeArray&&record.trainingTypeArray.length){
+      for (let i=0;i<record.trainingTypeArray.length;i++){
+        const key=this.trainingTypeToEventKey(record.trainingTypeArray[i]);
+        if (this.isAircraftCheckrideKey(key)) return true;
+      }
+    }
+    if (!this.appConfig||!this.appConfig.trainingEventKeys) return false;
+    for (let i=0;i<this.appConfig.trainingEventKeys.length;i++){
+      const key=this.appConfig.trainingEventKeys[i];
+      if (!this.isAircraftCheckrideKey(key)) continue;
+      if (record[key]==='true') return true;
+    }
+    return false;
+  }
+
+  syncTrainingBooleansFromArray(record){
+    if (!record||!this.appConfig) return;
+    const active={};
+    (record.trainingTypeArray||[]).forEach(type=>{
+      const key=this.trainingTypeToEventKey(type);
+      if (key) active[key]=true;
+    });
+    this.appConfig.trainingEventKeys.forEach(key=>{
+      record[key]=active[key]?'true':'false';
+    });
+  }
+
+  rebuildTrainingTypeArrayFromBooleans(record){
+    record.trainingTypeArray=[];
+    this.appConfig.trainingEventKeys.forEach(key=>{
+      if (record[key]&&record[key]==='true') {
+        let typeKey=key;
+        if (typeKey.slice(0,3)==='far'&&typeKey!=='far293a') typeKey=typeKey.substring(3);
+        if (record.trainingTypeArray.indexOf(typeKey)<0) record.trainingTypeArray.push(typeKey);
+      }
+    });
+  }
+
   typeToTab(type){
     //['BasicIndoc','Hazmat','far299','far297','far297g','C208PIC','C208TKS','C208Ground','B190PIC','B190SIC','B190Ground','BE20PIC','BE20Ground','C408PIC','C408SIC','C408Ground','C212PIC','C212SIC','C212Ground','CheckAirmanObs','FlightInstructorObs']
     //['CERT','BI','HAZ','INTL','C208G','C408G','C212G','BE20G','B190G','RVSM','293A','C208','C408','C212','BE20','B190','297','297g','299','244','CFIT','FLT-INSTRUCTOR','CHECK-AIRMAN','OTHER-RECORDS'];
@@ -1254,8 +1695,15 @@ class RecordsComponent {
     let date=this.dateString;
     const associated=this.getAssociatedRecord();
     if (associated) date=associated.date;
+    else if (obj.tab === 'CERT' && this.subSkipsCertDocumentDate(obj.sub)) {
+      date=new Date().toLocaleDateString();
+    }
     fn=this.pilot._id+'_'+this.formatDate(date)+'_'+obj.tab+'_';
     if (obj.sub) fn+=obj.sub+'_';
+    if (obj.sub===this.unaffiliatedRotSub) {
+      const tag=this.sanitizeUnaffiliatedLabel(this.unaffiliatedLabel);
+      if (tag) fn+=tag+'_';
+    }
     if (obj.seat) fn+=obj.seat+'_';
     if (associated) fn+='associated_'+associated._id+'_';
     fn+=filename;
@@ -1270,6 +1718,7 @@ class RecordsComponent {
       case 'CERT':
         timeframe=0;
         break;
+      case 'HAZ':
       case 'HAZMAT':
         timeframe=24;
         break;
@@ -1308,7 +1757,6 @@ class RecordsComponent {
     switch (tab) {
       case 'BI':
         expKey='BasicIndocExp';
-        expKeyAlt='far293a148';
         break;
       case '293A':
         expKey='far293a148';
@@ -1357,7 +1805,9 @@ class RecordsComponent {
       const index=this.tabs.indexOf(arr[2]);
       if (index>-1){
         type=arr[3];
-        if (arr[4]==='PIC'||arr[5]==='SIC') type+=' '+arr[4];
+        if (type===this.unaffiliatedRotSub&&arr[4]&&arr[4]!=='associated'&&arr[4]!=='PIC'&&arr[4]!=='SIC') {
+          type=arr[4].replace(/-/g,' ');
+        } else if (arr[4]==='PIC'||arr[4]==='SIC') type+=' '+arr[4];
         arr.forEach((str,i)=>{
           if (str==="associated") associated=arr[i+1];
         });
@@ -1445,10 +1895,14 @@ class RecordsComponent {
         if (removal.permanent) removal.locked=true;
       });
     }
-    console.log(this.pilot)
-    this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:this.pilot}).then(res=>{
+    const pilotDoc=Object.assign({},this.fullPilot,this.pilot);
+    this.logManualCertDocHistoryChanges(pilotDoc);
+    pilotDoc.trainingExpHistory=this.fullPilot.trainingExpHistory;
+    this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:pilotDoc}).then(res=>{
       let index=this.pilots.map(e=>e._id).indexOf(this.pilot._id);
-      if (index>-1) Object.assign(this.pilots[index], this.pilot );
+      if (index>-1) Object.assign(this.pilots[index], pilotDoc);
+      Object.assign(this.fullPilot, pilotDoc);
+      this.pilot=this.cleanObject(this.fullPilot);
       let navIndex=this.scope.$root.nav.pilots.map(e=>e._id).indexOf(this.pilot._id);
       if (navIndex>-1) this.scope.$root.nav.pilots[navIndex]=this.pilots[index];
       console.log(this.scope.$root.nav.pilots)
@@ -1485,7 +1939,7 @@ class RecordsComponent {
     if (!record.trainingTypeArray||record.trainingTypeArray.length===0) {
       return Promise.reject('training');
     }
-    if (record.checkAirman&&(!record.aircraft||record.aircraft==='none')) {
+    if (this.recordRequiresAircraft(record)&&(!record.aircraft||record.aircraft==='none')) {
       return Promise.reject('aircraft');
     }
     record.dateObj=new Date(record.date);
@@ -1504,7 +1958,7 @@ class RecordsComponent {
 
   persistRecordError(err){
     if (err==='training') this.toaster.error('Error','You Need to Select at least one training type before saving');
-    else if (err==='aircraft') this.toaster.error('Error','An aircraft has to be selected if the event is a checkride');
+    else if (err==='aircraft') this.toaster.error('Error','Select an aircraft when this record includes a PIC/SIC checkride');
     else console.log(err);
   }
   
@@ -1514,8 +1968,11 @@ class RecordsComponent {
   
   createNewRecord(){
     let nr=JSON.parse(JSON.stringify(this.fullPilot));
-    let newObj={name:this.fullPilot.name,pilotNumber:this.fullPilot._id,dateObj:new Date(),date:new Date().toLocaleDateString(),newBaseMonth:'false',baseMonthManual:false,trainingType:'recurrent',baseMonth:new Date().toLocaleString('default', { month: 'long' }),eventResult:{},flightTestItems:{},remarks:[],aircraftN:'',flightTime:'',result:'S'};
+    let newObj={name:this.fullPilot.name,pilotNumber:this.fullPilot._id,dateObj:new Date(),date:new Date().toLocaleDateString(),newBaseMonth:'false',baseMonthManual:false,trainingType:'recurrent',baseMonth:new Date().toLocaleString('default', { month: 'long' }),eventResult:{},flightTestItems:{},remarks:[],aircraftN:'',flightTime:'',result:'S',trainingTypeArray:[]};
     Object.assign(nr, newObj );
+    if (this.appConfig&&this.appConfig.trainingEventKeys) {
+      this.appConfig.trainingEventKeys.forEach(key=>{ delete nr[key]; });
+    }
     delete nr._id;
     return nr;
   }
@@ -1528,21 +1985,47 @@ class RecordsComponent {
     this.startApprove(record, index);
   }
   
+  recordIndexInList(record){
+    if (!record||!this.records) return -1;
+    if (record._id) return this.records.findIndex(r=>r._id===record._id);
+    return this.records.findIndex(r=>r===record);
+  }
+
+  removeDraftRecord(record){
+    const resolvedIndex=this.recordIndexInList(record);
+    if (resolvedIndex>-1) this.records.splice(resolvedIndex, 1);
+    this.ensureDraftRow();
+    this.buildRecordsChoice();
+  }
+
   delete(record,index){
-    if (!record._id) return alert('No ID associated with this record, nothing to delete in Firestore');
+    if (!record) return;
+    if (!record._id) {
+      this.removeDraftRecord(record);
+      return;
+    }
+    const resolvedIndex=this.recordIndexInList(record);
+    if (resolvedIndex<0) {
+      return this.toaster.error('Error','Could not find this record in the list — refresh the page and try again');
+    }
     let revertExp=false;
     if (record.approved&&record.priorExpDates&&Object.keys(record.priorExpDates).length) {
       revertExp=confirm('This record was approved and updated pilot expiration dates. Also revert those expiration dates to their values before this record was approved?');
     }
     const priorExpDates=revertExp?record.priorExpDates:null;
-    //remove record from firebase and update local array
-    this.http.post('/api/rot/deleteFirebase',{id:record._id}).then(res=>{
+    this.http.post('/api/rot/deleteFirebase',{id:record._id}).then(()=>{
       this.toaster.warning('Warning','Record has been deleted');
-      this.records.splice(index,1);
+      const idx=this.recordIndexInList(record);
+      if (idx>-1) this.records.splice(idx, 1);
+      else if (typeof index==='number'&&index>-1&&index<this.records.length) this.records.splice(index, 1);
+      this.ensureDraftRow();
       this.buildRecordsChoice();
       if (priorExpDates) this.revertPriorExpDates(priorExpDates);
     })
-    .catch(err=>{console.log(err)});
+    .catch(err=>{
+      console.log(err);
+      this.toaster.error('Error','Could not delete this record in Firebase — try again or refresh the page');
+    });
   }
   
   quarterlyReport(quarter,year){
@@ -1760,14 +2243,9 @@ class RecordsComponent {
       if (record.trainingType&&record.flightOrGround) {
         record.trainingTypeCombo=record.trainingType + ' ' + record.flightOrGround;
       }
-      record.trainingTypeArray=[];
-      this.appConfig.trainingEventKeys.forEach(key=>{
-        if (record[key]&&record[key]==="true") {
-          let typeKey=key;
-          if (typeKey.slice(0,3)==="far"&&typeKey!=='far293a') typeKey=typeKey.substring(3);
-          if (record.trainingTypeArray.indexOf(typeKey)<0) record.trainingTypeArray.push(typeKey);
-        }
-      });
+      if (!Array.isArray(record.trainingTypeArray)) record.trainingTypeArray=[];
+      if (record.trainingTypeArray.length===0) this.rebuildTrainingTypeArrayFromBooleans(record);
+      else this.syncTrainingBooleansFromArray(record);
     }
     let instructorIndex=this.pilotRosterIndexByLabel(record.instructor);
     if (instructorIndex>-1) {
@@ -2286,20 +2764,14 @@ class RecordsComponent {
     }
 }
 
-RecordsComponent.$inject = ['$scope','$timeout','$interval','$http','rotAppConfig','rotFlightTestItems','Modal','categoryFilterFilter','$state','Auth','RotPilotContext','RotAccess'];
+RecordsComponent.$inject = ['$scope','$timeout','$interval','$http','rotAppConfig','rotFlightTestItems','Modal','categoryFilterFilter','$state','Auth','RotPilotContext','RotAccess','rotPilotExpDate'];
 
 angular.module('workspaceApp')
-  .filter('monthYear', () => {
+  .filter('monthYear', ['rotPilotExpDate', function(rotPilotExpDate) {
     return function(dateStr) {
-      if (!dateStr) return '';
-      const parts = dateStr.split('/');
-      if (parts.length !== 3) return dateStr;
-      const date = new Date(parseInt(parts[2], 10), parseInt(parts[0], 10) - 1, parseInt(parts[1], 10));
-      if (isNaN(date.getTime())) return dateStr;
-      const month = date.toLocaleString('default', { month: 'short' });
-      return month + '-' + date.getFullYear();
+      return rotPilotExpDate.formatPilotExpDate(dateStr) || '';
     };
-  })
+  }])
   .filter('recordFilter',()=>{
     return function(input, showApproved) {
       if (!input||!Array.isArray(input)) return [];

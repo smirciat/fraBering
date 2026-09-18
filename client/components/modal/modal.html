@@ -5,13 +5,48 @@
 </div>
 <div class="modal-body wheat" ng-class="modal.highMinsClass()">
   <div ng-if="modal.html" ng-bind-html="modal.html"></div>
-  <form ng-if="modal.radio" name="radios">
-    <div ng-repeat="type in modal.trainingTypes" style="margin-bottom:6px;">
-      <input type="checkbox" ng-model="modal.formData[type.name]" ng-change="modal.onTypeToggle(type.name)">
-      <label>{{type.label}}</label>
-      <select ng-if="modal.formData[type.name]" ng-model="modal.formData.eventResult[type.name]"
-          ng-options="g for g in modal.eventGrades" style="margin-left:8px;">
-      </select>
+  <form ng-if="modal.radio" name="radios" class="rot-training-select-form">
+    <div class="rot-training-sections-layout">
+    <div ng-repeat="section in modal.trainingSections" class="rot-training-section">
+      <h5 class="rot-training-section-title">{{section.title}}</h5>
+      <div ng-repeat="row in section.rows">
+        <div ng-if="row.children" class="rot-training-group">
+          <div class="rot-training-group-label">{{row.label}}</div>
+          <div ng-repeat="type in row.children" class="rot-training-row rot-training-row-nested">
+            <input type="checkbox" id="rot-train-{{type.name}}" ng-model="modal.formData[type.name]" ng-change="modal.onTypeToggle(type.name)">
+            <label for="rot-train-{{type.name}}">{{type.label}}</label>
+            <select ng-if="modal.formData[type.name]" ng-model="modal.formData.eventResult[type.name]"
+                ng-options="g for g in modal.eventGrades" class="rot-training-grade">
+            </select>
+            <div ng-if="modal.formData[type.name] && modal.linkedTypesFor(type.name).length" class="rot-training-linked-block">
+              <div ng-repeat="link in modal.linkedTypesFor(type.name)" class="rot-training-row rot-training-row-linked">
+                <input type="checkbox" id="rot-train-{{link.name}}" ng-model="modal.formData[link.name]" ng-change="modal.onTypeToggle(link.name)">
+                <label for="rot-train-{{link.name}}">{{link.label}}</label>
+                <select ng-if="modal.formData[link.name]" ng-model="modal.formData.eventResult[link.name]"
+                    ng-options="g for g in modal.eventGrades" class="rot-training-grade">
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div ng-if="!row.children" class="rot-training-row">
+          <input type="checkbox" id="rot-train-{{row.name}}" ng-model="modal.formData[row.name]" ng-change="modal.onTypeToggle(row.name)">
+          <label for="rot-train-{{row.name}}">{{row.label}}</label>
+          <select ng-if="modal.formData[row.name]" ng-model="modal.formData.eventResult[row.name]"
+              ng-options="g for g in modal.eventGrades" class="rot-training-grade">
+          </select>
+          <div ng-if="modal.formData[row.name] && modal.linkedTypesFor(row.name).length" class="rot-training-linked-block">
+            <div ng-repeat="link in modal.linkedTypesFor(row.name)" class="rot-training-row rot-training-row-linked">
+              <input type="checkbox" id="rot-train-{{link.name}}" ng-model="modal.formData[link.name]" ng-change="modal.onTypeToggle(link.name)">
+              <label for="rot-train-{{link.name}}">{{link.label}}</label>
+              <select ng-if="modal.formData[link.name]" ng-model="modal.formData.eventResult[link.name]"
+                  ng-options="g for g in modal.eventGrades" class="rot-training-grade">
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     </div>
   </form>
   <div ng-if="modal.flightTestItems" style="max-height:70vh;overflow:auto;">
@@ -129,10 +164,10 @@
     <label>Russian Visa Expiration(MM/DD/YYYY)</label>
     <input class="form-control" name="rus" type="text" ng-model="modal.formData.rus" ng-blur="modal.fixDate('rus')">
     <div ng-repeat="event in modal.trainingEvents track by $index">
-      <label>{{event.label+' Base Month (MM/DD/YYYY)'}}</label>
+      <label>{{event.label+' expiration (M/YY)'}}</label>
       <input class="form-control" type="text" ng-model="modal.formData[event.name+'Exp']" ng-blur="modal.fixDate(event.name+'Exp')">
     </div>
-    <label>293(a) 1,4-8 Expiration (MM/DD/YYYY)</label>
+    <label>293(a) 1,4-8 expiration (M/YY)</label>
     <input class="form-control" type="text" ng-model="modal.formData.far293a148" ng-blur="modal.fixDate('far293a148')">
     <div ng-repeat="t in modal.aircraftTypes">
       <label>High Minumums Captain for {{t}}</label>

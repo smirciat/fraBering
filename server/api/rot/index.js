@@ -41,6 +41,7 @@ router.post('/uploadRecord', requireRecordsAccess, rotRecords.uploadRecord);
 router.post('/changeFilename', requireRecordsAccess, rotRecords.changeFilename);
 router.post('/deleteRecord', requireRecordsAccess, rotRecords.deleteRecord);
 router.post('/inferLegalName', requireRecordsAccess, rotRecords.inferLegalName);
+router.post('/inferMedical', requireRecordsAccess, rotRecords.inferMedical);
 
 router.post('/listFileserver', rotFileserver.listFileserver);
 router.post('/uploadFileserver', rotFileserver.uploadFileserver);

@@ -94,6 +94,13 @@ body {
 .event-yellow {
     color:#D4AF37;
 }
+.exp-history-table th.exp-history-cert-col,
+.exp-history-table td.exp-history-cert-col {
+  font-size: 11px;
+  min-width: 4.5em;
+  max-width: 5.5em;
+}
+
 .exp-history-table th:first-child,
 .exp-history-table td:first-child {
     white-space: nowrap;
@@ -117,6 +124,43 @@ body {
 }
 .exp-history-restorable:hover {
   background-color: #d6ebff !important;
+}
+
+/* #44 — training record entry row: wider type cell, roomier controls */
+.rot-records-entry-wrap {
+  width: 98%;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+.rot-records-entry-md {
+  min-height: 120px;
+}
+.rot-records-entry-table .rot-records-type-cell {
+  min-width: 14em;
+  max-width: 24em;
+  min-height: 3.25em;
+  vertical-align: top;
+  cursor: pointer;
+  padding: 10px 12px !important;
+  background: #fffde7;
+  border: 1px solid #e6d98a;
+}
+.rot-records-entry-table .rot-records-type-cell:hover {
+  background: #fff9c4;
+}
+.rot-records-entry-table .rot-records-type-cell p {
+  margin: 0;
+  line-height: 1.4;
+  font-size: 13px;
+  white-space: normal;
+  word-break: break-word;
+}
+.rot-records-entry-table .ui-select-container {
+  min-width: 6.5em;
+}
+.rot-records-entry-table td {
+  vertical-align: middle;
 }
 .table .newDraftBackground > td {
   background-color: #d4edda !important;

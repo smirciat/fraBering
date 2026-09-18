@@ -1,13 +1,28 @@
-<div class="rot-pilot-selector" style="min-width:20em;max-width:32em;margin-bottom:1em;">
+<div class="rot-pilot-selector" style="min-width:20em;max-width:36em;margin-bottom:1em;">
   <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">Pilot</label>
   <ui-select ng-model="rotPilotSelector.pilot" theme="bootstrap" dropdown-position="down"
       on-select="rotPilotSelector.onSelect($item)">
-    <ui-select-match placeholder="Choose Pilot">{{$select.selected.name}}</ui-select-match>
+    <ui-select-match placeholder="Choose Pilot">
+      {{$select.selected.name}}<span ng-if="rotPilotSelector.isArchived($select.selected)"> (archived)</span>
+    </ui-select-match>
     <ui-select-choices repeat="pilot in rotPilotSelector.pilots | filter: $select.search">
-      <div ng-bind-html="(pilot.legalName || pilot.name) | highlight: $select.search"></div>
+      <div ng-bind-html="((pilot.legalName || pilot.name) + (rotPilotSelector.isArchived(pilot) ? ' (archived)' : '')) | highlight: $select.search"></div>
       <small ng-if="pilot.legalName && pilot.name && pilot.legalName !== pilot.name" style="color:#666;">Roster: {{pilot.name}}</small>
     </ui-select-choices>
   </ui-select>
+  <div style="margin-top:8px;font-size:13px;">
+    <label style="font-weight:normal;cursor:pointer;">
+      <input type="checkbox" ng-model="rotPilotSelector.showArchived" ng-change="rotPilotSelector.onShowArchivedChange()">
+      Show archived pilots
+    </label>
+  </div>
+  <p ng-if="rotPilotSelector.pilot && rotPilotSelector.isArchived(rotPilotSelector.pilot)" style="margin:8px 0 0;font-size:12px;color:#856404;background:#fff3cd;padding:6px 8px;border-radius:4px;">
+    This pilot is archived and hidden from ROT lists unless “Show archived pilots” is checked.
+  </p>
+  <div ng-if="rotPilotSelector.canArchivePilot && rotPilotSelector.pilot && rotPilotSelector.pilot._id != null" style="margin-top:8px;">
+    <button type="button" class="btn btn-default btn-sm" ng-if="!rotPilotSelector.isArchived(rotPilotSelector.pilot)" ng-click="rotPilotSelector.setArchived(true)">Archive pilot</button>
+    <button type="button" class="btn btn-warning btn-sm" ng-if="rotPilotSelector.isArchived(rotPilotSelector.pilot)" ng-click="rotPilotSelector.setArchived(false)">Restore pilot</button>
+  </div>
   <div ng-if="rotPilotSelector.pilot && rotPilotSelector.pilot._id != null" style="margin-top:10px;">
     <label style="display:block;font-size:12px;color:#666;margin-bottom:2px;">Legal name (FAA certificate)</label>
     <div class="input-group">

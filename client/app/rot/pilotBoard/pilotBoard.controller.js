@@ -3,12 +3,13 @@
 (function(){
 
 class RotPilotBoardComponent {
-  constructor($http, $timeout, $scope, moment, Auth) {
+  constructor($http, $timeout, $scope, moment, Auth, rotPilotExpDate) {
     this.http = $http;
     this.timeout = $timeout;
     this.scope = $scope;
     this.moment = moment;
     this.Auth = Auth;
+    this.rotPilotExpDate = rotPilotExpDate;
     this.data = [];
     this.today = new Date();
     this.shortMonths = [];
@@ -28,7 +29,7 @@ class RotPilotBoardComponent {
         {name: 'passport', field: 'passportShort', width: 90},
         {name: 'russianVisa', field: 'rusShort', minWidth: 90},
         {name: 'basicIndoc', field: 'BasicIndocExpShort', minWidth: 90, cellClass: this.cellClass},
-        {name: '293(a)1,4-8', field: 'BasicIndocExpShort', enableCellEdit: false, minWidth: 90, cellClass: this.cellClass},
+        {name: '293(a)1,4-8', field: 'far293a148Short', enableCellEdit: false, minWidth: 90, cellClass: this.cellClass},
         {name: 'hazmat', field: 'HazmatExpShort', minWidth: 90, cellClass: this.cellClass},
         {name: '208Ground', field: 'C208GroundExpShort', minWidth: 90, cellClass: this.cellClass},
         {name: '208TKS', field: 'C208TKSExpShort', minWidth: 90, cellClass: this.cellClass},
@@ -91,19 +92,8 @@ class RotPilotBoardComponent {
           let value = oldRowcol.row.entity[field];
           if (field.length > 5 && field.slice(-5) === 'Short') {
             field = field.slice(0, -5);
-            let arr = [];
-            if (value) arr = value.split('-');
-            if (arr.length === 2) {
-              let month = arr[0];
-              if (this.shortMonths.indexOf(month) > -1) {
-                month = this.shortMonths.indexOf(month);
-                month++;
-              }
-              if (arr[1].length === 2) arr[1] = '20' + arr[1];
-              value = month + '/1/' + arr[1];
-            } else if (value && new Date(value).getTime && !isNaN(new Date(value).getTime())) {
-              value = new Date(value).toLocaleDateString();
-            }
+            const parsed = this.rotPilotExpDate.parsePilotExpDate(value);
+            if (parsed) value = this.rotPilotExpDate.formatPilotExpDate(parsed);
           }
           let document = {_id: oldRowcol.row.entity._id};
           document[field] = value;
@@ -186,7 +176,11 @@ class RotPilotBoardComponent {
       for (let key in pilot) {
         if (key !== 'medicalDate' && typeof pilot[key] === 'string') {
           let arr = pilot[key].split('/');
-          if (arr.length === 3) {
+          let makeShort = arr.length === 3;
+          if (!makeShort && arr.length === 2 && (key.slice(-3) === 'Exp' || key === 'far293a148')) {
+            makeShort = true;
+          }
+          if (makeShort) {
             pilot[key + 'Short'] = this.shortDate(pilot[key]);
           }
         }
@@ -216,7 +210,11 @@ class RotPilotBoardComponent {
   cellClass(grid, row, col) {
     if (!grid) return;
     if (!grid.getCellValue(row, col) || grid.getCellValue(row, col) === '') return;
-    let base = window.moment(new Date(grid.getCellValue(row, col)));
+    const parsed = window.rotPilotExpDate
+      ? window.rotPilotExpDate.parsePilotExpDate(grid.getCellValue(row, col))
+      : new Date(grid.getCellValue(row, col));
+    let base = window.moment(parsed);
+    if (!base.isValid()) return;
     let baseMonth = base.month();
     let baseYear = base.year();
     let today = window.moment();
@@ -267,14 +265,7 @@ class RotPilotBoardComponent {
   }
 
   shortDate(dateString) {
-    if (dateString) {
-      let arr = dateString.split('/');
-      if (arr.length >= 3) {
-        if (arr[2].length === 2) arr[2] = '20' + arr[2];
-        return this.shortMonths[parseInt(arr[0], 10) - 1] + '-' + arr[2];
-      }
-    }
-    return dateString;
+    return this.rotPilotExpDate.formatPilotExpDate(dateString);
   }
 
   medicalShortDate(row) {
@@ -330,6 +321,8 @@ class RotPilotBoardComponent {
     return expDate;
   }
 }
+
+RotPilotBoardComponent.$inject = ['$http', '$timeout', '$scope', 'moment', 'Auth', 'rotPilotExpDate'];
 
 angular.module('workspaceApp')
   .component('rotPilotBoard', {

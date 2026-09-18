@@ -10,6 +10,15 @@ angular.module('workspaceApp')
       'kalebjanke@gmail.com'
     ];
 
+    /** #43 — archive / restore pilots on ROT (approvers only, not all instructors). */
+    const ROT_ARCHIVE_PILOT_EMAILS = [
+      'fen@beringair.com',
+      'nathaniel@beringair.com',
+      'nathanielwkolson@gmail.com',
+      'smirciat@gmail.com',
+      'kalebjanke@gmail.com'
+    ];
+
     const FDR_ACCESS_NAMES = [
       'Andy Smircich',
       'Nathaniel Olson',
@@ -86,8 +95,15 @@ angular.module('workspaceApp')
       return isCompanyInstructor(user);
     }
 
+    function canArchiveRotPilots(user) {
+      if (!user || !user.email) return false;
+      const email = String(user.email).toLowerCase();
+      return ROT_ARCHIVE_PILOT_EMAILS.indexOf(email) > -1;
+    }
+
     return {
       canAccessRecords: canAccessRecords,
+      canArchiveRotPilots: canArchiveRotPilots,
       canAccessFdr: canAccessFdr,
       canManageFdrYearLock: canManageFdrYearLock,
       isCompanyInstructor: isCompanyInstructor

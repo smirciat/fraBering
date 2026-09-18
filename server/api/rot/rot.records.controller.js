@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import {rotFileRoot, safeRotFilename} from './rot.storage.js';
 import {inferLegalNameFromScanFiles} from './rot.legalNameFromScan.js';
+import {inferMedicalFromScanFiles} from './rot.medicalFromScan.js';
 
 function recordsDir() {
   return path.join(rotFileRoot(), 'records');
@@ -81,6 +82,28 @@ export function inferLegalName(req, res) {
   } catch (err) {
     console.error('rot inferLegalName error', err);
     return res.status(500).json({message: 'Could not infer legal name'});
+  }
+}
+
+export function inferMedical(req, res) {
+  try {
+    let pilotId = req.body && req.body.pilotId;
+    let filename = req.body && req.body.filename;
+    if (!pilotId) {
+      return res.status(400).json({message: 'pilotId is required'});
+    }
+    let folder = recordsDir();
+    fs.mkdirSync(folder, {recursive: true});
+    let files = fs.readdirSync(folder).filter(file => file && file.charAt(0) !== '.');
+    return inferMedicalFromScanFiles(files, pilotId, filename)
+      .then(result => res.status(200).json(result))
+      .catch(err => {
+        console.error('rot inferMedical error', err);
+        return res.status(500).json({message: err.message || 'Could not read medical from scan'});
+      });
+  } catch (err) {
+    console.error('rot inferMedical error', err);
+    return res.status(500).json({message: 'Could not read medical from scan'});
   }
 }
 

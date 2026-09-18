@@ -2,24 +2,19 @@
 
 (function(){
 
-const APPROVAL_EMAILS = [
-  'fen@beringair.com',
-  'nathaniel@beringair.com',
-  'nathanielwkolson@gmail.com',
-  'smirciat@gmail.com',
-  'kalebjanke@gmail.com'
-];
-
 class RotPilotSelectorComponent {
-  constructor(RotPilotContext, $http, Auth, $scope) {
+  constructor(RotPilotContext, $http, Auth, $scope, RotAccess) {
     this.RotPilotContext = RotPilotContext;
     this.http = $http;
     this.Auth = Auth;
+    this.RotAccess = RotAccess;
     this.scope = $scope;
     this.pilots = [];
     this.pilot = null;
     this.legalNameEdit = '';
     this.canEditLegalName = false;
+    this.canArchivePilot = false;
+    this.showArchived = false;
   }
 
   pilotFromList(chosen) {
@@ -39,15 +34,47 @@ class RotPilotSelectorComponent {
     this.legalNameEdit = legal;
   }
 
+  refreshPilotList() {
+    this.pilots = this.RotPilotContext.getPilots();
+    this.syncLegalNameFromPilot(this.pilotFromList(this.RotPilotContext.getChosenPilot()));
+  }
+
+  isArchived(pilot) {
+    return this.RotPilotContext.isPilotArchived(pilot);
+  }
+
+  onShowArchivedChange() {
+    this.RotPilotContext.setShowArchived(this.showArchived);
+    this.refreshPilotList();
+  }
+
+  setArchived(archived) {
+    if (!this.canArchivePilot || !this.pilot || this.pilot._id == null) return;
+    const verb = archived ? 'archive' : 'restore';
+    const label = this.pilot.name || this.pilot._id;
+    if (!window.confirm((archived ? 'Archive' : 'Restore') + ' pilot ' + label + '?')) return;
+    const doc = {
+      _id: this.pilot._id,
+      rotArchived: !!archived,
+      isActive: !archived
+    };
+    return this.http.post('/api/rot/updateFirebase', {collection: 'pilots', doc: doc}).then(() => {
+      this.RotPilotContext.mergePilotDoc(doc);
+      this.refreshPilotList();
+    });
+  }
+
   $onInit() {
     this.Auth.getCurrentUser(user => {
-      if (user && user.email) {
-        this.canEditLegalName = APPROVAL_EMAILS.indexOf(String(user.email).toLowerCase()) > -1;
+      if (!user) return;
+      this.canArchivePilot = this.RotAccess.canArchiveRotPilots(user);
+      if (user.email) {
+        this.canEditLegalName = this.canArchivePilot;
       }
     });
+    this.showArchived = this.RotPilotContext.getShowArchived();
     this.RotPilotContext.loadPilots().then(() => {
-      this.pilots = this.RotPilotContext.getPilots();
-      this.syncLegalNameFromPilot(this.pilotFromList(this.RotPilotContext.getChosenPilot()));
+      this.refreshPilotList();
       this.scope.$watch(
         () => this.RotPilotContext.getChosenPilot(),
         (newVal) => {
@@ -78,7 +105,7 @@ class RotPilotSelectorComponent {
   }
 }
 
-RotPilotSelectorComponent.$inject = ['RotPilotContext', '$http', 'Auth', '$scope'];
+RotPilotSelectorComponent.$inject = ['RotPilotContext', '$http', 'Auth', '$scope', 'RotAccess'];
 
 angular.module('workspaceApp')
   .component('rotPilotSelector', {
