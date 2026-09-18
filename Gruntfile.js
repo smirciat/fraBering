@@ -747,6 +747,9 @@ module.exports = function(grunt) {
     }
   });
 
+  // Server-only compile (avoids cdnify / full client build when Node or grunt deps break)
+  grunt.registerTask('buildServer', ['babel:server']);
+
   grunt.registerTask('build', [
     'clean:dist',
     'concurrent:pre',

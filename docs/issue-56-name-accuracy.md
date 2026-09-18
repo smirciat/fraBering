@@ -26,13 +26,38 @@ Scans live under `server/fileserver/rot/records/` as
 
 **Prod deps**
 
+Production runs from **`dist/`** (`npm start` there). Static JS is **`dist/client`**, API is **`dist/server`** — a `git pull` alone does not update what browsers or pm2 use until you build.
+
 ```bash
-npm install   # pdf-parse, tesseract.js
-sudo apt-get install -y poppler-utils   # pdftoppm for scanned PDFs
-grunt babel:server && pm2 restart fraBering
+cd ~/fraBering
+node -v    # should be ^12.22.12 for grunt
+npm install --legacy-peer-deps   # pdf-parse, tesseract.js
+sudo apt-get install -y poppler-utils   # pdftoppm for scanned/image PDFs
+npx grunt buildServer            # or: grunt babel:server (same as buildServer)
+npx grunt build                  # client → dist/client (required for new toasts/UI)
+cd dist && pm2 restart fraBering # or your usual pm2 cwd
 ```
 
 JPEG CERT uploads are OCR’d directly. Image-only PDFs need `pdftoppm` on the host.
+
+### “Failed instantly” — usually not OCR
+
+Real OCR (Tesseract on page 1) normally takes **several seconds**. A warning in under ~1s usually means:
+
+| Cause | What to check |
+|--------|----------------|
+| **Old `dist/server`** | `grep ocrAttempted dist/server/api/rot/rot.legalNameFromScan.js` — should exist after `buildServer` |
+| **Old `dist/client`** | Modal hint should mention **OCR (Tesseract)**; generic “could not read” only → rerun **`grunt build`** |
+| **No matching CERT file** | On disk: `{employee#}_…_CERT_Medical_…` or `_CERT_Certificate_…` (pilot Firebase `_id` = employee #) |
+| **poppler missing** | Toast: *install poppler-utils* (`ocr_needs_poppler`) — fails fast, no OCR |
+| **404 on API** | Network tab: `POST /api/rot/inferLegalName` — needs logged-in approver + deployed route |
+
+### More than clicking the button
+
+1. **Infer legal name from CERT scan** — infers and **writes Firebase** (`persist`).
+2. **Edit Pilot Training Dates** — if `legalName` is empty, a **silent** infer runs **before** the modal opens (can feel like “it already failed”).
+3. **Infer from scan** in the modal — fills the field only; **Confirm/Save** still required to store.
+4. Parsed name must **match roster last name** (e.g. roster “Conor Murray” → certificate must end in **Murray**).
 
 Optional batch later: `scripts/rot-infer-legal-names/` (not shipped yet).
 
