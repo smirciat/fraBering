@@ -29,6 +29,7 @@ const MOBILE_BOARD_ATTRS = [
   'tfliteDepart',
   'airportObjs',
   'airportObjsLocked',
+  'knownIce',
 ];
 
 const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
@@ -217,6 +218,7 @@ function toBoardRow(flight) {
         String(f.pilotAgree).trim() &&
         (f.dispatchRelease || f.ocRelease)
     ),
+    knownIce: f.knownIce === true,
   };
 }
 

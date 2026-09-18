@@ -1,0 +1,66 @@
+Subject: Training Records updates — please verify when you have time (18 items)
+
+Hi Nate,
+
+We pushed a batch of Training Records fixes and improvements you asked for. They're live (or will be as soon as Andy finishes the usual deploy). Nothing was emailed from the system — this note is the overview.
+
+In the app, open Issues — each item is Ready for review with a short "what to check" comment on the issue itself (#42 through #59, including #56 legal names). You can close them one at a time as you verify.
+
+Before you start: use Training Records (/rot/records), pick a pilot you know well, and work through the sections below in order. If something doesn't match what you expected, reply on that issue in the app (or tell Andy).
+
+
+1. NAMES & CERTIFICATE UPLOADS
+------------------------------
+#56 — Legal names on PDFs
+  Full legal name on training PDFs (separate from roster name); optional read from CERT scan.
+  Check: PDF name matches certificate; try "infer legal name" if you have a good scan.
+
+#59 — Document date on CERT uploads
+  No extra document date step for Certificate, Annual Resume, Driver's License, Medical.
+  Check: Upload each CERT type — no date picker unless you're linking a training record.
+
+#50 — Medical read from scan
+  Medical upload can fill exam date & class; button to re-read newest medical file.
+  Check: Upload or "read medical from scan"; manual entry if scan is poor.
+
+#42 — Medical upload / CERT tab
+  "UPLOAD A CERT" no longer hides Medical and other CERT choices.
+  Check: UPLOAD A CERT → Medical → upload without refreshing.
+
+
+2. EXPIRATION DATES & SUMMARY TABLE
+-----------------------------------
+#54 — Month/year display — Spot-check exp columns on board & records.
+#55 — 299 / 297 / 297g rules — Approve or edit; dates look right.
+#53 — BI vs 293(a) — BI only should not move 293(a) exp.
+#45 — Medical & passport table — Columns left of Basic Indoc; change dates and see Previous row.
+
+
+3. PICKING TRAINING TYPES (LESS SCROLLING)
+------------------------------------------
+#52 — Ground vs Flight picker — Open Type on a draft row.
+#44 — Larger entry area — Less scrolling in the type modal.
+#47 — GOS & General Emergency — GOS under ground (default on); GE under BI (optional).
+
+
+4. SAVING & APPROVING RECORDS
+-------------------------------
+#48 — Delete rows — Delete a bad draft (approved hidden).
+#49 — 293(a) without aircraft — 293(a) + check airman, no N# when not a checkride.
+#51 — Unaffiliated ROTs — BI tab, labeled upload, no exp changes.
+#46 — Tail numbers by type — C208 → Caravan tails; B190 → 1900 tails.
+#57 — Hazmat approve — Linked record required.
+#58 — Hazmat 24 months — HAZ exp after approve.
+
+
+5. PILOT LIST
+-------------
+#43 — Archive pilots — Archive, "Show archived", restore.
+
+
+Not in this batch (already waiting on you from earlier): #22, #23, #29 — still Ready for review from prior work.
+
+When you're happy with an item, mark it Done in Issues or leave a comment. If deploy isn't on prod yet, Andy will confirm when to retest.
+
+Thanks,
+Andy

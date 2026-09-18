@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!-- Authors: copy into Gmail via docs/verifier-email-from-html.md (download to Mac → Finder → double-click). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Training Records verification — Nate</title>
+</head>
+<body style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.45; color: #222; max-width: 720px;">
+
+<p>Hi Nate,</p>
+
+<p>We pushed a batch of Training Records fixes and improvements you asked for. They’re live (or will be as soon as Andy finishes the usual deploy). <strong>Nothing was emailed from the system</strong> — this note is the overview.</p>
+
+<p>In the app, open <strong>Issues</strong> — each item is <strong>Ready for review</strong> with a short “what to check” comment on the issue itself (<strong>#42 through #59</strong>, including <strong>#56</strong> legal names). You can close them one at a time as you verify.</p>
+
+<p><strong>Before you start:</strong> use Training Records (<code>/rot/records</code>), pick a pilot you know well, and work through the sections below in order. If something doesn’t match what you expected, reply on that issue in the app (or tell Andy).</p>
+
+<h2 style="font-size: 16px; margin-top: 24px;">1. Names &amp; certificate uploads</h2>
+<ul>
+  <li><strong>#56 — Legal names on PDFs</strong><br>
+    Full legal name on training PDFs (separate from roster name); optional read from CERT scan.<br>
+    <em>Check:</em> PDF name matches certificate; try “infer legal name” if you have a good scan.</li>
+  <li><strong>#59 — Document date on CERT uploads</strong><br>
+    No extra document date step for Certificate, Annual Resume, Driver’s License, Medical.<br>
+    <em>Check:</em> Upload each CERT type — no date picker unless you’re linking a training record.</li>
+  <li><strong>#50 — Medical read from scan</strong><br>
+    Medical upload can fill exam date &amp; class; button to re-read newest medical file; sideways scans improved on server.<br>
+    <em>Check:</em> Upload or “read medical from scan”; manual entry still works if scan is poor.</li>
+  <li><strong>#42 — Medical upload / CERT tab</strong><br>
+    “UPLOAD A CERT” no longer hides Medical and other CERT choices.<br>
+    <em>Check:</em> UPLOAD A CERT → Medical → upload without refreshing.</li>
+</ul>
+
+<h2 style="font-size: 16px; margin-top: 24px;">2. Expiration dates &amp; summary table</h2>
+<ul>
+  <li><strong>#54 — Month/year display</strong> — Expirations show as month/year on board &amp; records. <em>Spot-check a few columns.</em></li>
+  <li><strong>#55 — 299 / 297 / 297g rules</strong> — Expiration rules aligned with your notes. <em>Approve or edit — dates look right.</em></li>
+  <li><strong>#53 — BI vs 293(a)</strong> — Basic Indoc no longer bumps 293(a) exp by mistake. <em>BI only vs 293(a) approval.</em></li>
+  <li><strong>#45 — Medical &amp; passport table</strong> — Columns left of Basic Indoc with Current / Previous. <em>Change medical/passport; see Previous row.</em></li>
+</ul>
+
+<h2 style="font-size: 16px; margin-top: 24px;">3. Picking training types (less scrolling)</h2>
+<ul>
+  <li><strong>#52 — Ground vs Flight picker</strong> — Type picker grouped Ground / Flight. <em>Open Type on a draft row.</em></li>
+  <li><strong>#44 — Larger entry area</strong> — Bigger Type box; wider picker on large screens. <em>Less scrolling in the modal.</em></li>
+  <li><strong>#47 — GOS &amp; General Emergency</strong> — GOS under ground (default on); General Emergency under BI (optional). <em>1900 ground + GOS; BI + optional GE.</em></li>
+</ul>
+
+<h2 style="font-size: 16px; margin-top: 24px;">4. Saving &amp; approving records</h2>
+<ul>
+  <li><strong>#48 — Delete rows</strong> — Delete removes the correct row. <em>Delete a bad draft with approved hidden.</em></li>
+  <li><strong>#49 — 293(a) without aircraft</strong> — Not required when it’s not a PIC/SIC ride. <em>293(a) + check airman, no N#.</em></li>
+  <li><strong>#51 — Unaffiliated ROTs</strong> — Under BI with label; no exp changes. <em>One unaffiliated upload.</em></li>
+  <li><strong>#46 — Tail numbers by type</strong> — N# list matches aircraft (Caravan for 208, etc.). <em>C208 vs B190 lists.</em></li>
+  <li><strong>#57 — Hazmat approve</strong> — Needs a linked training record. <em>HAZ upload/approve.</em></li>
+  <li><strong>#58 — Hazmat 24 months</strong> — 24-month expiration on HAZ tab. <em>HAZ exp after approve.</em></li>
+</ul>
+
+<h2 style="font-size: 16px; margin-top: 24px;">5. Pilot list</h2>
+<ul>
+  <li><strong>#43 — Archive pilots</strong> — Archive / restore; “Show archived” to view old files. <em>Archive → show archived → restore.</em></li>
+</ul>
+
+<p><strong>Not in this batch</strong> (already waiting on you from earlier): <strong>#22</strong>, <strong>#23</strong>, <strong>#29</strong> — still Ready for review from prior work.</p>
+
+<p>When you’re happy with an item, mark it <strong>Done</strong> in Issues or leave a comment. If deploy isn’t on prod yet, Andy will confirm when to retest.</p>
+
+<p>Thanks,<br>Andy</p>
+
+</body>
+</html>

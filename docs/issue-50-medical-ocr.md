@@ -26,7 +26,7 @@ Same limits as legal-name OCR: skip read **> 15 MB**, skip OCR **> 800 KB**.
 
 **Deploy:** `grunt buildServer` + `grunt build`; host needs `tesseract-ocr` and `poppler-utils`.
 
-**Sideways scans:** OCR tries **0°, 90°, 180°, 270°** (picks the best parse via `scoreMedicalOcrText`). Requires **ImageMagick** `convert` on the server (`apt install imagemagick`). JPEGs also get **`-auto-orient`** from EXIF when `convert` is available. Without ImageMagick, behavior is a single 0° pass (as before).
+**Sideways scans:** OCR tries **0°, 90°, 180°, 270°** (picks the best parse via `scoreMedicalOcrText`). Requires **ImageMagick** `convert` on the server (`apt install imagemagick`). JPEGs also get **`-auto-orient`** from EXIF when `convert` is available. Without ImageMagick, behavior is a single 0° pass (as before). Same rotation path applies to **legal name** CERT OCR in `rot.certScanOcr.lib.js`.
 
 ## Test
 
