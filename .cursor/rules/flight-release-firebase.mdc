@@ -1,0 +1,22 @@
+---
+description: FRA firebaseMin releaseStatus contract — do not invent parent writes or null wipes
+alwaysApply: true
+---
+
+# Flight release → Firebase (`firebaseMin`)
+
+**Locked 18 Sep 2026** (proven extra **6850** / PFR `933-091826-17`). Detail: `docs/flight-release-firebase.md`.
+
+## Write
+
+- **Only** `flights/{pfr._id}/release/releaseStatus` `{ merge: true }`.
+- Signatures **set on this save** + JS `Date` timestamps. **Omit** unset names (never `pilotAgree: null` on dispatch-only).
+- **Wipe (explicit `null` on all three names + timestamps)** only when **Remove Release** cleared the flight (web admin button or mobile remove-release).
+
+## Do not
+
+- Merge release fields onto the **parent** PFR (Flight Report / Ryan).
+- Compact vs copy-all experiments, ISO-string timestamps, or `matchLivePfr` inside `firebaseMin`.
+- “Fix” iPad display by changing this payload. If FR wipes or ignores `releaseStatus`, that is **not** an FRA `firebaseMin` change unless Andy asks.
+
+Web PATCH and mobile sign/remove must keep using `runFlightUpdateSideEffects` → `firebaseMin`.

@@ -102,19 +102,3 @@ Screenshots are **not** in git or in `dist/`. They live on disk at:
 Optional override: `ISSUE_ATTACHMENT_ROOT` in `local.env.js` (see `local.env.sample.js`).
 
 Export (`scripts/export-team-backlog`) only **reads** attachments; it does not delete them.
-
-## Ready for review + verifier email (batch)
-
-1. **Per issue:** `PATCH` status `ready_for_review` and post a comment. Use **`--no-email`** so reporters are not spammed:
-   ```sh
-   node scripts/issue-comment/index.js 42 --status ready_for_review --no-email
-   ```
-   Or a batch script (example: `scripts/issue-rfr-nate-rot-sep2026/index.js`).
-
-2. **One formatted overview email:** Author HTML under `docs/` (e.g. `nate-rot-verification-email-2026-09.html`).  
-   **Do not** rely on localhost in the browser on your Mac — the repo often lives on a remote dev host.
-
-3. **Copy into Gmail (Mac):** Download the `.html` to your Mac → **Finder → double‑click** → opens in Safari/Chrome → **⌘A ⌘C** → paste in Gmail compose body.  
-   Full steps: **`docs/verifier-email-from-html.md`**.
-
-4. Plain-text twin (`.txt`) if rich paste fails.

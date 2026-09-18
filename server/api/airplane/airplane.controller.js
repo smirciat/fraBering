@@ -546,83 +546,6 @@ function livePfrDocId(pfr) {
   return null;
 }
 
-function pfrDocId(flight) {
-  let pfr = flight && flight.pfr;
-  if (typeof pfr === 'string') {
-    try { pfr = JSON.parse(pfr); } catch (err) { pfr = null; }
-  }
-  return livePfrDocId(pfr);
-}
-
-function releaseValue(val) {
-  return val === undefined ? null : val;
-}
-
-function assignIfSet(payload, key, val) {
-  if (val === undefined || val === null) return;
-  payload[key] = val;
-}
-
-/** Merge-only payload: never send null for a signature this save did not set. */
-function compactReleaseWrite(flight, pfrId) {
-  const payload = {
-    dbId: releaseValue(flight._id),
-    dateString: flightDateString(flight),
-    flightNumber: releaseValue(flight.flightNum),
-    aircraft: releaseValue(flight.aircraft),
-    knownIce: releaseValue(flight.knownIce),
-    pfrNum: pfrId
-  };
-  const clear = !releaseFieldSet(flight.pilotAgree) &&
-    !releaseFieldSet(flight.dispatchRelease) &&
-    !releaseFieldSet(flight.ocRelease);
-  if (clear) {
-    payload.pilotAgree = null;
-    payload.ocRelease = null;
-    payload.dispatchRelease = null;
-    payload.releaseTimestamp = null;
-    payload.ocReleaseTimestamp = null;
-    payload.dispatchReleaseTimestamp = null;
-    return payload;
-  }
-  if (releaseFieldSet(flight.pilotAgree)) {
-    payload.pilotAgree = flight.pilotAgree;
-    assignIfSet(payload, 'releaseTimestamp', asFirestoreTime(flight.releaseTimestamp));
-  }
-  if (releaseFieldSet(flight.dispatchRelease)) {
-    payload.dispatchRelease = flight.dispatchRelease;
-    assignIfSet(payload, 'dispatchReleaseTimestamp', asFirestoreTime(flight.dispatchReleaseTimestamp));
-  }
-  if (releaseFieldSet(flight.ocRelease)) {
-    payload.ocRelease = flight.ocRelease;
-    assignIfSet(payload, 'ocReleaseTimestamp', asFirestoreTime(flight.ocReleaseTimestamp));
-  }
-  return payload;
-}
-
-function parentReleaseFields(minFlight) {
-  const parent = {};
-  ['pilotAgree', 'ocRelease', 'dispatchRelease',
-    'releaseTimestamp', 'ocReleaseTimestamp', 'dispatchReleaseTimestamp'
-  ].forEach(function(key) {
-    if (!Object.prototype.hasOwnProperty.call(minFlight, key)) return;
-    let val = minFlight[key];
-    if (val instanceof Date) val = val.toISOString();
-    parent[key] = val;
-  });
-  return parent;
-}
-
-function asFirestoreTime(val) {
-  if (val === undefined || val === null || val === '') return null;
-  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
-  if (typeof val === 'object' && typeof val.toDate === 'function') {
-    try { return val.toDate(); } catch (err) { return null; }
-  }
-  let d = new Date(val);
-  return isNaN(d.getTime()) ? null : d;
-}
-
 function flightDateString(flight) {
   if (!flight || !flight.date) return formatDate(new Date());
   let d = new Date(flight.date);
@@ -668,29 +591,79 @@ export function matchLivePfr(flight) {
   return fallback;
 }
 
-function resolvePfrId(flight) {
-  let fromDoc = pfrDocId(flight);
-  if (fromDoc) return fromDoc;
-  let live = matchLivePfr(flight);
-  return livePfrDocId(live);
+function asFirestoreDate(val) {
+  if (val === undefined || val === null || val === '') return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val === 'object' && typeof val.toDate === 'function') {
+    try { return val.toDate(); } catch (err) { return null; }
+  }
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
 }
 
+/**
+ * 931 dispatch-only shape: metadata always; signatures only when set.
+ * Never merge unset names as null (Firestore merge deletes). Remove Release
+ * writes all six fields null. Timestamps stay JS Date (Firestore Timestamp).
+ */
+function compactReleasePayload(flight, pfrId) {
+  const payload = {
+    dbId: flight._id,
+    dateString: flight.date ? formatDate(new Date(flight.date)) : formatDate(new Date()),
+    flightNumber: flight.flightNum,
+    aircraft: flight.aircraft,
+    pfrNum: pfrId
+  };
+  if (flight.knownIce != null) payload.knownIce = flight.knownIce;
+
+  const clearing = !releaseFieldSet(flight.pilotAgree) &&
+    !releaseFieldSet(flight.dispatchRelease) &&
+    !releaseFieldSet(flight.ocRelease);
+  if (clearing) {
+    payload.pilotAgree = null;
+    payload.ocRelease = null;
+    payload.dispatchRelease = null;
+    payload.releaseTimestamp = null;
+    payload.ocReleaseTimestamp = null;
+    payload.dispatchReleaseTimestamp = null;
+    return payload;
+  }
+
+  [
+    ['pilotAgree', 'releaseTimestamp'],
+    ['dispatchRelease', 'dispatchReleaseTimestamp'],
+    ['ocRelease', 'ocReleaseTimestamp']
+  ].forEach(function(pair) {
+    const nameKey = pair[0];
+    const tsKey = pair[1];
+    if (!releaseFieldSet(flight[nameKey])) return;
+    payload[nameKey] = flight[nameKey];
+    const ts = asFirestoreDate(flight[tsKey]);
+    if (ts) payload[tsKey] = ts;
+  });
+  return payload;
+}
+
+/**
+ * FRA → Firebase: release/releaseStatus only.
+ * Merge set signatures; omit unset (null would delete). Remove Release clears all.
+ */
 export async function firebaseMin(flight){
   if (!flight) return 'need flight!';
-  let pfrId = resolvePfrId(flight);
-  if (!pfrId) {
+  let pfr = flight.pfr;
+  if (typeof pfr === 'string') {
+    try { pfr = JSON.parse(pfr); } catch (err) { pfr = null; }
+  }
+  if (!pfr || !pfr._id) {
+    console.log('firebaseMin skip: no PFR id', flight.flightNum || flight._id);
     return 'No Pfr Attached to Flight';
   }
-  let minFlight = compactReleaseWrite(flight, pfrId);
+  let pfrId = String(pfr._id);
+  const minFlight = compactReleasePayload(flight, pfrId);
   try {
     const response = await updateDocumentSub('flights', pfrId, minFlight);
     if (response) {
-      try {
-        const parent = parentReleaseFields(minFlight);
-        if (Object.keys(parent).length) {
-          await firebase_db.collection('flights').doc(String(pfrId)).set(parent, {merge: true});
-        }
-      } catch (parentErr) {}
+      console.log('minFlight updated', pfrId, flight.flightNum);
       return 'Updated';
     }
     return 'Firebase Write Failure';

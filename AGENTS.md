@@ -44,6 +44,7 @@ npm start            # Production server from dist/
 4. **`server/auth/`** — authentication and authorization middleware
 5. **Database** — no destructive SQL, drops, or `sequelize.sync({ force: true })`
 6. **`stopped{N}` deploy reload** — `navbar.controller.js` `stoppedFunction()` + `server/api/todaysFlight/index.js` route. **Do not remove 404 → `location.reload()`** when fixing loops. See `docs/stopped-version-deploy.md` and `.cursor/rules/stopped-version-deploy.mdc` (Aug 2026 agent regression).
+7. **Flight release Firebase** — `firebaseMin` → `release/releaseStatus` only; wipe **nulls** only on **Remove Release**. Do not merge parent PFR or invent payload shapes. See `docs/flight-release-firebase.md` and `.cursor/rules/flight-release-firebase.mdc`.
 
 ## Change discipline
 

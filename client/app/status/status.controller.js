@@ -242,7 +242,9 @@ class StatusComponent {
       this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
         this.spinner=false;
         console.log('Updated Flight ' + flight.flightNum);
-        this.writeReleaseToFirebase(flight);
+        if (this.heliReleaseUsesClientFirebase(flight)) {
+          this.writeReleaseToFirebase(flight);
+        }
         if (flight.pilotAgree||flight.ocRelease||flight.dispatchRelease) this.quickModal("Flight Release Signature has Been Recorded","Success!",false);
         //updates have been failing occasionally, even with positive confimation, try to prevent that
         this.timeout(()=>{
@@ -2158,6 +2160,18 @@ class StatusComponent {
       return pfr;
     }
     return fallback;
+  }
+
+  heliReleaseUsesClientFirebase(flight) {
+    if (!flight) return false;
+    if (flight.isHelicopter) return true;
+    let name = flight.equipment && flight.equipment.name;
+    if (!name) return false;
+    let helis = ['Robinson', 'Astar', 'AStar', 'R-44', 'R44', 'UH-1H', 'Huey', 'MD500', 'MD 500', 'Bell', 'EC130', 'H125', '407'];
+    for (let i = 0; i < helis.length; i++) {
+      if (name.indexOf(helis[i]) > -1) return true;
+    }
+    return false;
   }
 
   writeReleaseToFirebase(flight) {
