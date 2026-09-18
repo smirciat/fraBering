@@ -137,6 +137,9 @@ async function main() {
     if (!inferred) {
       let tried = result && result.alsoTriedSources;
       let triedNote = tried && tried.length ? ' [also tried: ' + tried.join(', ') + ']' : '';
+      if (reason === 'ocr_skipped_too_large') {
+        triedNote += ' (file over 3MB — skipped OCR, no pdftoppm)';
+      }
       console.log(
         '[no match] ' + id + ' ' + rosterName +
           ' — ' + (reason || '?') +

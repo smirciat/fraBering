@@ -50,9 +50,12 @@ function buildResult(base, legalName, extra) {
   );
 }
 
-function tryOcr(buf, filename, rosterName) {
+function tryOcr(buf, filename, rosterName, fullPath) {
   if (isImageCertFile(filename)) {
     return certScanOcr.ocrCertImageBuffer(buf, rosterName);
+  }
+  if (fullPath) {
+    return certScanOcr.ocrCertPdfFile(fullPath, rosterName);
   }
   return certScanOcr.ocrCertPdfBuffer(buf, rosterName);
 }
@@ -64,7 +67,7 @@ function withOcrFailure(filename, documentKind, promise) {
   });
 }
 
-function runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge) {
+function runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge, fullPath) {
   if (ocrTooLarge) {
     return Promise.resolve(
       buildResult(
@@ -82,7 +85,7 @@ function runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge) 
   return withOcrFailure(
     filename,
     documentKind,
-    tryOcr(buf, filename, rosterName)
+    tryOcr(buf, filename, rosterName, fullPath)
   ).then(ocr => {
     return buildResult(
       {
@@ -116,20 +119,38 @@ function inferLegalNameFromOneFile(filename, rosterName) {
       )
     );
   }
-  let buf = fs.readFileSync(fullPath);
   let documentKind = /_CERT_Medical_/i.test(filename) ? 'medical' : 'certificate';
   let ocrTooLarge = stat.size > MAX_OCR_BYTES;
 
   if (isCertScanUpload(filename)) {
-    return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge);
+    if (ocrTooLarge) {
+      return Promise.resolve(
+        buildResult(
+          {
+            sourceFile: filename,
+            documentKind: documentKind,
+            method: null,
+            reason: 'ocr_skipped_too_large',
+            ocrAttempted: false
+          },
+          null
+        )
+      );
+    }
+    if (!isImageCertFile(filename)) {
+      return runOcrOnCertFile(filename, null, documentKind, rosterName, false, fullPath);
+    }
+    let buf = fs.readFileSync(fullPath);
+    return runOcrOnCertFile(filename, buf, documentKind, rosterName, false, fullPath);
   }
 
+  let buf = fs.readFileSync(fullPath);
   // Non-standard CERT filename — rare; try text layer then OCR.
   let pdfParse;
   try {
     pdfParse = require('pdf-parse');
   } catch (e) {
-    return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge);
+    return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge, fullPath);
   }
   return pdfParse(buf)
     .then(data => {
@@ -146,11 +167,11 @@ function inferLegalNameFromOneFile(filename, rosterName) {
           legalName
         );
       }
-      return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge);
+      return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge, fullPath);
     })
     .catch(err => {
       console.error('rot infer pdf-parse error', filename, err);
-      return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge);
+      return runOcrOnCertFile(filename, buf, documentKind, rosterName, ocrTooLarge, fullPath);
     });
 }
 
@@ -160,7 +181,7 @@ function inferNextFile(filenames, rosterName, priorAttempts) {
     if (last) {
       return Promise.resolve(
         Object.assign({}, last, {
-          alsoTriedSources: priorAttempts.slice(0, -1).map(a => a.sourceFile).filter(Boolean)
+          alsoTriedSources: priorAttempts.map(a => a.sourceFile).filter(Boolean)
         })
       );
     }

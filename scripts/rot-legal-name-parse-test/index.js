@@ -113,5 +113,21 @@ assert(
   'no roster last name in OCR'
 );
 
+assert(
+  parseLegalNameFromOcrText(
+    'City Ok - Charlton Zachary Heckman',
+    'Charlton Heckman'
+  ) === 'Charlton Zachary Heckman',
+  'strip city ok dash prefix'
+);
+
+assert(
+  parseLegalNameFromOcrText(
+    'Po Box 25082 Cole Alexander Thomas',
+    'Cole Thomas'
+  ) === 'Cole Alexander Thomas',
+  'strip PO box prefix'
+);
+
 if (failed) process.exit(1);
 console.log('All passed.');

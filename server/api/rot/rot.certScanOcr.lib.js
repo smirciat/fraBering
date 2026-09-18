@@ -33,12 +33,11 @@ function unlinkQuiet(filePath) {
   }
 }
 
-function pdfFirstPageToPng(pdfBuffer) {
+function pdfFirstPageToPngFromPath(pdfPath, dpi) {
   let tmpId = 'rot-ocr-' + process.pid + '-' + Date.now();
-  let pdfPath = path.join(os.tmpdir(), tmpId + '.pdf');
   let outPrefix = path.join(os.tmpdir(), tmpId);
   let pngPath = outPrefix + '.png';
-  fs.writeFileSync(pdfPath, pdfBuffer);
+  let resolution = dpi || 200;
   return execFileAsync('pdftoppm', [
     '-png',
     '-f',
@@ -47,20 +46,33 @@ function pdfFirstPageToPng(pdfBuffer) {
     '1',
     '-singlefile',
     '-r',
-    '200',
+    String(resolution),
     pdfPath,
     outPrefix
-  ])
-    .then(() => {
-      if (!fs.existsSync(pngPath)) {
-        throw new Error('pdftoppm produced no PNG');
-      }
-      return fs.readFileSync(pngPath);
-    })
-    .finally(() => {
-      unlinkQuiet(pdfPath);
-      unlinkQuiet(pngPath);
-    });
+  ]).then(() => {
+    if (!fs.existsSync(pngPath)) {
+      throw new Error('pdftoppm produced no PNG');
+    }
+    return fs.readFileSync(pngPath);
+  }).finally(() => {
+    unlinkQuiet(pngPath);
+  });
+}
+
+function pdfFirstPageToPng(pdfBuffer) {
+  let tmpId = 'rot-ocr-' + process.pid + '-' + Date.now();
+  let pdfPath = path.join(os.tmpdir(), tmpId + '.pdf');
+  fs.writeFileSync(pdfPath, pdfBuffer);
+  return pdfFirstPageToPngFromPath(pdfPath, 200).finally(() => {
+    unlinkQuiet(pdfPath);
+  });
+}
+
+function pdfPagePngForOcr(pdfPath) {
+  return pdfFirstPageToPngFromPath(pdfPath, 200).then(png => {
+    if (png.length <= MAX_OCR_IMAGE_BYTES) return png;
+    return pdfFirstPageToPngFromPath(pdfPath, 120);
+  });
 }
 
 /** Prefer system `tesseract` CLI — isolated child process, avoids Node worker crashes (502). */
@@ -109,6 +121,34 @@ function ocrCertImageBuffer(imageBuffer, rosterName) {
     });
 }
 
+/** OCR page 1 from PDF on disk — does not load whole PDF into Node. */
+function ocrCertPdfFile(pdfPath, rosterName) {
+  return pdfPagePngForOcr(pdfPath)
+    .then(png => ocrCertImageBuffer(png, rosterName))
+    .catch(err => {
+      let msg = err && err.message ? err.message : String(err);
+      if (msg.indexOf('Image too large') > -1) {
+        return {
+          legalName: null,
+          reason: 'ocr_skipped_too_large',
+          ocrTextSample: ''
+        };
+      }
+      if (msg.indexOf('ENOENT') > -1 || msg.indexOf('pdftoppm') > -1) {
+        return {
+          legalName: null,
+          reason: 'ocr_needs_poppler',
+          ocrTextSample: ''
+        };
+      }
+      return {
+        legalName: null,
+        reason: 'ocr_failed',
+        ocrTextSample: msg.slice(0, 200)
+      };
+    });
+}
+
 function ocrCertPdfBuffer(pdfBuffer, rosterName) {
   return pdfFirstPageToPng(pdfBuffer)
     .then(png => ocrCertImageBuffer(png, rosterName))
@@ -133,5 +173,7 @@ module.exports = {
   ocrImageBuffer,
   ocrCertImageBuffer,
   ocrCertPdfBuffer,
-  pdfFirstPageToPng
+  ocrCertPdfFile,
+  pdfFirstPageToPng,
+  pdfFirstPageToPngFromPath
 };

@@ -63,7 +63,12 @@ const OCR_NAME_STOP_WORDS = {
   of: 1,
   birth: 1,
   and: 1,
-  address: 1
+  address: 1,
+  city: 1,
+  po: 1,
+  post: 1,
+  box: 1,
+  office: 1
 };
 
 function cleanToken(word) {
@@ -86,7 +91,13 @@ function personNameTokenCount(nameLine) {
 
 /** Drop FAA label junk (e.g. "And Address): Kaleb D Janke"). */
 function scrubNameCandidate(raw) {
-  let parts = String(raw || '')
+  let s = String(raw || '').trim();
+  s = s.replace(/^(?:p\.?\s*o\.?\s*)?box\s*\d*\s*/i, '');
+  if (/\s+-\s+/.test(s) && (/\bcity\b/i.test(s) || /\bok\b/i.test(s))) {
+    let segments = s.split(/\s+-\s+/);
+    s = segments[segments.length - 1];
+  }
+  let parts = s
     .split(/\s+/)
     .map(cleanToken)
     .filter(Boolean);
