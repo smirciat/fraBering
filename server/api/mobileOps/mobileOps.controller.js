@@ -64,6 +64,9 @@ const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
   'active',
   'tfliteDepart',
   'tfliteArrive',
+  'jumpseaterObject',
+  'altObj',
+  'status',
 ]);
 
 function hasReleaseSignature(flight) {
@@ -620,16 +623,58 @@ export function patchFlight(req, res) {
         }
       }
 
+      if (Object.prototype.hasOwnProperty.call(body, 'alternate')) {
+        const rawAlt = body.alternate;
+        if (
+          rawAlt == null ||
+          rawAlt === '' ||
+          String(rawAlt).trim() === 'None'
+        ) {
+          flight.alternate = null;
+          flight.altObj = null;
+        } else {
+          flight.alternate = String(rawAlt).trim();
+        }
+        changed = true;
+      }
+
+      if (body.bew && typeof body.bew === 'object') {
+        const next = Object.assign({}, flight.bew || {}, body.bew);
+        if (Object.prototype.hasOwnProperty.call(body.bew, 'seatsRemoved')) {
+          let num = Number(body.bew.seatsRemoved);
+          if (!Number.isFinite(num)) num = 0;
+          if (num > 9) num = 9;
+          next.seatsRemoved = num;
+          next.seatWeight = num * 24.5 * -1;
+        }
+        flight.bew = next;
+        flight.changed('bew', true);
+        changed = true;
+      }
+
+      if (body.jumpseaterObject && typeof body.jumpseaterObject === 'object') {
+        flight.jumpseaterObject = Object.assign(
+          {},
+          flight.jumpseaterObject || {},
+          body.jumpseaterObject
+        );
+        flight.changed('jumpseaterObject', true);
+        changed = true;
+      }
+
       if (!changed) {
         return res.status(400).json({
           message:
-            'No editable fields in body (mel, other, fuelPreviouslyOnboard, knownIce, otherEnvironment, crewId, security, enrouteChanges, updatedEta, standbyLegTimes).',
+            'No editable fields in body (mel, other, fuelPreviouslyOnboard, knownIce, otherEnvironment, crewId, security, alternate, bew, jumpseaterObject, enrouteChanges, updatedEta, standbyLegTimes).',
         });
       }
 
       return flight
         .save()
-        .then(saved => res.status(200).json(toReleaseDto(saved, req.user)));
+        .then(saved => {
+          runFlightUpdateSideEffects(saved);
+          return res.status(200).json(toReleaseDto(saved, req.user));
+        });
     })
     .catch(err => {
       console.error('[mobileOps] patch', err);

@@ -2,6 +2,27 @@
 
 const { buildAmendmentsView } = require('./standby-charter.js');
 
+const ALTERNATE_CHOICES = [
+  'None',
+  'PAOM',
+  'PAOT',
+  'PAUN',
+  'PABE',
+  'PAGA',
+  'PAFA',
+  'PANC',
+];
+
+const JUMPSEAT_REASONS = [
+  'No Reason',
+  'BA Employee',
+  'BA Pilot',
+  'Non-Company Handler',
+  'Other Airline Pilot',
+  'FAA',
+  'DOD',
+];
+
 function str(val) {
   if (val == null) return '';
   return String(val).trim();
@@ -182,6 +203,143 @@ function weatherSnapshot(metarObj) {
   };
 }
 
+function pfrAirportCount(f) {
+  const objs = asLegArray(f.airportObjsLocked).length
+    ? asLegArray(f.airportObjsLocked)
+    : asLegArray(f.airportObjs);
+  if (objs.length) return objs.length;
+  if (f.airports && f.airports.length) return f.airports.length;
+  return 0;
+}
+
+function pfrLegPlannedBurnLbs(leg, legIndex) {
+  if (!leg) return 0;
+  const legNum = (legIndex != null ? legIndex : 0) + 1;
+  const burnKey = 'fuelBurn' + legNum;
+  if (leg[burnKey] != null && leg[burnKey] !== '') {
+    const b = Number(leg[burnKey]);
+    if (Number.isFinite(b) && b >= 0) return b;
+  }
+  const burn = Number(leg.fuelBurn);
+  return Number.isFinite(burn) && burn >= 0 ? burn : 0;
+}
+
+function pfrLegEndingFuelLbs(leg, legIndex) {
+  if (!leg) return null;
+  const legNum = (legIndex != null ? legIndex : 0) + 1;
+  const remainKey = 'fuelRemain' + legNum;
+  if (leg[remainKey] != null && leg[remainKey] !== '') {
+    const remain = Number(leg[remainKey]);
+    if (Number.isFinite(remain) && remain >= 0 && remain <= 15000) {
+      return Math.round(remain);
+    }
+  }
+  let fuel = Number(leg.takeoffFuel);
+  if (!Number.isFinite(fuel) || fuel <= 0) fuel = Number(leg.fuel);
+  if (!Number.isFinite(fuel) || fuel <= 0) return null;
+  const end = Math.round(fuel - pfrLegPlannedBurnLbs(leg, legIndex));
+  if (end < 0 || end > 15000) return null;
+  return end;
+}
+
+function pfrTakeoffFuelForAirportIndex(f, airportIndex, airportCount) {
+  const pfr = f.pfr;
+  if (!pfr || !pfr.legArray || !pfr.legArray.length) return null;
+  if (airportIndex !== 0) return null;
+  const leg0 = pfr.legArray[0];
+  let fuel = Number(leg0.takeoffFuel);
+  if (!Number.isFinite(fuel) || fuel <= 0) fuel = Number(leg0.fuel);
+  if (!Number.isFinite(fuel) || fuel <= 0) return null;
+  return Math.round(fuel);
+}
+
+function pfrEndingFuelForAirportIndex(f, airportIndex, airportCount) {
+  const pfr = f.pfr;
+  if (!pfr || !pfr.legArray || !pfr.legArray.length) return null;
+  if (!airportCount || airportIndex <= 0 || airportIndex >= airportCount) {
+    return null;
+  }
+  const legs = pfr.legArray;
+  let legIdx = airportIndex - 1;
+  if (airportIndex === airportCount - 1) {
+    legIdx = legs.length - 1;
+  }
+  if (legIdx < 0 || legIdx >= legs.length) return null;
+  return pfrLegEndingFuelLbs(legs[legIdx], legIdx);
+}
+
+function calcSeatWeightLbs(seatsRemoved) {
+  let num = Number(seatsRemoved);
+  if (!Number.isFinite(num) || num < 0) num = 0;
+  if (num > 9) num = 9;
+  return Math.round(num * 24.5 * -1);
+}
+
+function tksFromPfr(f) {
+  const l0 = leg0(f);
+  let gals = 0;
+  if (l0 && l0.tksGallons != null) {
+    gals = Number(l0.tksGallons) * 1;
+    if (!Number.isFinite(gals) || gals < 0) gals = 0;
+  }
+  return { gals: gals, lbs: Math.round(gals * 9.2308) };
+}
+
+function calculatedOweLbs(f) {
+  const bew = f.bew && typeof f.bew === 'object' ? f.bew : {};
+  const jump =
+    f.jumpseaterObject && typeof f.jumpseaterObject === 'object'
+      ? f.jumpseaterObject
+      : {};
+  const seat = Number(bew.seatWeight);
+  const base = Number(bew.bew);
+  const equip = Number(bew.equipment);
+  const cap = Number(bew.captain);
+  const fo = Number(bew.fo);
+  const bag = Number(jump.bagWt);
+  const body = Number(jump.bodyWt);
+  return Math.round(
+    (Number.isFinite(seat) ? seat : 0) +
+      (Number.isFinite(base) ? base : 0) +
+      (Number.isFinite(equip) ? equip : 0) +
+      (Number.isFinite(cap) ? cap : 0) +
+      (Number.isFinite(fo) ? fo : 0) +
+      (Number.isFinite(bag) ? bag : 0) +
+      (Number.isFinite(body) ? body : 0)
+  );
+}
+
+function buildLoadSheetView(f) {
+  const bew = f.bew && typeof f.bew === 'object' ? f.bew : {};
+  const jump =
+    f.jumpseaterObject && typeof f.jumpseaterObject === 'object'
+      ? f.jumpseaterObject
+      : {};
+  const equipment = f.equipment || {};
+  const tks = tksFromPfr(f);
+  const seatsRemoved =
+    bew.seatsRemoved != null && bew.seatsRemoved !== ''
+      ? String(bew.seatsRemoved)
+      : '';
+  return {
+    isCaravan: str(equipment.name) === 'Caravan',
+    bewAsWeighed: str(bew.bew),
+    seatsRemoved: seatsRemoved,
+    seatWeightLbs: String(calcSeatWeightLbs(bew.seatsRemoved)),
+    equipmentLbs: str(bew.equipment),
+    captainLbs: str(bew.captain),
+    foLbs: str(bew.fo),
+    tksGallons: String(tks.gals),
+    tksLbs: String(tks.lbs),
+    calculatedOweLbs: String(calculatedOweLbs(f)),
+    jumpseaterName: str(jump.name),
+    jumpseaterReason: str(jump.reason) || 'No Reason',
+    jumpseaterBagWt: str(jump.bagWt),
+    jumpseaterBodyWt: str(jump.bodyWt),
+    jumpseatReasons: JUMPSEAT_REASONS,
+  };
+}
+
 function mapLegCards(f) {
   const objs = asLegArray(f.airportObjsLocked).length
     ? asLegArray(f.airportObjsLocked)
@@ -190,6 +348,7 @@ function mapLegCards(f) {
     ? f.departTimesZulu
     : {};
   const count = objs.length;
+  const airportCount = pfrAirportCount(f);
   return objs.map(function (metarObj, index) {
     const airport = metarObj.airport || {};
     const pireps = airport.pireps || [];
@@ -228,6 +387,8 @@ function mapLegCards(f) {
           return sev + p.raw;
         })
         .filter(Boolean),
+      pfrTakeoffFuelLbs: pfrTakeoffFuelForAirportIndex(f, index, airportCount),
+      pfrEndingFuelLbs: pfrEndingFuelForAirportIndex(f, index, airportCount),
     };
   });
 }
@@ -249,6 +410,30 @@ function buildReleaseModalView(flight) {
 
   const takeoffFuel = l0 && l0.fuel != null ? Number(l0.fuel) : null;
   const equipment = f.equipment || {};
+  const minFuel =
+    equipment.minFuel != null ? Number(equipment.minFuel) : null;
+  const fuelBurn =
+    equipment.fuelBurn != null ? Number(equipment.fuelBurn) : null;
+  let fuelEnduranceHours = null;
+  if (takeoffFuel != null && fuelBurn != null && fuelBurn > 0) {
+    fuelEnduranceHours = Number((takeoffFuel / fuelBurn).toFixed(1));
+  }
+  const fobRaw = f.fuelPreviouslyOnboard;
+  const fobNum =
+    fobRaw != null && String(fobRaw).trim() !== '' ? Number(fobRaw) : null;
+  let fuelRequestGalPerSide = null;
+  let fuelRequestGalTotal = null;
+  if (
+    takeoffFuel != null &&
+    fobNum != null &&
+    Number.isFinite(fobNum) &&
+    Number.isFinite(takeoffFuel)
+  ) {
+    const main = (takeoffFuel - fobNum) / 2;
+    const galSide = Math.floor(main / 6.7);
+    fuelRequestGalPerSide = galSide;
+    fuelRequestGalTotal = galSide * 2;
+  }
 
   const flightInfo = [
     { title: 'Origin', value: originCode(f) },
@@ -263,6 +448,15 @@ function buildReleaseModalView(flight) {
     { title: 'Rule', value: 'VFR/IFR. Altitude per GOM 06.19' },
     { title: 'Route', value: (f.airports || []).join(', ') },
   ];
+  if (f.pfr && f.pfr.pfrNum != null && String(f.pfr.pfrNum).trim()) {
+    flightInfo.push({
+      title: 'PFR #',
+      value: String(f.pfr.pfrNum).trim(),
+    });
+  }
+  if (str(f.status)) {
+    flightInfo.push({ title: 'Status', value: str(f.status) });
+  }
 
   const weightSummary = [];
   if (l0) {
@@ -302,6 +496,7 @@ function buildReleaseModalView(flight) {
       type: str(equipment.name),
       mel: str(f.mel),
       other: str(f.other),
+      status: str(f.status),
     },
     fuel: {
       fuelPreviouslyOnboard: str(f.fuelPreviouslyOnboard),
@@ -310,6 +505,15 @@ function buildReleaseModalView(flight) {
         takeoffFuel != null && Number.isFinite(takeoffFuel)
           ? takeoffFuel / 2
           : null,
+      fuelEnduranceHours: fuelEnduranceHours,
+      fuelRequestGalPerSide: fuelRequestGalPerSide,
+      fuelRequestGalTotal: fuelRequestGalTotal,
+      minFuelLbs: minFuel,
+      belowMinFuel:
+        takeoffFuel != null &&
+        minFuel != null &&
+        Number.isFinite(minFuel) &&
+        takeoffFuel < minFuel,
     },
     weightSummary,
     crew: {
@@ -325,6 +529,9 @@ function buildReleaseModalView(flight) {
     },
     legs: mapLegCards(f),
     alternate: str(f.alternate),
+    alternateChoices: ALTERNATE_CHOICES,
+    alternateSelected: str(f.alternate) || 'None',
+    loadSheet: buildLoadSheetView(f),
     pfrRemark: str((f.pfr && f.pfr.remarks1) || f.security),
     inspections: {
       cockpit: str(f.cockpitInspection),
