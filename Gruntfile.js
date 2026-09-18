@@ -14,7 +14,6 @@ module.exports = function(grunt) {
     express: 'grunt-express-server',
     useminPrepare: 'grunt-usemin',
     ngtemplates: 'grunt-angular-templates',
-    cdnify: 'grunt-google-cdn',
     protractor: 'grunt-protractor-runner',
     buildcontrol: 'grunt-build-control',
     istanbul_check_coverage: 'grunt-mocha-istanbul',
@@ -349,13 +348,6 @@ module.exports = function(grunt) {
         cwd: '.tmp',
         src: ['{app,components}/**/*.html'],
         dest: '.tmp/tmp-templates.js'
-      }
-    },
-
-    // Replace Google CDN references
-    cdnify: {
-      dist: {
-        html: ['<%= yeoman.dist %>/<%= yeoman.client %>/*.html']
       }
     },
 
@@ -747,8 +739,16 @@ module.exports = function(grunt) {
     }
   });
 
-  // Server-only compile (avoids cdnify / full client build when Node or grunt deps break)
+  // Server-only compile (no client bundle)
   grunt.registerTask('buildServer', ['babel:server']);
+
+  /**
+   * Replaces grunt-google-cdn (google-cdn → bower → graceful-fs@2 → "primordials is not defined" on Node 12+).
+   * This app vendors JS/CSS via Bower in dist; index.html has no ajax.googleapis.com script tags to rewrite.
+   */
+  grunt.registerTask('cdnify', 'No-op (legacy Google CDN step removed)', function cdnifyNoop() {
+    grunt.log.ok('cdnify: skipped (local bower bundle; grunt-google-cdn incompatible with Node 12)');
+  });
 
   grunt.registerTask('build', [
     'clean:dist',
