@@ -322,7 +322,7 @@ angular.module('workspaceApp')
                 title: 'Check or Enter the Pilot`s Information',
                 inferLegalNameFromScan: pilotModalOptions.inferLegalNameFromScan || null,
                 inferLegalNameHint: pilotModalOptions.inferLegalNameHint ||
-                  'Newest CERT Medical (else Certificate) under employee #. Uses PDF text, then OCR (Tesseract). Last name must match roster.',
+                  'Newest CERT Medical (else Certificate) under employee #. Uses PDF text, then server OCR (tesseract-ocr). Last name must match roster.',
                 fill: function() {
                   if (this.formData.name === 'new' || this.new) {
                     if (!this.new) this.formData.name = '';

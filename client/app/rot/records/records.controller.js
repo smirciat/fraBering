@@ -645,8 +645,14 @@ class RecordsComponent {
         if (data.reason==='ocr_needs_poppler') {
           msg='Scanned PDF needs OCR: install poppler-utils on the server (pdftoppm), then retry.';
         }
+        if (data.reason==='ocr_needs_tesseract') {
+          msg='OCR needs the system package tesseract-ocr on the server (`apt install tesseract-ocr`), then retry.';
+        }
         if (data.reason==='ocr_no_name_match') {
           msg='OCR ran but no matching legal name was found — check scan quality or enter manually.';
+        }
+        if (data.reason==='ocr_failed') {
+          msg='OCR failed on the server — install tesseract-ocr and poppler-utils, redeploy, or check pm2 logs.';
         }
         this.toaster.warning('Legal name',msg);
       }

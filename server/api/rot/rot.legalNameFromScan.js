@@ -8,6 +8,8 @@ const certScanOcr = require('./rot.certScanOcr.lib.js');
 const parseLegalNameFromDocumentText = legalNameParse.parseLegalNameFromDocumentText;
 const pickCertScanFilename = legalNameParse.pickCertScanFilename;
 
+const MAX_CERT_BYTES = 15 * 1024 * 1024;
+
 function recordsDir() {
   return path.join(rotFileRoot(), 'records');
 }
@@ -55,6 +57,13 @@ function tryOcr(buf, filename, rosterName) {
   return certScanOcr.ocrCertPdfBuffer(buf, rosterName);
 }
 
+function withOcrFailure(filename, documentKind, promise) {
+  return promise.catch(err => {
+    console.error('rot infer OCR error', filename, err);
+    return {legalName: null, reason: 'ocr_failed'};
+  });
+}
+
 export function inferLegalNameFromScanFiles(fileNames, pilotId, rosterName) {
   let filename = pickCertScanFilename(fileNames, pilotId);
   if (!filename) {
@@ -74,11 +83,24 @@ export function inferLegalNameFromScanFiles(fileNames, pilotId, rosterName) {
       )
     );
   }
+  let stat = fs.statSync(fullPath);
+  if (stat.size > MAX_CERT_BYTES) {
+    return Promise.resolve(
+      buildResult(
+        {sourceFile: filename, reason: 'file_too_large'},
+        null
+      )
+    );
+  }
   let buf = fs.readFileSync(fullPath);
   let documentKind = /_CERT_Medical_/i.test(filename) ? 'medical' : 'certificate';
 
   if (isImageCertFile(filename)) {
-    return tryOcr(buf, filename, rosterName).then(ocr => {
+    return withOcrFailure(
+      filename,
+      documentKind,
+      tryOcr(buf, filename, rosterName)
+    ).then(ocr => {
       return buildResult(
         {
           sourceFile: filename,
@@ -106,7 +128,11 @@ export function inferLegalNameFromScanFiles(fileNames, pilotId, rosterName) {
           legalName
         );
       }
-      return tryOcr(buf, filename, rosterName).then(ocr => {
+      return withOcrFailure(
+        filename,
+        documentKind,
+        tryOcr(buf, filename, rosterName)
+      ).then(ocr => {
         return buildResult(
           {
             sourceFile: filename,
@@ -120,7 +146,12 @@ export function inferLegalNameFromScanFiles(fileNames, pilotId, rosterName) {
       });
     })
     .catch(err => {
-      return tryOcr(buf, filename, rosterName).then(ocr => {
+      console.error('rot infer pdf-parse error', filename, err);
+      return withOcrFailure(
+        filename,
+        documentKind,
+        tryOcr(buf, filename, rosterName)
+      ).then(ocr => {
         return buildResult(
           {
             sourceFile: filename,
