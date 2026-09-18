@@ -9,6 +9,7 @@ import {runFlightUpdateSideEffects} from '../todaysFlight/todaysFlight.controlle
 
 const { buildReleaseModalView } = require('./release-modal-view.js');
 const { applyStandbyLegTimesPatch } = require('./standby-charter.js');
+const fuelDisplay = require('./ground-services-fuel-display.js');
 
 const MOBILE_BOARD_ATTRS = [
   '_id',
@@ -30,6 +31,7 @@ const MOBILE_BOARD_ATTRS = [
   'airportObjs',
   'airportObjsLocked',
   'knownIce',
+  'fueled',
 ];
 
 const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
@@ -106,7 +108,7 @@ function opsExportTokenSecret() {
   return process.env.FRAT_OPS_EXPORT_TOKEN || localEnv.FRAT_OPS_EXPORT_TOKEN || '';
 }
 
-function allowOpsExportAccess(req, res, next) {
+export function allowOpsExportAccess(req, res, next) {
   const secret = opsExportTokenSecret();
   if (!secret) {
     return res.status(503).json({ message: 'FRAT ops export is not configured' });
@@ -222,6 +224,7 @@ function toBoardRow(flight) {
         (f.dispatchRelease || f.ocRelease)
     ),
     knownIce: f.knownIce === true,
+    fueled: f.fueled === true,
   };
 }
 
@@ -848,4 +851,76 @@ export function patchAirportRunway(req, res) {
     });
 }
 
-export { allowOpsExportAccess };
+export function patchFlightFuel(req, res) {
+  const id = req.params.id;
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const displayName =
+    (body.employeeDisplayName && String(body.employeeDisplayName).trim()) ||
+    (req.user && req.user.name ? String(req.user.name).trim() : '');
+
+  return TodaysFlight.findOne({ where: { _id: id } })
+    .then(flight => {
+      if (!flight) return res.status(404).json({ message: 'Flight not found' });
+
+      let changed = false;
+      if (Object.prototype.hasOwnProperty.call(body, 'fueled')) {
+        flight.fueled = body.fueled === true || body.fueled === 'true';
+        changed = true;
+        if (!flight.fueled) {
+          flight.fueledBy = null;
+          flight.fueledTimestamp = null;
+          flight.truck = null;
+          flight.startFuel = null;
+          flight.stopFuel = null;
+          flight.gallonsUplifted = null;
+        } else {
+          flight.fueledBy = displayName || flight.fueledBy;
+          flight.fueledTimestamp = new Date().toLocaleTimeString('en-US', {
+            timeStyle: 'short',
+          });
+        }
+      }
+
+      ['truck', 'startFuel', 'stopFuel', 'gallonsUplifted'].forEach(field => {
+        if (!Object.prototype.hasOwnProperty.call(body, field)) return;
+        const value = body[field];
+        flight[field] = value == null || value === '' ? null : String(value);
+        changed = true;
+      });
+
+      if (
+        Object.prototype.hasOwnProperty.call(body, 'startFuel') ||
+        Object.prototype.hasOwnProperty.call(body, 'stopFuel')
+      ) {
+        const plain = flight.dataValues || flight;
+        fuelDisplay.updateFuelMeterGallons(plain);
+        flight.gallonsUplifted = plain.gallonsUplifted;
+        changed = true;
+      }
+
+      if (!changed) {
+        return res.status(400).json({ message: 'No fuel fields in body.' });
+      }
+
+      return flight.save().then(saved => {
+        runFlightUpdateSideEffects(saved);
+        const f = saved.dataValues || saved;
+        return res.status(200).json({
+          ok: true,
+          _id: f._id,
+          fueled: f.fueled === true,
+          fueledBy: f.fueledBy || '',
+          fueledTimestamp: f.fueledTimestamp || '',
+          truck: f.truck,
+          startFuel: f.startFuel,
+          stopFuel: f.stopFuel,
+          gallonsUplifted: f.gallonsUplifted,
+        });
+      });
+    })
+    .catch(err => {
+      console.error('[mobileOps] patch fuel', err);
+      return res.status(500).json({ message: 'Fuel update failed' });
+    });
+}
+
