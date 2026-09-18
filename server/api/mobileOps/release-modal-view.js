@@ -340,6 +340,26 @@ function buildLoadSheetView(f) {
   };
 }
 
+function runwayEditSnapshot(airport) {
+  if (!airport || airport._id == null) return null;
+  return {
+    airportRequirementId: airport._id,
+    openClosed: str(airport.openClosed) || 'Open',
+    runwayScore:
+      airport.runwayScore != null && String(airport.runwayScore).trim() !== ''
+        ? String(airport.runwayScore)
+        : '5',
+    depth: str(airport.depth),
+    contaminent: str(airport.contaminent),
+    percent: str(airport.percent),
+    comment: str(airport.comment),
+    pilotComment: str(airport.pilotComment),
+    officialSource: str(airport.officialSource),
+    unOfficialSource: str(airport.unOfficialSource),
+    signature: str(airport.signature),
+  };
+}
+
 function mapLegCards(f) {
   const objs = asLegArray(f.airportObjsLocked).length
     ? asLegArray(f.airportObjsLocked)
@@ -389,6 +409,7 @@ function mapLegCards(f) {
         .filter(Boolean),
       pfrTakeoffFuelLbs: pfrTakeoffFuelForAirportIndex(f, index, airportCount),
       pfrEndingFuelLbs: pfrEndingFuelForAirportIndex(f, index, airportCount),
+      runwayEdit: runwayEditSnapshot(airport),
     };
   });
 }

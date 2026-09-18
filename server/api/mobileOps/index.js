@@ -8,6 +8,7 @@ import {
   getBoard,
   getFlight,
   patchFlight,
+  patchAirportRunway,
   removeReleaseFlight,
   signFlight,
 } from './mobileOps.controller';
@@ -21,6 +22,7 @@ router.use(auth.isAuthenticated());
 router.get('/board', getBoard);
 router.get('/flights/:id', getFlight);
 router.patch('/flights/:id', patchFlight);
+router.patch('/airport-requirements/:id/runway', patchAirportRunway);
 router.post('/flights/:id/sign', signFlight);
 router.post('/flights/:id/remove-release', removeReleaseFlight);
 

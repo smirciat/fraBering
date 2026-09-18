@@ -2,7 +2,7 @@
 
 import { Op } from 'sequelize';
 import config from '../../config/environment';
-import { User, TodaysFlight } from '../../sqldb';
+import { User, TodaysFlight, AirportRequirement } from '../../sqldb';
 import { signToken } from '../../auth/auth.service';
 import localEnv from '../../config/local.env.js';
 import {runFlightUpdateSideEffects} from '../todaysFlight/todaysFlight.controller.js';
@@ -774,6 +774,77 @@ export function signFlight(req, res) {
     .catch(err => {
       console.error('[mobileOps] sign', err);
       return res.status(500).json({ message: 'Sign failed' });
+    });
+}
+
+const RUNWAY_PATCH_FIELDS = [
+  'openClosed',
+  'runwayScore',
+  'depth',
+  'contaminent',
+  'percent',
+  'comment',
+  'pilotComment',
+  'officialSource',
+  'unOfficialSource',
+];
+
+/** Runway conditions only — same store as frat web `PATCH /api/airportRequirements/:id`. METAR/manual obs not exposed on mobile ops. */
+export function patchAirportRunway(req, res) {
+  const id = req.params.id;
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const userName =
+    req.user && req.user.name ? String(req.user.name).trim() : '';
+
+  return AirportRequirement.findByPk(id)
+    .then(entity => {
+      if (!entity) {
+        return res.status(404).json({ message: 'Airport not found' });
+      }
+      const updates = {};
+      RUNWAY_PATCH_FIELDS.forEach(field => {
+        if (!Object.prototype.hasOwnProperty.call(body, field)) return;
+        const value = body[field];
+        updates[field] = value == null ? '' : String(value);
+      });
+
+      const companyPirepRaw = body.companyPirep;
+      if (
+        companyPirepRaw != null &&
+        String(companyPirepRaw).trim() !== ''
+      ) {
+        const line =
+          new Date().toLocaleString() +
+          ' > ' +
+          String(companyPirepRaw).trim();
+        const list = entity.companyPireps
+          ? entity.companyPireps.slice()
+          : [];
+        list.unshift(line);
+        updates.companyPireps = list;
+      }
+
+      if (!Object.keys(updates).length && !body.companyPirep) {
+        return res.status(400).json({
+          message:
+            'No runway fields in body (openClosed, runwayScore, depth, contaminent, percent, comment, pilotComment, officialSource, unOfficialSource, companyPirep).',
+        });
+      }
+
+      updates.signature = userName || entity.signature || '';
+      updates.timestamp = new Date();
+      updates.runScroll = true;
+
+      return entity.update(updates).then(saved =>
+        res.status(200).json({
+          ok: true,
+          airportRequirementId: saved._id,
+        })
+      );
+    })
+    .catch(err => {
+      console.error('[mobileOps] airport runway patch', err);
+      return res.status(500).json({ message: 'Runway update failed' });
     });
 }
 
