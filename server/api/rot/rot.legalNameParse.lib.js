@@ -6,12 +6,17 @@ function rosterLastName(rosterName) {
   return parts[parts.length - 1].toLowerCase();
 }
 
+function titleCaseSegment(seg) {
+  if (!seg) return '';
+  return seg.charAt(0).toUpperCase() + seg.slice(1).toLowerCase();
+}
+
 function titleCaseWords(str) {
   return String(str || '')
     .trim()
     .split(/\s+/)
     .filter(Boolean)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .map(w => w.split('-').map(titleCaseSegment).join('-'))
     .join(' ');
 }
 

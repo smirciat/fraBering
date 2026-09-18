@@ -33,6 +33,14 @@ assert(
 );
 
 assert(
+  parseLegalNameFromDocumentText(
+    'Name: SHAWN-MICHAEL Thomas GRAHAM\n',
+    'Shawn Graham'
+  ) === 'Shawn-Michael Thomas Graham',
+  'hyphenated given name on medical'
+);
+
+assert(
   parseLegalNameFromDocumentText('Name: John Smith\n', 'Conor Murray') === null,
   'reject wrong last name'
 );

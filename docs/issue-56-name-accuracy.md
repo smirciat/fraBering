@@ -69,7 +69,20 @@ pm2 logs fraBering --lines 80   # right after a failed click
 3. **Infer from scan** in the modal — fills the field only; **Confirm/Save** still required to store.
 4. Parsed name must **match roster last name** (e.g. roster “Conor Murray” → certificate must end in **Murray**).
 
-Optional batch later: `scripts/rot-infer-legal-names/` (not shipped yet).
+### Bulk infer (server script)
+
+On **smircich** (or any host with `server/firebase.json` and CERT files on disk):
+
+```bash
+cd ~/fraBering
+node scripts/rot-infer-legal-names/index.js              # dry-run
+node scripts/rot-infer-legal-names/index.js --apply      # write Firebase legalName
+node scripts/rot-infer-legal-names/index.js --apply --force   # overwrite existing
+node scripts/rot-infer-legal-names/index.js --pilot Graham --apply
+node scripts/rot-infer-legal-names/index.js --delay 3000 --apply   # slower OCR pacing
+```
+
+Skips pilots who already have `legalName` unless `--force`. Uses the same infer logic as the UI (`pdf-parse` → OCR). No `grunt build` required — runs against `server/` source via `babel-register`.
 
 ## Verify
 
