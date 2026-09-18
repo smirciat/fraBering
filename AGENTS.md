@@ -80,4 +80,4 @@ See `README.md` for full install steps (npm, bower, node version quirks).
 - `docs/takeflite-resbering-cutover.md` — Oct 2026 Takeflite API flip via `TAKEFLITE_DATA_SOURCE`; FRA uses **status-export** (not extra webhooks; N+1 manifest shim is temporary)
 - `docs/mobile-ops-v1.md` — **draft** mobile ops API for bering_crew FRAT board + release (assertion JWT, `/api/mobile/ops/v1/*`); build guide in resBering `docs/bering-crew-frat-board.md`
 - `docs/issue-40-rot-pdf.md` — #40 ROT / Flight Test PDF QA and field-mapping gaps
-- `docs/flight-release-firebase.md` — FRA → Firestore / Flight Report signatures (do not null-wipe PIC vs dispatch/OC)
+- `docs/flight-release-firebase.md` — FRA → Firestore / Flight Report: restore working `firebaseMin` payload; do not patch-forward
