@@ -6,54 +6,266 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #40 ROT
+## #56 Name Accuracy
+
+- **Type:** bug · critical · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Conor Rocco Murray
+Shawn Michael Thomas Graham
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-56-att-41-image.png)
+
+## #59 Document date
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Don't need a document date when selecting Cert, Annual resume, or drivers license.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-59-att-44-image.png)
+
+## #58 Hazmat 2 year expiration
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Hazmat defaults to 1 year expiration Aug 27.  I manually updated expiration Aug 28.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-58-att-43-image.png)
+
+## #57 Hazmat Approval
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+When I hit upload and approve it said it uploaded but did not.  Went down to the entry line and hit approve and it gave me this.  Reading the hazmat paperwork as a full up checkride.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-57-att-42-image.png)
+
+## #55 Expiration Date Logic
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Expiration date logic for .297 must be based on day count.  Calculating 3/3/27 for new expiration.  Back to eliminating days and just using months.  For the 299/297g it isn't understanding that a new base overwrites a future base month.  299/297g should have 9/30/27 as expiration.  Seen this a couple times now.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-55-att-40-image.png)
+
+## #54 Expiration format
 
 - **Type:** feature · medium · open
-- **Reporter:** Andrew Smircich
+- **Reporter:** NATHANIEL OLSON
 
 **Original report:**
 
-ROT PDFs need attention, they need to generate accurate forms.  NAte says this is his next priority for ROT
+Why don't we just put expiration as 10/27.  Month and year.  All pilot dates expire at the end of the month so day is superfluous.  Unless you can think of a reason to keep it, lets drop the day.  Nice work Andy.
 
-**Progress (changed, not resolved):**
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-54-att-39-image.png)
 
-Andy Smircich: correction - the forms do work and fill out data, lets do a pass through them for accuracy and completeness using some recent flight and ground training event records.   re-uploading the pdf to the uploads folder after generation to check for completeness
-
-**Comments:**
-- Andy Smircich: Referring the checkride and ROT form that are auto-generated with the information from the record. Previously, these forms did not generate all available data consistently.  currently, i don't think they work at all.
-- Andy Smircich: correction - the forms do work and fill out data, lets do a pass through them for accuracy and completeness using some recent flight and ground training event records.   re-uploading the pdf to the uploads folder after generation to check for completeness
-
-## #39 flight release actual load
+## #53 293(a) expiration updated when it shouldn't have
 
 - **Type:** bug · medium · open
-- **Reporter:** DONALD SHOWALTER
+- **Reporter:** NATHANIEL OLSON
 
 **Original report:**
 
-says its zero even though take flight has stuff manifested
+Built an entry and clicked BI and 293(a) then hit save.  Realized I couldn't upload 2 docs and attach them to the same entry, so when back and unclicked 293(a) then hit save again.  Then uploaded and approved BI ROT to BI section.  Somehow the 293(a) expiration was modified as well.  Not sure if this occurred when I hit save the first time (which it should not since no dates are modified until "approved") or if BI and 293(a) are incorrectly tied together.
 
-**Progress (changed, not resolved):**
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-53-att-38-image.png)
 
-Andy Smircich: This is Dawson, not Donald.  In the flight release modal, weight on the flight hasa line that is 0, Dawson expected it to reflect the weight of pax and freight already added to that flight in Takeflite.  I think it might be tied to the PFR not takeflite.  This is the desired pattern, not what Dawson expected. Perhaps a verification followed be clarification in the modal
+## #52 Training selection organization
 
-**Comments:**
-- Andy Smircich: This is Dawson, not Donald.  In the flight release modal, weight on the flight hasa line that is 0, Dawson expected it to reflect the weight of pax and freight already added to that flight in Takeflite.  I think it might be tied to the PFR not takeflite.  This is the desired pattern, not what Dawson expected. Perhaps a verification followed be clarification in the modal
+- **Type:** feature · medium · open
+- **Reporter:** NATHANIEL OLSON
 
-## #38 caravan fuel flight release
+**Original report:**
+
+Organized similar to my post it.  
+Wouldn't need sub-options for 297/297g/299
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-52-att-36-image.png)
+- ![image.png](team-backlog/attachments/issue-52-att-37-image.png)
+
+## #51 Unaffiliated ROTs
+
+- **Type:** feature · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Need the ability to upload a ROT to a section without modifying base month.
+
+Example:
+Special approach training 
+
+Will go under basic indoc section but will not affect base month and will not expire
+
+Needs to be located under basic indoc section and shown on single line entry for that section
+
+## #50 AI Reads/interprets Medical
+
+- **Type:** feature · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Is it possible for you to force your AI underling to have an option where I just upload the medical and STARR command reads/interprets/calculates expiration?  So I never need to type in any data for medicals, I just upload a picture?
+
+## #49 135.293(a)1,4-8 not aircraft specific
 
 - **Type:** bug · medium · open
-- **Reporter:** DONALD SHOWALTER
+- **Reporter:** NATHANIEL OLSON
 
 **Original report:**
 
-start and end fuel are the same
+Requiring an aircraft; aircraft not required and should not be entered on this flight test form.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-49-att-35-image.png)
+
+## #48 Not allowing me to delete erroneous input
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Not allowing me to delete this 8/3 erroneous entry
 
 **Progress (changed, not resolved):**
 
-Andy Smircich: Again Dawson in the flight release modal.  Lets verify that these are being calculated properly, and they may be waiting on the PFR to be more complete before they read correctly.
+NATHANIEL OLSON: When I clicked back to the page, that entry was deleted, but two I had previously deleted where back.
+
+**Latest screenshot:**
+
+![image.png](team-backlog/attachments/issue-48-att-34-image.png)
 
 **Comments:**
-- Andy Smircich: Again Dawson in the flight release modal.  Lets verify that these are being calculated properly, and they may be waiting on the PFR to be more complete before they read correctly.
+- NATHANIEL OLSON: When I clicked back to the page, that entry was deleted, but two I had previously deleted where back.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-48-att-34-image.png)
+
+## #47 GOS option
+
+- **Type:** feature · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+When I select 1900 ground, 208 ground, etc, I'd like a sub-option for GOS that is defaulted to checked, but can be unchecked.  Virtually all in-house aircraft ground has GOS simultaneously accomplished, so would make the whole process more efficient.
+
+**Progress (changed, not resolved):**
+
+NATHANIEL OLSON: additionally, when selecting Basic Indoc, a General Emergency sub-option should present itself.
+
+**Latest screenshot:**
+
+![image.png](team-backlog/attachments/issue-47-att-33-image.png)
+
+**Comments:**
+- NATHANIEL OLSON: additionally, when selecting Basic Indoc, a General Emergency sub-option should present itself.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-47-att-33-image.png)
+
+## #46 Only Beech
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+No Van N-numbers listed.  Only beeches it appears.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-46-att-32-image.png)
+
+## #45 Medical/Passport
+
+- **Type:** feature · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Would like a table and history of current/previous medical/passport dates.  It could be built into the current training table.  So just left of Basic Indoc
+
+**Progress (changed, not resolved):**
+
+NATHANIEL OLSON: Obviously would require shrinking the columns, but looks like there is enough space.  Nice work Andy.
+
+**Latest screenshot:**
+
+![image.png](team-backlog/attachments/issue-45-att-31-image.png)
+
+**Comments:**
+- NATHANIEL OLSON: Obviously would require shrinking the columns, but looks like there is enough space.  Nice work Andy.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-45-att-31-image.png)
+
+## #44 Larger area so less scrolling is needed
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Make the training entry box larger so that less awkward scrolling is needed.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-44-att-30-image.png)
+
+## #43 Archive Pilots no longer employed
+
+- **Type:** feature · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Need the ability to archive pilots no longer working here.  I'd like to have the option to do this, then have a selection to view archived pilot records.
+
+## #42 Error uploading medical
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Telling me to select tab for medical upload.  I have "certs" selected.
+
+**Progress (changed, not resolved):**
+
+NATHANIEL OLSON: Well the error is not that there is no "medical" tab, its that when I select training record then select upload cert, the medical tab goes away and I cannot get to it retroactively without refreshing the page.
+
+**Latest screenshot:**
+
+![image.png](team-backlog/attachments/issue-42-att-29-image.png)
+
+**Comments:**
+- NATHANIEL OLSON: Well the error is not that there is no "medical" tab, its that when I select training record then select upload cert, the medical tab goes away and I cannot get to it retroactively without refreshing the page.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-42-att-29-image.png)
 
 ## Ready for review (shipped — reporter verify, do not build)
 
@@ -330,6 +542,131 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
+
+## #41 data collision
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** FEN KINNEEN
+- **Status:** ready for review
+
+**Original report:**
+
+Still running into issues when two parties are in the flight release at the same time. One signature is created, and when the second is created, it deletes the first signature. The second party ends up waiting for the first to sign, and the first party knows they've already done it and moves on to other tasks.
+
+**Comments:**
+- Andy Smircich: Ready for review — Flight Release signature collision (#41)
+
+Root cause: Confirm/Save PATCHes the whole flight from the modal. If two people sign close together, the second save can still have null for the first signer’s fields and overwrote Postgres (and the Firebase min sync).
+
+Fix (deployed): server merge on PATCH /api/todaysFlights/:id (and mobile update) — existing dispatch / OC / pilot release names and timestamps are kept when the incoming body would clear them; admin Remove Release still clears all three signatures and timestamps together.
+
+Please try the same scenario that bit you (two parties in release at once, sign in either order without refreshing). If a signature still disappears, note flight #, time, and who signed in which order.
+- Andy Smircich: Fen,
+
+You reported issue #41: when two people were in Flight Release at the same time, the second signature could wipe the first. That matched what we saw in the code — Confirm/Save sends the whole flight from the modal, and if your copy of the flight was opened before the other person signed, your save could still send null for their fields and overwrite what was already stored.
+
+We deployed a server-side fix today. On save, the API now keeps any dispatch, OC, or pilot release name (and timestamp) that is already on the flight if the incoming save would clear it. Admin Remove Release still clears all three signatures together when that is intentional.
+
+When you have a chance, please try the same kind of scenario — two people in release, sign in either order without refreshing — and let me know in the issue (or reply here) if anything still drops. Flight number, time, and who signed first helps if we need another pass. Thanks for flagging this.
+
+Andy
+
+## #40 ROT
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** Andrew Smircich
+- **Status:** ready for review
+
+**Original report:**
+
+ROT PDFs need attention, they need to generate accurate forms.  NAte says this is his next priority for ROT
+
+**Comments:**
+- Andy Smircich: Referring the checkride and ROT form that are auto-generated with the information from the record. Previously, these forms did not generate all available data consistently.  currently, i don't think they work at all.
+- Andy Smircich: correction - the forms do work and fill out data, lets do a pass through them for accuracy and completeness using some recent flight and ground training event records.   re-uploading the pdf to the uploads folder after generation to check for completeness
+- Andy Smircich: Conversation with Nate on 9/16: His emailed summary:
+Hello Andy,
+
+ 
+
+Here’s what I remember from our conversation:
+
+Whence the flight test form/RoT/INDOC is created, no fields should be fillable; all data should be input when created the form in the training line
+INDOC Green button can be removed; when 293(a)1,4-8 is accomplished, that should be selected under “type” column and then flight test for should be selected; obviously fields will be based on specific requirements of 293(a)1,4-8
+Remove columns additional instruction/result
+Add columns for a/c (list of N-numbers) and flight time
+Modify “result” column to be selectable like “type” column; all events should have options for “S,” “W,” and “U/S;” “U/S” will generate an “S” on flight test form, but add a remark in a remark section that states “Event 40 retrained/Rechecked”
+The previous one will obviously require modifying the flight test form; the new form will have to be written into the PTP
+ 
+
+That’s all I remember for now.  Thanks Andy.  Nice work.   
+
+ 
+
+Nathaniel Olson 
+
+Chief Pilot  ǀ  Bering Air, Inc.
+
+PO Box 1650  ǀ  Nome, Alaska 99762
+- Andy Smircich: Additionally, On creating a flight test record, a popup selector with required items pre-marked as "S", editable there and persisted to the record, possibly changing value to blank, S, W, or R (retrain required).  A full selectable list inferred from the flight test form should be included in this popup.  We will have to code in required items for each different type of checkride, SIC and PIC are different list, Multi/single have different requirements, checkride type 297, g, 299, all impact required items. Wil provide a document to encode this somehow.
+
+Todo Later: Investigate possibility of electronic signature for all parties on Flight Test form
+- Andy Smircich: Guidance for checkride requirements is in FAA 8900 at https://drs.faa.gov/
+Specifically, FAA Order 8900.1, Volume 3, Chapter 19 (Training and Qualification Programs) and Chapter 20 (Check Pilots and Instructors).
+- Andy Smircich: We can decide the best route for agent to refer required checkride items is 1. 8900 , 2. infer from existing uploaded pdf training forms or 3. None are acceptable we need to manually enter this information
+- Cursor Agent: Progress update (Nate 9/16 notes — shipped for your QA on prod):
+
+Training line: INDOC button removed (293(a)1,4-8 stays on Type → Flight Test). Additional Instruction / Outcome columns removed. N# (from fleet list) and flight time on the row; both flatten onto the PDF. Type modal: S / W / U/S per event. Row result is S / W / U/S / Discontinued. Unsaved draft row at top is light green.
+
+Flight Test generate: flattened PDF (no live fields after download; wet-sign on paper). On PIC/SIC / 297 / 297g rows, a popup lists all 44 F.3 items — required lines default S, others default "-" so you can still grade if flown. U/S prints S on the form and stores a retrain remark on the record (PDF Remarks box still waits on PTP template).
+
+Please run real checkrides/ground rows on https://frat.beringair.com/rot/records and send me any wrong PDF with a short note (pilot, date, what should change). Matrix lives in client/app/rot/flight-test-items.js if we need to tune required vs optional. E-sign and formal Remarks on the PDF remain later.
+- Andy Smircich: (Posted via export token above as Cursor Agent — same text, attributed here as Andy for the record.)
+- Andy Smircich: Progress update (Nate 9/16 notes — shipped for your QA on prod):
+
+Training line: INDOC button removed (293(a)1,4-8 stays on Type → Flight Test). Additional Instruction / Outcome columns removed. N# (from fleet list) and flight time on the row; both flatten onto the PDF. Type modal: S / W / U/S per event. Row result is S / W / U/S / Discontinued. Unsaved draft row at top is light green.
+
+Flight Test generate: flattened PDF (no live fields after download; wet-sign on paper). On PIC/SIC / 297 / 297g rows, a popup lists all 44 F.3 items — required lines default S, others default "-" so you can still grade if flown. U/S prints S on the form and stores a retrain remark on the record (PDF Remarks box still waits on PTP template).
+
+Please run real checkrides/ground rows on https://frat.beringair.com/rot/records and send me any wrong PDF with a short note (pilot, date, what should change). Matrix lives in client/app/rot/flight-test-items.js if we need to tune required vs optional. E-sign and formal Remarks on the PDF remain later.
+
+## #39 flight release actual load
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** DONALD SHOWALTER
+- **Status:** ready for review
+
+**Original report:**
+
+says its zero even though take flight has stuff manifested
+
+**Comments:**
+- Andy Smircich: This is Dawson, not Donald.  In the flight release modal, weight on the flight hasa line that is 0, Dawson expected it to reflect the weight of pax and freight already added to that flight in Takeflite.  I think it might be tied to the PFR not takeflite.  This is the desired pattern, not what Dawson expected. Perhaps a verification followed be clarification in the modal
+- Cursor Agent: Shipped — ready for review (Dawson / training).
+
+**#39 Actual load shows 0**
+Confirmed behavior: **Actual Load** is `totalLoad` from the **iPad Flight Report**, not Takeflite manifest weight. The modal now labels it **Actual Load (Flight Report)** with a short note that it stays **0** until the pilot completes the PFR load/weight section.
+
+**Please verify** on a flight with manifest pax/freight in Takeflite but an incomplete PFR: load line should be 0 with the new hint. After weights are entered on the PFR, the same line should match the report.
+
+## #38 caravan fuel flight release
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** DONALD SHOWALTER
+- **Status:** ready for review
+
+**Original report:**
+
+start and end fuel are the same
+
+**Comments:**
+- Andy Smircich: Again Dawson in the flight release modal.  Lets verify that these are being calculated properly, and they may be waiting on the PFR to be more complete before they read correctly.
+- Cursor Agent: Shipped — ready for review (Dawson / training).
+
+**#38 Caravan fuel in Flight Release**
+Ending fuel at each airport now uses PFR fields the iPad actually sends on C208 (`fuelRemain1`, `burnOff1`, and `takeoffFuel` when set), not only `leg.burn`. That was why departure and destination often showed the same lbs when burn was blank on the leg.
+
+**Please verify** on a Caravan with a completed Flight Report: open Flight Release, expand the route legs — takeoff fuel at origin and ending fuel at destination should differ when the PFR has planned burn/remain. If they still match, note flight # and whether fuel remain is filled on the iPad PFR.
 
 ## #35 FDR
 

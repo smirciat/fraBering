@@ -604,11 +604,71 @@ class RecordsComponent {
     if (record) record.baseMonthManual=true;
   }
 
+  inferLegalNameFromScan(pilot, options){
+    options=options||{};
+    if (!pilot||!pilot._id||!pilot.name) {
+      return Promise.resolve(null);
+    }
+    return this.http.post('/api/rot/inferLegalName',{
+      pilotId:String(pilot._id),
+      rosterName:pilot.name
+    }).then(res=>{
+      let data=res.data||{};
+      if (data.legalName) {
+        pilot.legalName=data.legalName;
+        if (this.fullPilot&&this.fullPilot._id===pilot._id) {
+          this.fullPilot.legalName=data.legalName;
+        }
+        if (options.persist) {
+          return this.http.post('/api/rot/updateFirebase',{
+            collection:'pilots',
+            doc:{_id:pilot._id,legalName:data.legalName}
+          }).then(()=>{
+            let idx=this.pilots.map(e=>e._id).indexOf(pilot._id);
+            if (idx>-1) this.pilots[idx].legalName=data.legalName;
+            if (!options.silent) {
+              let kind=data.documentKind==='medical'?'medical':'certificate';
+              this.toaster.success('Legal name saved',data.legalName+' (from '+kind+' scan)');
+            }
+            return data;
+          });
+        }
+        if (!options.silent) {
+          let kind=data.documentKind==='medical'?'medical':'certificate';
+          this.toaster.success('Legal name',data.legalName+' (from '+kind+' scan)');
+        }
+        return data;
+      }
+      if (!options.silent) {
+        let msg='Could not read a legal name from CERT scans (need text PDF; last name must match roster).';
+        if (data.reason==='no_cert_pdf') msg='No CERT Medical or Certificate PDF on file for this employee #.';
+        this.toaster.warning('Legal name',msg);
+      }
+      return data;
+    }).catch(err=>{
+      console.error('inferLegalName',err);
+      if (!options.silent) this.toaster.error('Error','Legal name inference failed');
+      return null;
+    });
+  }
+
   showPilotTrainingDates(){
     if (!this.fullPilot||!this.fullPilot._id) return this.toaster.error('Error','Select a pilot first');
     if (!this.isApprover()) return this.toaster.error('Error','Only approvers can edit pilot training dates');
     let pilotCopy=JSON.parse(JSON.stringify(this.fullPilot));
-    this.pilotModal(pilotCopy,this.pilots);
+    let modalOptions={
+      inferLegalNameFromScan:()=>{
+        return this.inferLegalNameFromScan(pilotCopy).then(data=>{
+          if (data&&data.legalName) pilotCopy.legalName=data.legalName;
+        });
+      }
+    };
+    let open=()=>{this.pilotModal(pilotCopy,this.pilots,modalOptions);};
+    if (pilotCopy.legalName) {
+      open();
+      return;
+    }
+    this.inferLegalNameFromScan(pilotCopy,{silent:true}).then(()=>{open();});
   }
 
   parseExpInputDate(dateStr){
@@ -1630,6 +1690,20 @@ class RecordsComponent {
     });
   }
 
+  pilotLegalName(pilot){
+    return this.RotPilotContext.pilotLegalName(pilot);
+  }
+
+  pilotRosterIndexByLabel(label){
+    if (!label||!this.pilots) return -1;
+    let target=String(label).trim().toLowerCase();
+    if (!target) return -1;
+    return this.pilots.findIndex(p=>{
+      let names=[p.name,p.legalName,p.payrollName,p.displayName];
+      return names.some(n=>n&&String(n).trim().toLowerCase()===target);
+    });
+  }
+
   /** Pilot profile + roster certs before ROT / Flight Test PDF fill (#40). */
   enrichRecordForForms(record){
     if (!record) return;
@@ -1640,7 +1714,9 @@ class RecordsComponent {
       if (!record.medicalInterval) record.medicalInterval=this.fullPilot.medicalInterval;
       if (!record.cert) record.cert=this.fullPilot.cert;
       if (!record.certType) record.certType=this.fullPilot.certType;
-      if (!record.name) record.name=this.fullPilot.name;
+      let legal=this.pilotLegalName(this.fullPilot);
+      if (legal) record.name=legal;
+      else if (!record.name) record.name=this.fullPilot.name;
       if (record.trainingType&&record.flightOrGround) {
         record.trainingTypeCombo=record.trainingType + ' ' + record.flightOrGround;
       }
@@ -1653,12 +1729,12 @@ class RecordsComponent {
         }
       });
     }
-    let instructorIndex=this.pilots.map(e=>e.name).indexOf(record.instructor);
+    let instructorIndex=this.pilotRosterIndexByLabel(record.instructor);
     if (instructorIndex>-1) {
       record.instructorCert=this.pilots[instructorIndex].cert;
       record.instructorCertType=this.pilots[instructorIndex].certType;
     } else if (!record.instructorCert) record.instructorCert="";
-    let checkAirmanIndex=this.pilots.map(e=>e.name).indexOf(record.checkAirman);
+    let checkAirmanIndex=this.pilotRosterIndexByLabel(record.checkAirman);
     if (checkAirmanIndex>-1) {
       record.checkAirmanCert=this.pilots[checkAirmanIndex].cert;
       record.checkAirmanCertType=this.pilots[checkAirmanIndex].certType;
@@ -1987,7 +2063,7 @@ class RecordsComponent {
 	    }
       var fields={"Cert Type1":[certType],
                   "CertType":[certType],
-                  "Pilots Name":[pilot.name],
+                  "Pilots Name":[this.pilotLegalName(pilot)||pilot.name],
                   "Date of Birth":[pilot.dateOfBirth],
                   "Cert Number":[pilot.cert],
                   "Medical Class":[medClass],
@@ -2153,7 +2229,8 @@ class RecordsComponent {
         .then(response=> {
           this.fillAndFlattenPdf(response.data, fields).then(filled_pdf=>{
   		    var blob = new Blob([filled_pdf], {type: 'application/pdf'});
-  		    var filename=PDFFileName + "_" + pilot.name + '_' + year + '_' + month + '_' + day + '.pdf';
+  		    let pdfPilotName=(this.pilotLegalName(pilot)||pilot.name||'pilot').replace(/\s+/g,'_');
+  		    var filename=PDFFileName + "_" + pdfPilotName + '_' + year + '_' + month + '_' + day + '.pdf';
   	      saveAs(blob, filename);
   	      this.loading=false;
           }).catch(err=>{

@@ -145,8 +145,9 @@
   </div>
   <div class="table-responsive" style="overflow-x: auto;" ng-if="rotRecords.showTable">
     <div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;">
-      <h3 style="margin:0;">All Training Dates for Selected Pilot {{rotRecords.pilot.displayName || rotRecords.pilot.name}}</h3>
+      <h3 style="margin:0;">All Training Dates for Selected Pilot {{rotRecords.pilotLegalName(rotRecords.pilot)}}</h3>
       <button ng-if="rotRecords.isApprover()" class="btn btn-info" ng-click="rotRecords.showPilotTrainingDates()">Edit Pilot Training Dates</button>
+      <button ng-if="rotRecords.isApprover() && rotRecords.fullPilot._id" class="btn btn-default" ng-click="rotRecords.inferLegalNameFromScan(rotRecords.fullPilot,{persist:true})">Infer legal name from CERT scan</button>
     </div>
     <p ng-if="rotRecords.isApprover()" style="font-size:12px;color:#666;margin-bottom:8px;">Approvers: click a shaded <em>Previous</em> cell to restore that expiration date.</p>
     <table class="table table-condensed table-bordered exp-history-table" style="min-width: 1200px;">
@@ -311,7 +312,7 @@
               <th class="tight">Certificate Number</th>
             </tr></thead>
             <tbody><tr>
-              <td>{{rotRecords.pilot.name}}</td>
+              <td>{{rotRecords.pilotLegalName(rotRecords.pilot)}}</td>
               <td>{{rotRecords.pilot.cert}}</td>
             </tr></tbody>
           </table>

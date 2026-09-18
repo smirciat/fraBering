@@ -8,12 +8,21 @@ angular.module('workspaceApp')
       loadPromise: null
     };
 
+    function pilotLegalName(pilot) {
+      if (!pilot) return '';
+      let legal = pilot.legalName && String(pilot.legalName).trim();
+      if (legal) return legal;
+      let payroll = pilot.payrollName && String(pilot.payrollName).trim();
+      if (payroll) return payroll;
+      return pilot.name || pilot.displayName || '';
+    }
+
     function filterPilots(pilots) {
       return pilots.filter(pilot => {
         return pilot.name && pilot.name !== '' &&
           (pilot.isActive === undefined || pilot.isActive) &&
           pilot.pilotBase && pilot.pilotBase !== 'none';
-      }).sort((a, b) => a.name.localeCompare(b.name));
+      }).sort((a, b) => pilotLegalName(a).localeCompare(pilotLegalName(b)));
     }
 
     function defaultPilot() {
@@ -37,6 +46,7 @@ angular.module('workspaceApp')
 
     return {
       loadPilots: loadPilots,
+      pilotLegalName: pilotLegalName,
       getPilots: function() { return state.pilots; },
       getChosenPilot: function() { return state.chosenPilot; },
       setChosenPilot: function(pilot) { state.chosenPilot = pilot; },

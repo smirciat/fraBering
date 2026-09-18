@@ -3,6 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import {rotFileRoot, safeRotFilename} from './rot.storage.js';
+import {inferLegalNameFromScanFiles} from './rot.legalNameFromScan.js';
 
 function recordsDir() {
   return path.join(rotFileRoot(), 'records');
@@ -58,6 +59,28 @@ export function changeFilename(req, res) {
   } catch (err) {
     console.error('rot changeFilename error', err);
     return res.status(500).json({message: 'Unable to update filename'});
+  }
+}
+
+export function inferLegalName(req, res) {
+  try {
+    let pilotId = req.body && req.body.pilotId;
+    let rosterName = req.body && req.body.rosterName;
+    if (!pilotId || !rosterName) {
+      return res.status(400).json({message: 'pilotId and rosterName are required'});
+    }
+    let folder = recordsDir();
+    fs.mkdirSync(folder, {recursive: true});
+    let files = fs.readdirSync(folder).filter(file => file && file.charAt(0) !== '.');
+    return inferLegalNameFromScanFiles(files, pilotId, rosterName)
+      .then(result => res.status(200).json(result))
+      .catch(err => {
+        console.error('rot inferLegalName error', err);
+        return res.status(500).json({message: err.message || 'Could not infer legal name'});
+      });
+  } catch (err) {
+    console.error('rot inferLegalName error', err);
+    return res.status(500).json({message: 'Could not infer legal name'});
   }
 }
 

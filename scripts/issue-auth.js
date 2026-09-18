@@ -63,26 +63,43 @@ function resolveLoginCredentials() {
   return {email, password};
 }
 
+async function jwtAuthHeaders(base) {
+  const {email, password} = resolveLoginCredentials();
+  if (!email || !password) {
+    throw new Error(
+      'JWT login requires ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD ' +
+        '(or DEVELOPER_EMAIL_ADDRESS + DEVELOPER_PASSWORD) in server/config/local.env.js'
+    );
+  }
+  const login = await requestJson('POST', base + '/auth/local', {}, {email, password});
+  if (!login.token) {
+    throw new Error('Login succeeded but no token returned');
+  }
+  return {headers: {authorization: 'Bearer ' + login.token}, exportToken: null};
+}
+
 async function authHeaders(base) {
   const exportToken = process.env.ISSUES_EXPORT_TOKEN;
   if (exportToken) {
     return {headers: {'x-issues-export-token': exportToken}, exportToken: exportToken};
   }
-  const {email, password} = resolveLoginCredentials();
-  if (email && password) {
-    const login = await requestJson('POST', base + '/auth/local', {}, {email, password});
-    if (!login.token) {
-      throw new Error('Login succeeded but no token returned');
-    }
-    return {headers: {authorization: 'Bearer ' + login.token}, exportToken: null};
-  }
-  throw new Error(
-    'Set ISSUES_EXPORT_TOKEN or ISSUES_EXPORT_EMAIL + ISSUES_EXPORT_PASSWORD ' +
-      '(or DEVELOPER_EMAIL_ADDRESS + DEVELOPER_PASSWORD) in server/config/local.env.js'
-  );
+  return jwtAuthHeaders(base);
+}
+
+/** List issues (GET /api/issues) — requires JWT; export token is not accepted on that route. */
+async function authHeadersForIssueList(base) {
+  return jwtAuthHeaders(base);
+}
+
+/** PATCH issues — export token (admin) or JWT. */
+async function authHeadersForIssueWrite(base) {
+  return authHeaders(base);
 }
 
 module.exports = {
   loadLocalEnv,
-  authHeaders
+  authHeaders,
+  jwtAuthHeaders,
+  authHeadersForIssueList,
+  authHeadersForIssueWrite
 };

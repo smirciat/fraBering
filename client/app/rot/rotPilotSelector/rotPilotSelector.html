@@ -3,7 +3,8 @@
       on-select="rotPilotSelector.onSelect($item)">
     <ui-select-match placeholder="Choose Pilot">{{$select.selected.name}}</ui-select-match>
     <ui-select-choices repeat="pilot in rotPilotSelector.pilots | filter: $select.search">
-      <div ng-bind-html="pilot.name | highlight: $select.search"></div>
+      <div ng-bind-html="(pilot.legalName || pilot.name) | highlight: $select.search"></div>
+      <small ng-if="pilot.legalName && pilot.name && pilot.legalName !== pilot.name" style="color:#666;">Roster: {{pilot.name}}</small>
     </ui-select-choices>
   </ui-select>
 </div>

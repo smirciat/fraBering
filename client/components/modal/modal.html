@@ -69,7 +69,7 @@
     <div class="modal-footer">
       <button ng-repeat="button in modal.buttons" ng-class="button.classes" ng-click="button.click($event)" ng-bind="button.text" class="btn"></button>
     </div>
-    <label>Pilot Name (Firstname Lastname)</label>
+    <label>Pilot name (roster / daily use)</label>
     <ui-select ng-hide="modal.new" ng-model="modal.formData" theme="bootstrap" ng-disabled="disabled" on-select="modal.fill()" name="name">
       <ui-select-match placeholder="Choose...">{{$select.selected.name}}</ui-select-match>
       <ui-select-choices repeat="pilot in modal.pilotArr">
@@ -77,6 +77,14 @@
       </ui-select-choices>
     </ui-select>
     <input ng-show="modal.new" class="form-control" name="name" type="text" ng-model="modal.formData.name">
+    <label>Legal name (as on FAA certificate — used on ROT / Flight Test PDFs)</label>
+    <div class="input-group">
+      <input class="form-control" name="legalName" type="text" ng-model="modal.formData.legalName" placeholder="e.g. Conor Rocco Murray">
+      <span class="input-group-btn" ng-if="modal.inferLegalNameFromScan">
+        <button type="button" class="btn btn-default" ng-click="modal.inferLegalNameFromScan()">Infer from scan</button>
+      </span>
+    </div>
+    <p ng-if="modal.inferLegalNameHint" style="font-size:0.85em;color:#666;margin-top:4px;">{{modal.inferLegalNameHint}}</p>
     <label>PILOT BASE (OME/OTZ/HEL)</label>
     <ui-select ng-model="modal.formData.pilotBase" theme="bootstrap" ng-disabled="disabled">
       <ui-select-match placeholder="Choose...">{{$select.selected}}</ui-select-match>

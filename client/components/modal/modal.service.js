@@ -283,6 +283,7 @@ angular.module('workspaceApp')
             var args = Array.prototype.slice.call(arguments),
                 pilotData = args.shift() || {},
                 pilotArr = args.shift() || [],
+                pilotModalOptions = args.shift() || {},
                 theModal;
             var trainingEvents = rotAppConfig.trainingEvents;
             let index = pilotArr.map(e => e.name).indexOf('new');
@@ -319,6 +320,9 @@ angular.module('workspaceApp')
                   }
                 },
                 title: 'Check or Enter the Pilot`s Information',
+                inferLegalNameFromScan: pilotModalOptions.inferLegalNameFromScan || null,
+                inferLegalNameHint: pilotModalOptions.inferLegalNameHint ||
+                  'Newest CERT Medical PDF (else Certificate) under employee #. Last name must match roster.',
                 fill: function() {
                   if (this.formData.name === 'new' || this.new) {
                     if (!this.new) this.formData.name = '';
