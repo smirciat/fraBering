@@ -253,6 +253,7 @@ function toPublicFlightRow(flight) {
 const OPS_EXPORT_ATTRS = [
   'flightNum', 'active', 'color', 'colorLock',
   'pilotAgree', 'dispatchRelease', 'ocRelease',
+  'pfr',
 ];
 
 function normalizeFratColorClass(raw) {
@@ -281,6 +282,7 @@ function toOpsExportRow(flight) {
     f.dispatchRelease && String(f.dispatchRelease).trim()
   );
   const ocReleased = Boolean(f.ocRelease && String(f.ocRelease).trim());
+  const pfr = f.pfr || null;
   return {
     flightNum: String(f.flightNum || '').trim(),
     color: normalizeFratColorClass(colorRaw),
@@ -290,7 +292,31 @@ function toOpsExportRow(flight) {
     dispatchReleased,
     ocReleased,
     released: pilotAccepted && (dispatchReleased || ocReleased),
+    hasPfr: Boolean(pfr && (pfr.legArray || pfr._id || pfr.id)),
+    /** After Flight Report PFR import — same formula as Ground Services. */
+    loadAvailableLb: opsExportLoadAvailableLb(pfr),
   };
+}
+
+/** MGTOW − OWE − fuel + taxi − TKS on first PFR leg (Ground Services). */
+function opsExportLoadAvailableLb(pfr) {
+  if (!pfr || !pfr.legArray || !pfr.legArray[0]) return null;
+  const leg = pfr.legArray[0];
+  const mgtow = Number(leg.mgtow);
+  const owe = Number(leg.operatingWeightEmpty);
+  const fuel = Number(leg.fuel);
+  if (!Number.isFinite(mgtow) || !Number.isFinite(owe) || !Number.isFinite(fuel)) {
+    return null;
+  }
+  const taxiFuel = Number(leg.taxiFuel) || 0;
+  let tks = 0;
+  if (leg.tksGallons) {
+    tks = Number(leg.tksGallons);
+    if (tks > 20.8) tks = 20.8;
+    tks = tks * 9.2308;
+  }
+  const lbs = Math.round(mgtow - owe - fuel + taxiFuel - tks);
+  return Number.isFinite(lbs) ? lbs : null;
 }
 
 // Token-gated export for reservations daily board (#126)
