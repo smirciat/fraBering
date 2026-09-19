@@ -624,7 +624,7 @@ function asFirestoreDate(val) {
 /**
  * 931 dispatch-only shape: metadata always; signatures only when set.
  * Never merge unset names as null (Firestore merge deletes). Remove Release
- * writes all six fields null. Timestamps stay JS Date (Firestore Timestamp).
+ * writes all six fields null. Timestamps are ISO strings (Ryan / Flight Report).
  */
 function compactReleasePayload(flight, pfrId) {
   const payload = {
@@ -659,7 +659,7 @@ function compactReleasePayload(flight, pfrId) {
     if (!releaseFieldSet(flight[nameKey])) return;
     payload[nameKey] = flight[nameKey];
     const ts = asFirestoreDate(flight[tsKey]);
-    if (ts) payload[tsKey] = ts;
+    if (ts) payload[tsKey] = ts.toISOString();
   });
   return payload;
 }

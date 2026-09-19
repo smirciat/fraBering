@@ -10,7 +10,7 @@ fraBering is a **live flight-operations** app on a **frozen-era stack** (Angular
 
 3. **Do not modernize in passing.** Avoid replacing legacy Sequelize operators, refactoring controllers to new patterns, swapping build tools, or bumping dependencies unless the user explicitly approves. Modern Sequelize/Angular/Node patterns **often do not behave the same** here.
 
-4. **When debugging, suspect the diff—not the decade-old code.** If behavior regressed during a small change, revert incidental edits first (especially server SQL and shared services), then fix forward with minimal scope.
+4. **When debugging, suspect the diff—not the decade-old code.** If behavior regressed during a small change, revert incidental edits first (especially server SQL and shared services), then fix forward with minimal scope. If ops asks to restore a working path, **restore that caller and payload** (git history / last known-good function). Do not invent an equivalent write (e.g. Firestore `Timestamp` vs ISO string, `null` vs omit). **Sep 2026 Flight Report:** patch-forward of `firebaseMin` induced PIC/dispatch wipes; see `docs/flight-release-firebase.md`.
 
 5. **Production wins over elegance.** A duplicated loop that calls `dayFlights` per day is acceptable if that is what the rest of the app uses and ops trusts it.
 
@@ -33,8 +33,7 @@ Sequelize pool timeouts, sluggish `/status`, and public-board load were investig
 ## Where else this is documented
 
 - `docs/performance-status-board-2026-08.md` — dayFlights pool exhaustion, benchmarks, deploy checklist
-- `docs/flight-release-firebase.md` — Flight Release Firestore writes; do not convert missing PIC/dispatch/OC fields to `null` on merge
-- `.cursor/rules/safe-changes.mdc` — always-on agent guardrails
+- `docs/flight-release-firebase.md` — Flight Release Firestore writes; restore working `firebaseMin` payload, do not null-wipe or Timestamp-convert
 - `.cursor/rules/safe-changes.mdc` — always-on agent guardrails
 - `AGENTS.md` — agent entry point
 - `.cursor/rules/project-overview.mdc` — stack and layout

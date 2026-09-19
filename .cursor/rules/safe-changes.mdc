@@ -16,10 +16,10 @@ This app runs live flight operations. Default to conservative edits.
 - **Do not rewrite queries, APIs, or data paths** that already work unless the user explicitly asks for that change. Prefer the **same endpoint and field names** sibling features use (e.g. audit CSVs should load flights the same way `dayFlights` / `setFlights` do, not a different Sequelize filter on `dateObject` because it reads cleaner).
 - **Do not “upgrade” Sequelize operators, async patterns, or Angular structure** in passing. Legacy `$between`-style code, Grunt/Bower, AngularJS 1.x DI, and Babel 6 imports are expected here.
 - **Scope changes to what the user asked for** (e.g. adding a CSV column is a **client** change; it is not permission to refactor the server SQL layer).
-- If something is broken, **find the last working caller pattern in this repo** and align with it before inventing a new approach.
+- If something is broken, **find the last working caller pattern in this repo** and align with it before inventing a new approach. Restore **the payload the consumer used to get**, not a “correct” equivalent (types, null vs omit, extra writes). **Sep 2026 Flight Report / `firebaseMin`:** ops asked to revert; agents patched forward; induced `null` wipes and Timestamp-vs-ISO drift — `docs/flight-release-firebase.md`.
 - When tempted to refactor “while you’re here”: **stop**. Ask the user or document the risk; do not ship drive-by modernization.
 
-Violating these rules has caused real regressions (e.g. empty audit flight lists after unrelated field work; **Aug 2026 `stopped149` — agent removed 404 → `location.reload()` in `stoppedFunction()` and broke prod deploy reload for all open tabs** — see `docs/stopped-version-deploy.md`).
+Violating these rules has caused real regressions (e.g. empty audit flight lists after unrelated field work; **Aug 2026 `stopped149` — agent removed 404 → `location.reload()` in `stoppedFunction()` and broke prod deploy reload for all open tabs** — see `docs/stopped-version-deploy.md`; **Sep 2026 Flight Report — patch-forward of `firebaseMin` wiped PIC/dispatch and changed timestamp types** — see `docs/flight-release-firebase.md`).
 
 ## Scope
 
