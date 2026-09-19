@@ -185,10 +185,20 @@ function applyStandbyLegTimesPatch(flight, rows) {
   return changed;
 }
 
+function formatBoardTime(time) {
+  if (!time) return '';
+  const s = String(time).trim();
+  if (!s) return '';
+  return s.length >= 5 ? s.substring(0, 5) : s;
+}
+
 module.exports = {
   STANDBY_GROUND_MINUTES,
   isStandbyCharter,
   initStandbyLegTimes,
   buildAmendmentsView,
   applyStandbyLegTimesPatch,
+  plannedFinalEta,
+  releaseEtaDisplay,
+  formatBoardTime,
 };

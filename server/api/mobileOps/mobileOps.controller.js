@@ -8,7 +8,12 @@ import localEnv from '../../config/local.env.js';
 import {runFlightUpdateSideEffects} from '../todaysFlight/todaysFlight.controller.js';
 
 const { buildReleaseModalView } = require('./release-modal-view.js');
-const { applyStandbyLegTimesPatch } = require('./standby-charter.js');
+const {
+  applyStandbyLegTimesPatch,
+  plannedFinalEta,
+  releaseEtaDisplay,
+  formatBoardTime,
+} = require('./standby-charter.js');
 const fuelDisplay = require('./ground-services-fuel-display.js');
 const heliGround = require('./ground-services-heli.js');
 
@@ -29,6 +34,9 @@ const MOBILE_BOARD_ATTRS = [
   'pilotObject',
   'equipment',
   'tfliteDepart',
+  'tfliteArrive',
+  'arriveTimes',
+  'miscObject',
   'airportObjs',
   'airportObjsLocked',
   'knownIce',
@@ -226,6 +234,10 @@ function toBoardRow(flight) {
     ),
     knownIce: f.knownIce === true,
     fueled: f.fueled === true,
+    scheduledDeparture: formatBoardTime((f.departTimes || [])[0]),
+    scheduledArrival: plannedFinalEta(flight),
+    actualDepart: formatBoardTime(f.tfliteDepart),
+    displayEta: releaseEtaDisplay(flight),
   };
 }
 
