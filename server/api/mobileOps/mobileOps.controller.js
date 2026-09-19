@@ -255,6 +255,7 @@ function str(val) {
 function toBoardRow(flight) {
   const f = flight.dataValues || flight;
   const colorRaw = String(f.colorLock || f.color || '').trim();
+  const times = boardRowTimeFields(flight, f);
   return {
     _id: f._id,
     flightNum: String(f.flightNum || '').trim(),
@@ -279,7 +280,10 @@ function toBoardRow(flight) {
     ),
     knownIce: f.knownIce === true,
     fueled: f.fueled === true,
-    ...boardRowTimeFields(flight, f),
+    scheduledDeparture: times.scheduledDeparture,
+    scheduledArrival: times.scheduledArrival,
+    actualDepart: times.actualDepart,
+    displayEta: times.displayEta,
   };
 }
 
