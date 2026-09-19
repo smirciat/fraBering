@@ -79,16 +79,25 @@ const MOBILE_BOARD_ATTRS = [
   'pilotObject',
   'equipment',
   'tfliteDepart',
-  'tfliteArrive',
-  'arriveTimes',
-  'miscObject',
   'airportObjs',
   'airportObjsLocked',
   'knownIce',
   'fueled',
 ];
 
-const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
+function uniqueAttrNames(list) {
+  const seen = {};
+  const out = [];
+  for (let i = 0; i < list.length; i++) {
+    const name = list[i];
+    if (!name || seen[name]) continue;
+    seen[name] = true;
+    out.push(name);
+  }
+  return out;
+}
+
+const MOBILE_RELEASE_ATTRS = uniqueAttrNames(MOBILE_BOARD_ATTRS.concat([
   'dispatchReleaseTimestamp',
   'ocReleaseTimestamp',
   'releaseTimestamp',
@@ -123,7 +132,7 @@ const MOBILE_RELEASE_ATTRS = MOBILE_BOARD_ATTRS.concat([
   'jumpseaterObject',
   'altObj',
   'status',
-]);
+]));
 
 function hasReleaseSignature(flight) {
   const f = flight.dataValues || flight;
@@ -221,12 +230,22 @@ function toBoardLegs(f) {
   const locked = f.airportObjsLocked;
   const live = f.airportObjs;
   const objs =
-    locked && locked.length ? locked : live && live.length ? live : [];
+    locked && typeof locked.length === 'number' && locked.length
+      ? locked
+      : live && typeof live.length === 'number' && live.length
+        ? live
+        : [];
   const colorRaw = String(f.colorLock || f.color || '').trim();
   const flightColor = normalizeFratColorClass(colorRaw);
 
-  if (objs.length) {
+  if (objs.length && typeof objs.map === 'function') {
     return objs.map(function (leg, index) {
+      if (!leg || typeof leg !== 'object') {
+        return {
+          airportCode: airportCodeFromCityName((f.airports || [])[index], index),
+          colorClass: flightColor,
+        };
+      }
       const airport = leg.airport || {};
       const code = str(airport.threeLetter) || airportCodeFromCityName(
         (f.airports || [])[index],
@@ -252,39 +271,76 @@ function str(val) {
   return String(val).trim();
 }
 
-function toBoardRow(flight) {
-  const f = flight.dataValues || flight;
-  const colorRaw = String(f.colorLock || f.color || '').trim();
-  const times = boardRowTimeFields(flight, f);
+function fallbackBoardRow(f) {
+  const departs = Array.isArray(f.departTimes)
+    ? f.departTimes.map(boardFormatTime)
+    : [];
   return {
     _id: f._id,
     flightNum: String(f.flightNum || '').trim(),
-    airports: f.airports || [],
-    legs: toBoardLegs(f),
-    departTimes: f.departTimes || [],
-    flightStatus: f.flightStatus || '',
-    color: normalizeFratColorClass(colorRaw),
-    colorRaw,
+    airports: Array.isArray(f.airports) ? f.airports : [],
+    legs: [],
+    departTimes: departs,
+    flightStatus: String(f.flightStatus || ''),
+    color: 'airport-green',
+    colorRaw: '',
     dispatchRelease: f.dispatchRelease || '',
     ocRelease: f.ocRelease || '',
     pilotAgree: f.pilotAgree || '',
-    pilotLastName:
-      f.pilotObject && f.pilotObject.lastName ? f.pilotObject.lastName : '',
-    equipmentName:
-      f.equipment && f.equipment.name ? f.equipment.name : '',
+    pilotLastName: '',
+    equipmentName: '',
     registration: f.aircraft || '',
-    released: Boolean(
-      f.pilotAgree &&
-        String(f.pilotAgree).trim() &&
-        (f.dispatchRelease || f.ocRelease)
-    ),
-    knownIce: f.knownIce === true,
-    fueled: f.fueled === true,
-    scheduledDeparture: times.scheduledDeparture,
-    scheduledArrival: times.scheduledArrival,
-    actualDepart: times.actualDepart,
-    displayEta: times.displayEta,
+    released: false,
+    knownIce: false,
+    fueled: false,
+    scheduledDeparture: boardFormatTime(departs[0]),
+    scheduledArrival: boardFormatTime(departs[departs.length - 1]),
+    actualDepart: '',
+    displayEta: '',
   };
+}
+
+function toBoardRow(flight) {
+  const f = flight.dataValues || flight;
+  try {
+    const colorRaw = String(f.colorLock || f.color || '').trim();
+    const times = boardRowTimeFields(flight, f);
+    const departs = Array.isArray(f.departTimes)
+      ? f.departTimes.map(boardFormatTime)
+      : [];
+    return {
+      _id: f._id,
+      flightNum: String(f.flightNum || '').trim(),
+      airports: Array.isArray(f.airports) ? f.airports : [],
+      legs: toBoardLegs(f),
+      departTimes: departs,
+      flightStatus: f.flightStatus || '',
+      color: normalizeFratColorClass(colorRaw),
+      colorRaw: colorRaw,
+      dispatchRelease: f.dispatchRelease || '',
+      ocRelease: f.ocRelease || '',
+      pilotAgree: f.pilotAgree || '',
+      pilotLastName:
+        f.pilotObject && f.pilotObject.lastName ? f.pilotObject.lastName : '',
+      equipmentName:
+        f.equipment && f.equipment.name ? f.equipment.name : '',
+      registration: f.aircraft || '',
+      released: Boolean(
+        f.pilotAgree &&
+          String(f.pilotAgree).trim() &&
+          (f.dispatchRelease || f.ocRelease)
+      ),
+      knownIce: f.knownIce === true,
+      fueled: f.fueled === true,
+      scheduledDeparture: times.scheduledDeparture,
+      scheduledArrival: times.scheduledArrival,
+      actualDepart: times.actualDepart,
+      displayEta: times.displayEta,
+    };
+  } catch (err) {
+    console.error('[mobileOps] board row failed', f && f._id, err);
+    return fallbackBoardRow(f || {});
+  }
 }
 
 function flightMatchesBase(flight, base) {
@@ -508,7 +564,13 @@ function whoCanSign(flight, user) {
 
 function toReleaseDto(flight, user) {
   const f = flight.dataValues || flight;
-  const row = toBoardRow(flight);
+  let row;
+  try {
+    row = toBoardRow(flight);
+  } catch (rowErr) {
+    console.error('[mobileOps] toBoardRow failed', f && f._id, rowErr);
+    row = fallbackBoardRow(f || {});
+  }
   let modalView = null;
   try {
     modalView = buildReleaseModalView(flight);
@@ -592,7 +654,14 @@ export function getBoard(req, res) {
           return ac.startsWith('N');
         })
         .filter(row => allBases || flightMatchesBase(row, base))
-        .map(toBoardRow)
+        .map(function (row) {
+          try {
+            return toBoardRow(row);
+          } catch (err) {
+            console.error('[mobileOps] board row failed', row && row._id, err);
+            return fallbackBoardRow(row.dataValues || row || {});
+          }
+        })
     )
     .then(flights => res.status(200).json({ date, base, flights }))
     .catch(err => {
