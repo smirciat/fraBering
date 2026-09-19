@@ -8,14 +8,59 @@ import localEnv from '../../config/local.env.js';
 import {runFlightUpdateSideEffects} from '../todaysFlight/todaysFlight.controller.js';
 
 const { buildReleaseModalView } = require('./release-modal-view.js');
-const {
-  applyStandbyLegTimesPatch,
-  plannedFinalEta,
-  releaseEtaDisplay,
-  formatBoardTime,
-} = require('./standby-charter.js');
+const standbyCharter = require('./standby-charter.js');
+const applyStandbyLegTimesPatch = standbyCharter.applyStandbyLegTimesPatch;
 const fuelDisplay = require('./ground-services-fuel-display.js');
 const heliGround = require('./ground-services-heli.js');
+
+/** Board row times — fallbacks if standby-charter.js on server is older than controller. */
+function boardFormatTime(time) {
+  if (typeof standbyCharter.formatBoardTime === 'function') {
+    return standbyCharter.formatBoardTime(time);
+  }
+  if (!time) return '';
+  const s = String(time).trim();
+  if (!s) return '';
+  return s.length >= 5 ? s.substring(0, 5) : s;
+}
+
+function boardPlannedFinalEta(flight) {
+  if (typeof standbyCharter.plannedFinalEta === 'function') {
+    return standbyCharter.plannedFinalEta(flight) || '';
+  }
+  const f = flight.dataValues || flight;
+  const times =
+    f.arriveTimes && f.arriveTimes.length ? f.arriveTimes : f.departTimes;
+  if (!times || !times.length) return '';
+  const t = times[times.length - 1];
+  return t ? String(t).substring(0, 5) : '';
+}
+
+function boardReleaseEtaDisplay(flight) {
+  if (typeof standbyCharter.releaseEtaDisplay === 'function') {
+    return standbyCharter.releaseEtaDisplay(flight) || '';
+  }
+  return boardPlannedFinalEta(flight);
+}
+
+function boardRowTimeFields(flight, f) {
+  try {
+    return {
+      scheduledDeparture: boardFormatTime((f.departTimes || [])[0]),
+      scheduledArrival: boardPlannedFinalEta(flight),
+      actualDepart: boardFormatTime(f.tfliteDepart),
+      displayEta: boardReleaseEtaDisplay(flight),
+    };
+  } catch (err) {
+    console.error('[mobileOps] board row time fields', err);
+    return {
+      scheduledDeparture: '',
+      scheduledArrival: '',
+      actualDepart: '',
+      displayEta: '',
+    };
+  }
+}
 
 const MOBILE_BOARD_ATTRS = [
   '_id',
@@ -234,10 +279,7 @@ function toBoardRow(flight) {
     ),
     knownIce: f.knownIce === true,
     fueled: f.fueled === true,
-    scheduledDeparture: formatBoardTime((f.departTimes || [])[0]),
-    scheduledArrival: plannedFinalEta(flight),
-    actualDepart: formatBoardTime(f.tfliteDepart),
-    displayEta: releaseEtaDisplay(flight),
+    ...boardRowTimeFields(flight, f),
   };
 }
 
