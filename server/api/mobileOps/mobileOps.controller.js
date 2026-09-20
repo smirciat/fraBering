@@ -130,7 +130,6 @@ const MOBILE_RELEASE_ATTRS = uniqueAttrNames(MOBILE_BOARD_ATTRS.concat([
   'tfliteDepart',
   'tfliteArrive',
   'jumpseaterObject',
-  'altObj',
   'status',
 ]));
 
