@@ -94,6 +94,7 @@ angular.module('workspaceApp')
       {
         title: 'Flight',
         rows: [
+          {name: 'far293a', label: 'General Emergency (293(a) 1,4-8)'},
           {name: 'far297', label: '297 Instrument Proficiency Check'},
           {name: 'far297g', label: '297G Autopilot Check'},
           {name: 'far299', label: '299 Route Check'},
@@ -142,9 +143,6 @@ angular.module('workspaceApp')
     ],
     // #47 — nested options when a parent training type is checked (modal only)
     trainingSelectionLinks: {
-      BasicIndoc: [
-        {name: 'far293a', label: 'General Emergency (293(a) 1,4-8)', defaultChecked: false}
-      ],
       C208Ground: [
         {name: 'C208GOS', label: 'GOS', defaultChecked: true}
       ],

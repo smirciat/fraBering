@@ -6,270 +6,120 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
+## #67 No option to add a/c, flight time for stand alone .299
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-67-att-51-image.png)
+
+## #66 293(a)1,4-8
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Found where this was located.  This is technically a "flight test" so could you move it to the right side under flight and have it as its own section?  Nice work Andy.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-66-att-50-image.png)
+
+## #65 Move read medical button
+
+- **Type:** feature · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+In the area that you upload and approve, when I select medical, I want the option to only be upload, read, approve.  Or something similar.  So all I need to do for a medical is scan it then press one button and it reads/uploads med date, but would also like a "expiration, new base" type popup so I can see it performed the function correctly and if it didn't I can modify it right there on the spot like base month.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-65-att-49-image.png)
+
+## #64 Pending view
+
+- **Type:** feature · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Would like a way to view all "pending" or "not yet approved" training records in the system.  Also, I way to see all approved records not associated with a document.  This shouldn't happen but I feel like we probably have some in the system already.
+
+## #63 Create a new user
+
+- **Type:** feature · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+trying to build accounts for the new SICs.  Thought I saw a way to do this, but it did not.  It would be nice to be able to create a new user and then that's either pushed or synced with flight report.
+
+## #62 Uploading and Approving Passport
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+Gave me an error when I tried to upload and approve passport.  I was able to upload the passport but without approving it, the dates were not changed in the pilot board.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-62-att-48-image.png)
+
+## #61 Expiration date logic incorrect when creating flight test form
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+screen shot of what STARR command created vs what Timmy Time created.  Timmy's is accurate.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-61-att-46-image.png)
+- ![image.png](team-backlog/attachments/issue-61-att-47-image.png)
+
+## #60 Does not automatically rebase future dates
+
+- **Type:** bug · medium · open
+- **Reporter:** NATHANIEL OLSON
+
+**Original report:**
+
+293(b) for the caravan did not want to rebase Adam.  All others appeared to work accurately.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-60-att-45-image.png)
+
+## Ready for review (shipped — reporter verify, do not build)
+
+_Waiting for reporter sign-off in the app._
+
 ## #56 Name Accuracy
 
-- **Type:** bug · critical · open
+- **Type:** bug · critical · ready_for_review
 - **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
 
 **Original report:**
 
 Conor Rocco Murray
 Shawn Michael Thomas Graham
 
+**Comments:**
+- Cursor Agent: Ready for your review (deployed pending Andy’s build).
+
+**Legal names on training PDFs**
+• Pilots can have a separate **legal name** (as on the FAA certificate) while roster name stays the same.
+• Training Records and ROT/Flight Test PDFs use legal name when set.
+• **Edit Pilot Training Dates** and the pilot dropdown have fields to set legal name; **Infer from CERT scan** can pull it from the newest medical or certificate scan when the scan is readable.
+
+**Please check:** Pick a pilot with a multi-part legal name, confirm PDFs and records show the full name; try infer from scan if you have a clear CERT upload.
+
 **Attachments:**
 - ![image.png](team-backlog/attachments/issue-56-att-41-image.png)
-
-## #59 Document date
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Don't need a document date when selecting Cert, Annual resume, or drivers license.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-59-att-44-image.png)
-
-## #58 Hazmat 2 year expiration
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Hazmat defaults to 1 year expiration Aug 27.  I manually updated expiration Aug 28.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-58-att-43-image.png)
-
-## #57 Hazmat Approval
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-When I hit upload and approve it said it uploaded but did not.  Went down to the entry line and hit approve and it gave me this.  Reading the hazmat paperwork as a full up checkride.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-57-att-42-image.png)
-
-## #55 Expiration Date Logic
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Expiration date logic for .297 must be based on day count.  Calculating 3/3/27 for new expiration.  Back to eliminating days and just using months.  For the 299/297g it isn't understanding that a new base overwrites a future base month.  299/297g should have 9/30/27 as expiration.  Seen this a couple times now.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-55-att-40-image.png)
-
-## #54 Expiration format
-
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Why don't we just put expiration as 10/27.  Month and year.  All pilot dates expire at the end of the month so day is superfluous.  Unless you can think of a reason to keep it, lets drop the day.  Nice work Andy.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-54-att-39-image.png)
-
-## #53 293(a) expiration updated when it shouldn't have
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Built an entry and clicked BI and 293(a) then hit save.  Realized I couldn't upload 2 docs and attach them to the same entry, so when back and unclicked 293(a) then hit save again.  Then uploaded and approved BI ROT to BI section.  Somehow the 293(a) expiration was modified as well.  Not sure if this occurred when I hit save the first time (which it should not since no dates are modified until "approved") or if BI and 293(a) are incorrectly tied together.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-53-att-38-image.png)
-
-## #52 Training selection organization
-
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Organized similar to my post it.  
-Wouldn't need sub-options for 297/297g/299
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-52-att-36-image.png)
-- ![image.png](team-backlog/attachments/issue-52-att-37-image.png)
-
-## #51 Unaffiliated ROTs
-
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Need the ability to upload a ROT to a section without modifying base month.
-
-Example:
-Special approach training 
-
-Will go under basic indoc section but will not affect base month and will not expire
-
-Needs to be located under basic indoc section and shown on single line entry for that section
-
-## #50 AI Reads/interprets Medical
-
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Is it possible for you to force your AI underling to have an option where I just upload the medical and STARR command reads/interprets/calculates expiration?  So I never need to type in any data for medicals, I just upload a picture?
-
-## #49 135.293(a)1,4-8 not aircraft specific
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Requiring an aircraft; aircraft not required and should not be entered on this flight test form.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-49-att-35-image.png)
-
-## #48 Not allowing me to delete erroneous input
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Not allowing me to delete this 8/3 erroneous entry
-
-**Progress (changed, not resolved):**
-
-NATHANIEL OLSON: When I clicked back to the page, that entry was deleted, but two I had previously deleted where back.
-
-**Latest screenshot:**
-
-![image.png](team-backlog/attachments/issue-48-att-34-image.png)
-
-**Comments:**
-- NATHANIEL OLSON: When I clicked back to the page, that entry was deleted, but two I had previously deleted where back.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-48-att-34-image.png)
-
-## #47 GOS option
-
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-When I select 1900 ground, 208 ground, etc, I'd like a sub-option for GOS that is defaulted to checked, but can be unchecked.  Virtually all in-house aircraft ground has GOS simultaneously accomplished, so would make the whole process more efficient.
-
-**Progress (changed, not resolved):**
-
-NATHANIEL OLSON: additionally, when selecting Basic Indoc, a General Emergency sub-option should present itself.
-
-**Latest screenshot:**
-
-![image.png](team-backlog/attachments/issue-47-att-33-image.png)
-
-**Comments:**
-- NATHANIEL OLSON: additionally, when selecting Basic Indoc, a General Emergency sub-option should present itself.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-47-att-33-image.png)
-
-## #46 Only Beech
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-No Van N-numbers listed.  Only beeches it appears.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-46-att-32-image.png)
-
-## #45 Medical/Passport
-
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Would like a table and history of current/previous medical/passport dates.  It could be built into the current training table.  So just left of Basic Indoc
-
-**Progress (changed, not resolved):**
-
-NATHANIEL OLSON: Obviously would require shrinking the columns, but looks like there is enough space.  Nice work Andy.
-
-**Latest screenshot:**
-
-![image.png](team-backlog/attachments/issue-45-att-31-image.png)
-
-**Comments:**
-- NATHANIEL OLSON: Obviously would require shrinking the columns, but looks like there is enough space.  Nice work Andy.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-45-att-31-image.png)
-
-## #44 Larger area so less scrolling is needed
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Make the training entry box larger so that less awkward scrolling is needed.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-44-att-30-image.png)
-
-## #43 Archive Pilots no longer employed
-
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Need the ability to archive pilots no longer working here.  I'd like to have the option to do this, then have a selection to view archived pilot records.
-
-## #42 Error uploading medical
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Telling me to select tab for medical upload.  I have "certs" selected.
-
-**Progress (changed, not resolved):**
-
-NATHANIEL OLSON: Well the error is not that there is no "medical" tab, its that when I select training record then select upload cert, the medical tab goes away and I cannot get to it retroactively without refreshing the page.
-
-**Latest screenshot:**
-
-![image.png](team-backlog/attachments/issue-42-att-29-image.png)
-
-**Comments:**
-- NATHANIEL OLSON: Well the error is not that there is no "medical" tab, its that when I select training record then select upload cert, the medical tab goes away and I cannot get to it retroactively without refreshing the page.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-42-att-29-image.png)
-
-## Ready for review (shipped — reporter verify, do not build)
-
-_Waiting for reporter sign-off in the app._
 
 ## #28 Blank flight origin
 
@@ -542,6 +392,382 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
+
+## #59 Document date
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Don't need a document date when selecting Cert, Annual resume, or drivers license.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Document date on CERT uploads**
+• Uploading **Certificate**, **Annual Resume**, **Driver’s License**, or **Medical** no longer asks for a separate document date in the upload box.
+• The system uses the upload date in the file name where needed.
+
+**Please check:** CERT → each of those types → upload flow has no document date step (unless you linked a training record that still needs dates).
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-59-att-44-image.png)
+
+## #58 Hazmat 2 year expiration
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Hazmat defaults to 1 year expiration Aug 27.  I manually updated expiration Aug 28.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Hazmat expiration (24 months)**
+• Hazmat on the **HAZ** tab now uses a **24-month** expiration when approving/updating, same as other hazmat handling.
+
+**Please check:** HAZ record approve → expiration month on pilot profile and board looks correct (~24 months from base month).
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-58-att-43-image.png)
+
+## #57 Hazmat Approval
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+When I hit upload and approve it said it uploaded but did not.  Went down to the entry line and hit approve and it gave me this.  Reading the hazmat paperwork as a full up checkride.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Hazmat upload & approve**
+• Hazmat upload/approve must be tied to a **saved training record** with training types selected (same idea as other approvals).
+• Training type checkboxes stay in sync when you use the type picker.
+
+**Please check:** HAZ upload without a linked record should warn; with a proper record, approve updates hazmat expiration.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-57-att-42-image.png)
+
+## #55 Expiration Date Logic
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Expiration date logic for .297 must be based on day count.  Calculating 3/3/27 for new expiration.  Back to eliminating days and just using months.  For the 299/297g it isn't understanding that a new base overwrites a future base month.  299/297g should have 9/30/27 as expiration.  Seen this a couple times now.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Expiration date rules**
+• Base-month math for **299**, **297**, and **297g** adjusted per your notes (including end-of-month behavior and 297g vs BI).
+
+**Please check:** Approve or edit dates for those items and confirm expirations match what you expect on the summary table and pilot board.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-55-att-40-image.png)
+
+## #54 Expiration format
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Why don't we just put expiration as 10/27.  Month and year.  All pilot dates expire at the end of the month so day is superfluous.  Unless you can think of a reason to keep it, lets drop the day.  Nice work Andy.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Expiration display (M/YY)**
+• Training expiration columns on Records and Pilot Board show **month/year** in a consistent short format.
+
+**Please check:** Spot-check several exp columns — should read like 2/27 not long date strings.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-54-att-39-image.png)
+
+## #53 293(a) expiration updated when it shouldn't have
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Built an entry and clicked BI and 293(a) then hit save.  Realized I couldn't upload 2 docs and attach them to the same entry, so when back and unclicked 293(a) then hit save again.  Then uploaded and approved BI ROT to BI section.  Somehow the 293(a) expiration was modified as well.  Not sure if this occurred when I hit save the first time (which it should not since no dates are modified until "approved") or if BI and 293(a) are incorrectly tied together.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**293(a) vs Basic Indoc expiration**
+• Approving **BI** no longer incorrectly moves the **293(a)** expiration column.
+• Pilot board 293(a) column uses the correct field.
+
+**Please check:** BI-only update should not change 293(a) exp; 293(a) still updates when that training is approved.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-53-att-38-image.png)
+
+## #52 Training selection organization
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Organized similar to my post it.  
+Wouldn't need sub-options for 297/297g/299
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Training type picker layout**
+• Click **Type** on a record → picker is grouped **Ground** vs **Flight** (easier to find items).
+
+**Please check:** Open picker on a draft row; confirm layout matches how you think about ground vs flight events.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-52-att-36-image.png)
+- ![image.png](team-backlog/attachments/issue-52-att-37-image.png)
+
+## #51 Unaffiliated ROTs
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Need the ability to upload a ROT to a section without modifying base month.
+
+Example:
+Special approach training 
+
+Will go under basic indoc section but will not affect base month and will not expire
+
+Needs to be located under basic indoc section and shown on single line entry for that section
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Unaffiliated ROTs**
+• Under **BI** tab there is an **Unaffiliated** option with a short description in the file name.
+• These uploads do **not** change base month or pilot expirations; they show under that tab’s single-line entry.
+
+**Please check:** Upload an unaffiliated item with a label; confirm it files correctly and does not move training dates.
+
+## #50 AI Reads/interprets Medical
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Is it possible for you to force your AI underling to have an option where I just upload the medical and STARR command reads/interprets/calculates expiration?  So I never need to type in any data for medicals, I just upload a picture?
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Medical read from scan**
+• After a **CERT Medical** upload, the system tries to read **exam date** and **class** from the scan (server OCR).
+• **Read medical from newest CERT scan** button when CERT + Medical is selected.
+• Sideways scans: server tries several orientations when ImageMagick is installed on the server.
+• If OCR fails, you can still enter date/class manually.
+
+**Please check:** Upload a clear medical scan; confirm profile date/class update or sensible message if scan is poor.
+
+## #49 135.293(a)1,4-8 not aircraft specific
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Requiring an aircraft; aircraft not required and should not be entered on this flight test form.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**293(a) without aircraft**
+• Events like **293(a)** that are not a PIC/SIC checkride no longer require aircraft, N#, or flight time.
+• Only real checkride lines require those fields.
+
+**Please check:** 293(a) + check airman, no PIC line → save/approve without aircraft. PIC checkride still asks for aircraft/N#.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-49-att-35-image.png)
+
+## #48 Not allowing me to delete erroneous input
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Not allowing me to delete this 8/3 erroneous entry
+
+**Comments:**
+- NATHANIEL OLSON: When I clicked back to the page, that entry was deleted, but two I had previously deleted where back.
+- Cursor Agent: Ready for your review.
+
+**Delete bad rows**
+• **Delete** removes the correct row even when approved records are hidden from the list.
+• Draft rows can be removed before save.
+
+**Please check:** Create a mistake row, delete it; with “hide approved” on, delete should not remove the wrong person’s row.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-48-att-34-image.png)
+
+## #47 GOS option
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+When I select 1900 ground, 208 ground, etc, I'd like a sub-option for GOS that is defaulted to checked, but can be unchecked.  Virtually all in-house aircraft ground has GOS simultaneously accomplished, so would make the whole process more efficient.
+
+**Comments:**
+- NATHANIEL OLSON: additionally, when selecting Basic Indoc, a General Emergency sub-option should present itself.
+- Cursor Agent: Ready for your review.
+
+**GOS & General Emergency in type picker**
+• **Ground** training (208, 1900, etc.) → nested **GOS**, on by default, can be turned off.
+• **BI** → optional **General Emergency (293(a))**, not auto-checked.
+
+**Please check:** 1900 ground → GOS appears checked; uncheck GOS only; BI → GE optional.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-47-att-33-image.png)
+
+## #46 Only Beech
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+No Van N-numbers listed.  Only beeches it appears.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Tail numbers by aircraft type**
+• N# dropdown on checkrides uses the full fleet list (not only 1900s).
+• Choosing **C208** shows **Caravan** tails; **B190** shows 1900 tails, etc.
+
+**Please check:** C208 PIC line → Caravan N-numbers; B190 → 1900 tails.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-46-att-32-image.png)
+
+## #45 Medical/Passport
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Would like a table and history of current/previous medical/passport dates.  It could be built into the current training table.  So just left of Basic Indoc
+
+**Comments:**
+- NATHANIEL OLSON: Obviously would require shrinking the columns, but looks like there is enough space.  Nice work Andy.
+- Cursor Agent: Ready for your review.
+
+**Medical & passport on summary table**
+• **Medical** and **Passport** columns added **left of Basic Indoc** on “All Training Dates,” with Current / Previous rows like other training.
+• History updates when you change medical/passport or use medical scan.
+
+**Please check:** Columns visible; change medical in assignment or passport in edit modal → Previous row; restore prior (approver) if needed.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-45-att-31-image.png)
+
+## #44 Larger area so less scrolling is needed
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Make the training entry box larger so that less awkward scrolling is needed.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Larger training entry area**
+• **Type** column is a bigger click target with wrapped text.
+• Training type modal is wider; Ground and Flight side-by-side on a large screen to reduce scrolling.
+
+**Please check:** Pick types on a busy record; confirm less awkward scrolling in the modal.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-44-att-30-image.png)
+
+## #43 Archive Pilots no longer employed
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Need the ability to archive pilots no longer working here.  I'd like to have the option to do this, then have a selection to view archived pilot records.
+
+**Comments:**
+- Cursor Agent: Ready for your review.
+
+**Archive pilots**
+• Approvers can **Archive pilot** (no longer on active lists) or **Restore**.
+• **Show archived pilots** checkbox on the pilot selector to open their old records.
+
+**Please check:** Archive someone → gone from list → check “show archived” → view records → restore.
+
+## #42 Error uploading medical
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Telling me to select tab for medical upload.  I have "certs" selected.
+
+**Comments:**
+- NATHANIEL OLSON: Well the error is not that there is no "medical" tab, its that when I select training record then select upload cert, the medical tab goes away and I cannot get to it retroactively without refreshing the page.
+- Cursor Agent: Ready for your review.
+
+**Medical upload / CERT tab**
+• Choosing **UPLOAD A CERT** in the training-record dropdown no longer hides the CERT type picker (Medical, Certificate, etc.).
+• You can pick **Medical** after UPLOAD A CERT without refreshing the page.
+
+**Please check:** UPLOAD A CERT → Medical → upload; also confirm linking a real training record still hides the extra tab row (by design).
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-42-att-29-image.png)
 
 ## #41 data collision
 

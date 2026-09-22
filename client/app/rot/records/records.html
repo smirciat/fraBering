@@ -127,10 +127,17 @@
           No document date for this CERT type — upload date is used in the filename.
         </p>
       </div>
+      <div class="points-row" ng-if="rotRecords.tab==='CERT' && rotRecords.subtab==='Medical' && rotRecords.showUploadTabPicker()">
+        <button class="btn btn-default" ng-if="rotRecords.isApprover()" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.inferMedicalFromScan({})">Read medical from newest CERT scan</button>
+        <span ng-if="rotRecords.isApprover()" style="font-size:12px;color:#666;">Upload a file below, or read an existing scan, then Upload and Approve to confirm exam date and expiration.</span>
+      </div>
       <div class="points-row">
         <button class="btn btn-success" ng-if="rotRecords.isUserUploader()" ng-disabled="rotRecords.isItDisabled()" ng-click="rotRecords.add()">Upload File</button>
-        <button class="btn btn-warning" ng-if="rotRecords.isApprover() && !rotRecords.isUnaffiliatedRotSub(rotRecords.subtab)" ng-disabled="rotRecords.isItDisabled('approve')" ng-click="rotRecords.add(true)">Upload and Approve</button>
+        <button class="btn btn-warning" ng-if="rotRecords.isApprover() && (rotRecords.isCertDocOnlyUploadSub(rotRecords.subtab) || !rotRecords.isUnaffiliatedRotSub(rotRecords.subtab))" ng-disabled="rotRecords.isItDisabled('approve')" ng-click="rotRecords.add(true)">Upload and Approve</button>
       </div>
+      <p ng-if="rotRecords.tab==='CERT' && rotRecords.subtab==='Passport' && rotRecords.showUploadTabPicker()" style="font-size:12px;color:#666;margin:8px 0 0 0;">
+        Passport: set <strong>Document Date</strong> to the passport expiration, choose the PDF, then Upload and Approve (no training record required).
+      </p>
     </div>
       
       
@@ -262,18 +269,18 @@
                   </ui-select-choices>
                 </ui-select></td>
                 <td>
-                  <span ng-if="!rotRecords.recordRequiresAircraft(record)" style="font-size:12px;color:#888;">—</span>
-                  <ui-select ng-if="rotRecords.recordRequiresAircraft(record) && rotRecords.nNumbersForRecord(record).length" ng-model="record.aircraftN" theme="bootstrap" ng-disabled="disabled">
+                  <span ng-if="!rotRecords.recordRequiresTailAndTime(record)" style="font-size:12px;color:#888;">—</span>
+                  <ui-select ng-if="rotRecords.recordRequiresTailAndTime(record) && rotRecords.nNumbersForRecord(record).length" ng-model="record.aircraftN" theme="bootstrap" ng-disabled="disabled">
                     <ui-select-match allow-clear="true" placeholder="N#">{{$select.selected}}</ui-select-match>
                     <ui-select-choices repeat="n in rotRecords.nNumbersForRecord(record) | filter:$select.search">
                       <div ng-bind-html="n | highlight: $select.search"></div>
                     </ui-select-choices>
                   </ui-select>
-                  <input ng-if="rotRecords.recordRequiresAircraft(record) && !rotRecords.nNumbersForRecord(record).length" class="form-control" ng-model="record.aircraftN" type="text" style="min-width:6em" placeholder="N#">
+                  <input ng-if="rotRecords.recordRequiresTailAndTime(record) && !rotRecords.nNumbersForRecord(record).length" class="form-control" ng-model="record.aircraftN" type="text" style="min-width:6em" placeholder="N#">
                 </td>
                 <td>
-                  <span ng-if="!rotRecords.recordRequiresAircraft(record)" style="font-size:12px;color:#888;">—</span>
-                  <input ng-if="rotRecords.recordRequiresAircraft(record)" class="form-control" ng-model="record.flightTime" type="text" style="min-width:4em" placeholder="hrs">
+                  <span ng-if="!rotRecords.recordRequiresTailAndTime(record)" style="font-size:12px;color:#888;">—</span>
+                  <input ng-if="rotRecords.recordRequiresTailAndTime(record)" class="form-control" ng-model="record.flightTime" type="text" style="min-width:4em" placeholder="hrs">
                 </td>
                 <td class="rot-records-type-cell" ng-click="rotRecords.radioModal(record)">
                   <p tooltip-placement="auto" uib-tooltip="Click to open training type picker">{{rotRecords.displayArray(record)}}</p>

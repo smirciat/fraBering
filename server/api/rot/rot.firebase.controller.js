@@ -125,6 +125,59 @@ async function updateDocument(collection, docId, data) {
   }
 }
 
+/**
+ * Fields FRA may write on pilots. Anything else (courierCurrency, apprCurrency,
+ * holdCurrency, and the rest of the flight-log profile) is left untouched.
+ * Training-dates and assignment saves used to merge the whole loaded document.
+ */
+const PILOT_PROFILE_FIELDS = [
+  'name', 'legalName', 'pilotBase', 'dateOfHire', 'dateOfBirth',
+  'cert', 'certType', 'medicalClass', 'medicalDate', 'medicalInterval',
+  'oas', 'passport', 'rus',
+  'atp', 'commercial', 'cfi', 'other', 'otherDescription', 'ratings',
+  'quals', 'removals',
+  'highMinimumsC208', 'highMinimumsC408', 'highMinimumsC212', 'highMinimumsB190', 'highMinimumsBE20',
+  'rotArchived', 'isActive',
+  'trainingExpHistory',
+  'far293a148'
+];
+
+const PILOT_EXP_KEYS = [
+  'BasicIndoc', 'Hazmat', 'far299', 'far293a', 'far297', 'far297g',
+  'C208PIC', 'C208TKS', 'C208Ground', 'C208GOS',
+  'B190PIC', 'B190SIC', 'B190Ground', 'B190GOS',
+  'BE20PIC', 'BE20Ground', 'BE20GOS',
+  'C408PIC', 'C408SIC', 'C408Ground', 'C408GOS',
+  'C212PIC', 'C212SIC', 'C212Ground', 'C212GOS',
+  'CheckAirmanObs', 'FlightInstructorObs'
+];
+
+function pilotWriteAllowlist() {
+  const allowed = new Set(PILOT_PROFILE_FIELDS);
+  PILOT_EXP_KEYS.forEach(key => {
+    allowed.add(key === 'far293a' ? 'far293a148' : key + 'Exp');
+  });
+  return allowed;
+}
+
+function pickPilotWriteFields(doc, docId) {
+  const allowed = pilotWriteAllowlist();
+  const out = {};
+  const dropped = [];
+  Object.keys(doc || {}).forEach(key => {
+    if (doc[key] === undefined) return;
+    if (!allowed.has(key)) {
+      dropped.push(key);
+      return;
+    }
+    out[key] = doc[key];
+  });
+  if (dropped.length) {
+    console.warn('rot pilots write dropped non-FRA fields', docId, dropped.join(','));
+  }
+  return out;
+}
+
 export async function updateFirebase(req, res) {
   try {
     let collection = req.body.collection;
@@ -132,6 +185,7 @@ export async function updateFirebase(req, res) {
     let id;
     if (localDoc._id) id = localDoc._id.toString();
     delete localDoc._id;
+    if (collection === 'pilots') localDoc = pickPilotWriteFields(localDoc, id);
     let data = await updateDocument(collection, id, localDoc);
     if (data) return res.status(200).json(data);
     return res.status(500).json({message: 'No response from firebase'});
