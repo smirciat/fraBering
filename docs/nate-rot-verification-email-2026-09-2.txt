@@ -1,0 +1,60 @@
+Subject: Training Records — please verify today's batch (#60–#67)
+
+Hi Nate,
+
+Today's Training Records items are ready for you. Each one is Ready for review in Issues, with a short "what to check" comment. Nothing was emailed from the system — this note is the overview.
+
+Use Training Records, and work through the sections below in order. If something doesn't match what you expected, comment on that issue.
+
+
+1. DATES ON CHECKRIDES
+----------------------
+#60 — 293(b) rebase
+  PIC/SIC checkride expirations rebase from the check month (end of that month + 12), not the old base-month table.
+  Check: Preview a Caravan 293(b) (Adam was the example). The proposed month should match the check, not a month early. Cancel if you only want to look.
+
+#61 — Flight Test form dates
+  The Flight Test PDF uses the same expirations as the pilot profile.
+  Check: Set the aircraft on the row, open Flight Test, and compare the PDF to the board.
+
+Training dates on screen show as month/year (09/27). The stored date stays the first of that month so Flight Report keeps working.
+
+
+2. CERT UPLOADS (NO TRAINING RECORD)
+------------------------------------
+#62 — Passport
+  CERT → Passport: set Document Date to the passport expiration (full date), then Upload and Approve.
+  Check: The passport date on the pilot updates. It stays a full date, not month/year only.
+
+#65 — Medical
+  CERT → Medical: Read medical from the newest scan, or upload, then Upload and Approve.
+  Check: The preview shows exam date and expiration before you accept it.
+
+
+3. ENTERING A RECORD
+--------------------
+#66 — 293(a) 1,4-8
+  General Emergency is on the Flight side of the type picker, as its own row.
+  Check: Type on a draft → Flight → General Emergency at the top.
+
+#67 — Tail and time on a standalone 299
+  299, 297, or 297g asks for N# and flight time even without a PIC/SIC checkride.
+  Check: A 299-only row shows those fields. A ground-only row does not.
+
+
+4. PILOTS AND THE QUEUE
+-----------------------
+#63 — New pilot
+  New pilot on Training Records. Name, employee number (digits), and base. That is the Flight Report pilot.
+  Check: Add one new SIC with their real employee number. They should show in the list. Don't reuse an existing number.
+
+#64 — Pending and missing documents
+  Open "Pending records and missing documents."
+  First list: not yet approved, all pilots. Second list: approved with no file tied to that record. Click a row to open the pilot.
+  Check: Both lists match what you expect.
+
+
+Earlier batch (#42–#59, including legal names) is still Ready for review if you haven't closed those yet.
+
+Thanks,
+Andy
