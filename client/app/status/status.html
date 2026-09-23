@@ -32,6 +32,7 @@
             <p style="margin:10px; padding:10px; border:1px solid black; text-align:center; min-width:6em;" ng-class="flight.colorLock||flight.color" 
                     ng-click="status.lookAtFlight(flight)">
               {{status.getFlightNum(flight)}}
+              <span ng-if="status.flightAwayFromHomeBases(flight)" title="Does not arrive or depart Nome, Kotzebue, or Unalakleet. Listed on the Nome board so it can be released."> · Away</span>
             </p>
           </div>
           <div style="padding-left:0.3em;">

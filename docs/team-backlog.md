@@ -6,92 +6,21 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #67 No option to add a/c, flight time for stand alone .299
+## #68 Flights away from a base
 
 - **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-67-att-51-image.png)
-
-## #66 293(a)1,4-8
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
+- **Reporter:** FEN KINNEEN
 
 **Original report:**
 
-Found where this was located.  This is technically a "flight test" so could you move it to the right side under flight and have it as its own section?  Nice work Andy.
+It appears that a flight built (in this case a test flight, 930) that doesn't have a leg that arrives or departs one of our three bases, won't show up on the flight release tool. We have a check flight for a 1900 from Greybull to Greybull with no way to sign it off.
 
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-66-att-50-image.png)
+**Progress (changed, not resolved):**
 
-## #65 Move read medical button
+Andy Smircich: Lets fix this right away
 
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-In the area that you upload and approve, when I select medical, I want the option to only be upload, read, approve.  Or something similar.  So all I need to do for a medical is scan it then press one button and it reads/uploads med date, but would also like a "expiration, new base" type popup so I can see it performed the function correctly and if it didn't I can modify it right there on the spot like base month.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-65-att-49-image.png)
-
-## #64 Pending view
-
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Would like a way to view all "pending" or "not yet approved" training records in the system.  Also, I way to see all approved records not associated with a document.  This shouldn't happen but I feel like we probably have some in the system already.
-
-## #63 Create a new user
-
-- **Type:** feature · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-trying to build accounts for the new SICs.  Thought I saw a way to do this, but it did not.  It would be nice to be able to create a new user and then that's either pushed or synced with flight report.
-
-## #62 Uploading and Approving Passport
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-Gave me an error when I tried to upload and approve passport.  I was able to upload the passport but without approving it, the dates were not changed in the pilot board.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-62-att-48-image.png)
-
-## #61 Expiration date logic incorrect when creating flight test form
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-screen shot of what STARR command created vs what Timmy Time created.  Timmy's is accurate.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-61-att-46-image.png)
-- ![image.png](team-backlog/attachments/issue-61-att-47-image.png)
-
-## #60 Does not automatically rebase future dates
-
-- **Type:** bug · medium · open
-- **Reporter:** NATHANIEL OLSON
-
-**Original report:**
-
-293(b) for the caravan did not want to rebase Adam.  All others appeared to work accurately.
-
-**Attachments:**
-- ![image.png](team-backlog/attachments/issue-60-att-45-image.png)
+**Comments:**
+- Andy Smircich: Lets fix this right away
 
 ## Ready for review (shipped — reporter verify, do not build)
 
@@ -392,6 +321,185 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
+
+## #67 No option to add a/c, flight time for stand alone .299
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Comments:**
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**Aircraft and flight time on a standalone 299**
+• A row with **299**, **297**, or **297g** (even without a PIC/SIC checkride) now asks for tail number and flight time.
+• Checkrides still ask for those too.
+
+**Please check:** A 299-only record shows N# and hours. A ground-only record does not.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-67-att-51-image.png)
+
+## #66 293(a)1,4-8
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Found where this was located.  This is technically a "flight test" so could you move it to the right side under flight and have it as its own section?  Nice work Andy.
+
+**Comments:**
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**293(a) 1,4-8 placement**
+• In the training-type picker, **General Emergency (293(a) 1,4-8)** is on the **Flight** side, as its own row, not under Basic Indoc.
+
+**Please check:** Type on a draft row → Flight side → General Emergency is at the top.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-66-att-50-image.png)
+
+## #65 Move read medical button
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+In the area that you upload and approve, when I select medical, I want the option to only be upload, read, approve.  Or something similar.  So all I need to do for a medical is scan it then press one button and it reads/uploads med date, but would also like a "expiration, new base" type popup so I can see it performed the function correctly and if it didn't I can modify it right there on the spot like base month.
+
+**Comments:**
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**Medical upload, read, and approve**
+• CERT → Medical: **Read medical from newest CERT scan**, then **Upload and Approve** (no training record required).
+• After upload and approve, a preview shows the exam date and computed expiration so you can correct it before it sticks.
+
+**Please check:** Scan or read a medical, Upload and Approve, and confirm the preview matches the certificate before you accept it.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-65-att-49-image.png)
+
+## #64 Pending view
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Would like a way to view all "pending" or "not yet approved" training records in the system.  Also, I way to see all approved records not associated with a document.  This shouldn't happen but I feel like we probably have some in the system already.
+
+**Comments:**
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**Pending records and missing documents**
+• On Training Records, open **Pending records and missing documents**.
+• First list: every saved training record that is not approved yet, across pilots.
+• Second list: approved records that have no uploaded file tied to that record.
+• Click a row to open that pilot.
+
+**Please check:** Both lists look right against pilots you know. A file counts as attached when its name includes that record.
+
+## #63 Create a new user
+
+- **Type:** feature · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+trying to build accounts for the new SICs.  Thought I saw a way to do this, but it did not.  It would be nice to be able to create a new user and then that's either pushed or synced with flight report.
+
+**Comments:**
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**New pilot**
+• Training Records has a **New pilot** button (the name list still has **new** as well).
+• Enter the roster name, the employee number (digits), and a base (OME, OTZ, or HEL), then Confirm/Save.
+• That creates the pilot on the shared list Flight Report uses. It does not copy another pilot's training history.
+
+**Please check:** Add one new SIC with their real employee number and base. They should appear in the pilot list. Do not reuse a number that already exists.
+- Cursor Agent: Clarification: ROT does not create the pilot record.
+
+Ryan Woehler creates the initial Flight Report record under the employee number. That step is out of scope for ROT.
+
+After that record exists, Training Records → Add pilot to ROT. Look up the employee number.
+• No Firebase record: you get an alert naming Ryan, and nothing is created.
+• Record exists but is not on the ROT list yet: confirm the roster name and base, then Add.
+• Already on the ROT list: pick them in the pilot selector.
+
+Newton (1228), Young (1229), Krezel (1230), and Todd (1206) already have roster names on their existing records. They should show on the pilot list after this deploy.
+
+## #62 Uploading and Approving Passport
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+Gave me an error when I tried to upload and approve passport.  I was able to upload the passport but without approving it, the dates were not changed in the pilot board.
+
+**Comments:**
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**Passport upload and approve**
+• CERT → Passport no longer needs a training record.
+• Set Document Date to the passport expiration (full date), choose the PDF, then Upload and Approve.
+• That writes the passport date on the pilot profile.
+
+**Please check:** Passport upload and approve updates the passport date on the board. The stored date stays a full calendar date.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-62-att-48-image.png)
+
+## #61 Expiration date logic incorrect when creating flight test form
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+screen shot of what STARR command created vs what Timmy Time created.  Timmy's is accurate.
+
+**Comments:**
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**Flight Test PDF expirations**
+• Flight Test form dates now use the same expiration as the pilot profile and the approval preview, not the old calculator alone.
+
+**Please check:** On a saved checkride row, set the aircraft, open Flight Test, and compare the PDF dates to the pilot board. They should match (month/year).
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-61-att-46-image.png)
+- ![image.png](team-backlog/attachments/issue-61-att-47-image.png)
+
+## #60 Does not automatically rebase future dates
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** NATHANIEL OLSON
+- **Status:** ready for review
+
+**Original report:**
+
+293(b) for the caravan did not want to rebase Adam.  All others appeared to work accurately.
+
+**Comments:**
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**293(b) rebase**
+• PIC/SIC checkride expirations (Caravan, 1900, King Air, Sky Courier, Casa) now rebase from the check date: end of that month, plus 12 months.
+• They no longer follow the old base-month table that left the Caravan a month off.
+
+**Please check:** Re-approve or preview a 293(b) PIC/SIC (Adam Baker / C208 was the example). Proposed expiration should land on the check month, not a month early. Cancel the preview if you only want to look.
+
+**Attachments:**
+- ![image.png](team-backlog/attachments/issue-60-att-45-image.png)
 
 ## #59 Document date
 

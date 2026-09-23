@@ -2,6 +2,39 @@
 
 (function(){
 
+const HOME_BASE_AIRPORTS = ['Nome', 'Kotzebue', 'Unalakleet'];
+
+function flightAirportList(flight) {
+  return flight && flight.airports ? flight.airports : [];
+}
+
+function flightTouchesAirport(flight, name) {
+  let airports = flightAirportList(flight);
+  for (let i = 0; i < airports.length; i++) {
+    if (airports[i] === name) return true;
+  }
+  return false;
+}
+
+function flightTouchesAnyHomeBase(flight) {
+  for (let i = 0; i < HOME_BASE_AIRPORTS.length; i++) {
+    if (flightTouchesAirport(flight, HOME_BASE_AIRPORTS[i])) return true;
+  }
+  return false;
+}
+
+/** True when this fixed-wing board should list the flight. Trips that never touch Nome, Kotzebue, or Unalakleet show on the Nome board only. */
+function flightInSelectedBase(flight, baseCode) {
+  if (!flight || !flight.airports || !flight.airports.length) return false;
+  if (baseCode === 'HEL') return false;
+  if (!flightTouchesAnyHomeBase(flight)) {
+    return !baseCode || baseCode === 'OME';
+  }
+  if (baseCode === 'OTZ') return flightTouchesAirport(flight, 'Kotzebue');
+  if (baseCode === 'UNK') return flightTouchesAirport(flight, 'Unalakleet');
+  return flightTouchesAirport(flight, 'Nome');
+}
+
 class StatusComponent {
   constructor($http,$scope,$interval,$timeout,socket,metar,$location,$anchorScroll,moment,Auth,appConfig,Modal,$cookies,Util) {
     this.cookies=$cookies;
@@ -2750,24 +2783,12 @@ class StatusComponent {
   }
 
   plannerFlightInBase(flight){
-    if (!flight||!flight.airports||!flight.airports.length) return false;
-    if (window.base&&window.base.base==='HEL') return false;
-    if (window.base&&window.base.base==='OTZ') {
-      for (let i=0;i<flight.airports.length;i++){
-        if (flight.airports[i]==='Kotzebue') return true;
-      }
-      return false;
-    }
-    if (window.base&&window.base.base==='UNK') {
-      for (let i=0;i<flight.airports.length;i++){
-        if (flight.airports[i]==='Unalakleet') return true;
-      }
-      return false;
-    }
-    for (let i=0;i<flight.airports.length;i++){
-      if (flight.airports[i]==='Nome') return true;
-    }
-    return false;
+    let baseCode = window.base && window.base.base;
+    return flightInSelectedBase(flight, baseCode);
+  }
+
+  flightAwayFromHomeBases(flight){
+    return !!(flight && flight.airports && flight.airports.length && !flightTouchesAnyHomeBase(flight));
   }
 
   plannerFlightSuppressed(flight){
@@ -3180,24 +3201,8 @@ class StatusComponent {
           if (new Date()>flightDate&&date===new Date().toLocaleDateString()) old=true;
         }
       }
-      let inBase;
-      if (window.base&&window.base.base==='HEL') inBase=false;
-      else if (window.base&&window.base.base==='OTZ')  {
-        for (let i=0;i<flight.airports.length;i++){
-          if (flight.airports[i]==='Kotzebue') inBase=true;
-        }
-      }
-      else if (window.base&&window.base.base==='UNK')  {
-        for (let i=0;i<flight.airports.length;i++){
-          if (flight.airports[i]==='Unalakleet') inBase=true;
-        }
-      }
-      else if (flight.airports&&flight.airports.length>0) {
-        for (let i=0;i<flight.airports.length;i++){
-          if (flight.airports[i]==='Nome') inBase=true;
-        }
-        //inBase=flight.airports[0]==='Nome'||flight.airports[0]==='Unalakleet'||flight.airports.at(-1)==='Nome'||flight.airports.at(-1)==='Unalakleet';
-      }
+      let baseCode = window.base && window.base.base;
+      let inBase = flightInSelectedBase(flight, baseCode);
       return (flight.date===date)&&inBase&&flight.active==='true'&&!old&&flight.aircraft&&flight.aircraft.substring(0,1)==="N";
     }
   }
