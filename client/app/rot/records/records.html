@@ -206,9 +206,38 @@
     <div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;">
       <h3 style="margin:0;">All Training Dates for Selected Pilot {{rotRecords.pilotLegalName(rotRecords.pilot)}}</h3>
       <button ng-if="rotRecords.isApprover()" class="btn btn-info" ng-click="rotRecords.showPilotTrainingDates()">Edit Pilot Training Dates</button>
-      <button ng-if="rotRecords.isApprover()" class="btn btn-default" ng-click="rotRecords.showNewPilot()">New pilot</button>
+      <button ng-if="rotRecords.isApprover()" class="btn btn-default" ng-click="rotRecords.toggleUninitializedPilots()">Add pilot to ROT</button>
       <button ng-if="rotRecords.isApprover() && rotRecords.fullPilot._id" class="btn btn-default" ng-click="rotRecords.inferLegalNameFromScan(rotRecords.fullPilot,{persist:true})">Infer legal name from CERT scan</button>
       <button ng-if="rotRecords.isApprover() && rotRecords.fullPilot._id && rotRecords.tab==='CERT' && rotRecords.subtab==='Medical'" class="btn btn-default" ng-click="rotRecords.inferMedicalFromScan({})">Read medical from newest CERT scan</button>
+    </div>
+    <div ng-if="rotRecords.showUninitialized" style="margin:8px 0 12px 0;max-width:720px;">
+      <p style="font-size:12px;color:#555;margin:0 0 6px 0;">Ryan Woehler creates the initial Flight Report record under the employee number. ROT does not. After that record exists, confirm the roster name and base here and Add.</p>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input class="form-control" style="max-width:140px;" ng-model="rotRecords.lookupEmployeeId" placeholder="Employee #" ng-keydown="$event.keyCode===13 && rotRecords.lookupPilotRecord()">
+        <button class="btn btn-default btn-sm" ng-click="rotRecords.lookupPilotRecord()">Look up</button>
+      </div>
+      <p ng-if="rotRecords.uninitializedLoading">Loading…</p>
+      <p ng-if="!rotRecords.uninitializedLoading && !rotRecords.uninitializedPilots.length">No Flight Report pilots are waiting.</p>
+      <table class="table table-condensed" ng-if="rotRecords.uninitializedPilots.length">
+        <thead><tr><th>Employee</th><th>Flight Report</th><th>Roster name</th><th>Base</th><th>Hired</th><th></th></tr></thead>
+        <tbody>
+          <tr ng-repeat="row in rotRecords.uninitializedPilots track by row._id">
+            <td>{{row._id}}</td>
+            <td>{{row.displayName}}</td>
+            <td><input class="form-control" ng-model="row.rotName" type="text"></td>
+            <td>
+              <select class="form-control" ng-model="row.pilotBase">
+                <option value="">Choose</option>
+                <option value="OME">OME</option>
+                <option value="OTZ">OTZ</option>
+                <option value="HEL">HEL</option>
+              </select>
+            </td>
+            <td>{{row.dateOfHire}}</td>
+            <td><button class="btn btn-primary btn-sm" ng-click="rotRecords.initializePilot(row)">Add</button></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <p ng-if="rotRecords.isApprover()" style="font-size:12px;color:#666;margin-bottom:8px;">Approvers: click a shaded <em>Previous</em> cell to restore that expiration date.</p>
     <table class="table table-condensed table-bordered exp-history-table" style="min-width: 1200px;">

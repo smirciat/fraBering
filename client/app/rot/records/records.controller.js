@@ -140,6 +140,9 @@ class RecordsComponent {
     this.showTable=true;
     this.showApproved=false;
     this.showQueue=false;
+    this.showUninitialized=false;
+    this.uninitializedPilots=[];
+    this.lookupEmployeeId='';
     this.queuePending=[];
     this.queueMissingFile=[];
     this.showSLEArray=[];
@@ -1029,10 +1032,90 @@ class RecordsComponent {
     this.RotPilotContext.setChosenPilot(pilot);
   }
 
-  showNewPilot(){
-    if (!this.isApprover()) return this.toaster.error('Error','Only approvers can add a pilot');
-    const blank={_id:'',name:'',_creatingNew:true,isActive:true};
-    this.pilotModal(blank,this.pilots,{});
+  toggleUninitializedPilots(){
+    if (!this.isApprover()) return this.toaster.error('Error','Only approvers can add a pilot to ROT');
+    this.showUninitialized=!this.showUninitialized;
+    if (this.showUninitialized) this.loadUninitializedPilots();
+  }
+
+  loadUninitializedPilots(){
+    this.uninitializedLoading=true;
+    this.http.post('/api/rot/uninitializedPilots',{}).then(res=>{
+      this.uninitializedPilots=(res.data||[]).map(row=>{
+        row.rotName=row.suggestedName||'';
+        if (!row.pilotBase) row.pilotBase='';
+        return row;
+      });
+      this.uninitializedLoading=false;
+    }).catch(err=>{
+      console.error('uninitializedPilots',err);
+      this.uninitializedLoading=false;
+      this.toaster.error('Error','Could not list Flight Report pilots waiting for ROT');
+    });
+  }
+
+  ryanCreatesPilotMessage(employeeNumber){
+    const id=employeeNumber?('Employee '+employeeNumber+' has no Flight Report record yet. '):'';
+    return id+'Creating the first pilot record is out of scope for ROT. Ryan Woehler creates that record in Flight Report under the employee number. After it exists, use Add pilot to ROT and set the roster name and base. That is the only step ROT takes.';
+  }
+
+  alertRyanCreatesPilot(employeeNumber){
+    this.quickModal(this.ryanCreatesPilotMessage(employeeNumber), 'Ryan creates the pilot record', true);
+  }
+
+  lookupPilotRecord(){
+    const id=String(this.lookupEmployeeId||'').trim();
+    if (!/^\d{2,6}$/.test(id)) {
+      this.quickModal('Enter the employee number as digits.', 'Employee number', true);
+      return;
+    }
+    this.http.post('/api/rot/pilotRecordStatus',{employeeNumber:id}).then(res=>{
+      const row=res.data||{};
+      if (!row.exists) {
+        this.alertRyanCreatesPilot(id);
+        return;
+      }
+      if (row.rotReady) {
+        this.quickModal(id+' is already on the ROT pilot list. Pick them in the pilot selector.', 'Already in ROT', false);
+        return;
+      }
+      const waiting=(this.uninitializedPilots||[]).some(p=>String(p._id)===id);
+      if (!waiting) {
+        this.uninitializedPilots=(this.uninitializedPilots||[]).concat([{
+          _id:id,
+          displayName:row.displayName||'',
+          rotName:row.suggestedName||'',
+          pilotBase:row.pilotBase||'',
+          dateOfHire:row.dateOfHire||''
+        }]);
+      }
+      this.quickModal('Flight Report already has '+id+'. Confirm the roster name and base in the list, then Add.', 'Ready to add', false);
+    }).catch(err=>{
+      console.error('lookupPilotRecord',err);
+      this.toaster.error('Error','Could not look up that employee number');
+    });
+  }
+
+  initializePilot(row){
+    if (!this.isApprover()||!row||!row._id) return;
+    const name=String(row.rotName||'').trim();
+    const base=String(row.pilotBase||'').trim();
+    if (!name) return this.toaster.error('Error','Enter the roster name');
+    if (!base||base==='none') return this.toaster.error('Error','Choose a base (OME, OTZ, or HEL)');
+    const doc={_id:String(row._id),name:name,pilotBase:base};
+    this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
+      this.RotPilotContext.mergePilotDoc(doc);
+      this.pilots=this.RotPilotContext.getPilots();
+      const created=this.pilots.filter(p=>String(p._id)===String(row._id))[0]||doc;
+      this.RotPilotContext.setChosenPilot(created);
+      this.uninitializedPilots=(this.uninitializedPilots||[]).filter(p=>String(p._id)!==String(row._id));
+      this.toaster.success('Pilot added to ROT',name+' ('+row._id+')');
+    }).catch(err=>{
+      console.error('initializePilot',err);
+      const missing=err&&err.status===400;
+      if (missing) this.alertRyanCreatesPilot(row._id);
+      else this.toaster.error('Error','Could not add this pilot');
+    });
   }
 
   savePilotFromModal(formData){
@@ -1042,40 +1125,25 @@ class RecordsComponent {
     }
     const id=String(formData._id||'').trim();
     if (!/^\d{2,6}$/.test(id)) {
-      this.quickModal('Enter the employee number as digits, like 1173. That number is the Flight Report pilot id.');
+      this.alertRyanCreatesPilot(id);
       return;
     }
     formData._id=id;
-    const creating=!!formData._creatingNew;
-    const all=this.RotPilotContext.getAllPilots()||this.pilots||[];
-    const duplicate=all.some(p=>String(p._id)===id);
-    if (creating&&duplicate) {
-      this.quickModal('That employee number is already a pilot. Choose them from the list instead of new.');
+    if (formData._creatingNew) {
+      this.alertRyanCreatesPilot(id);
       return;
     }
-    if (creating&&(!formData.pilotBase||formData.pilotBase==='none')) {
-      this.quickModal('Choose a pilot base (OME, OTZ, or HEL) so the new pilot shows on the list.');
-      return;
-    }
-    if (!creating && this.fullPilot && String(this.fullPilot._id)===id) {
+    if (this.fullPilot && String(this.fullPilot._id)===id) {
       this.logManualExpHistoryChanges(formData);
       this.logManualCertDocHistoryChanges(formData);
     }
     const doc=this.pilotProfileWriteDoc(formData);
-    if (creating) {
-      doc.isActive=true;
-    } else if (this.fullPilot&&String(this.fullPilot._id)===id&&this.fullPilot.trainingExpHistory) {
+    if (this.fullPilot&&String(this.fullPilot._id)===id&&this.fullPilot.trainingExpHistory) {
       doc.trainingExpHistory=this.fullPilot.trainingExpHistory;
     }
     this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
       this.RotPilotContext.mergePilotDoc(doc);
       this.pilots=this.RotPilotContext.getPilots();
-      if (creating) {
-        const created=this.pilots.filter(p=>String(p._id)===id)[0]||doc;
-        this.RotPilotContext.setChosenPilot(created);
-        this.toaster.success('Pilot created',formData.name+' ('+id+') is on the shared pilot list');
-        return;
-      }
       this.toaster.success('Success','Pilot training dates updated');
       if (this.fullPilot&&String(this.fullPilot._id)===id) {
         Object.assign(this.fullPilot, doc);
@@ -1083,7 +1151,7 @@ class RecordsComponent {
       }
     }).catch(err=>{
       console.log(err);
-      this.toaster.error('Error',creating?'Failed to create pilot':'Failed to update pilot training dates');
+      this.toaster.error('Error','Failed to update pilot training dates');
     });
   }
 

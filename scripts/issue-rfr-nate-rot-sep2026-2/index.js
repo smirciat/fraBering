@@ -53,12 +53,11 @@ const UPDATES = [
     id: 63,
     body: `Ready for your review (on today's deploy).
 
-**New pilot**
-• Training Records has a **New pilot** button (the name list still has **new** as well).
-• Enter the roster name, the employee number (digits), and a base (OME, OTZ, or HEL), then Confirm/Save.
-• That creates the pilot on the shared list Flight Report uses. It does not copy another pilot's training history.
+**Add an existing pilot to ROT**
+• Ryan Woehler creates the initial Flight Report record under the employee number. ROT does not create that record.
+• **Add pilot to ROT** looks up the employee number. If Firebase has no record, you get an alert to ask Ryan. If the record exists, confirm the roster name and base, then Add.
 
-**Please check:** Add one new SIC with their real employee number and base. They should appear in the pilot list. Do not reuse a number that already exists.`
+**Please check:** Newton (1228), Young (1229), Krezel (1230), and Todd (1206) are on the pilot list. Look up a number that does not exist and confirm the alert names Ryan and does not create a pilot.`
   },
   {
     id: 64,

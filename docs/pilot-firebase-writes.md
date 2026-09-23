@@ -21,6 +21,7 @@ Client saves that used to post `fullPilot` must stay narrow:
 - `Object.assign({}, fullPilot, …)` (or the training-dates modal object) as the Firebase `doc`.
 - Add `courierCurrency`, `apprCurrency`, `holdCurrency`, `extLoadCurrency`, `caravanCurrency`, `beech1900Currency`, `kingairCurrency`, phones, email, or other flight-log fields to the allowlist so a save “does not lose them.” Omitting them is what keeps them.
 - Return the filtered payload and then merge the **read-back** full document into the next write.
+- Create a `pilots` document. Ryan Woehler creates the new-hire record in Flight Report. If the employee number is missing, tell the ROT user that and stop. ROT only adds `name` and `pilotBase` on a record that already exists (`Add pilot to ROT`).
 
 Training expiration strings stored on the pilot are **`MM/01/YYYY`** (first of the month). **`M/YY`** (`9/27`) crashes Flight Report. Display in FRA may stay **MM/YY**; do not write that shape. Calendar fields (passport, medical, hire, DOB) stay full dates. See `docs/shared-firebase.md` and `docs/issue-54-expiration-format.md`.
 

@@ -34,6 +34,8 @@ router.use(auth.isAuthenticated());
 router.post('/firebase', rotFirebase.firebase);
 router.post('/firebaseQuery', requireRecordsAccessIfRecordsCollection, rotFirebase.firebaseQuery);
 router.post('/updateFirebase', requireRecordsAccessIfRecordsCollection, rotFirebase.updateFirebase);
+router.post('/uninitializedPilots', requireRecordsAccess, rotFirebase.uninitializedPilots);
+router.post('/pilotRecordStatus', requireRecordsAccess, rotFirebase.pilotRecordStatus);
 router.post('/deleteFirebase', requireRecordsAccess, rotFirebase.deleteFirebase);
 
 router.post('/listRecords', requireRecordsAccess, rotRecords.listRecords);

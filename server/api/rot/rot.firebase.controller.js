@@ -241,13 +241,93 @@ export async function updateFirebase(req, res) {
     let id;
     if (localDoc._id) id = localDoc._id.toString();
     delete localDoc._id;
-    if (collection === 'pilots') localDoc = pickPilotWriteFields(localDoc, id);
+    if (collection === 'pilots') {
+      if (!id) return res.status(400).json({message: 'Pilot id is required'});
+      const existing = await firebase_db.collection('pilots').doc(id).get();
+      if (!existing.exists) {
+        return res.status(400).json({message: 'Employee ' + id + ' has no Flight Report record yet. Creating that record is out of scope for ROT. Ryan Woehler creates the initial pilot record in Flight Report under the employee number. After it exists, use Add pilot to ROT to set the roster name and base.'});
+      }
+      localDoc = pickPilotWriteFields(localDoc, id);
+    }
     let data = await updateDocument(collection, id, localDoc);
     if (data) return res.status(200).json(data);
     return res.status(500).json({message: 'No response from firebase'});
   } catch (err) {
     console.error('rot updateFirebase error', err);
     return res.status(500).json({message: 'ROT firebase update failed'});
+  }
+}
+
+/** Active Flight Report pilots ROT cannot list yet (missing name or base). Slim fields only. */
+export async function listUninitializedPilots() {
+  const snap = await firebase_db.collection('pilots').get();
+  const rows = [];
+  snap.forEach(doc => {
+    const id = String(doc.id || '');
+    if (!/^\d{3,6}$/.test(id)) return;
+    const data = doc.data() || {};
+    if (data.isActive === false || data.isPilot === false) return;
+    const name = data.name != null ? String(data.name).trim() : '';
+    const base = data.pilotBase != null ? String(data.pilotBase).trim() : '';
+    const needsName = !name;
+    const needsBase = !base || base === 'none';
+    if (!needsName && !needsBase) return;
+    const first = data.firstName != null ? String(data.firstName).trim() : '';
+    const last = data.lastName != null ? String(data.lastName).trim() : '';
+    const suggested = (first + ' ' + last).trim();
+    rows.push({
+      _id: id,
+      displayName: data.displayName || '',
+      firstName: first,
+      lastName: last,
+      suggestedName: suggested || data.displayName || '',
+      pilotBase: needsBase ? '' : base,
+      dateOfHire: data.dateOfHire || ''
+    });
+  });
+  rows.sort((a, b) => String(b.dateOfHire).localeCompare(String(a.dateOfHire)));
+  return rows;
+}
+
+export async function pilotRecordStatus(req, res) {
+  try {
+    const id = String((req.body && req.body.employeeNumber) || '').trim();
+    if (!/^\d{2,6}$/.test(id)) {
+      return res.status(400).json({message: 'Enter the employee number as digits.'});
+    }
+    const snap = await firebase_db.collection('pilots').doc(id).get();
+    if (!snap.exists) {
+      return res.status(200).json({exists: false, employeeNumber: id});
+    }
+    const data = snap.data() || {};
+    const name = data.name != null ? String(data.name).trim() : '';
+    const base = data.pilotBase != null ? String(data.pilotBase).trim() : '';
+    const needsName = !name;
+    const needsBase = !base || base === 'none';
+    const first = data.firstName != null ? String(data.firstName).trim() : '';
+    const last = data.lastName != null ? String(data.lastName).trim() : '';
+    return res.status(200).json({
+      exists: true,
+      employeeNumber: id,
+      rotReady: !needsName && !needsBase,
+      displayName: data.displayName || '',
+      suggestedName: (first + ' ' + last).trim() || data.displayName || '',
+      pilotBase: needsBase ? '' : base,
+      dateOfHire: data.dateOfHire || ''
+    });
+  } catch (err) {
+    console.error('rot pilotRecordStatus error', err);
+    return res.status(500).json({message: 'Could not look up that employee number'});
+  }
+}
+
+export async function uninitializedPilots(req, res) {
+  try {
+    const rows = await listUninitializedPilots();
+    return res.status(200).json(rows);
+  } catch (err) {
+    console.error('rot uninitializedPilots error', err);
+    return res.status(500).json({message: 'Could not list pilots waiting for ROT'});
   }
 }
 

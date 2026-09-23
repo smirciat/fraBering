@@ -334,7 +334,6 @@ angular.module('workspaceApp')
             pilotArr.forEach(pilot => {
               pilot.combo = pilot._id + ': ' + pilot.name;
             });
-            pilotArr.unshift({name: 'new', combo: 'new', _id: ''});
             let aircraftTypes = ['C208', 'C408', 'B190', 'BE20', 'C212'];
             theModal = openModal({
               modal: {
@@ -365,14 +364,7 @@ angular.module('workspaceApp')
                 inferLegalNameHint: pilotModalOptions.inferLegalNameHint ||
                   'Newest CERT Medical, then Pilot Certificate if needed. Server OCR (tesseract-ocr) on scans. Last name must match roster.',
                 fill: function() {
-                  if (this.formData && this.formData.name === 'new' && !this.new) {
-                    const blank = {_id: '', name: '', _creatingNew: true, isActive: true};
-                    pilotData = blank;
-                    this.formData = blank;
-                    this.new = true;
-                    return;
-                  }
-                  if (this.new) return;
+                  if (this.formData && this.formData.name === 'new') return;
                   let idx = -1;
                   if (pilotData._id) idx = pilotArr.map(e => e._id).indexOf(pilotData._id);
                   if (this.formData._id) idx = pilotArr.map(e => e._id).indexOf(this.formData._id);

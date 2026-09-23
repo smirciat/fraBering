@@ -104,7 +104,6 @@
     <div class="modal-footer">
       <button ng-repeat="button in modal.buttons" ng-class="button.classes" ng-click="button.click($event)" ng-bind="button.text" class="btn"></button>
     </div>
-    <p ng-if="modal.new" style="font-size:0.85em;color:#555;margin-bottom:8px;">New pilot. The employee number is the Flight Report id. Choose a base (OME, OTZ, or HEL) so they show on the list.</p>
     <label>Pilot name (roster / daily use)</label>
     <ui-select ng-hide="modal.new" ng-model="modal.formData" theme="bootstrap" ng-disabled="disabled" on-select="modal.fill()" name="name">
       <ui-select-match placeholder="Choose...">{{$select.selected.name}}</ui-select-match>
