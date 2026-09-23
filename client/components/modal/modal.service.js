@@ -339,6 +339,7 @@ angular.module('workspaceApp')
             theModal = openModal({
               modal: {
                 formData: pilotData,
+                new: !!(pilotData && pilotData._creatingNew),
                 pilotArr: pilotArr,
                 trainingEvents: trainingEvents,
                 pilot: true,
@@ -364,11 +365,14 @@ angular.module('workspaceApp')
                 inferLegalNameHint: pilotModalOptions.inferLegalNameHint ||
                   'Newest CERT Medical, then Pilot Certificate if needed. Server OCR (tesseract-ocr) on scans. Last name must match roster.',
                 fill: function() {
-                  if (this.formData.name === 'new' || this.new) {
-                    if (!this.new) this.formData.name = '';
+                  if (this.formData && this.formData.name === 'new' && !this.new) {
+                    const blank = {_id: '', name: '', _creatingNew: true, isActive: true};
+                    pilotData = blank;
+                    this.formData = blank;
                     this.new = true;
                     return;
                   }
+                  if (this.new) return;
                   let idx = -1;
                   if (pilotData._id) idx = pilotArr.map(e => e._id).indexOf(pilotData._id);
                   if (this.formData._id) idx = pilotArr.map(e => e._id).indexOf(this.formData._id);

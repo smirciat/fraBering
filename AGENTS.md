@@ -45,6 +45,8 @@ npm start            # Production server from dist/
 5. **Database** — no destructive SQL, drops, or `sequelize.sync({ force: true })`
 6. **`stopped{N}` deploy reload** — `navbar.controller.js` `stoppedFunction()` + `server/api/todaysFlight/index.js` route. **Do not remove 404 → `location.reload()`** when fixing loops. See `docs/stopped-version-deploy.md` and `.cursor/rules/stopped-version-deploy.mdc` (Aug 2026 agent regression).
 7. **Flight release Firebase** — `firebaseMin` → `release/releaseStatus` only; wipe **nulls** only on **Remove Release**. Do not merge parent PFR or invent payload shapes. See `docs/flight-release-firebase.md` and `.cursor/rules/flight-release-firebase.mdc`.
+8. **Pilot Firebase writes** — `pilots` updates send FRA-owned fields only. Do not merge the loaded pilot document (`courierCurrency`, `apprCurrency`, `holdCurrency`, and the rest of the flight-log profile). See `docs/pilot-firebase-writes.md` and `.cursor/rules/pilot-firebase-writes.mdc`.
+9. **Shared Firebase shapes** — do not rewrite a stored date, timestamp, or id into a different pattern. Training exp stays `MM/01/YYYY` (screens may show `MM/YY`). See `docs/shared-firebase.md` and `.cursor/rules/shared-firebase.mdc`.
 
 ## Change discipline
 
@@ -81,3 +83,5 @@ See `README.md` for full install steps (npm, bower, node version quirks).
 - `docs/mobile-ops-v1.md` — **draft** mobile ops API for bering_crew FRAT board + release (assertion JWT, `/api/mobile/ops/v1/*`); build guide in resBering `docs/bering-crew-frat-board.md`
 - `docs/issue-40-rot-pdf.md` — #40 ROT / Flight Test PDF QA and field-mapping gaps
 - `docs/flight-release-firebase.md` — FRA → Firestore / Flight Report: restore working `firebaseMin` payload; do not patch-forward
+- `docs/pilot-firebase-writes.md` — FRA `pilots` writes: allowlisted fields only; do not merge the whole loaded pilot (currency fields belong to Flight Report)
+- `docs/shared-firebase.md` — do not change stored Firebase shapes; Flight Report and other apps read the same documents

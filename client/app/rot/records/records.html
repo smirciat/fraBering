@@ -17,7 +17,7 @@
         <div ng-repeat="event in rotRecords.upcomingEvents track by $index">
           <h4 style="margin-left:20px" ng-if="event.events.length>0">{{event.key}}</h4>
           <h5 style="margin-left:40px" ng-repeat="pilot in event.events | orderBy: 'grace' track by $index" ng-class="rotRecords.eventClass(pilot.grace)" style="font-weight:bold;">
-            {{pilot.id}}&nbsp{{pilot.name}}&nbsp{{pilot.exp}}&nbsp{{rotRecords.graces[pilot.grace]}}
+            {{pilot.id}}&nbsp{{pilot.name}}&nbsp{{pilot.exp | monthYear}}&nbsp{{rotRecords.graces[pilot.grace]}}
           </h5>
         </div>
       </div>
@@ -35,9 +35,48 @@
       <div ng-if="rotRecords.showUpcomingEvents">
         <div ng-repeat="pilot in rotRecords.upcomingEventsSorted track by $index">
           <h5 style="margin-left:40px" ng-class="rotRecords.eventClass(pilot.grace)" style="font-weight:bold;">
-            {{pilot.id}}&nbsp{{pilot.name}}&nbsp{{pilot.event}}&nbsp{{pilot.exp}}&nbsp{{rotRecords.graces[pilot.grace]}}
+            {{pilot.id}}&nbsp{{pilot.name}}&nbsp{{pilot.event}}&nbsp{{pilot.exp | monthYear}}&nbsp{{rotRecords.graces[pilot.grace]}}
           </h5>
         </div>
+      </div>
+    </div>
+    <div class="box">
+      <h3 ng-click="rotRecords.toggleRecordsQueue()" style="margin:0;">
+        Pending records and missing documents &nbsp
+        <span ng-if="rotRecords.showQueue"><i class="fas fa-caret-square-up"></i></span>
+        <span ng-if="!rotRecords.showQueue"><i class="fas fa-caret-square-down"></i></span>
+      </h3>
+      <div ng-if="rotRecords.showQueue" style="margin-left:20px;margin-top:10px;">
+        <p ng-if="rotRecords.queueLoading">Loading training records…</p>
+        <p ng-if="rotRecords.queueError" style="color:#a00;">{{rotRecords.queueError}}</p>
+        <p ng-if="rotRecords.queueTruncated">Showing the first 8000 records. Ask Andy if the lists look short.</p>
+        <h4>Not yet approved ({{rotRecords.queuePending.length}})</h4>
+        <p ng-if="!rotRecords.queueLoading && !rotRecords.queuePending.length">None.</p>
+        <table class="table table-condensed" ng-if="rotRecords.queuePending.length">
+          <thead><tr><th>Pilot</th><th>Employee</th><th>Date</th><th>Training</th></tr></thead>
+          <tbody>
+            <tr ng-repeat="row in rotRecords.queuePending track by row._id" ng-click="rotRecords.openQueuePilot(row)" style="cursor:pointer;">
+              <td>{{row.name}}</td>
+              <td>{{row.pilotNumber}}</td>
+              <td>{{row.date}}</td>
+              <td>{{rotRecords.queueTrainingLabel(row)}}</td>
+            </tr>
+          </tbody>
+        </table>
+        <h4>Approved with no uploaded document ({{rotRecords.queueMissingFile.length}})</h4>
+        <p ng-if="!rotRecords.queueLoading && !rotRecords.queueMissingFile.length">None.</p>
+        <table class="table table-condensed" ng-if="rotRecords.queueMissingFile.length">
+          <thead><tr><th>Pilot</th><th>Employee</th><th>Date</th><th>Training</th></tr></thead>
+          <tbody>
+            <tr ng-repeat="row in rotRecords.queueMissingFile track by row._id" ng-click="rotRecords.openQueuePilot(row)" style="cursor:pointer;">
+              <td>{{row.name}}</td>
+              <td>{{row.pilotNumber}}</td>
+              <td>{{row.date}}</td>
+              <td>{{rotRecords.queueTrainingLabel(row)}}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px;color:#666;">Click a row to open that pilot. A document counts when the filename includes that record id.</p>
       </div>
     </div>
     <div class="box">
@@ -167,6 +206,7 @@
     <div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;">
       <h3 style="margin:0;">All Training Dates for Selected Pilot {{rotRecords.pilotLegalName(rotRecords.pilot)}}</h3>
       <button ng-if="rotRecords.isApprover()" class="btn btn-info" ng-click="rotRecords.showPilotTrainingDates()">Edit Pilot Training Dates</button>
+      <button ng-if="rotRecords.isApprover()" class="btn btn-default" ng-click="rotRecords.showNewPilot()">New pilot</button>
       <button ng-if="rotRecords.isApprover() && rotRecords.fullPilot._id" class="btn btn-default" ng-click="rotRecords.inferLegalNameFromScan(rotRecords.fullPilot,{persist:true})">Infer legal name from CERT scan</button>
       <button ng-if="rotRecords.isApprover() && rotRecords.fullPilot._id && rotRecords.tab==='CERT' && rotRecords.subtab==='Medical'" class="btn btn-default" ng-click="rotRecords.inferMedicalFromScan({})">Read medical from newest CERT scan</button>
     </div>

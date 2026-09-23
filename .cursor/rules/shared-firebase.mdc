@@ -1,0 +1,22 @@
+---
+description: Shared Firestore with Flight Report — do not change stored shapes
+alwaysApply: true
+---
+
+# Shared Firebase
+
+**Locked 22 Sep 2026.** Detail: `docs/shared-firebase.md`.
+
+Firestore is shared with Flight Report and other apps this repo does not control. `merge: true` overwrites every key you send, including a new string shape or type.
+
+## Do not
+
+- Rewrite a stored date, timestamp, or id into a shorter or “cleaner” form (`M/YY` vs `MM/01/YYYY`, Firestore `Timestamp` vs ISO string, `null` vs omit).
+- Post a loaded document (`fullPilot`, modal clone, parent PFR) so fields you did not mean to change go back.
+- “Fix” another app by changing the payload. Match the pattern already on the document.
+
+## Already locked
+
+- Training exp stores `MM/01/YYYY`. Screens may show `MM/YY`.
+- `firebaseMin` writes `release/releaseStatus` only. See `docs/flight-release-firebase.md`.
+- `pilots` writes are allowlisted. See `docs/pilot-firebase-writes.md`.

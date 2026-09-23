@@ -37,6 +37,7 @@ router.post('/updateFirebase', requireRecordsAccessIfRecordsCollection, rotFireb
 router.post('/deleteFirebase', requireRecordsAccess, rotFirebase.deleteFirebase);
 
 router.post('/listRecords', requireRecordsAccess, rotRecords.listRecords);
+router.post('/recordsQueue', requireRecordsAccess, rotRecords.recordsQueue);
 router.post('/uploadRecord', requireRecordsAccess, rotRecords.uploadRecord);
 router.post('/changeFilename', requireRecordsAccess, rotRecords.changeFilename);
 router.post('/deleteRecord', requireRecordsAccess, rotRecords.deleteRecord);

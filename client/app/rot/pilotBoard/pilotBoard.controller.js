@@ -93,7 +93,7 @@ class RotPilotBoardComponent {
           if (field.length > 5 && field.slice(-5) === 'Short') {
             field = field.slice(0, -5);
             const parsed = this.rotPilotExpDate.parsePilotExpDate(value);
-            if (parsed) value = this.rotPilotExpDate.formatPilotExpDate(parsed);
+            if (parsed) value = this.rotPilotExpDate.formatPilotExpStoredDate(parsed);
           }
           let document = {_id: oldRowcol.row.entity._id};
           document[field] = value;

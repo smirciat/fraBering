@@ -104,6 +104,7 @@
     <div class="modal-footer">
       <button ng-repeat="button in modal.buttons" ng-class="button.classes" ng-click="button.click($event)" ng-bind="button.text" class="btn"></button>
     </div>
+    <p ng-if="modal.new" style="font-size:0.85em;color:#555;margin-bottom:8px;">New pilot. The employee number is the Flight Report id. Choose a base (OME, OTZ, or HEL) so they show on the list.</p>
     <label>Pilot name (roster / daily use)</label>
     <ui-select ng-hide="modal.new" ng-model="modal.formData" theme="bootstrap" ng-disabled="disabled" on-select="modal.fill()" name="name">
       <ui-select-match placeholder="Choose...">{{$select.selected.name}}</ui-select-match>
@@ -164,10 +165,10 @@
     <label>Russian Visa Expiration(MM/DD/YYYY)</label>
     <input class="form-control" name="rus" type="text" ng-model="modal.formData.rus" ng-blur="modal.fixDate('rus')">
     <div ng-repeat="event in modal.trainingEvents track by $index">
-      <label>{{event.label+' expiration (M/YY)'}}</label>
+      <label>{{event.label+' expiration (MM/YY)'}}</label>
       <input class="form-control" type="text" ng-model="modal.formData[event.name+'Exp']" ng-blur="modal.fixDate(event.name+'Exp')">
     </div>
-    <label>293(a) 1,4-8 expiration (M/YY)</label>
+    <label>293(a) 1,4-8 expiration (MM/YY)</label>
     <input class="form-control" type="text" ng-model="modal.formData.far293a148" ng-blur="modal.fixDate('far293a148')">
     <div ng-repeat="t in modal.aircraftTypes">
       <label>High Minumums Captain for {{t}}</label>

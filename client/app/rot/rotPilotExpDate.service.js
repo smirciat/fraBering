@@ -48,12 +48,25 @@ angular.module('workspaceApp')
       if (!d || isNaN(d.getTime())) {
         return dateOrStr === null || dateOrStr === undefined ? null : String(dateOrStr);
       }
-      const m = d.getMonth() + 1;
+      const month = d.getMonth() + 1;
+      const mm = month < 10 ? '0' + month : String(month);
       const yy = d.getFullYear() % 100;
-      return m + '/' + yy;
+      const ys = yy < 10 ? '0' + yy : String(yy);
+      return mm + '/' + ys;
     }
 
-    const api = {parsePilotExpDate, formatPilotExpDate};
+    /** Firebase / Flight Report shape: first of the expiration month, MM/01/YYYY. Display stays MM/YY. */
+    function formatPilotExpStoredDate(dateOrStr) {
+      const d = dateOrStr instanceof Date ? dateOrStr : parsePilotExpDate(dateOrStr);
+      if (!d || isNaN(d.getTime())) {
+        return dateOrStr === null || dateOrStr === undefined ? null : String(dateOrStr);
+      }
+      const month = d.getMonth() + 1;
+      const mm = month < 10 ? '0' + month : String(month);
+      return mm + '/01/' + d.getFullYear();
+    }
+
+    const api = {parsePilotExpDate, formatPilotExpDate, formatPilotExpStoredDate};
     window.rotPilotExpDate = api;
     return api;
   });

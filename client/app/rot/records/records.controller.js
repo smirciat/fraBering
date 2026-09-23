@@ -131,28 +131,7 @@ class RecordsComponent {
         });
       });
       this.pilotModal = this.Modal.confirm.pilotData(formData =>{
-        if (!formData||!formData.name) {
-          this.quickModal('Try again to enter the pilot data');
-          return;
-        }
-        if (formData._id) {
-          this.logManualExpHistoryChanges(formData);
-          this.logManualCertDocHistoryChanges(formData);
-          const doc=this.pilotProfileWriteDoc(formData);
-          doc.trainingExpHistory=this.fullPilot.trainingExpHistory;
-          this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
-            this.toaster.success('Success','Pilot training dates updated');
-            let pilotIndex = this.pilots.map(e => e._id).indexOf(formData._id);
-            if (pilotIndex>-1) Object.assign(this.pilots[pilotIndex], doc);
-            if (this.fullPilot&&this.fullPilot._id===formData._id) {
-              Object.assign(this.fullPilot, doc);
-              this.pilot=this.cleanObject(this.fullPilot);
-            }
-          }).catch(err=>{
-            console.log(err);
-            this.toaster.error('Error','Failed to update pilot training dates');
-          });
-        }
+        this.savePilotFromModal(formData);
       });
   }
   
@@ -160,6 +139,9 @@ class RecordsComponent {
     this.fullPilot={};
     this.showTable=true;
     this.showApproved=false;
+    this.showQueue=false;
+    this.queuePending=[];
+    this.queueMissingFile=[];
     this.showSLEArray=[];
     this.bootstrapped=false;
     this.rotAircraft=[];
@@ -602,7 +584,10 @@ class RecordsComponent {
     const context={source:'manual'};
     const fields=this.getTrackedExpFields();
     fields.forEach(field=>{
-      if (this.fullPilot[field]&&updatedPilot[field]!==this.fullPilot[field]) {
+      if (!this.fullPilot[field]) return;
+      const prior=this.rotPilotExpDate.formatPilotExpStoredDate(this.fullPilot[field]);
+      const next=this.rotPilotExpDate.formatPilotExpStoredDate(updatedPilot[field]);
+      if (next!==prior) {
         this.prependExpHistory(field,this.buildExpHistoryEntry(this.fullPilot[field],context));
       }
     });
@@ -712,14 +697,15 @@ class RecordsComponent {
       newBaseMonth: entry&&entry.newBaseMonth,
     };
     let doc={_id:this.fullPilot._id};
-    doc[fieldKey]=expValue;
-    this.fullPilot[fieldKey]=expValue;
-    this.prependExpHistory(fieldKey,this.buildExpHistoryEntry(expValue,context));
+    const storedExp=this.rotPilotExpDate.formatPilotExpStoredDate(expValue)||expValue;
+    doc[fieldKey]=storedExp;
+    this.fullPilot[fieldKey]=storedExp;
+    this.prependExpHistory(fieldKey,this.buildExpHistoryEntry(storedExp,context));
     doc.trainingExpHistory=this.fullPilot.trainingExpHistory;
     this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
       let index=this.pilots.map(e=>e._id).indexOf(this.pilot._id);
       if (index>-1) Object.assign(this.pilots[index],doc);
-      this.toaster.success('Success',label+' restored to '+expValue);
+      this.toaster.success('Success',label+' restored to '+storedExp);
     }).catch(err=>{
       console.log(err);
       this.toaster.error('Error','Failed to restore '+label);
@@ -872,8 +858,8 @@ class RecordsComponent {
     if (!this.isApprover()||!this.fullPilot||!this.fullPilot._id) {
       return this.toaster.error('Error','Select a pilot and use approver login for passport approve');
     }
-    const expValue=this.formatPilotExpDateStr(expirationInput)||String(expirationInput||'').trim();
-    if (!expValue) return this.toaster.error('Error','Enter a valid passport expiration date');
+    const expValue=this.calendarStoredDate(this.date)||this.calendarStoredDate(expirationInput);
+    if (!expValue) return this.toaster.error('Error','Passport expiration must be a full date (MM/DD/YYYY)');
     const col=(this.appConfig.certDocSummaryColumns||[]).find(c=>c.key==='passport');
     const priorSnapshot=JSON.parse(JSON.stringify(this.fullPilot));
     const doc={_id:this.fullPilot._id,passport:expValue};
@@ -1000,10 +986,112 @@ class RecordsComponent {
     });
   }
 
+  toggleRecordsQueue(){
+    this.showQueue=!this.showQueue;
+    if (this.showQueue) this.loadRecordsQueue();
+  }
+
+  loadRecordsQueue(){
+    this.queueLoading=true;
+    this.queueError=null;
+    this.http.post('/api/rot/recordsQueue',{}).then(res=>{
+      const data=res.data||{};
+      this.queuePending=data.pending||[];
+      this.queueMissingFile=data.approvedWithoutFile||[];
+      this.queueTruncated=!!data.truncated;
+      this.queueLoading=false;
+    }).catch(err=>{
+      console.error('recordsQueue',err);
+      this.queueLoading=false;
+      this.queueError='Could not load the pending list.';
+    });
+  }
+
+  queueTrainingLabel(row){
+    if (!row) return '';
+    if (Array.isArray(row.trainingTypeArray)&&row.trainingTypeArray.length) return row.trainingTypeArray.join(', ');
+    return row.trainingType||'';
+  }
+
+  openQueuePilot(row){
+    if (!row) return;
+    const id=String(row.pilotNumber||'');
+    const all=this.RotPilotContext.getAllPilots()||[];
+    const pilot=all.filter(p=>String(p._id)===id)[0];
+    if (!pilot) {
+      this.toaster.error('Error','Pilot '+(row.name||id)+' is not on the loaded pilot list');
+      return;
+    }
+    if (String(this.RotPilotContext.getChosenPilot()&&this.RotPilotContext.getChosenPilot()._id)===id) {
+      this.init();
+      return;
+    }
+    this.RotPilotContext.setChosenPilot(pilot);
+  }
+
+  showNewPilot(){
+    if (!this.isApprover()) return this.toaster.error('Error','Only approvers can add a pilot');
+    const blank={_id:'',name:'',_creatingNew:true,isActive:true};
+    this.pilotModal(blank,this.pilots,{});
+  }
+
+  savePilotFromModal(formData){
+    if (!formData||!formData.name||formData.name==='new') {
+      this.quickModal('Enter a pilot name');
+      return;
+    }
+    const id=String(formData._id||'').trim();
+    if (!/^\d{2,6}$/.test(id)) {
+      this.quickModal('Enter the employee number as digits, like 1173. That number is the Flight Report pilot id.');
+      return;
+    }
+    formData._id=id;
+    const creating=!!formData._creatingNew;
+    const all=this.RotPilotContext.getAllPilots()||this.pilots||[];
+    const duplicate=all.some(p=>String(p._id)===id);
+    if (creating&&duplicate) {
+      this.quickModal('That employee number is already a pilot. Choose them from the list instead of new.');
+      return;
+    }
+    if (creating&&(!formData.pilotBase||formData.pilotBase==='none')) {
+      this.quickModal('Choose a pilot base (OME, OTZ, or HEL) so the new pilot shows on the list.');
+      return;
+    }
+    if (!creating && this.fullPilot && String(this.fullPilot._id)===id) {
+      this.logManualExpHistoryChanges(formData);
+      this.logManualCertDocHistoryChanges(formData);
+    }
+    const doc=this.pilotProfileWriteDoc(formData);
+    if (creating) {
+      doc.isActive=true;
+    } else if (this.fullPilot&&String(this.fullPilot._id)===id&&this.fullPilot.trainingExpHistory) {
+      doc.trainingExpHistory=this.fullPilot.trainingExpHistory;
+    }
+    this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
+      this.RotPilotContext.mergePilotDoc(doc);
+      this.pilots=this.RotPilotContext.getPilots();
+      if (creating) {
+        const created=this.pilots.filter(p=>String(p._id)===id)[0]||doc;
+        this.RotPilotContext.setChosenPilot(created);
+        this.toaster.success('Pilot created',formData.name+' ('+id+') is on the shared pilot list');
+        return;
+      }
+      this.toaster.success('Success','Pilot training dates updated');
+      if (this.fullPilot&&String(this.fullPilot._id)===id) {
+        Object.assign(this.fullPilot, doc);
+        this.pilot=this.cleanObject(this.fullPilot);
+      }
+    }).catch(err=>{
+      console.log(err);
+      this.toaster.error('Error',creating?'Failed to create pilot':'Failed to update pilot training dates');
+    });
+  }
+
   showPilotTrainingDates(){
     if (!this.fullPilot||!this.fullPilot._id) return this.toaster.error('Error','Select a pilot first');
     if (!this.isApprover()) return this.toaster.error('Error','Only approvers can edit pilot training dates');
     let pilotCopy=JSON.parse(JSON.stringify(this.fullPilot));
+    this.displayExpFields(pilotCopy);
     let modalOptions={
       inferLegalNameFromScan:()=>{
         return this.inferLegalNameFromScan(pilotCopy).then(data=>{
@@ -1032,6 +1120,28 @@ class RecordsComponent {
   formatPilotExpDateStr(raw){
     if (raw === null || raw === undefined || raw === '') return null;
     return this.rotPilotExpDate.formatPilotExpDate(raw);
+  }
+
+  /** Passport, medical, hire, DOB. Keep the day. Never store the MM/YY display shape. */
+  calendarStoredDate(raw){
+    if (raw instanceof Date && !isNaN(raw.getTime())) {
+      return this.padCalendarDate(raw.getMonth()+1, raw.getDate(), raw.getFullYear());
+    }
+    const text=String(raw||'').trim();
+    const parts=text.split('/');
+    if (parts.length!==3) return null;
+    const month=parseInt(parts[0], 10);
+    const day=parseInt(parts[1], 10);
+    let year=parseInt(parts[2], 10);
+    if (!month||!day||isNaN(year)||month>12||day>31) return null;
+    if (year<100) year+=2000;
+    return this.padCalendarDate(month, day, year);
+  }
+
+  padCalendarDate(month, day, year){
+    const mm=month<10?'0'+month:String(month);
+    const dd=day<10?'0'+day:String(day);
+    return mm+'/'+dd+'/'+year;
   }
 
   priorExpForPreview(priorExpDates, expKey, expKeyAlt){
@@ -1227,9 +1337,28 @@ class RecordsComponent {
       keys.push(event.name+'Exp');
     });
     keys.forEach(key=>{
-      if (source[key]!==undefined) doc[key]=source[key];
+      if (source[key]===undefined) return;
+      doc[key]=this.storedExpFieldValue(key, source[key]);
     });
     return doc;
+  }
+
+  displayExpFields(pilot){
+    if (!pilot||!this.rotPilotExpDate) return pilot;
+    const keys=this.getTrackedExpFields();
+    keys.forEach(key=>{
+      if (!pilot[key]) return;
+      const shown=this.rotPilotExpDate.formatPilotExpDate(pilot[key]);
+      if (shown) pilot[key]=shown;
+    });
+    return pilot;
+  }
+
+  storedExpFieldValue(key, value){
+    if (!this.rotPilotExpDate||value===null||value===undefined||value==='') return value;
+    const isExp=key==='far293a148'||/Exp$/.test(key);
+    if (!isExp||typeof value!=='string') return value;
+    return this.rotPilotExpDate.formatPilotExpStoredDate(value);
   }
 
   /** Pilot Duty Assignment save — quals, removals, certificate checkboxes, medical. */
@@ -1518,7 +1647,7 @@ class RecordsComponent {
     if (!rows||!rows.length) return;
     const doc={_id:this.pilot._id};
     rows.forEach(row=>{
-      const expValue=this.formatPilotExpDateStr(row.newDate);
+      const expValue=this.rotPilotExpDate.formatPilotExpStoredDate(row.newDate);
       doc[row.expKey]=expValue;
       if (row.expKeyAlt) doc[row.expKeyAlt]=expValue;
       this.logApprovalExpHistory(record, row.expKey, expValue, row.expKeyAlt, row.priorExpiration);
@@ -1527,7 +1656,7 @@ class RecordsComponent {
     this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
       this.toaster.success('Success','Pilot Profile Updated');
       rows.forEach(row=>{
-        const expValue=this.formatPilotExpDateStr(row.newDate);
+        const expValue=this.rotPilotExpDate.formatPilotExpStoredDate(row.newDate);
         this.fullPilot[row.expKey]=expValue;
         if (row.expKeyAlt) this.fullPilot[row.expKeyAlt]=expValue;
       });

@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import {rotFileRoot, safeRotFilename} from './rot.storage.js';
 import {inferLegalNameFromScanFiles} from './rot.legalNameFromScan.js';
+import {listRecordSummaries} from './rot.firebase.controller';
 import {inferMedicalFromScanFiles} from './rot.medicalFromScan.js';
 
 function recordsDir() {
@@ -17,6 +18,47 @@ function resolveRecordPath(filename) {
   let fullPath = path.resolve(path.join(root, safeName));
   if (!fullPath.startsWith(root + path.sep)) return null;
   return fullPath;
+}
+
+function associatedRecordIds(files) {
+  const ids = new Set();
+  files.forEach(name => {
+    const match = String(name).match(/associated_([^_]+)_/);
+    if (match) ids.add(match[1]);
+  });
+  return ids;
+}
+
+function queueSort(a, b) {
+  const ad = Date.parse(a.date) || 0;
+  const bd = Date.parse(b.date) || 0;
+  return bd - ad;
+}
+
+export async function recordsQueue(req, res) {
+  try {
+    let folder = recordsDir();
+    fs.mkdirSync(folder, {recursive: true});
+    let files = fs.readdirSync(folder).filter(file => file && file.charAt(0) !== '.');
+    let linked = associatedRecordIds(files);
+    let summary = await listRecordSummaries(8000);
+    let pending = [];
+    let approvedWithoutFile = [];
+    summary.rows.forEach(row => {
+      if (!row.approved) pending.push(row);
+      else if (!linked.has(String(row._id))) approvedWithoutFile.push(row);
+    });
+    pending.sort(queueSort);
+    approvedWithoutFile.sort(queueSort);
+    return res.status(200).json({
+      pending: pending,
+      approvedWithoutFile: approvedWithoutFile,
+      truncated: summary.truncated
+    });
+  } catch (err) {
+    console.error('rot recordsQueue error', err);
+    return res.status(500).json({message: 'Could not build the records queue'});
+  }
 }
 
 export function listRecords(req, res) {

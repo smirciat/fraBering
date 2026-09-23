@@ -160,6 +160,60 @@ function pilotWriteAllowlist() {
   return allowed;
 }
 
+/** Training exp stays first-of-month MM/01/YYYY. M/YY and other slash shapes crash Flight Report. */
+function storedExpDate(value) {
+  if (typeof value !== 'string') return value;
+  const parts = value.trim().split('/');
+  if (parts.length !== 2 && parts.length !== 3) return value;
+  const month = parseInt(parts[0], 10);
+  const yearPart = parts.length === 2 ? parts[1] : parts[2];
+  let year = parseInt(yearPart, 10);
+  if (!month || month < 1 || month > 12 || isNaN(year)) return value;
+  if (String(yearPart).length !== 2 && String(yearPart).length !== 4) return value;
+  if (year < 100) year += 2000;
+  const mm = month < 10 ? '0' + month : String(month);
+  return mm + '/01/' + year;
+}
+
+/** Full calendar dates. A 2-part string would replace MM/DD/YYYY with month/year. */
+const PILOT_CALENDAR_FIELDS = [
+  'dateOfHire', 'dateOfBirth', 'medicalDate', 'oas', 'passport', 'rus'
+];
+
+function isMonthYearOnly(value) {
+  if (typeof value !== 'string') return false;
+  return value.trim().split('/').length === 2;
+}
+
+function dropCalendarMonthYear(doc, docId) {
+  PILOT_CALENDAR_FIELDS.forEach(key => {
+    if (!isMonthYearOnly(doc[key])) return;
+    console.warn('rot pilots write refused M/YY on calendar field', docId, key, doc[key]);
+    delete doc[key];
+  });
+}
+
+function isExpFieldKey(key) {
+  return key === 'far293a148' || /Exp$/.test(key);
+}
+
+function normalizePilotExpFields(doc) {
+  Object.keys(doc).forEach(key => {
+    if (isExpFieldKey(key)) {
+      doc[key] = storedExpDate(doc[key]);
+      return;
+    }
+    if (key !== 'trainingExpHistory' || !doc[key] || typeof doc[key] !== 'object') return;
+    Object.keys(doc[key]).forEach(expKey => {
+      const rows = doc[key][expKey];
+      if (!Array.isArray(rows)) return;
+      rows.forEach(row => {
+        if (row && typeof row.exp === 'string') row.exp = storedExpDate(row.exp);
+      });
+    });
+  });
+}
+
 function pickPilotWriteFields(doc, docId) {
   const allowed = pilotWriteAllowlist();
   const out = {};
@@ -172,6 +226,8 @@ function pickPilotWriteFields(doc, docId) {
     }
     out[key] = doc[key];
   });
+  normalizePilotExpFields(out);
+  dropCalendarMonthYear(out, docId);
   if (dropped.length) {
     console.warn('rot pilots write dropped non-FRA fields', docId, dropped.join(','));
   }
@@ -193,6 +249,26 @@ export async function updateFirebase(req, res) {
     console.error('rot updateFirebase error', err);
     return res.status(500).json({message: 'ROT firebase update failed'});
   }
+}
+
+/** Slim rows for the records pending / missing-file view. Cap so a full scan stays bounded. */
+export async function listRecordSummaries(limit) {
+  const cap = limit || 8000;
+  const snap = await firebase_db.collection('records').limit(cap).get();
+  const rows = [];
+  snap.forEach(doc => {
+    const row = doc.data() || {};
+    rows.push({
+      _id: doc.id,
+      pilotNumber: row.pilotNumber || '',
+      name: row.name || '',
+      date: row.date || '',
+      trainingType: row.trainingType || '',
+      trainingTypeArray: Array.isArray(row.trainingTypeArray) ? row.trainingTypeArray : [],
+      approved: row.approved === true
+    });
+  });
+  return {rows: rows, truncated: snap.size >= cap};
 }
 
 export async function deleteFirebase(req, res) {

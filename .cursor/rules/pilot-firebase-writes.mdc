@@ -1,0 +1,19 @@
+---
+description: FRA pilots Firebase writes — do not merge the whole pilot document
+alwaysApply: true
+---
+
+# Pilot Firebase writes (`pilots`)
+
+**Locked 22 Sep 2026** (`pilots/1173` — `courierCurrency`, `apprCurrency`, `holdCurrency`). Detail: `docs/pilot-firebase-writes.md`.
+
+## Write
+
+- `/api/rot/updateFirebase` on `collection: 'pilots'` may set **FRA-owned fields only**. `pickPilotWriteFields` drops the rest.
+- Training-dates save → `pilotProfileWriteDoc()`. Assignment save → `pilotAssignmentWriteDoc()`. Other pilot updates send the few keys that action changes, plus `trainingExpHistory` when that action records history.
+
+## Do not
+
+- Post `fullPilot`, a modal clone, or `Object.assign({}, fullPilot, edits)` to Firebase.
+- Put flight-log currency (`*Currency`), phones, or email on the allowlist. Omitting them is what keeps Flight Report’s values.
+- Merge a full read-back document into the next pilot write.
