@@ -236,6 +236,12 @@
   background: transparent;
 }
 
+.rot-fdr-days-input-paper {
+  border: none;
+  border-bottom: 1px dashed #666;
+  background: #fff;
+}
+
 .rot-fdr-alert-list {
   margin: 0.5em 0 0;
   padding-left: 1.2em;

@@ -493,8 +493,8 @@ class RotFdrComponent {
       return 'No Firebase duty index for this pilot — enter days off from the paper F&D sheet.';
     }
     if (pilot.dutyFromFirebase) {
-      let t = 'Days off snapshot (elapsed days in month minus duty; today/future not counted as off)';
-      if (pilot.dutySyncedAt) t += ' (synced ' + this.formatSyncDate(pilot.dutySyncedAt) + ')';
+      let t = 'Firebase snapshot (elapsed days in the month minus claimed duty days). Type the paper count in the cell to override it.';
+      if (pilot.dutySyncedAt) t += ' Synced ' + this.formatSyncDate(pilot.dutySyncedAt) + '.';
       return t;
     }
     if (pilot.hoursFromFirebase && pilot.dutySyncNeeded) {
@@ -633,23 +633,51 @@ class RotFdrComponent {
     return pilot && pilot.daysOffEditable;
   }
 
+  daysOffCellEditable(pilot, monthKey) {
+    if (this.daysOffEditable(pilot)) return true;
+    return this.monthAuditAllowed(pilot, monthKey);
+  }
+
+  daysOffInputTitle(pilot) {
+    if (this.daysOffEditable(pilot)) return this.dutyCellTitle(pilot);
+    return 'Paper days off. The number shown is the Firebase snapshot until you type the sheet count and leave the cell.';
+  }
+
+  beginDaysOffEdit(pilot, monthKey) {
+    let raw = pilot && pilot.duty && pilot.duty.months ? pilot.duty.months[monthKey] : '';
+    this.daysOffEditBaseline = {
+      pilotName: pilot && pilot.name,
+      monthKey: monthKey,
+      value: raw === '' || raw === null || raw === undefined ? '' : parseInt(raw, 10)
+    };
+  }
+
   onDaysOffBlur(pilot, monthKey) {
-    if (!this.daysOffEditable(pilot) || this.selectedYear === 'summary') return;
+    if (this.selectedYear === 'summary') return;
     let monthIndex = this.months.indexOf(monthKey) + 1;
     if (!monthIndex) return;
     let raw = pilot.duty && pilot.duty.months ? pilot.duty.months[monthKey] : '';
-    let entry = {
-      pilotName: pilot.name,
-      month: monthIndex,
-      daysOff: raw === '' || raw === null || raw === undefined ? '' : parseInt(raw, 10)
-    };
-    this.savingDaysOff = true;
-    this.http.put('/api/rot/fdr/' + this.selectedYear + '/days-off', {entries: [entry]}).then(res => {
-      this.savingDaysOff = false;
-      this.applyYearData(res.data);
-    }, () => {
-      this.savingDaysOff = false;
-    });
+    let next = raw === '' || raw === null || raw === undefined ? '' : parseInt(raw, 10);
+    if (this.daysOffEditable(pilot)) {
+      let entry = {
+        pilotName: pilot.name,
+        month: monthIndex,
+        daysOff: next
+      };
+      this.savingDaysOff = true;
+      this.http.put('/api/rot/fdr/' + this.selectedYear + '/days-off', {entries: [entry]}).then(res => {
+        this.savingDaysOff = false;
+        this.applyYearData(res.data);
+      }, () => {
+        this.savingDaysOff = false;
+      });
+      return;
+    }
+    if (!this.monthAuditAllowed(pilot, monthKey)) return;
+    let baseline = this.daysOffEditBaseline;
+    if (!baseline || baseline.pilotName !== pilot.name || baseline.monthKey !== monthKey) return;
+    if (!Number.isFinite(next) || next === baseline.value) return;
+    this.saveMonthAuditEntry(pilot.name, monthKey, 'duty', true, undefined, next);
   }
 
   hoursStatusBanner() {
@@ -830,7 +858,12 @@ class RotFdrComponent {
       currentDaysOff: (pilot.duty && pilot.duty.months) ? pilot.duty.months[monthKey] : null
     };
     this.timeout(() => {
-      window.scrollTo(0, scrollTop);
+      let panel = document.querySelector('.rot-fdr-note-panel');
+      if (panel && panel.scrollIntoView) {
+        panel.scrollIntoView({block: 'nearest'});
+      } else {
+        window.scrollTo(0, scrollTop);
+      }
     }, 0, false);
   }
 

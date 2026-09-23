@@ -47,7 +47,7 @@ Training dates on screen show as month/year (09/27). The stored date stays the f
 #63 — Add an existing pilot to ROT
   Ryan Woehler creates the initial Flight Report record under the employee number. ROT does not.
   Add pilot to ROT: look up the employee number. If there is no record, you get an alert to ask Ryan. If the record exists, confirm the roster name and base, then Add.
-  Check: Maddoc Newton (1228), Keityn Young (1229), Patrick Krezel (1230), and Cameron Todd (1206) should already be on the pilot list. Look up a number that does not exist and confirm the alert names Ryan and does not create a pilot.
+  Check: Maddoc Newton (1228), Keityn Young (1229), Patrick Krezel (1230), and Willow Hanson (1156, OME) should already be on the pilot list. Look up a number that does not exist and confirm the alert names Ryan and does not create a pilot.
 
 #64 — Pending and missing documents
   Open "Pending records and missing documents."

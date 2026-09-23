@@ -211,7 +211,7 @@
       <button ng-if="rotRecords.isApprover() && rotRecords.fullPilot._id && rotRecords.tab==='CERT' && rotRecords.subtab==='Medical'" class="btn btn-default" ng-click="rotRecords.inferMedicalFromScan({})">Read medical from newest CERT scan</button>
     </div>
     <div ng-if="rotRecords.showUninitialized" style="margin:8px 0 12px 0;max-width:720px;">
-      <p style="font-size:12px;color:#555;margin:0 0 6px 0;">Ryan Woehler creates the initial Flight Report record under the employee number. ROT does not. After that record exists, confirm the roster name and base here and Add.</p>
+      <p style="font-size:12px;color:#555;margin:0 0 6px 0;">Ryan Woehler creates the initial Flight Report record under the employee number. ROT does not. After that record exists, confirm the roster name and base here and Add. Add also puts them on this year’s FDR (OME → NOME SIC, OTZ → Kotzebue, HEL → rotor) and fills days off for every day that year before the hire date.</p>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
         <input class="form-control" style="max-width:140px;" ng-model="rotRecords.lookupEmployeeId" placeholder="Employee #" ng-keydown="$event.keyCode===13 && rotRecords.lookupPilotRecord()">
         <button class="btn btn-default btn-sm" ng-click="rotRecords.lookupPilotRecord()">Look up</button>

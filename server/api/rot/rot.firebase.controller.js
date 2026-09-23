@@ -1,5 +1,7 @@
 'use strict';
 
+import {initializeFdrPilot} from './rot.fdr.init';
+
 /**
  * ROT-compatible Firebase proxy — same query behavior as ~/ROT/server/api/thing/thing.controller.js
  * Used by ROT screens in fraBering (sicHours, records, main) so we do not route through
@@ -241,15 +243,35 @@ export async function updateFirebase(req, res) {
     let id;
     if (localDoc._id) id = localDoc._id.toString();
     delete localDoc._id;
+    let hireDate = '';
+    let initFdr = false;
     if (collection === 'pilots') {
       if (!id) return res.status(400).json({message: 'Pilot id is required'});
       const existing = await firebase_db.collection('pilots').doc(id).get();
       if (!existing.exists) {
         return res.status(400).json({message: 'Employee ' + id + ' has no Flight Report record yet. Creating that record is out of scope for ROT. Ryan Woehler creates the initial pilot record in Flight Report under the employee number. After it exists, use Add pilot to ROT to set the roster name and base.'});
       }
+      const prior = existing.data() || {};
+      hireDate = prior.dateOfHire || '';
+      initFdr = req.body.initializeFdr === true;
       localDoc = pickPilotWriteFields(localDoc, id);
     }
     let data = await updateDocument(collection, id, localDoc);
+    if (data && initFdr) {
+      try {
+        let userName = req.user && req.user.name ? req.user.name : '';
+        data.fdrInit = await initializeFdrPilot({
+          employeeId: id,
+          name: data.name || localDoc.name,
+          pilotBase: data.pilotBase || localDoc.pilotBase,
+          dateOfHire: data.dateOfHire || hireDate,
+          updatedBy: userName || 'fdr-init'
+        });
+      } catch (fdrErr) {
+        console.error('rot fdr init error', fdrErr);
+        data.fdrInit = {error: true};
+      }
+    }
     if (data) return res.status(200).json(data);
     return res.status(500).json({message: 'No response from firebase'});
   } catch (err) {

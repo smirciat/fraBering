@@ -1103,13 +1103,22 @@ class RecordsComponent {
     if (!name) return this.toaster.error('Error','Enter the roster name');
     if (!base||base==='none') return this.toaster.error('Error','Choose a base (OME, OTZ, or HEL)');
     const doc={_id:String(row._id),name:name,pilotBase:base};
-    this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc}).then(()=>{
+    this.http.post('/api/rot/updateFirebase',{collection:'pilots',doc:doc,initializeFdr:true}).then(res=>{
       this.RotPilotContext.mergePilotDoc(doc);
       this.pilots=this.RotPilotContext.getPilots();
       const created=this.pilots.filter(p=>String(p._id)===String(row._id))[0]||doc;
       this.RotPilotContext.setChosenPilot(created);
       this.uninitializedPilots=(this.uninitializedPilots||[]).filter(p=>String(p._id)!==String(row._id));
-      this.toaster.success('Pilot added to ROT',name+' ('+row._id+')');
+      const fdr=res&&res.data&&res.data.fdrInit;
+      let detail=name+' ('+row._id+')';
+      if (fdr&&fdr.pilotName) {
+        detail=fdr.pilotName+' is on the '+fdr.year+' FDR in '+fdr.section;
+        if (fdr.daysOffMonths) detail+='. Days off filled through the day before hire ('+fdr.daysOffMonths+' months).';
+        else if (!fdr.hireDate) detail+='. No hire date on the Flight Report record, so days off were not filled.';
+      } else if (fdr&&fdr.error) {
+        detail+='. FDR roster was not updated.';
+      }
+      this.toaster.success('Pilot added to ROT',detail);
     }).catch(err=>{
       console.error('initializePilot',err);
       const missing=err&&err.status===400;
