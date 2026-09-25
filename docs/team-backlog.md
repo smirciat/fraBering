@@ -8,7 +8,7 @@ _Developer-approved, open or in progress. Agents should implement these._
 
 ## #68 Flights away from a base
 
-- **Type:** bug · medium · open
+- **Type:** bug · medium · in_progress
 - **Reporter:** FEN KINNEEN
 
 **Original report:**
@@ -17,10 +17,23 @@ It appears that a flight built (in this case a test flight, 930) that doesn't ha
 
 **Progress (changed, not resolved):**
 
-Andy Smircich: Lets fix this right away
+FEN KINNEEN: Looks good, flight is only showing on the Nome board. 
+
+One item of note is that the Greybull weather is not showing. Not sure if this is due to the way the flight was built in TF, or if it is because it is an out of state airport.
 
 **Comments:**
 - Andy Smircich: Lets fix this right away
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**Flights that never touch a base**
+• A flight whose legs do not arrive or depart Nome, Kotzebue, or Unalakleet now shows on the **Nome** board, marked **Away**.
+• It does not show on Kotzebue, Unalakleet, or the helicopter board.
+• Open it the same way as any other flight and sign the release.
+
+**Please check:** The Greybull–Greybull 1900 check flight (930) appears on the Nome board and can be signed off. Confirm it is not on the Kotzebue or Unalakleet boards.
+- FEN KINNEEN: Looks good, flight is only showing on the Nome board. 
+
+One item of note is that the Greybull weather is not showing. Not sure if this is due to the way the flight was built in TF, or if it is because it is an out of state airport.
 
 ## Ready for review (shipped — reporter verify, do not build)
 

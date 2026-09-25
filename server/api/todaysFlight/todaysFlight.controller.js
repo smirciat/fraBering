@@ -1742,7 +1742,19 @@ async function airportNameToMetar(airport){
       icao="PFKO";
       airport.threeLetter='2A9';
     }
-    else return airport; 
+    else {
+      for (let j=0;j<res.data.length;j++) {
+        let row=res.data[j];
+        if (row.country==='US'&&row.reporting) {
+          foundIndex=j;
+          break;
+        }
+      }
+      if (foundIndex<0) return airport;
+      icao=res.data[foundIndex].icao;
+      airport.threeLetter=res.data[foundIndex].local||'';
+      if (!airport.threeLetter&&icao&&icao.length>=3) airport.threeLetter=icao.slice(-3);
+    }
   }
   else {
     icao=res.data[foundIndex].icao;
