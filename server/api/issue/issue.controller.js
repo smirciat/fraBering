@@ -64,6 +64,21 @@ function isAdminUser(user) {
   return user && user.role && ADMIN_ROLES.indexOf(user.role) >= 0;
 }
 
+function findUniqueUserByName(name) {
+  var trimmed = String(name || '').trim();
+  if (!trimmed) {
+    return Promise.resolve(null);
+  }
+  return User.findAll({
+    where: {name: {[Op.iLike]: trimmed}}
+  }).then(function(matches) {
+    if (matches.length !== 1) {
+      return null;
+    }
+    return matches[0];
+  });
+}
+
 function pickCreateBody(body, user) {
   var picked = _.pick(body, ['kind', 'title', 'description', 'priority', 'reporterName']);
   picked.reporterName = picked.reporterName || user.name;
@@ -238,7 +253,14 @@ export function create(req, res) {
     res.status(400).send({message: 'title and reporterName are required'});
     return null;
   }
-  return Issue.create(data)
+  return findUniqueUserByName(data.reporterName)
+    .then(function(reporterUser) {
+      if (reporterUser) {
+        data.reporterUserId = reporterUser._id;
+        data.reporterName = reporterUser.name;
+      }
+      return Issue.create(data);
+    })
     .then(function(issue) {
       var files = decodeUploadPayload(req.body);
       if (!files.length) {
@@ -375,10 +397,18 @@ export function addComment(req, res) {
             return comment;
           }
           return Promise.resolve().then(function() {
-            if (!emailReporter || !issue.reporterUserId) {
+            if (!emailReporter) {
               return null;
             }
-            return User.findOne({where: {_id: issue.reporterUserId}});
+            return findUniqueUserByName(issue.reporterName).then(function(named) {
+              if (named) {
+                return named;
+              }
+              if (!issue.reporterUserId) {
+                return null;
+              }
+              return User.findOne({where: {_id: issue.reporterUserId}});
+            });
           }).then(function(reporterUser) {
             var notifyOpts = {
               emailReporter: emailReporter,

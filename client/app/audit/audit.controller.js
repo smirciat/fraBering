@@ -2,6 +2,47 @@
 
 (function(){
 
+const HELI_TYPE_RE = /(astar|robinson|md500|huey|r44|r-44|helicopter|heli)/i;
+
+function csvCell(val) {
+  if (val === undefined || val === null) return '';
+  return String(val).replace(/,/g, '-');
+}
+
+function finiteNumber(val) {
+  if (val === undefined || val === null || val === '') return null;
+  let n = parseFloat(val);
+  return Number.isFinite(n) ? n : null;
+}
+
+function isHelicopterPfr(pfr) {
+  if (!pfr) return false;
+  if (pfr.isHelicopter) return true;
+  return HELI_TYPE_RE.test(String(pfr.acftType || ''));
+}
+
+function legHasWeightBalance(leg) {
+  if (!leg) return false;
+  return finiteNumber(leg.mgtow) !== null || finiteNumber(leg.tow) !== null || finiteNumber(leg.cg) !== null;
+}
+
+/** Takeoff CG envelopes printed on the load sheets. Other types are not checked. */
+function takeoffCgLimits(acftType) {
+  let t=String(acftType||'').toLowerCase();
+  if (t.indexOf('courier')>=0||t.indexOf('c408')>=0) return {fwd:-17.7, aft:-4.8};
+  if (t.indexOf('casa')>=0||t.indexOf('c212')>=0) return {fwd:-22.2, aft:-6.7};
+  return null;
+}
+
+function legRoute(leg) {
+  if (!leg) return '';
+  if (leg.route) return String(leg.route);
+  let from = leg.from || leg.dep || leg.origin || '';
+  let to = leg.to || leg.arr || leg.destination || '';
+  if (from || to) return String(from) + '-' + String(to);
+  return '';
+}
+
 class AuditComponent {
   constructor($http,$state,$timeout,$scope,Auth,Util) {
     this.http=$http;
@@ -152,6 +193,7 @@ class AuditComponent {
     this.complete2=false;
     this.complete3=false;
     this.complete4=false;
+    this.complete5=false;
     this.startDateStringFormatted=this.startDate.toLocaleDateString();
     this.startDate.setHours(10);
     this.endDateStringFormatted=this.endDate.toLocaleDateString();
@@ -202,6 +244,7 @@ class AuditComponent {
     this.complete2=false;
     this.complete3=false;
     this.complete4=false;
+    this.complete5=false;
     this.spinner=true;
     this.csv="";
     let keys=[];
@@ -360,6 +403,7 @@ class AuditComponent {
     this.complete2=false;
     this.complete3=false;
     this.complete4=false;
+    this.complete5=false;
     this.spinner=true;
     let date=new Date(this.startDate);
     let date1=new Date(this.endDate);
@@ -407,6 +451,7 @@ class AuditComponent {
     this.complete2=false;
     this.complete3=false;
     this.complete4=false;
+    this.complete5=false;
     this.spinner=true;
     return this.http.post('/api/airplanes/firebaseQuery',this.pfrQuery).then(res=>{
       this.csv="PILOT,DATE,FLIGHTNUM,AIRCRAFT,AIRCRAFT TYPE,OWE,FUEL,LOAD AVAILABLE,MGTOW,CG,OW,TOW\r\n";
@@ -436,6 +481,7 @@ class AuditComponent {
     this.complete2=false;
     this.complete3=false;
     this.complete4=false;
+    this.complete5=false;
     this.spinner=true;
     let date=new Date(this.startDate);
     let date1=new Date(this.endDate);
@@ -466,6 +512,134 @@ class AuditComponent {
       this.complete4=true;
       let blob = new Blob([ this.csv ], { type : 'text/plain' });
       this.url = (window.URL || window.webkitURL).createObjectURL( blob );
+    });
+  }
+
+  /** Last 30 days of fixed-wing Flight Report legs. TOW is checked against that leg's MGTOW. CG is listed; envelopes are not coded yet. */
+  createCSVWeightBalance(){
+    this.customAudit=false;
+    this.complete=false;
+    this.complete2=false;
+    this.complete3=false;
+    this.complete4=false;
+    this.complete5=false;
+    this.spinner=true;
+    let end=new Date();
+    end.setHours(14,0,0,0);
+    let start=new Date();
+    start.setDate(start.getDate()-30);
+    start.setHours(10,0,0,0);
+    let query={
+      collection:'flights',
+      limit:3000,
+      parameter:'date',
+      operator:'>=',
+      value:start,
+      parameter2:'date',
+      operator2:'<=',
+      value2:end,
+      timestampBoolean:true
+    };
+    return this.http.post('/api/airplanes/firebaseQuery', query).then(res=>{
+      let pfrs=res.data||[];
+      let capped=pfrs.length>=3000;
+      if (this.pilot&&this.pilot.displayName&&this.pilot.displayName!=='None') {
+        pfrs=pfrs.filter(p=>p.pilot===this.pilot.displayName);
+      }
+      let rows=[];
+      let over=0;
+      let outside=0;
+      let missing=0;
+      pfrs.forEach(pfr=>{
+        if (isHelicopterPfr(pfr)||!pfr.legArray) return;
+        pfr.legArray.forEach((leg, idx)=>{
+          if (!legHasWeightBalance(leg)) return;
+          let mgtow=finiteNumber(leg.mgtow);
+          let tow=finiteNumber(leg.tow);
+          let cg=finiteNumber(leg.cg);
+          let status=[];
+          if (mgtow===null||mgtow<=0||tow===null) {
+            status.push('missing MGTOW or TOW');
+            missing+=1;
+          } else if (tow>mgtow) {
+            status.push('over MGTOW');
+            over+=1;
+          } else {
+            status.push('within MGTOW');
+          }
+          let limits=takeoffCgLimits(pfr.acftType);
+          let fwd='';
+          let aft='';
+          if (!limits) {
+            status.push('CG limits not checked');
+          } else if (cg===null||cg===0) {
+            fwd=limits.fwd;
+            aft=limits.aft;
+            status.push('missing CG');
+          } else if (cg<limits.fwd||cg>limits.aft) {
+            fwd=limits.fwd;
+            aft=limits.aft;
+            status.push('outside CG');
+            outside+=1;
+          } else {
+            fwd=limits.fwd;
+            aft=limits.aft;
+            status.push('within CG');
+          }
+          rows.push({
+            date:pfr.dateString||'',
+            flight:pfr.flightNumber||'',
+            tail:pfr.acftNumber||'',
+            type:pfr.acftType||'',
+            pilot:pfr.pilot||'',
+            leg:idx+1,
+            route:legRoute(leg),
+            mgtow:mgtow===null?'':mgtow,
+            tow:tow===null?'':tow,
+            cg:cg===null?'':cg,
+            fwd:fwd,
+            aft:aft,
+            status:status.join('; ')
+          });
+        });
+      });
+      rows.sort((a,b)=>{
+        return String(a.date).localeCompare(String(b.date))||
+          String(a.flight).localeCompare(String(b.flight))||
+          a.leg-b.leg;
+      });
+      let lines=[];
+      lines.push('LEGS CHECKED,OVER MGTOW,OUTSIDE CG,MISSING MGTOW OR TOW');
+      lines.push(rows.length+','+over+','+outside+','+missing);
+      lines.push('NOTE,Takeoff CG limits are the Casa sheet (-22.2 to -6.7) and the Sky Courier sheet (-17.7 to -4.8). Other types are not checked. A CG of 0 counts as missing.,,');
+      if (capped) {
+        lines.push('NOTE,Flight Report query returned 3000 flights. Older days in this window may be missing.,,');
+      }
+      lines.push('DATE,FLIGHT,TAIL,TYPE,PILOT,LEG,ROUTE,MGTOW,TOW,CG,FWD CG LIMIT,AFT CG LIMIT,STATUS');
+      rows.forEach(row=>{
+        lines.push([
+          csvCell(row.date),
+          csvCell(row.flight),
+          csvCell(row.tail),
+          csvCell(row.type),
+          csvCell(row.pilot),
+          csvCell(row.leg),
+          csvCell(row.route),
+          csvCell(row.mgtow),
+          csvCell(row.tow),
+          csvCell(row.cg),
+          csvCell(row.fwd),
+          csvCell(row.aft),
+          csvCell(row.status)
+        ].join(','));
+      });
+      this.csv=lines.join('\r\n')+'\r\n';
+      this.spinner=false;
+      this.complete5=true;
+      let blob=new Blob([this.csv], {type:'text/plain'});
+      this.url=(window.URL||window.webkitURL).createObjectURL(blob);
+    }, ()=>{
+      this.spinner=false;
     });
   }
 }

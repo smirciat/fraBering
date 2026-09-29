@@ -10,7 +10,7 @@
 'use strict';
 
 import nodemailer from 'nodemailer';
-import {TodaysFlight,AirportRequirement,Airplane,Assessment} from '../../sqldb';
+import {TodaysFlight,AirportRequirement,Airplane,Assessment,Sequelize} from '../../sqldb';
 import {firebaseMin,firebaseFlights,firebaseAircraft,firebasePilots,previousPfrs} from '../airplane/airplane.controller.js';
 import {getMetarSynoptic,parseADDS} from '../airportRequirement/airportRequirement.controller.js';
 import localEnv from '../../config/local.env.js';
@@ -28,6 +28,41 @@ let bearer='';
 let allAirports=[];
 let airplanes=[];
 let pfrs=[];
+const AIRPORT_CACHE_MS = 3 * 60 * 1000;
+const AIRPLANE_CACHE_MS = 15 * 60 * 1000;
+let airportsLoadedAt = 0;
+let airplanesLoadedAt = 0;
+
+export function invalidateAirportCache() {
+  airportsLoadedAt = 0;
+}
+
+async function loadModelRows(model) {
+  let instance = await model.findAll({});
+  let rows = [];
+  instance.forEach(i => {
+    if (i.dataValues) rows.push(i.dataValues);
+  });
+  return rows;
+}
+
+async function ensureReferenceTables() {
+  let now = Date.now();
+  if (!allAirports.length || now - airportsLoadedAt >= AIRPORT_CACHE_MS) {
+    let rows = await loadModelRows(AirportRequirement);
+    if (rows.length) {
+      allAirports = rows;
+      airportsLoadedAt = now;
+    }
+  }
+  if (!airplanes.length || now - airplanesLoadedAt >= AIRPLANE_CACHE_MS) {
+    let rows = await loadModelRows(Airplane);
+    if (rows.length) {
+      airplanes = rows;
+      airplanesLoadedAt = now;
+    }
+  }
+}
 let flightLog=[];
 let colors=['airport-green','airport-blue','airport-yellow','airport-purple','airport-orange','airport-pink'];
 const baseUrl = 'https://localhost:' + config.port;
@@ -906,20 +941,7 @@ export async function tf(req,res) {
   //console.log(`Array Buffers: ${memoryUsage.arrayBuffers / (1024 * 1024)} MB`);
   try {
     staleFile=true;
-    if (true) {//(!allAirports||allAirports.length===0) {
-      allAirports=[];
-      let instance=await AirportRequirement.findAll({});
-      instance.forEach(i=>{
-        if (i.dataValues) allAirports.push(i.dataValues);
-      });
-    }
-    if (true){//!airplanes||airplanes.length===0) {
-      airplanes=[];
-      let instance=await Airplane.findAll({});
-      instance.forEach(i=>{
-        if (i.dataValues) airplanes.push(i.dataValues);
-      });
-    }
+    await ensureReferenceTables();
     pfrs=previousPfrs.concat(firebaseFlights);
     let pfrsByAircraft={};
     pfrs.forEach(pfr=>{
@@ -933,11 +955,16 @@ export async function tf(req,res) {
     let year = String(d.getFullYear()).slice(-2);
     let dateString=month+'/'+day+'/'+year;
     
-    let date=new Date();
-    let date2=new Date(date);
-    date2.setDate(date2.getDate()+1);
-    date2=date2.toLocaleDateString();
-    date=date.toLocaleDateString();
+    let today=new Date();
+    // Manifest window is yesterday 23:00 through the day-after-tomorrow 01:00.
+    // Match those dates instead of the latest 3000 rows.
+    let manifestDates=[-1, 0, 1, 2].map(offset=>{
+      let d=new Date(today);
+      d.setDate(d.getDate()+offset);
+      return d.toLocaleDateString();
+    });
+    let date=manifestDates[1];
+    let date2=manifestDates[2];
     
     let flights=[];
 
@@ -1050,8 +1077,9 @@ export async function tf(req,res) {
       flights=manifests;
   
     let instance=await TodaysFlight.findAll({
-      order: [['_id', 'DESC']],
-      limit: 3000
+      where: {
+        date: { [Sequelize.Op.in]: manifestDates }
+      }
     });
     let todaysFlights=[];
     let allFlights=[];

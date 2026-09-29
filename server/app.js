@@ -10,7 +10,7 @@ import sqldb from './sqldb';
 import config from './config/environment';
 import localEnv from './config/local.env.js';
 import {charterInterval} from './api/futureCharter/futureCharter.controller.js';
-import {tf,setBearer,getFlightLogs} from './api/todaysFlight/todaysFlight.controller.js';
+import {tf,setBearer,getFlightLogs,invalidateAirportCache} from './api/todaysFlight/todaysFlight.controller.js';
 import {setRosterDay} from './api/calendar/calendar.controller.js';
 import {setupSocket,observe,observePilots,setPreviousPfrs,firebaseInterval, quickGrab} from './api/airplane/airplane.controller.js';
 import {metars,tafs,syncPireps} from './api/airportRequirement/airportRequirement.controller.js';
@@ -98,24 +98,68 @@ require('./config/express').default(app);
 require('./routes').default(app);
 setupSocket(socketio);
 
+let callbackRunning=false;
 let callbackFunction=async ()=>{
-  await getFlightLogs();
-  console.time('TF Function');
-  console.log(await tf());
-  console.timeEnd('TF Function');
+  if (callbackRunning) {
+    console.log('TF Function skipped; previous run still going');
+    return;
+  }
+  callbackRunning=true;
+  let timed=false;
+  try {
+    await getFlightLogs();
+    console.time('TF Function');
+    timed=true;
+    console.log(await tf());
+  } catch (err) {
+    console.log('TF callback failed', err);
+  } finally {
+    if (timed) console.timeEnd('TF Function');
+    callbackRunning=false;
+  }
 };
 
+let metarRunning=false;
 let metarFunction=async ()=>{
-  await syncPireps();
-  console.time('Metar Function');
-  console.log(await metars());
-  console.timeEnd('Metar Function');
+  if (metarRunning) {
+    console.log('Metar Function skipped; previous run still going');
+    return;
+  }
+  metarRunning=true;
+  let timed=false;
+  try {
+    await syncPireps();
+    console.time('Metar Function');
+    timed=true;
+    console.log(await metars());
+    invalidateAirportCache();
+  } catch (err) {
+    console.log('Metar callback failed', err);
+  } finally {
+    if (timed) console.timeEnd('Metar Function');
+    metarRunning=false;
+  }
 };
 
+let tafRunning=false;
 let tafFunction=async ()=>{
-  console.time('TAF Function');
-  console.log(await tafs());
-  console.timeEnd('TAF Function');
+  if (tafRunning) {
+    console.log('TAF Function skipped; previous run still going');
+    return;
+  }
+  tafRunning=true;
+  let timed=false;
+  try {
+    console.time('TAF Function');
+    timed=true;
+    console.log(await tafs());
+    invalidateAirportCache();
+  } catch (err) {
+    console.log('TAF callback failed', err);
+  } finally {
+    if (timed) console.timeEnd('TAF Function');
+    tafRunning=false;
+  }
 };
 
 let observerFunction=async ()=>{
