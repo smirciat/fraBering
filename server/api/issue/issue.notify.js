@@ -69,13 +69,18 @@ function issueCommentHtml(issueJson, commentJson) {
   var domain = configString('DOMAIN').replace(/\/$/, '');
   var link = domain ? (domain + '/issues?issueId=' + id) : '';
   var body = commentJson.body || '';
+  var truncated = false;
   if (body.length > 800) {
-    body = body.slice(0, 800) + '…';
+    body = body.slice(0, 800).replace(/\s+\S*$/, '') + '…';
+    truncated = true;
   }
   var html = 'New comment on fraBering issue #' + id + '<br><br>' +
     '<b>' + escapeHtml(issueJson.title || '') + '</b><br>' +
     'From: ' + escapeHtml(commentJson.authorName || '') + '<br><br>' +
     escapeHtml(body).replace(/\n/g, '<br>');
+  if (truncated) {
+    html += '<br><br>The rest of this comment is on the issue.';
+  }
   if (link) {
     html += '<br><br><a href="' + escapeHtml(link) + '">Open in fraBering</a>';
   }
