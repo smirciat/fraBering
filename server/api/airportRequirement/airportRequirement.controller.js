@@ -317,16 +317,43 @@ export function pireps(airport) {
 }
 
 // Creates a new AirportRequirement in the DB
+function notamStillCurrent(notam, now) {
+  let end = notam && notam.end_time && notam.end_time.dt;
+  if (!end) return true;
+  let ms = Date.parse(end);
+  if (isNaN(ms)) return true;
+  return ms >= now;
+}
+
 export async function notams(req, res) {
   try {
-    let icao=req.body.airport;
+    let icao=req.body&&req.body.airport;
+    if (!icao) return res.status(400).json('airport required');
     let response = await axios.get('https://avwx.rest/api/notam/'+icao+'?token='+localEnv.AVWX_TOKEN2);
-    if (response.data&&response.data.Error) console.log(res.data.Error);
-    else res.status(200).json(response.data);
+    let rows = response.data && response.data.data;
+    if (!Array.isArray(rows)) return res.status(404).json('Failed load notams');
+    let now = Date.now();
+    let notams = [];
+    let seen = {};
+    rows.forEach(notam=>{
+      if (!notamStillCurrent(notam, now)) return;
+      let type = notam.type && (notam.type.value || notam.type.repr) || '';
+      let body = notam.body || notam.sanitized || notam.raw || '';
+      let key = (notam.number || body).trim();
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      notams.push({
+        number: notam.number || '',
+        type: type,
+        body: body,
+        start: (notam.start_time && notam.start_time.repr) || '',
+        end: (notam.end_time && notam.end_time.repr) || ''
+      });
+    });
+    return res.status(200).json({notams: notams});
   }
   catch(err){
-    console.log(err);
-//    res.status(200).json('failure to update tafs');
+    console.log('notams fetch failed', req.body && req.body.airport, err.response ? err.response.status : err.message);
     res.status(404).json('Failed load notams');
   }
 }

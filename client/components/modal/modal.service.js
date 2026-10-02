@@ -789,6 +789,47 @@ angular.module('workspaceApp')
                 jumpseatDisp:flight.jumpseaterObject.reason,
                 tksCalc:tksCalc,
                 checkPirep:checkPirep,
+                officialNotams:{},
+                officialNotamState:function(metarObj){
+                  let icao=metarObj&&metarObj.airport&&metarObj.airport.icao;
+                  if (metarObj&&Array.isArray(metarObj.officialNotams)) {
+                    if (!icao||!this.officialNotams[icao]) {
+                      return {open:false, loading:false, lines:metarObj.officialNotams, error:!!metarObj.officialNotamsError, frozen:true};
+                    }
+                  }
+                  if (!icao||!this.officialNotams[icao]) return {open:false, loading:false, lines:null, error:false, frozen:false};
+                  return this.officialNotams[icao];
+                },
+                toggleOfficialNotams:function($event, metarObj){
+                  if ($event&&$event.stopPropagation) $event.stopPropagation();
+                  let icao=metarObj&&metarObj.airport&&metarObj.airport.icao;
+                  if (!icao) return;
+                  if (!this.officialNotams[icao]) {
+                    this.officialNotams[icao]={open:false, loading:false, lines:null, error:false, frozen:false};
+                  }
+                  let slot=this.officialNotams[icao];
+                  if (metarObj&&Array.isArray(metarObj.officialNotams)) {
+                    slot.lines=metarObj.officialNotams;
+                    slot.error=!!metarObj.officialNotamsError;
+                    slot.frozen=true;
+                    slot.loading=false;
+                    slot.open=!slot.open;
+                    return;
+                  }
+                  slot.frozen=false;
+                  slot.open=!slot.open;
+                  if (!slot.open||slot.loading||slot.lines) return;
+                  slot.loading=true;
+                  slot.error=false;
+                  $http.post('/api/airportRequirements/notams', {airport:icao}).then(res=>{
+                    slot.loading=false;
+                    slot.lines=(res.data&&res.data.notams)||[];
+                  }).catch(()=>{
+                    slot.loading=false;
+                    slot.lines=null;
+                    slot.error=true;
+                  });
+                },
                 startFuel:startFuel,
                 actualLoadPfrHint:function(){
                   let l0=flight.pfr&&flight.pfr.legArray&&flight.pfr.legArray[0];
@@ -1107,6 +1148,12 @@ angular.module('workspaceApp')
                       flight.dispatchReleaseTimestamp=null;
                       flight.ocReleaseTimestamp=null;
                       flight.colorLock=null;
+                      if (flight.airportObjsLocked) {
+                        flight.airportObjsLocked.forEach(function(leg){
+                          delete leg.officialNotams;
+                          delete leg.officialNotamsError;
+                        });
+                      }
                     }
                     quickModal.close(event);
                   }

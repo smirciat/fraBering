@@ -243,6 +243,35 @@ class StatusComponent {
       });
       this.applyManualWeatherSave(airport);
     });
+    this.captureOfficialNotamsForRelease=(flight)=>{
+      if (!flight||!(flight.dispatchRelease||flight.ocRelease)) return Promise.resolve();
+      let legs=flight.airportObjsLocked||[];
+      if (!legs.length) return Promise.resolve();
+      if (legs.every(leg=>Array.isArray(leg.officialNotams))) return Promise.resolve();
+      let icaos=[];
+      legs.forEach(leg=>{
+        let icao=leg.airport&&leg.airport.icao;
+        if (icao&&icaos.indexOf(icao)<0) icaos.push(icao);
+      });
+      if (!icaos.length) return Promise.resolve();
+      return Promise.all(icaos.map(icao=>{
+        return this.http.post('/api/airportRequirements/notams', {airport:icao}).then(res=>{
+          return {icao:icao, lines:(res.data&&res.data.notams)||[], error:false};
+        }).catch(()=>{
+          return {icao:icao, lines:[], error:true};
+        });
+      })).then(results=>{
+        let byIcao={};
+        results.forEach(row=>{ byIcao[row.icao]=row; });
+        legs.forEach(leg=>{
+          if (Array.isArray(leg.officialNotams)) return;
+          let icao=leg.airport&&leg.airport.icao;
+          let row=byIcao[icao];
+          if (!row||row.error) return;
+          leg.officialNotams=row.lines;
+        });
+      });
+    };
     this.flightModalCallback=(flight)=>{
       this.spinner=true;
       flight.newlyReleased=false;
@@ -272,6 +301,7 @@ class StatusComponent {
       flight.updatedBy=this.user.name;
       let id=flight._id;
       //this.http.post('/api/signatures',flight);
+      this.captureOfficialNotamsForRelease(flight).catch(()=>{}).then(()=>{
       this.http.patch('/api/todaysFlights/'+id,flight).then(res=>{
         this.spinner=false;
         console.log('Updated Flight ' + flight.flightNum);
@@ -303,6 +333,7 @@ class StatusComponent {
       //update flight in this.todaysFlights
       let index=this.todaysFlights.map(e => e._id).indexOf(flight._id);
       if (index>-1) Object.assign(this.todaysFlights[index], flight);
+      });
     };
     this.flightModal=this.Modal.confirm.flight(flight=>{
       this.flightModalCallback(flight);

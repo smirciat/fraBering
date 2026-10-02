@@ -6,34 +6,81 @@ _Generated from fraBering `/api/issues`. Regenerate: `node scripts/export-team-b
 
 _Developer-approved, open or in progress. Agents should implement these._
 
-## #68 Flights away from a base
+## #70 NOTAM's
 
-- **Type:** bug · medium · in_progress
-- **Reporter:** FEN KINNEEN
+- **Type:** bug · high · open
+- **Reporter:** Benjamin Rowe
 
 **Original report:**
 
-It appears that a flight built (in this case a test flight, 930) that doesn't have a leg that arrives or departs one of our three bases, won't show up on the flight release tool. We have a check flight for a 1900 from Greybull to Greybull with no way to sign it off.
+Under the weather section of Flight Releases, change "NOTAMs" to "COMPANY NOTAM's",  It should be made clear that the full official NOTAM's are not included here, and they need to be checked.  
+
+If we can pull in official NOTAM's here that would also be good, and we could keep a section of Company Notams and Official Notams.
 
 **Progress (changed, not resolved):**
 
-FEN KINNEEN: Looks good, flight is only showing on the Nome board. 
-
-One item of note is that the Greybull weather is not showing. Not sure if this is due to the way the flight was built in TF, or if it is because it is an out of state airport.
+Andy Smircich: I got pireps and notams confused.  Look into avwx notams for  the release sign off (default collapsed to avoid clutter
 
 **Comments:**
-- Andy Smircich: Lets fix this right away
-- Cursor Agent: Ready for your review (on today's deploy).
+- Andy Smircich: We already have official Notams and company notames specified in the status board view, Also show both in the flight release view as dispatch/oc/pilot are considering their sign off
+- Andy Smircich: I got pireps and notams confused.  Look into avwx notams for  the release sign off (default collapsed to avoid clutter
 
-**Flights that never touch a base**
-• A flight whose legs do not arrive or depart Nome, Kotzebue, or Unalakleet now shows on the **Nome** board, marked **Away**.
-• It does not show on Kotzebue, Unalakleet, or the helicopter board.
-• Open it the same way as any other flight and sign the release.
+## #69 30-day weight and balance audit
 
-**Please check:** The Greybull–Greybull 1900 check flight (930) appears on the Nome board and can be signed off. Confirm it is not on the Kotzebue or Unalakleet boards.
-- FEN KINNEEN: Looks good, flight is only showing on the Nome board. 
+- **Type:** feature · medium · open
+- **Reporter:** Benjamin Rowe
 
-One item of note is that the Greybull weather is not showing. Not sure if this is due to the way the flight was built in TF, or if it is because it is an out of state airport.
+**Original report:**
+
+30-day weight and balance audit is on dev (Audit page), not deployed.
+
+Done, one-click CSV like TSA:
+• Last 30 days, fixed-wing Flight Report legs. Helicopters left out.
+• TOW vs that leg's MGTOW. Blank or zero MGTOW is missing, not over.
+• Takeoff CG: Casa −22.2 to −6.7, Sky Courier −17.7 to −4.8 (load sheets). CG of 0 is missing.
+• Caravan, King Air, Beech 1900 listed; CG not checked.
+• Trial: 3,811 legs, 0 over MGTOW, 0 outside CG, 75 missing weight, 10 Casa/Courier missing CG.
+
+Needed from you:
+1. Confirm the Casa and Sky Courier limits.
+2. Takeoff CG forward/aft for Caravan, King Air, and Beech 1900.
+3. Also flag weight above the airplane cap? Casa 16,976 lb, Sky Courier 19,000 lb. No caps for the other types.
+4. Audit is superadmin only. Do you need to run the download yourself?
+
+**Progress (changed, not resolved):**
+
+Benjamin Rowe: 1 and2:  Limits are tied to TOW, should be in Firebase?  
+
+3.  Flag TOW above the MGTOW. Also flag MGTOW above structural limit. 
+
+4. I would like to be able to run the download, but when in place it will be flight department audit. 
+
+Set reminder for first week of month the run.  Must upload audit finding report to reset notification to next month.
+
+**Comments:**
+- Andy Smircich: 30-day weight and balance audit is on dev (Audit page), not deployed.
+
+Done, one-click CSV like TSA:
+• Last 30 days, fixed-wing Flight Report legs. Helicopters left out.
+• TOW vs that leg's MGTOW. Blank or zero MGTOW is missing, not over.
+• Takeoff CG: Casa −22.2 to −6.7, Sky Courier −17.7 to −4.8 (load sheets). CG of 0 is missing.
+• Caravan, King Air, Beech 1900 listed; CG not checked.
+• Trial: 3,811 legs, 0 over MGTOW, 0 outside CG, 75 missing weight, 10 Casa/Courier missing CG.
+
+Needed from you:
+1. Confirm the Casa and Sky Courier limits.
+2. Takeoff CG forward/aft for Caravan, King Air, and Beech 1900.
+3. Also flag weight above the airplane cap? Casa 16,976 lb, Sky Courier 19,000 lb. No caps for the other types.
+4. Audit is superadmin only. Do you need to run the download yourself?
+- Andy Smircich: Misleading comment there: I confirmed Ben is superadmin on fraBering, and can run all these functions with that permission
+- Andy Smircich: Also, can we infer limits from existing pfrs? They have specific fore and aft limits for the given gross weight embedded right in the record, there is little need to manually enter this again if that info is correct (I strongly believe it is)
+- Benjamin Rowe: 1 and2:  Limits are tied to TOW, should be in Firebase?  
+
+3.  Flag TOW above the MGTOW. Also flag MGTOW above structural limit. 
+
+4. I would like to be able to run the download, but when in place it will be flight department audit. 
+
+Set reminder for first week of month the run.  Must upload audit finding report to reset notification to next month.
 
 ## Ready for review (shipped — reporter verify, do not build)
 
@@ -334,6 +381,38 @@ Please verify: BRG703-style round-robin with long ground time at UNK still shows
 - ![screenshot-1786747288808.png](team-backlog/attachments/issue-13-att-10-screenshot-1786747288808.png)
 - ![screenshot-1787689274794.png](team-backlog/attachments/issue-13-att-16-screenshot-1787689274794.png)
 - ![screenshot-1787700915353.png](team-backlog/attachments/issue-13-att-17-screenshot-1787700915353.png)
+
+## #68 Flights away from a base
+
+- **Type:** bug · medium · ready_for_review
+- **Reporter:** FEN KINNEEN
+- **Status:** ready for review
+
+**Original report:**
+
+It appears that a flight built (in this case a test flight, 930) that doesn't have a leg that arrives or departs one of our three bases, won't show up on the flight release tool. We have a check flight for a 1900 from Greybull to Greybull with no way to sign it off.
+
+**Comments:**
+- Andy Smircich: Lets fix this right away
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**Flights that never touch a base**
+• A flight whose legs do not arrive or depart Nome, Kotzebue, or Unalakleet now shows on the **Nome** board, marked **Away**.
+• It does not show on Kotzebue, Unalakleet, or the helicopter board.
+• Open it the same way as any other flight and sign the release.
+
+**Please check:** The Greybull–Greybull 1900 check flight (930) appears on the Nome board and can be signed off. Confirm it is not on the Kotzebue or Unalakleet boards.
+- FEN KINNEEN: Looks good, flight is only showing on the Nome board. 
+
+One item of note is that the Greybull weather is not showing. Not sure if this is due to the way the flight was built in TF, or if it is because it is an out of state airport.
+- Cursor Agent: Ready for your review (on today's deploy).
+
+**Greybull / out-of-state weather on the flight row**
+• Unknown airports (not in our requirements list) already go through AVWX by city name when today's flights refresh.
+• That lookup only accepted **Alaska** stations, so Greybull, WY never got a METAR even though AVWX returns KGEY.
+• It now falls back to the first **US reporting** station from the same search, then loads METAR the same way as other off-list airports.
+
+**Please check:** On the Nome board, open the away-from-base Greybull check flight (930). After the next flight refresh (or a minute on the board), the leg chips should show weather (e.g. GEY) with a METAR tooltip. Kotzebue/Unalakleet-only trips should behave as before.
 
 ## #67 No option to add a/c, flight time for stand alone .299
 

@@ -26,12 +26,30 @@ function legHasWeightBalance(leg) {
   return finiteNumber(leg.mgtow) !== null || finiteNumber(leg.tow) !== null || finiteNumber(leg.cg) !== null;
 }
 
-/** Takeoff CG envelopes printed on the load sheets. Other types are not checked. */
-function takeoffCgLimits(acftType) {
+/**
+ * Certified max takeoff weight. Casa and Sky Courier are load-sheet mgtowLimit.
+ * Caravan is the gross cap on the flight-release modal. King Air and Beech 1900
+ * are the MGTOW Flight Report locks on every leg of that type.
+ */
+function structuralMgtow(acftType) {
   let t=String(acftType||'').toLowerCase();
-  if (t.indexOf('courier')>=0||t.indexOf('c408')>=0) return {fwd:-17.7, aft:-4.8};
-  if (t.indexOf('casa')>=0||t.indexOf('c212')>=0) return {fwd:-22.2, aft:-6.7};
+  if (t.indexOf('courier')>=0||t.indexOf('c408')>=0) return 19000;
+  if (t.indexOf('casa')>=0||t.indexOf('c212')>=0) return 16976;
+  if (t.indexOf('caravan')>=0||t.indexOf('c208')>=0) return 9062;
+  if (t.indexOf('king')>=0||t.indexOf('be20')>=0) return 12500;
+  if (t.indexOf('1900')>=0||t.indexOf('b190')>=0) return 17120;
   return null;
+}
+
+/** Fore/aft takeoff CG on the Flight Report leg. They move with that leg's weight. Both zero means the record has no envelope. */
+function legCgLimits(leg) {
+  let fwd=finiteNumber(leg&&leg.cgFWDLimit);
+  let aft=finiteNumber(leg&&leg.cgAFTLimit);
+  if (fwd===null&&aft===null) return null;
+  if ((fwd===null||fwd===0)&&(aft===null||aft===0)) return null;
+  if (fwd===null) fwd=aft;
+  if (aft===null) aft=fwd;
+  return {fwd:Math.min(fwd, aft), aft:Math.max(fwd, aft)};
 }
 
 function legRoute(leg) {
@@ -515,7 +533,7 @@ class AuditComponent {
     });
   }
 
-  /** Last 30 days of fixed-wing Flight Report legs. TOW is checked against that leg's MGTOW. CG is listed; envelopes are not coded yet. */
+  /** Last 30 days of fixed-wing Flight Report legs. TOW vs that leg's MGTOW. CG vs cgFWDLimit/cgAFTLimit. MGTOW vs the type structural cap. */
   createCSVWeightBalance(){
     this.customAudit=false;
     this.complete=false;
@@ -550,6 +568,7 @@ class AuditComponent {
       let over=0;
       let outside=0;
       let missing=0;
+      let overStructural=0;
       pfrs.forEach(pfr=>{
         if (isHelicopterPfr(pfr)||!pfr.legArray) return;
         pfr.legArray.forEach((leg, idx)=>{
@@ -567,11 +586,11 @@ class AuditComponent {
           } else {
             status.push('within MGTOW');
           }
-          let limits=takeoffCgLimits(pfr.acftType);
+          let limits=legCgLimits(leg);
           let fwd='';
           let aft='';
           if (!limits) {
-            status.push('CG limits not checked');
+            status.push('CG limits not on this record');
           } else if (cg===null||cg===0) {
             fwd=limits.fwd;
             aft=limits.aft;
@@ -586,6 +605,11 @@ class AuditComponent {
             aft=limits.aft;
             status.push('within CG');
           }
+          let structural=structuralMgtow(pfr.acftType);
+          if (structural!==null&&mgtow!==null&&mgtow>structural) {
+            status.push('MGTOW above structural');
+            overStructural+=1;
+          }
           rows.push({
             date:pfr.dateString||'',
             flight:pfr.flightNumber||'',
@@ -596,6 +620,7 @@ class AuditComponent {
             route:legRoute(leg),
             mgtow:mgtow===null?'':mgtow,
             tow:tow===null?'':tow,
+            structural:structural===null?'':structural,
             cg:cg===null?'':cg,
             fwd:fwd,
             aft:aft,
@@ -609,13 +634,13 @@ class AuditComponent {
           a.leg-b.leg;
       });
       let lines=[];
-      lines.push('LEGS CHECKED,OVER MGTOW,OUTSIDE CG,MISSING MGTOW OR TOW');
-      lines.push(rows.length+','+over+','+outside+','+missing);
-      lines.push('NOTE,Takeoff CG limits are the Casa sheet (-22.2 to -6.7) and the Sky Courier sheet (-17.7 to -4.8). Other types are not checked. A CG of 0 counts as missing.,,');
+      lines.push('LEGS CHECKED,OVER MGTOW,OUTSIDE CG,MISSING MGTOW OR TOW,MGTOW ABOVE STRUCTURAL');
+      lines.push(rows.length+','+over+','+outside+','+missing+','+overStructural);
+      lines.push('NOTE,CG limits are cgFWDLimit and cgAFTLimit on that leg. A CG of 0 counts as missing. Structural MGTOW is Caravan 9062, King Air 12500, Beech 1900 17120, Casa 16976, Sky Courier 19000.,,');
       if (capped) {
         lines.push('NOTE,Flight Report query returned 3000 flights. Older days in this window may be missing.,,');
       }
-      lines.push('DATE,FLIGHT,TAIL,TYPE,PILOT,LEG,ROUTE,MGTOW,TOW,CG,FWD CG LIMIT,AFT CG LIMIT,STATUS');
+      lines.push('DATE,FLIGHT,TAIL,TYPE,PILOT,LEG,ROUTE,MGTOW,TOW,STRUCTURAL MGTOW,CG,FWD CG LIMIT,AFT CG LIMIT,STATUS');
       rows.forEach(row=>{
         lines.push([
           csvCell(row.date),
@@ -627,6 +652,7 @@ class AuditComponent {
           csvCell(row.route),
           csvCell(row.mgtow),
           csvCell(row.tow),
+          csvCell(row.structural),
           csvCell(row.cg),
           csvCell(row.fwd),
           csvCell(row.aft),

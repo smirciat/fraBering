@@ -103,7 +103,7 @@
           <p>
             <button class="btn btn-default" ng-click="audit.createCSVWeightBalance()">Create CSV File (30-day weight and balance)</button>
           </p>
-          <p class="text-muted" style="max-width:16em;">Last 30 days. Every fixed-wing leg. TOW is compared to that leg's MGTOW. Casa and Sky Courier CG are compared to the takeoff limits on their load sheets.</p>
+          <p class="text-muted" style="max-width:16em;">Last 30 days. Every fixed-wing leg. TOW is compared to that leg's MGTOW. CG is compared to the fore and aft limits stored on that leg. MGTOW above the type structural cap is flagged.</p>
           <p>
             <a class="btn btn-primary" download="weight-balance-30-day.csv" ng-href="{{ audit.url }}" ng-if="audit.complete5">Download CSV File</a>
           </p>
